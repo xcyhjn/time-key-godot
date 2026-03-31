@@ -1,0 +1,169 @@
+[gd_scene format=3 uid="uid://cje2v37jkgv16"]
+
+[ext_resource type="Theme" uid="uid://w172uwoow3s3" path="res://theme/OptionsMenu.theme" id="1_lbr8e"]
+[ext_resource type="Script" uid="uid://r2oq4umo5cu1" path="res://scripts/UI/Volumn/slider_master_volume.gd" id="2_4gmlt"]
+[ext_resource type="Texture2D" uid="uid://d1iuxlj2d3835" path="res://assets/texture/hexagon_frame.png" id="2_t1lix"]
+[ext_resource type="Script" uid="uid://3ux4ajwmrhtm" path="res://scripts/UI/Volumn/slider_music_volume.gd" id="4_ogda5"]
+[ext_resource type="Script" uid="uid://c7of0nag6wh35" path="res://scripts/UI/Volumn/slider_sfx_volume.gd" id="5_6bffs"]
+[ext_resource type="Script" uid="uid://d2t1olgy4mxli" path="res://scripts/UI/fullscreen_check_box.gd" id="6_vwtu1"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4gmlt"]
+texture = ExtResource("2_t1lix")
+texture_margin_left = 2.0
+texture_margin_top = 2.0
+texture_margin_right = 2.0
+texture_margin_bottom = 2.0
+expand_margin_left = 3.0
+region_rect = Rect2(2, 0, 16, 20)
+
+[node name="OptionsMenu" type="Control" unique_id=646142702]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 960.0
+offset_top = 540.0
+offset_right = 960.0
+offset_bottom = 540.0
+theme = ExtResource("1_lbr8e")
+
+[node name="AudioOptions" type="Control" parent="." unique_id=1464162908]
+anchors_preset = 0
+
+[node name="AudioSettings" type="Label" parent="AudioOptions" unique_id=92448632]
+layout_mode = 0
+offset_left = -556.0
+offset_top = -364.0
+offset_right = -356.0
+offset_bottom = -289.0
+theme_override_font_sizes/font_size = 50
+text = "声音设置"
+
+[node name="GridContainer" type="GridContainer" parent="AudioOptions" unique_id=950260942]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -460.0
+offset_top = -274.0
+offset_right = 459.75
+offset_bottom = -37.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/h_separation = 30
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="Master" type="Label" parent="AudioOptions/GridContainer" unique_id=417421521]
+layout_mode = 2
+text = "总音量"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MasterVolume" type="HSlider" parent="AudioOptions/GridContainer" unique_id=978443855]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+max_value = 1.0
+step = 0.01
+value = 1.0
+script = ExtResource("2_4gmlt")
+
+[node name="ValuePopup" type="PanelContainer" parent="AudioOptions/GridContainer/MasterVolume" unique_id=1464699060]
+layout_mode = 0
+offset_top = 16.0
+offset_right = 60.875
+offset_bottom = 74.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_4gmlt")
+
+[node name="ValueLabel" type="Label" parent="AudioOptions/GridContainer/MasterVolume/ValuePopup" unique_id=152533616]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "50"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Music" type="Label" parent="AudioOptions/GridContainer" unique_id=1381522722]
+layout_mode = 2
+text = "音  乐"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MusicVolume" type="HSlider" parent="AudioOptions/GridContainer" unique_id=546215132]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+max_value = 1.0
+step = 0.01
+value = 1.0
+script = ExtResource("4_ogda5")
+
+[node name="ValuePopup" type="PanelContainer" parent="AudioOptions/GridContainer/MusicVolume" unique_id=170017646]
+layout_mode = 0
+offset_top = 16.0
+offset_right = 60.875
+offset_bottom = 74.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_4gmlt")
+
+[node name="ValueLabel" type="Label" parent="AudioOptions/GridContainer/MusicVolume/ValuePopup" unique_id=697403222]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "50"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SFX" type="Label" parent="AudioOptions/GridContainer" unique_id=1954982806]
+layout_mode = 2
+text = "音  效"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="SFXVolume" type="HSlider" parent="AudioOptions/GridContainer" unique_id=658864648]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+max_value = 1.0
+step = 0.01
+value = 1.0
+script = ExtResource("5_6bffs")
+
+[node name="ValuePopup" type="PanelContainer" parent="AudioOptions/GridContainer/SFXVolume" unique_id=720606540]
+layout_mode = 0
+offset_top = 16.0
+offset_right = 60.875
+offset_bottom = 74.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_4gmlt")
+
+[node name="ValueLabel" type="Label" parent="AudioOptions/GridContainer/SFXVolume/ValuePopup" unique_id=1918021807]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "50"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DisplayOptions" type="Control" parent="." unique_id=181863817]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="DisplaySettings" type="Label" parent="DisplayOptions" unique_id=1250032521]
+layout_mode = 0
+offset_left = -556.0
+offset_right = -356.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 50
+text = "显示设置"
+
+[node name="CheckBox" type="CheckBox" parent="DisplayOptions" unique_id=682703630]
+layout_mode = 0
+offset_left = -460.0
+offset_top = 107.0
+offset_right = -272.0
+offset_bottom = 169.0
+text = "全屏显示"
+script = ExtResource("6_vwtu1")
+
+[connection signal="toggled" from="DisplayOptions/CheckBox" to="DisplayOptions/CheckBox" method="_on_toggled"]

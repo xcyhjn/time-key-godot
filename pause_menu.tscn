@@ -1,0 +1,93 @@
+[gd_scene format=3 uid="uid://ij3dvdfrdp25"]
+
+[ext_resource type="Shader" uid="uid://bq2l6sxovbp55" path="res://pause_menu.gdshader" id="1_hdmo1"]
+[ext_resource type="Script" uid="uid://cfdjg0rb2r2p3" path="res://scripts/UI/Pause/main_container.gd" id="1_nwcfo"]
+[ext_resource type="PackedScene" uid="uid://cje2v37jkgv16" path="res://options_menu.tscn" id="3_05uyy"]
+[ext_resource type="Theme" uid="uid://w172uwoow3s3" path="res://theme/OptionsMenu.theme" id="4_2nc7s"]
+[ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="4_p81d2"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nwcfo"]
+shader = ExtResource("1_hdmo1")
+shader_parameter/slant_offset = 0.5
+shader_parameter/degree = 0.3350000159125
+shader_parameter/menu_color = Color(0.17254902, 0.17254902, 0.17254902, 0.7490196)
+
+[node name="PauseMenu" type="CanvasLayer" unique_id=383384250]
+
+[node name="MainContainer" type="Control" parent="." unique_id=1565552568]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_nwcfo")
+
+[node name="BackgroundShader" type="ColorRect" parent="MainContainer" unique_id=661187895]
+material = SubResource("ShaderMaterial_nwcfo")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuContainer" type="Control" parent="MainContainer" unique_id=1246432314]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="OptionsMenu" parent="MainContainer/MenuContainer" unique_id=646142702 instance=ExtResource("3_05uyy")]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -336.0
+offset_top = -102.0
+offset_right = -336.0
+offset_bottom = -102.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SaveOptions" type="Control" parent="MainContainer/MenuContainer" unique_id=310613722]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SaveSettings" type="Label" parent="MainContainer/MenuContainer/SaveOptions" unique_id=32021106]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 638.0
+offset_right = 268.0
+offset_bottom = 706.0
+theme = ExtResource("4_2nc7s")
+theme_override_font_sizes/font_size = 50
+text = "保存游戏"
+
+[node name="ButtonGroup" type="VBoxContainer" parent="MainContainer/MenuContainer/SaveOptions" unique_id=1390185278]
+layout_mode = 0
+offset_left = 164.0
+offset_top = 757.0
+offset_right = 468.0
+offset_bottom = 944.0
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="SaveToTitle" type="Button" parent="MainContainer/MenuContainer/SaveOptions/ButtonGroup" unique_id=1208343924]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("4_p81d2")
+text = "保存并回到标题画面"
+
+[node name="Quit" type="Button" parent="MainContainer/MenuContainer/SaveOptions/ButtonGroup" unique_id=901808848]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = ExtResource("4_p81d2")
+text = "退出游戏"

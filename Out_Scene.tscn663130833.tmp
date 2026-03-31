@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://bdsor6hek0y1j"]
+
+[ext_resource type="Script" uid="uid://cunn5cqnog06j" path="res://OutScene/out_scene_map_exp.gd" id="1_rr3dt"]
+[ext_resource type="Texture2D" uid="uid://btok7tsvprh6x" path="res://image/out-block_grass.png" id="2_an61j"]
+[ext_resource type="Texture2D" uid="uid://bqhsnn1qks7ta" path="res://image/player_token.png" id="2_igw38"]
+[ext_resource type="Script" uid="uid://iqptkkak618a" path="res://OutScene/map_generator.gd" id="3_rr3dt"]
+[ext_resource type="Script" uid="uid://es427lfaorir" path="res://OutScene/map_renderer.gd" id="4_an61j"]
+[ext_resource type="Texture2D" uid="uid://cn6lxb76f7fmb" path="res://image/2.png" id="8_vty0y"]
+[ext_resource type="Texture2D" uid="uid://5eq5pmcy6x7l" path="res://image/1.png" id="9_jqbmv"]
+[ext_resource type="Script" uid="uid://wvx58wvbksoc" path="res://camera_2d.gd" id="9_layod"]
+[ext_resource type="PackedScene" uid="uid://ij3dvdfrdp25" path="res://pause_menu.tscn" id="10_igw38"]
+
+[node name="OutScene" type="Node2D" unique_id=1612987038]
+script = ExtResource("1_rr3dt")
+map_seed = null
+step_x = 272.0
+step_y = null
+stagger_y = null
+move_duration = null
+combat_scene = null
+
+[node name="MapGenerator" type="Node" parent="." unique_id=575033209]
+script = ExtResource("3_rr3dt")
+
+[node name="MapRenderer" type="Node2D" parent="." unique_id=162266069]
+script = ExtResource("4_an61j")
+tex_normal = ExtResource("2_an61j")
+tex_elite = ExtResource("2_an61j")
+tex_event = ExtResource("2_an61j")
+tex_boss = ExtResource("2_an61j")
+tex_start = ExtResource("2_an61j")
+tex_mountain = ExtResource("2_an61j")
+tex_chars = Array[Texture2D]([ExtResource("2_an61j"), ExtResource("2_an61j"), ExtResource("2_an61j"), ExtResource("2_an61j"), ExtResource("2_an61j"), ExtResource("2_an61j")])
+icon_enhance = ExtResource("8_vty0y")
+icon_delete = ExtResource("9_jqbmv")
+icon_combine = ExtResource("8_vty0y")
+icon_trade = ExtResource("9_jqbmv")
+
+[node name="Player" type="Sprite2D" parent="." unique_id=832225153]
+texture = ExtResource("2_igw38")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=764292381]
+limit_enabled = false
+script = ExtResource("9_layod")
+min_zoom = Vector2(0.2, 0.2)
+
+[node name="TilesContainer" type="Node2D" parent="." unique_id=490631308]
+
+[node name="UI" type="Control" parent="." unique_id=228877884]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="PauseMenu" parent="UI" unique_id=383384250 instance=ExtResource("10_igw38")]

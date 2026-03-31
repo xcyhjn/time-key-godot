@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://eirips8867i"]
+
+[ext_resource type="Script" uid="uid://ccc7l6aekn2r8" path="res://ending.gd" id="1_fsb5k"]
+
+[node name="Ending" type="CanvasLayer" unique_id=1282304795]
+script = ExtResource("1_fsb5k")
+
+[node name="Dimmer" type="ColorRect" parent="." unique_id=397071409]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MapViewportContainer" type="SubViewportContainer" parent="." unique_id=913497296]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SubViewport" type="SubViewport" parent="MapViewportContainer" unique_id=269831409]
+handle_input_locally = false
+render_target_update_mode = 4
+
+[node name="WorldCamera" type="Camera2D" parent="MapViewportContainer/SubViewport" unique_id=1843034936]
+
+[node name="WorldMapProxy" type="Node2D" parent="MapViewportContainer/SubViewport" unique_id=362191273]
+
+[node name="VFX_Layer" type="Control" parent="." unique_id=1037716875]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="PulseMask" type="ColorRect" parent="VFX_Layer" unique_id=1117953418]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ShatterParticles" type="GPUParticles2D" parent="VFX_Layer" unique_id=1641882042]
+
+[node name="UI_Layer" type="Control" parent="." unique_id=811403676]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="FalseVictoryTitle" type="Label" parent="UI_Layer" unique_id=870266440]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="StatsPanel" type="VBoxContainer" parent="UI_Layer" unique_id=1457443136]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SectorIcons" type="HBoxContainer" parent="UI_Layer" unique_id=964919986]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="PostProcess" type="ColorRect" parent="." unique_id=158359195]
+offset_right = 40.0
+offset_bottom = 40.0
