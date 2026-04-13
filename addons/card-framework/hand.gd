@@ -25,6 +25,7 @@
 class_name Hand
 extends CardContainer
 
+
 @export_group("hand_meta_info")
 ## maximum number of cards that can be held.
 @export var max_hand_size := CardFrameworkSettings.LAYOUT_MAX_HAND_SIZE
@@ -56,6 +57,7 @@ var vertical_partitions_from_inside = []
 
 func _ready() -> void:
 	super._ready()
+	
 
 
 ## Returns a random selection of cards from this hand.
@@ -84,9 +86,21 @@ func _card_can_be_added(_cards: Array) -> bool:
 
 
 func _update_target_z_index() -> void:
+	# 清理无效的卡牌引用
+	var valid_cards = []
+	for card in _held_cards:
+		if is_instance_valid(card):
+			valid_cards.append(card)
+	
+	# 如果有卡牌被移除，更新数组
+	if valid_cards.size() != _held_cards.size():
+		_held_cards = valid_cards
+	
+	# 更新有效的卡牌的z_index
 	for i in range(_held_cards.size()):
 		var card = _held_cards[i]
-		card.stored_z_index = i
+		if is_instance_valid(card):
+			card.stored_z_index = i
 
 
 ## Calculates target positions for all cards using mathematical curves.
@@ -102,9 +116,23 @@ func _update_target_positions() -> void:
 
 	vertical_partitions_from_outside.clear()
 	
+	# 先清理无效的卡牌引用（与 _update_target_z_index 保持一致）
+	var valid_cards = []
+	for card in _held_cards:
+		if is_instance_valid(card):
+			valid_cards.append(card)
+	
+	# 如果有卡牌被移除，更新数组
+	if valid_cards.size() != _held_cards.size():
+		_held_cards = valid_cards
+	
 	# Calculate position and rotation for each card in the fan arrangement
 	for i in range(_held_cards.size()):
 		var card = _held_cards[i]
+		
+		# 安全检查：跳过无效卡牌
+		if not is_instance_valid(card):
+			continue
 		
 		# Calculate normalized position ratio (0.0 to 1.0) for curve sampling
 		var hand_ratio = 0.5  # Single card centered

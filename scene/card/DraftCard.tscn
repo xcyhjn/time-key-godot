@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://6pbnyuel0k2u"]
+
+[ext_resource type="Shader" uid="uid://ys2g5pch4fad" path="res://shaders/card_glow.gdshader" id="1_q4tg6"]
+[ext_resource type="Texture2D" uid="uid://ca7ln3w63nyne" path="res://image/behide.png" id="2_8mdwi"]
+[ext_resource type="Script" uid="uid://bhw6tqvu4h7s3" path="res://scene/card/draft_card.gd" id="3_i7w58"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8y2jn"]
+shader = ExtResource("1_q4tg6")
+shader_parameter/glow_color = Color(1, 0.9, 0.2, 1)
+shader_parameter/glow_size = 8.0
+shader_parameter/glow_intensity = 1.5
+shader_parameter/is_selected = true
+
+[node name="DraftCard" type="TextureRect" unique_id=325490202]
+material = SubResource("ShaderMaterial_8y2jn")
+custom_minimum_size = Vector2(125, 175)
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 0
+texture = ExtResource("2_8mdwi")
+expand_mode = 1
+script = ExtResource("3_i7w58")

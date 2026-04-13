@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://b3hj8nni2bo3m"]
+
+[ext_resource type="Script" uid="uid://yjgs8qeuxx6h" path="res://scene/in_scene/enermy/health_bar_enemy.gd" id="1_xuky6"]
+[ext_resource type="Texture2D" uid="uid://cqinuk58l2gdu" path="res://image/UI_Healthbar.png" id="2_8ksto"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_cf0ww"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_agoyj"]
+atlas = ExtResource("2_8ksto")
+region = Rect2(4, 26, 58, 6)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r2r00"]
+atlas = ExtResource("2_8ksto")
+region = Rect2(5, 42, 56, 4)
+
+[node name="HealthBarEnemy" type="Control" unique_id=1467879499]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xuky6")
+
+[node name="EnemyHealth" type="TextureProgressBar" parent="." unique_id=804165546]
+layout_mode = 0
+offset_right = 58.0
+offset_bottom = 11.0
+value = 100.0
+texture_over = SubResource("AtlasTexture_agoyj")
+texture_progress = SubResource("AtlasTexture_r2r00")
+texture_progress_offset = Vector2(1, 1)
+
+[node name="EnemyInfo" type="Label" parent="." unique_id=359832126]
+layout_mode = 0
+offset_left = 5.0
+offset_top = -9.0
+offset_right = 233.0
+offset_bottom = 34.0
+scale = Vector2(0.2, 0.2)
+theme_override_fonts/font = ExtResource("2_cf0ww")
+theme_override_font_sizes/font_size = 32

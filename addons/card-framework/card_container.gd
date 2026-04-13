@@ -366,17 +366,24 @@ func _find_and_register_card_manager() -> void:
 	if card_manager != null:
 		return
 
-	# Try scene root meta registration first (most flexible)
-	var scene_root = get_tree().current_scene
-	if scene_root and scene_root.has_meta("card_manager"):
-		card_manager = scene_root.get_meta("card_manager")
+	# Try tree root meta registration first (most reliable during scene transitions)
+	var tree_root = get_tree().root
+	if tree_root and tree_root.has_meta("card_manager"):
+		card_manager = tree_root.get_meta("card_manager")
 		if debug_mode:
-			print("CardContainer found CardManager via scene root meta: ", name)
+			print("CardContainer found CardManager via tree root meta: ", name)
 	else:
-		# Fallback to parent traversal for backward compatibility
-		card_manager = _find_card_manager_in_parents()
-		if card_manager and debug_mode:
-			print("CardContainer found CardManager via parent traversal: ", name)
+		# Fallback to scene root meta (for backward compatibility)
+		var scene_root = get_tree().current_scene
+		if scene_root and scene_root.has_meta("card_manager"):
+			card_manager = scene_root.get_meta("card_manager")
+			if debug_mode:
+				print("CardContainer found CardManager via scene root meta: ", name)
+		else:
+			# Fallback to parent traversal for backward compatibility
+			card_manager = _find_card_manager_in_parents()
+			if card_manager and debug_mode:
+				print("CardContainer found CardManager via parent traversal: ", name)
 
 	# CardManager must be found for proper functionality
 	if card_manager == null:

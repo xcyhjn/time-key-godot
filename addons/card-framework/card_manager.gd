@@ -55,7 +55,8 @@ var card_factory: CardFactory
 var card_container_dict: Dictionary = {}
 var history: Array[HistoryElement] = []
 
-
+var current_selected_card: Node = null # 当前选中的卡牌
+#修改部分到此为止
 func _init() -> void:
 	if Engine.is_editor_hint():
 		return
@@ -69,11 +70,11 @@ func _ready() -> void:
 		return
 
 	# Register CardManager to scene root for flexible CardContainer discovery
-	var scene_root = get_tree().current_scene
+	var scene_root = get_tree().root
 	if scene_root:
 		scene_root.set_meta("card_manager", self)
 		if debug_mode:
-			print("CardManager registered to scene root: ", scene_root.name)
+			print("CardManager registered to scene root (using tree root): ", scene_root.name)
 
 	card_factory.card_size = card_size
 	card_factory.preload_card_data()
@@ -191,3 +192,40 @@ func _pre_process_exported_variables() -> bool:
 	add_child(factory_instance)
 	card_factory = factory_instance
 	return true
+	
+	# ==========================================
+# ★ 新增：在脚本底部添加选中与弃牌接口
+# ==========================================
+# 尝试选中一张牌（如果已有选中的牌则拒绝）
+func select_card(card: Node) -> bool:
+	if current_selected_card != null and current_selected_card != card:
+		return false 
+	current_selected_card = card
+	return true
+
+# 取消当前选中状态
+func deselect_card() -> void:
+	current_selected_card = null
+
+# ==========================================
+# ★ 终极安全方案：通过节点名字找牌堆
+# ==========================================
+func get_container_by_name(container_name: String) -> CardContainer:
+	for id in card_container_dict:
+		var container = card_container_dict[id]
+		if container.name == container_name:
+			return container
+	return null
+
+func play_and_discard(card: Node, target_container_name: String) -> void:
+	var target_container = get_container_by_name(target_container_name)
+	
+	if target_container:
+		# ★ 只需要传卡牌数组进去，插件会自动把它放在牌堆最上面
+		target_container.move_cards([card])
+	else:
+		print("❌ 找不到名为 '", target_container_name, "' 的牌堆！卡牌将被安全销毁。")
+		if card.get("card_container") != null:
+			card.card_container.remove_card(card)
+		card.hide() 
+		card.call_deferred("queue_free")

@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://b3oxrni5xbtas"]
+
+[ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="1_08442"]
+[ext_resource type="Script" uid="uid://bdvg4mh5dqmjm" path="res://scene/main_menu/menu_guide/main_guide.gd" id="1_bva5s"]
+
+[node name="MainGuide" type="CanvasLayer" unique_id=2067301712]
+script = ExtResource("1_bva5s")
+
+[node name="Control" type="Control" parent="." unique_id=1854395665]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Control" unique_id=1921437195]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ButtonGroup" type="HBoxContainer" parent="Control" unique_id=542586406]
+clip_contents = true
+layout_mode = 0
+offset_left = 114.0
+offset_top = 198.0
+offset_right = 1744.0
+offset_bottom = 423.0
+theme_override_constants/separation = 48
+alignment = 1
+
+[node name="HistoryBtn" type="Button" parent="Control/ButtonGroup" unique_id=877818869]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("1_08442")
+text = "历史记录"
+
+[node name="CharDataBtn" type="Button" parent="Control/ButtonGroup" unique_id=892593904]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("1_08442")
+text = "角色数据"
+
+[node name="AchitectBtn" type="Button" parent="Control/ButtonGroup" unique_id=83269099]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("1_08442")
+text = "建筑百科"
+
+[node name="CardBtn" type="Button" parent="Control/ButtonGroup" unique_id=1606089350]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("1_08442")
+text = "卡牌百科"
+
+[node name="Back" type="Button" parent="Control" unique_id=1718574205]
+layout_mode = 0
+offset_left = 57.0
+offset_top = 885.0
+offset_right = 160.0
+offset_bottom = 944.0
+size_flags_vertical = 3
+theme = ExtResource("1_08442")
+text = "←"
+
+[connection signal="button_down" from="Control/Back" to="." method="_on_back_button_down"]

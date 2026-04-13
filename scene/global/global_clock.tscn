@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://82svss58r3m6"]
+
+[ext_resource type="Script" uid="uid://dyur66ab571xs" path="res://scene/global/global_clock.gd" id="1_7vtan"]
+[ext_resource type="Script" uid="uid://ddfsdvuaw6r38" path="res://scene/in_scene/timer_ui.gd" id="2_wimja"]
+[ext_resource type="Texture2D" uid="uid://cpmyh7fwmeajl" path="res://image/clock/frame_000.png" id="3_5jsvb"]
+[ext_resource type="Shader" uid="uid://ky7kprqmx32p" path="res://shaders/global_clock.gdshader" id="3_wvty7"]
+[ext_resource type="Texture2D" uid="uid://dw8j5ctfdaeyo" path="res://image/clock/frame_001.png" id="4_pnf5e"]
+[ext_resource type="Texture2D" uid="uid://ce5s7iywsoncd" path="res://image/clock/frame_002.png" id="5_w6xca"]
+[ext_resource type="Texture2D" uid="uid://dlckurme1uv0r" path="res://image/clock/frame_003.png" id="6_0lbrw"]
+[ext_resource type="Texture2D" uid="uid://cswcganv757hd" path="res://image/clock/frame_004.png" id="7_thbvb"]
+[ext_resource type="Texture2D" uid="uid://p8ybhvxptp3m" path="res://image/clock/frame_005.png" id="8_41xb4"]
+[ext_resource type="Texture2D" uid="uid://cocxk3mvuur3u" path="res://image/clock/frame_006.png" id="9_om4g8"]
+[ext_resource type="Texture2D" uid="uid://d13qmpuj0tece" path="res://image/clock/frame_007.png" id="10_pieu6"]
+[ext_resource type="Script" uid="uid://c6u28fnster13" path="res://scene/in_scene/timer.gd" id="11_670o4"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_y14vi"]
+shader = ExtResource("3_wvty7")
+shader_parameter/is_highlighted = false
+shader_parameter/highlight_color = Color(1, 1, 1, 1)
+shader_parameter/intensity = 0.3
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0if8d"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_5jsvb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_pnf5e")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_w6xca")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_0lbrw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_thbvb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_41xb4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_om4g8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_pieu6")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Global_Clock" type="Node2D" unique_id=599385813]
+script = ExtResource("1_7vtan")
+
+[node name="TimerUI" type="CanvasLayer" parent="." unique_id=1897452546]
+script = ExtResource("2_wimja")
+
+[node name="Timer" type="AnimatedSprite2D" parent="TimerUI" unique_id=445037226]
+material = SubResource("ShaderMaterial_y14vi")
+position = Vector2(149, 147)
+scale = Vector2(0.5, 0.514)
+sprite_frames = SubResource("SpriteFrames_0if8d")
+frame_progress = 0.3730904
+script = ExtResource("11_670o4")

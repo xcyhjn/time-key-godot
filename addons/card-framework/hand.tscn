@@ -13,7 +13,6 @@ _data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 40), 0.0, 0.0, 0, 0, Vector
 point_count = 3
 
 [node name="Hand" type="Control"]
-z_index = 1
 layout_mode = 3
 anchors_preset = 0
 mouse_filter = 1

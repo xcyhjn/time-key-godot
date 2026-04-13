@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://dr75xppin3p6f"]
+
+[ext_resource type="Script" uid="uid://b5wv1yv13tfjj" path="res://scene/main_menu/menu_set/main_set.gd" id="1_277lv"]
+[ext_resource type="PackedScene" uid="uid://cje2v37jkgv16" path="res://scene/options_menu.tscn" id="1_rp58b"]
+[ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="3_7q4oj"]
+
+[node name="MainSet" type="CanvasLayer" unique_id=1881415037]
+script = ExtResource("1_277lv")
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1294905625]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="OptionsMenu" parent="." unique_id=646142702 instance=ExtResource("1_rp58b")]
+
+[node name="Back" type="Button" parent="." unique_id=1300345776]
+offset_left = 57.0
+offset_top = 885.0
+offset_right = 160.0
+offset_bottom = 944.0
+size_flags_vertical = 3
+theme = ExtResource("3_7q4oj")
+text = "←"
+
+[connection signal="button_down" from="Back" to="." method="_on_back_button_down"]

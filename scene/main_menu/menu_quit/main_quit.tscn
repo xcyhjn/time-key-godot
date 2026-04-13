@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://diy1bx2xob7ix"]
+
+[ext_resource type="Script" uid="uid://qug8qbpy3t1p" path="res://scene/main_menu/menu_quit/main_quit.gd" id="1_ocrjt"]
+[ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="3_6el3e"]
+
+[node name="MainQuit" type="CanvasLayer" unique_id=1881415037]
+script = ExtResource("1_ocrjt")
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1294905625]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Tip" type="Button" parent="." unique_id=758138527]
+offset_left = 682.0
+offset_top = 264.0
+offset_right = 1253.0
+offset_bottom = 687.0
+size_flags_vertical = 3
+theme = ExtResource("3_6el3e")
+text = "你确认要退出游戏吗
+
+
+"
+
+[node name="Back" type="Button" parent="." unique_id=177032908]
+offset_left = 702.0
+offset_top = 583.0
+offset_right = 846.0
+offset_bottom = 669.0
+size_flags_vertical = 3
+theme = ExtResource("3_6el3e")
+text = "返回"
+
+[node name="Confirm" type="Button" parent="." unique_id=588958249]
+offset_left = 1100.0
+offset_top = 586.0
+offset_right = 1244.0
+offset_bottom = 672.0
+size_flags_vertical = 3
+theme = ExtResource("3_6el3e")
+text = "确认"
+
+[connection signal="button_down" from="Back" to="." method="_on_back_button_down"]
+[connection signal="button_down" from="Confirm" to="." method="_on_confirm_button_down"]

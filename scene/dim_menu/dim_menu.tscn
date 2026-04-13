@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://berunvbh1p375"]
+
+[ext_resource type="Script" uid="uid://dn7qb8iiquf35" path="res://scene/dim_menu/dim_menu.gd" id="1_c5v1e"]
+
+[node name="DimMenu" type="CanvasLayer" unique_id=59612590]
+layer = 1000
+script = ExtResource("1_c5v1e")
+mode = 1
+mode2 = 1
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1768059335]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)

@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://wvpr5bxx25pk"]
+
+[ext_resource type="Script" uid="uid://clqgq1n7v0ar" path="res://addons/card-framework/card_manager.gd" id="1_r4eom"]
+[ext_resource type="Script" uid="uid://dj46jo3lfbclo" path="res://addons/card-framework/hand.gd" id="2_untj4"]
+
+[node name="CardManager" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_r4eom")
+metadata/_custom_type_script = "uid://clqgq1n7v0ar"
+
+[node name="Hand" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("2_untj4")
+metadata/_custom_type_script = "uid://dj46jo3lfbclo"

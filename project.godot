@@ -14,19 +14,30 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="卡牌游戏"
-run/main_scene="uid://8mbjd7t0meqq"
+config/name="时之钥"
+run/main_scene="uid://378syxx0nj4d"
 config/features=PackedStringArray("4.6", "Forward Plus")
 
 [autoload]
 
 Global="*uid://djir5bfcqufdj"
+MapState="*uid://d3x5dg5yo75f5"
+GlobalClock="*uid://82svss58r3m6"
+Signal_Bus="*uid://db1rpjhabup7l"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
+
+[editor]
+
+version_control/autoload_on_startup=true
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=3
 
 [shader_globals]
 

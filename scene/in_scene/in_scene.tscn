@@ -1,0 +1,248 @@
+[gd_scene format=3 uid="uid://jek608mf31r8"]
+
+[ext_resource type="Texture2D" uid="uid://ca7ln3w63nyne" path="res://image/behide.png" id="2_6xffl"]
+[ext_resource type="Texture2D" uid="uid://5eq5pmcy6x7l" path="res://image/inscene_block/grass.png" id="2_ioxnp"]
+[ext_resource type="Script" uid="uid://istgpa5ab80k" path="res://scene/in_scene/camera_2d_inscene.gd" id="2_nbemg"]
+[ext_resource type="Script" uid="uid://biddqg06qvndu" path="res://scene/in_scene/hex_map.gd" id="2_uthkf"]
+[ext_resource type="Texture2D" uid="uid://cn6lxb76f7fmb" path="res://image/inscene_block/dirt.png" id="3_djuk3"]
+[ext_resource type="Shader" uid="uid://pdp2mrgq6od7" path="res://shaders/hex.gdshader" id="4_ioxnp"]
+[ext_resource type="Script" uid="uid://bjwid4x1can0t" path="res://scene/in_scene/enermy/health_bar.gd" id="5_ee15a"]
+[ext_resource type="Script" uid="uid://dxge25pjqhhag" path="res://scene/in_scene/in_scene.gd" id="6_a7mxu"]
+[ext_resource type="Texture2D" uid="uid://da1qrxudkpuji" path="res://image/Play.png" id="8_6ipd3"]
+[ext_resource type="Texture2D" uid="uid://dwkqtxwdvfuqx" path="res://image/PlayPause.png" id="9_hyn5d"]
+[ext_resource type="Texture2D" uid="uid://b080xjkdaw1he" path="res://image/fc1084.png" id="10_dsnwd"]
+[ext_resource type="PackedScene" uid="uid://17wbs1ndnij8" path="res://scene/in_scene/RewardManager.tscn" id="11_dsnwd"]
+[ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="11_sa0gx"]
+[ext_resource type="Script" uid="uid://b57d8s2xwou05" path="res://scene/in_scene/timeline/TimelineManager.gd" id="13_agq83"]
+[ext_resource type="Script" uid="uid://cgstk6buif658" path="res://scene/in_scene/DragShapeController.gd" id="14_3560t"]
+[ext_resource type="Shader" uid="uid://dr2hh00drgq38" path="res://shaders/shape_drag_state.gdshader.gdshader" id="15_a7mxu"]
+[ext_resource type="Script" uid="uid://cpufturn45tyx" path="res://scene/in_scene/enermy/enemy_intent_manager.gd" id="15_t5bpg"]
+[ext_resource type="Script" uid="uid://o24takqau3p" path="res://scene/in_scene/timeline/timeline_visualizer.gd" id="16_85ml3"]
+[ext_resource type="Shader" uid="uid://d3sbyeeqsa34" path="res://shaders/pulse_highlight.gdshader.gdshader" id="17_85ml3"]
+[ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="18_y13gh"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_djuk3"]
+shader = ExtResource("4_ioxnp")
+shader_parameter/max_float_height = -35.0
+shader_parameter/wiggle_speed = 3.5
+shader_parameter/wiggle_amount = 5.0
+shader_parameter/highlight_color = Color(1, 1, 1, 1)
+shader_parameter/select_line_color = Color(1, 1, 1, 1)
+shader_parameter/select_line_thickness = 2.0
+shader_parameter/select_overlay_color = Color(1, 1, 1, 1)
+shader_parameter/select_overlay_alpha = 0.27600001311
+shader_parameter/dissolve_block_size = 40.0
+shader_parameter/dissolve_edge_color = Color(2, 1.5, 0.5, 1)
+
+[node name="project" type="Control" unique_id=125971746]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 14.0
+offset_bottom = 14.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="map" type="Control" parent="." unique_id=523460233]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HexMap" type="Node2D" parent="map" unique_id=1540088708]
+script = ExtResource("2_uthkf")
+hex_top_tex = ExtResource("2_ioxnp")
+hex_side_tex = ExtResource("3_djuk3")
+block_material = SubResource("ShaderMaterial_djuk3")
+inner_tier_radius = 2
+hitbox_width = 200.0
+hitbox_base_height = 120.0
+hitbox_offset_x = 0.0
+hitbox_offset_y = -100.0
+
+[node name="HealthBar" type="Control" parent="map/HexMap" unique_id=1619581254]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -1804.0
+offset_top = -351.0
+offset_right = 106.0
+offset_bottom = 716.0
+script = ExtResource("5_ee15a")
+
+[node name="Camera2D" type="Camera2D" parent="map" unique_id=388682418]
+position = Vector2(631, 402)
+script = ExtResource("2_nbemg")
+
+[node name="ui" type="CanvasLayer" parent="." unique_id=2081110385]
+layer = 1000
+
+[node name="drop_area" type="Control" parent="ui" unique_id=706571820]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="drop_list" type="TextureRect" parent="ui/drop_area" unique_id=1780229885]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ui/drop_area/drop_list" unique_id=611349573]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="card" type="GridContainer" parent="ui/drop_area/drop_list/ScrollContainer" unique_id=1446813935]
+layout_mode = 2
+
+[node name="back" type="Button" parent="ui/drop_area" unique_id=1613687336]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="DeckButton" type="TextureButton" parent="ui" unique_id=1403410077]
+custom_minimum_size = Vector2(125, 175)
+offset_left = 120.0
+offset_top = 803.0
+offset_right = 591.0526
+offset_bottom = 1468.7896
+scale = Vector2(0.3, 0.3)
+texture_normal = ExtResource("2_6xffl")
+ignore_texture_size = true
+
+[node name="Label" type="Label" parent="ui/DeckButton" unique_id=1196368572]
+custom_minimum_size = Vector2(-0.35, -40)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -51.052612
+offset_top = -92.4563
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 64
+text = "1"
+
+[node name="DiscardButton" type="TextureButton" parent="ui" unique_id=1801291194]
+custom_minimum_size = Vector2(125, 175)
+offset_left = 1694.0
+offset_top = 748.0
+offset_right = 2164.0
+offset_bottom = 1420.5
+scale = Vector2(0.3, 0.3)
+texture_normal = ExtResource("2_6xffl")
+ignore_texture_size = true
+
+[node name="Label" type="Label" parent="ui/DiscardButton" unique_id=1925595441]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -95.83325
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 64
+text = "1"
+
+[node name="StartTurnButton" type="TextureButton" parent="ui" unique_id=763730376]
+offset_left = 125.0
+offset_top = 331.0
+offset_right = 141.0
+offset_bottom = 347.0
+scale = Vector2(10, 10)
+texture_normal = ExtResource("8_6ipd3")
+
+[node name="EndTurnButton" type="TextureButton" parent="ui" unique_id=841069993]
+offset_left = 1676.0
+offset_top = 463.0
+offset_right = 1692.0
+offset_bottom = 479.0
+scale = Vector2(10, 10)
+texture_normal = ExtResource("9_hyn5d")
+
+[node name="EndCombatButton" type="TextureButton" parent="ui" unique_id=1563764840]
+offset_left = 1658.0
+offset_top = 210.0
+offset_right = 1733.0
+offset_bottom = 274.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("10_dsnwd")
+
+[node name="TimelineUI" type="Control" parent="ui" unique_id=16653193]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 490.0
+offset_right = 1278.0
+offset_bottom = 211.0
+script = ExtResource("11_sa0gx")
+expanded_offset_y = 50.0
+expanded_offset_x = -200.0
+mask_color = Color(0.26657525, 0.26657513, 0.26657534, 0.6)
+mask_layer = 1
+
+[node name="ShapeLayer" type="Control" parent="ui/TimelineUI" unique_id=2107643462]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="GridBackground" type="GridContainer" parent="ui/TimelineUI" unique_id=1213060656]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+columns = 12
+
+[node name="CursorTooltip" type="RichTextLabel" parent="ui" unique_id=596911744]
+offset_right = 40.0
+offset_bottom = 23.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+
+[node name="TimelineSystem" type="Node" parent="ui" unique_id=1646605329]
+
+[node name="TimelineManager" type="Node" parent="ui/TimelineSystem" unique_id=243223625]
+script = ExtResource("13_agq83")
+
+[node name="DragShapeController" type="Node2D" parent="ui/TimelineSystem" unique_id=1167908421]
+script = ExtResource("14_3560t")
+slot_size = 40.0
+spacing = 2.0
+timeline_ui_path = NodePath("../../TimelineUI")
+drag_shader = ExtResource("15_a7mxu")
+cursor_tooltip_path = NodePath("../../CursorTooltip")
+timeline_manager_path = NodePath("../TimelineManager")
+
+[node name="EnemyIntentManager" type="Node" parent="ui/TimelineSystem" unique_id=890879926]
+script = ExtResource("15_t5bpg")
+
+[node name="TimelineVisualizer" type="Node2D" parent="ui/TimelineSystem" unique_id=1253387566]
+script = ExtResource("16_85ml3")
+timeline_ui_path = NodePath("../../TimelineUI")
+drag_shape_controller_path = NodePath("../DragShapeController")
+
+[node name="Main" type="Control" parent="ui" unique_id=1689513311]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("6_a7mxu")
+pulse_shader = ExtResource("17_85ml3")
+hand_y_offset = 100.0
+tooltip_bottom_margin = 20
+tooltip_offset_y = 40
+max_keywords_per_column = 5
+
+[node name="DimMenu" parent="ui" unique_id=319208608 instance=ExtResource("18_y13gh")]
+visible = false
+
+[node name="RewardManager" parent="." unique_id=402846539 instance=ExtResource("11_dsnwd")]

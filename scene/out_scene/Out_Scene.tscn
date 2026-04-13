@@ -1,0 +1,178 @@
+[gd_scene format=3 uid="uid://bdsor6hek0y1j"]
+
+[ext_resource type="Script" uid="uid://cunn5cqnog06j" path="res://scene/out_scene/out_scene_map_exp.gd" id="1_12582"]
+[ext_resource type="Script" uid="uid://iqptkkak618a" path="res://scene/out_scene/map_generator.gd" id="2_hewn3"]
+[ext_resource type="Script" uid="uid://es427lfaorir" path="res://scene/out_scene/map_renderer.gd" id="3_jf5bm"]
+[ext_resource type="Texture2D" uid="uid://btok7tsvprh6x" path="res://image/outscene_block/out-block_grass.png" id="4_qlwg0"]
+[ext_resource type="Texture2D" uid="uid://ckleisa7b53ix" path="res://image/character/0.png" id="5_3ibov"]
+[ext_resource type="Texture2D" uid="uid://clmskb2txvt60" path="res://image/character/4.png" id="6_kk43y"]
+[ext_resource type="Texture2D" uid="uid://xbd8c5egci0x" path="res://image/character/6.png" id="7_imcbm"]
+[ext_resource type="Texture2D" uid="uid://co8i5blrnxgh1" path="res://image/character/3.png" id="8_54d4p"]
+[ext_resource type="Texture2D" uid="uid://b6wcaiqkgvxkv" path="res://image/character/1.png" id="9_7i5u7"]
+[ext_resource type="Texture2D" uid="uid://cphi4s8ntu5o1" path="res://image/character/2.png" id="10_0l8be"]
+[ext_resource type="Texture2D" uid="uid://c75hg8m3usdvp" path="res://image/character/5.png" id="11_k6tjf"]
+[ext_resource type="Texture2D" uid="uid://8a5nuiwyndcx" path="res://image/inscene_block/snow.png" id="12_8fe0i"]
+[ext_resource type="Texture2D" uid="uid://5eq5pmcy6x7l" path="res://image/inscene_block/grass.png" id="13_17nnv"]
+[ext_resource type="Texture2D" uid="uid://cn6lxb76f7fmb" path="res://image/inscene_block/dirt.png" id="14_ugiw8"]
+[ext_resource type="Script" uid="uid://wvx58wvbksoc" path="res://scene/out_scene/camera_2d_outscene.gd" id="15_2aorf"]
+[ext_resource type="Script" uid="uid://cinqdq2dhjst0" path="res://scene/out_scene/cartoon_ui.gd" id="16_da1xk"]
+[ext_resource type="Texture2D" uid="uid://bgi3uwvhw54gd" path="res://image/clock/ring.png" id="17_p3itl"]
+[ext_resource type="Texture2D" uid="uid://el0fworygbkr" path="res://image/clock/clock_noring.png" id="18_at7ti"]
+[ext_resource type="Texture2D" uid="uid://b2n28xtpsessh" path="res://image/clock/point.png" id="19_ejqvg"]
+[ext_resource type="Shader" uid="uid://dy01xyj3taymq" path="res://shaders/color_BG.gdshader" id="20_4w1jy"]
+[ext_resource type="Script" uid="uid://c77sa0nlxsqs6" path="res://scene/color_bg.gd" id="21_28ugj"]
+[ext_resource type="PackedScene" uid="uid://ij3dvdfrdp25" path="res://scene/pause_menu/pause_menu.tscn" id="22_ioycw"]
+[ext_resource type="PackedScene" uid="uid://b7fftwdwy2mtf" path="res://scene/out_scene/choose_menu/choose_menu.tscn" id="23_fjosl"]
+[ext_resource type="PackedScene" uid="uid://cwskcr8vc6as3" path="res://scene/game_over/game_over.tscn" id="24_paitc"]
+[ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="25_q2y5e"]
+
+[sub_resource type="GDScript" id="GDScript_myqe3"]
+script/source = "extends Node2D
+
+enum State { STOP, TRACKING, SPINNING, DECELERATING }
+@export var rotation_speed : float = 20.0
+@export var spin_acceleration : float = 12.0
+static var current_state : State = State.TRACKING
+static var spin_velocity : float = 0.0
+
+signal stopped
+
+func _ready() -> void:
+	if Global.clock:
+		Global.clock.connect(change)
+
+func _process(delta: float) -> void:
+	match current_state:
+		State.STOP:
+			return
+
+		State.TRACKING:
+			var target_direction = get_global_mouse_position() - global_position
+			var target_angle = target_direction.angle() + PI/2
+			rotation = lerp_angle(rotation, target_angle, rotation_speed * delta)
+			
+		State.SPINNING:
+			spin_velocity += spin_acceleration * delta
+			rotation -= spin_velocity * delta
+			
+		State.DECELERATING:
+			# 阶段 1：高速物理减速
+			if spin_velocity > rotation_speed:
+				spin_velocity -= spin_acceleration * delta
+				rotation -= spin_velocity * delta
+			else:
+				# 阶段 2：精准归位阶段
+				var target_angle = 0.0 # 初始状态角度
+				
+				# 计算当前角度与目标的差距（使用此函数可处理跨越 360 度的旋转）
+				var angle_diff = abs(angle_difference(rotation, target_angle))
+				
+				# 如果差距已经极小，则直接锁定并停止
+				if angle_diff < 0.01:
+					rotation = target_angle
+					spin_velocity = 0.0
+					current_state = State.STOP
+					stopped.emit()
+				else:
+					# 使用 lerp_angle 实现“缓慢吸附”效果
+					# 这里的 5.0 是平滑系数，数值越大吸附越快
+					rotation = lerp_angle(rotation, target_angle, 5.0 * delta)
+					# 同时也让残余速度视觉化（可选，让指针看起来还有点惯性）
+					spin_velocity = lerp(spin_velocity, 0.0, 5.0 * delta)
+
+func change(new_state: int) -> void:
+	current_state = new_state as State
+	if current_state == State.TRACKING:
+		spin_velocity = 0.0
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6hq8d"]
+shader = ExtResource("20_4w1jy")
+shader_parameter/circle_size = 1.0
+shader_parameter/screen_width = 1152.0
+shader_parameter/screen_height = 648.0
+
+[node name="OutScene" type="Control" unique_id=1698665180]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_12582")
+
+[node name="MapGenerator" type="Node" parent="." unique_id=575033209]
+script = ExtResource("2_hewn3")
+
+[node name="MapRenderer" type="Node2D" parent="." unique_id=162266069]
+script = ExtResource("3_jf5bm")
+tex_normal = ExtResource("4_qlwg0")
+tex_elite = ExtResource("4_qlwg0")
+tex_event = ExtResource("4_qlwg0")
+tex_boss = ExtResource("4_qlwg0")
+tex_start = ExtResource("4_qlwg0")
+tex_mountain = ExtResource("4_qlwg0")
+tex_player_unknown = ExtResource("5_3ibov")
+tex_chars = Array[Texture2D]([ExtResource("4_qlwg0"), ExtResource("4_qlwg0"), ExtResource("4_qlwg0"), ExtResource("4_qlwg0"), ExtResource("4_qlwg0"), ExtResource("4_qlwg0")])
+tex_player_icons = Array[Texture2D]([ExtResource("6_kk43y"), ExtResource("7_imcbm"), ExtResource("8_54d4p"), ExtResource("9_7i5u7"), ExtResource("10_0l8be"), ExtResource("11_k6tjf")])
+icon_enhance = ExtResource("12_8fe0i")
+icon_delete = ExtResource("13_17nnv")
+icon_combine = ExtResource("14_ugiw8")
+icon_trade = ExtResource("13_17nnv")
+
+[node name="Player" type="Sprite2D" parent="." unique_id=832225153]
+z_index = 1
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=764292381]
+script = ExtResource("15_2aorf")
+
+[node name="UI" type="Control" parent="." unique_id=228877884]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CartoonUI" type="CanvasLayer" parent="UI" unique_id=865795886]
+script = ExtResource("16_da1xk")
+
+[node name="Ring" type="Sprite2D" parent="UI/CartoonUI" unique_id=264525379]
+modulate = Color(1, 1, 1, 0)
+position = Vector2(960, 140)
+texture = ExtResource("17_p3itl")
+
+[node name="Clock" type="Sprite2D" parent="UI/CartoonUI" unique_id=572456015]
+position = Vector2(960, 540)
+scale = Vector2(6.2460933, 6.2460933)
+texture = ExtResource("18_at7ti")
+
+[node name="Point" type="Node2D" parent="UI/CartoonUI/Clock" unique_id=1358098991]
+scale = Vector2(0.16010009, 0.16010009)
+script = SubResource("GDScript_myqe3")
+
+[node name="Point" type="Sprite2D" parent="UI/CartoonUI/Clock/Point" unique_id=855193968]
+texture_filter = 1
+position = Vector2(0, -72.99997)
+scale = Vector2(1.4140626, 1.4140626)
+texture = ExtResource("19_ejqvg")
+
+[node name="ColorBG" type="ColorRect" parent="UI/CartoonUI" unique_id=1653450264]
+material = SubResource("ShaderMaterial_6hq8d")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+script = ExtResource("21_28ugj")
+
+[node name="PauseMenu" parent="UI" unique_id=383384250 instance=ExtResource("22_ioycw")]
+
+[node name="ChooseMenu" parent="UI" unique_id=480533951 instance=ExtResource("23_fjosl")]
+
+[node name="GameOver" parent="UI" unique_id=1592078753 instance=ExtResource("24_paitc")]
+
+[node name="DimMenu" parent="UI" unique_id=59612590 instance=ExtResource("25_q2y5e")]
+visible = false
+mode = 0

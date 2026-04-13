@@ -94,7 +94,7 @@ func _update_target_positions() -> void:
 	var last_offset = _calculate_offset(last_index)
 	
 	# Align drop zone with top card if enabled
-	if enable_drop_zone and align_drop_zone_with_top_card:
+	if enable_drop_zone and align_drop_zone_with_top_card and drop_zone:
 		drop_zone.change_sensor_position_with_offset(last_offset)
 
 	# Position each card and set interaction state
