@@ -11,7 +11,6 @@
 [ext_resource type="Texture2D" uid="uid://da1qrxudkpuji" path="res://image/Play.png" id="8_6ipd3"]
 [ext_resource type="Texture2D" uid="uid://dwkqtxwdvfuqx" path="res://image/PlayPause.png" id="9_hyn5d"]
 [ext_resource type="Texture2D" uid="uid://b080xjkdaw1he" path="res://image/fc1084.png" id="10_dsnwd"]
-[ext_resource type="PackedScene" uid="uid://17wbs1ndnij8" path="res://scene/in_scene/RewardManager.tscn" id="11_dsnwd"]
 [ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="11_sa0gx"]
 [ext_resource type="Script" uid="uid://b57d8s2xwou05" path="res://scene/in_scene/timeline/TimelineManager.gd" id="13_agq83"]
 [ext_resource type="Script" uid="uid://cgstk6buif658" path="res://scene/in_scene/DragShapeController.gd" id="14_3560t"]
@@ -244,5 +243,3 @@ max_keywords_per_column = 5
 
 [node name="DimMenu" parent="ui" unique_id=319208608 instance=ExtResource("18_y13gh")]
 visible = false
-
-[node name="RewardManager" parent="." unique_id=402846539 instance=ExtResource("11_dsnwd")]

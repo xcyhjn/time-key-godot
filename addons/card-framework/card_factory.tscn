@@ -7,6 +7,6 @@
 [node name="CardFactory" type="Node" unique_id=1946627478]
 script = ExtResource("1_jlwb4")
 default_card_scene = ExtResource("2_1mca4")
-card_asset_dir = "D:/godot/卡牌/card_asset/"
-card_info_dir = "D:/godot/卡牌/card_data/"
+card_asset_dir = "res://card_asset/"
+card_info_dir = "res://card_data/"
 back_image = ExtResource("3_1mca4")

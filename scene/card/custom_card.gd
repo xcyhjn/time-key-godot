@@ -44,9 +44,9 @@ var timeline_shape_coords: Array[Vector2i] = []  # 形状坐标数组
 
 # 时间占位图片资源字典
 const TIMELINE_SHAPE_TEXTURES: Dictionary = {
-	"1x1": preload("res://时间占位图片/1x1.png"),
-	"1x2": preload("res://时间占位图片/1x2.png"),
-	"2x2": preload("res://时间占位图片/2x2.png")
+	"1x1": preload("res://image/time_block/1x1.png"),
+	"1x2": preload("res://image/time_block/1x2.png"),
+	"2x2": preload("res://image/time_block/2x2.png")
 	# 可扩展更多形状
 }
 
@@ -126,6 +126,9 @@ func return_to_hand() -> void:
 
 	# 清除拖拽视觉效果
 	material = original_material
+	if front_face_texture:
+		front_face_texture.material = original_material
+	set_card_transparency(1.0)
 
 	# 调试日志：缩放值
 	GameLogger.debug("返回手牌 - 原始缩放: %s, 当前缩放: %s, 原始位置: %s" % [
@@ -308,6 +311,9 @@ func force_deselect() -> void:
 	# 隐藏时间占位图片并恢复卡牌透明度
 	hide_timeline_shape()
 	set_card_transparency(1.0)  # 恢复完全不透明
+	material = original_material
+	if front_face_texture:
+		front_face_texture.material = original_material
 	
 	z_index = original_z_index
 	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -363,49 +369,37 @@ func setup_card_data() -> void:
 	if card_info.has("ATK"): base_stats["ATK"] = card_info["ATK"]
 
 	# ==========================================
-	# ★ 重构：处理 JSON 中的 shape 数据，支持字符串格式（如 "1x1"）和数组格式
+	# ★ 重构：处理 JSON 中的 shape 数据，支持多种格式
+	# ==========================================
+	# 支持的格式:
+	# 1. 二进制矩阵格式: "010,111,010" 或 "010\n111\n010" (敌人意图格式)
+	# 2. 字符串格式: "1x1", "2x2" (传统格式)
+	# 3. 数组格式: [[0,0], [1,0]] (坐标数组)
 	# ==========================================
 	if card_info.has("shape"):
 		var shape_data = card_info["shape"]
 		var parsed_shape: Array[Vector2i] = []
 		
-		# 判断 shape 数据类型：字符串格式 "1x1" 或数组格式 [[0,0], [1,0]]
+		# 判断 shape 数据类型
 		if shape_data is String:
-			# 字符串格式，如 "1x1", "1x2", "2x2"
-			timeline_shape_key = shape_data
-			GameLogger.debug("卡牌shape为字符串格式: " + shape_data, "CustomCard")
+			var shape_str = shape_data as String
+			GameLogger.debug("卡牌shape为字符串格式: " + shape_str, "CustomCard")
 			
-			# 解析尺寸，如 "1x2" -> width=1, height=2
-			var parts = shape_data.split("x")
-			if parts.size() >= 2:
-				var width = int(parts[0])
-				var height = int(parts[1])
-				
-				# 形状验证：确保形状尺寸适合时间轴网格
-				# 时间轴网格高度为3（0-2），形状高度不应超过3
-				if height > 3:
-					GameLogger.warning("卡牌形状高度 %d 超出时间轴网格最大高度3，已限制为3。形状键: %s" % [height, shape_data], "CustomCard")
-					height = 3
-				
-				# 形状宽度不应超过时间轴网格宽度12
-				if width > 12:
-					GameLogger.warning("卡牌形状宽度 %d 超出时间轴网格最大宽度12，已限制为12。形状键: %s" % [width, shape_data], "CustomCard")
-					width = 12
-				
-				timeline_shape_size = Vector2i(width, height)
-				
-				# 生成坐标数组，例如 1x2 生成 [Vector2i(0,0), Vector2i(1,0)]
-				for y in range(height):
-					for x in range(width):
-						parsed_shape.append(Vector2i(x, y))
-				
-				timeline_shape_coords = parsed_shape
-				GameLogger.debug("生成shape坐标: " + str(parsed_shape) + ", 尺寸: " + str(timeline_shape_size), "CustomCard")
+			# ★ 首先尝试解析为二进制矩阵格式 (如果字符串包含'0'或'1'，并且看起来像矩阵)
+			if shape_str.contains("0") or shape_str.contains("1"):
+				# 尝试解析矩阵
+				if _parse_matrix_shape(shape_str):
+					GameLogger.debug("成功解析为矩阵格式: " + shape_str + " -> " + timeline_shape_key, "CustomCard")
+					parsed_shape = timeline_shape_coords
+				else:
+					# 矩阵解析失败，尝试传统"1x1"格式
+					GameLogger.debug("矩阵解析失败，尝试传统格式: " + shape_str, "CustomCard")
+					_parse_traditional_shape_format(shape_str)
+					parsed_shape = timeline_shape_coords
 			else:
-				GameLogger.warning("无法解析shape字符串格式: " + shape_data, "CustomCard")
-				parsed_shape = [Vector2i(0, 0)]
-				timeline_shape_size = Vector2i(1, 1)
-				timeline_shape_coords = parsed_shape
+				# 不包含0或1，直接尝试传统格式
+				_parse_traditional_shape_format(shape_str)
+				parsed_shape = timeline_shape_coords
 		else:
 			# 数组格式，保持原有逻辑
 			GameLogger.debug("卡牌shape为数组格式: " + str(shape_data), "CustomCard")
@@ -432,6 +426,129 @@ func setup_card_data() -> void:
 # 2. ★ 核心：动态文本渲染器
 # ==========================================
 # ★ 修改：不再向 UI 渲染，而是返回解析好的 BBCode 字符串
+
+## 解析矩阵形状（二进制字符串格式）
+## 格式: 逗号分隔 "010,111,010"、换行分隔 "010\n111\n010" 或 空格分隔 "010 111 010"
+## 占用字符: 1
+## 空字符: 0 或其他
+func _parse_matrix_shape(matrix_str: String) -> bool:
+	var rows: Array[String] = []
+	var trimmed = matrix_str.strip_edges()
+	
+	if trimmed.contains(","):
+		# 逗号分隔格式
+		for row in trimmed.split(","):
+			var clean = row.strip_edges()
+			if not clean.is_empty():
+				rows.append(clean)
+	elif trimmed.contains("\n"):
+		# 换行分隔格式
+		for line in trimmed.split("\n"):
+			var clean = line.strip_edges()
+			if not clean.is_empty():
+				rows.append(clean)
+	else:
+		# 空格分隔格式 (支持用户输入的 "010 111 010" 格式)
+		# 注意：需要检查是否包含空格，并且字符串看起来像矩阵（包含0或1）
+		if trimmed.contains(" ") and (trimmed.contains("0") or trimmed.contains("1")):
+			for row in trimmed.split(" "):
+				var clean = row.strip_edges()
+				if not clean.is_empty():
+					rows.append(clean)
+		else:
+			# 可能是单行格式，如 "11" 或 "1"
+			rows.append(trimmed)
+	
+	if rows.is_empty():
+		return false
+	
+	# 检查行长度一致
+	var width = rows[0].length()
+	for i in range(1, rows.size()):
+		if rows[i].length() != width:
+			return false
+	
+	# 解析坐标
+	var parsed_shape: Array[Vector2i] = []
+	for y in range(rows.size()):
+		var row = rows[y]
+		for x in range(row.length()):
+			if row[x] == "1":
+				parsed_shape.append(Vector2i(x, y))
+	
+	if parsed_shape.is_empty():
+		return false
+	
+	# 计算包围盒（Bounding Box）
+	var min_x = 1000
+	var min_y = 1000
+	var max_x = -1000
+	var max_y = -1000
+	
+	for coord in parsed_shape:
+		min_x = min(min_x, coord.x)
+		max_x = max(max_x, coord.x)
+		min_y = min(min_y, coord.y)
+		max_y = max(max_y, coord.y)
+	
+	# 包围盒尺寸计算：宽度 = 最大X - 最小X + 1，高度 = 最大Y - 最小Y + 1
+	timeline_shape_size = Vector2i(max_x - min_x + 1, max_y - min_y + 1)
+	timeline_shape_coords = parsed_shape
+	
+	# 生成形状键名
+	timeline_shape_key = str(timeline_shape_size.x) + "x" + str(timeline_shape_size.y)
+	
+	# 尺寸验证：确保形状尺寸适合时间轴网格
+	# 时间轴网格高度为3（0-2），形状高度不应超过3
+	if timeline_shape_size.y > 3:
+		GameLogger.warning("矩阵形状高度 %d 超出时间轴网格最大高度3，已限制为3" % timeline_shape_size.y, "CustomCard")
+		timeline_shape_size.y = 3
+	
+	# 形状宽度不应超过时间轴网格宽度12
+	if timeline_shape_size.x > 12:
+		GameLogger.warning("矩阵形状宽度 %d 超出时间轴网格最大宽度12，已限制为12" % timeline_shape_size.x, "CustomCard")
+		timeline_shape_size.x = 12
+	
+	return true
+
+## 解析传统形状格式 (如 "1x1", "2x2")
+func _parse_traditional_shape_format(shape_str: String) -> void:
+	timeline_shape_key = shape_str
+	GameLogger.debug("尝试解析传统形状格式: " + shape_str, "CustomCard")
+	
+	# 解析尺寸，如 "1x2" -> width=1, height=2
+	var parts = shape_str.split("x")
+	if parts.size() >= 2:
+		var width = int(parts[0])
+		var height = int(parts[1])
+		
+		# 形状验证：确保形状尺寸适合时间轴网格
+		# 时间轴网格高度为3（0-2），形状高度不应超过3
+		if height > 3:
+			GameLogger.warning("卡牌形状高度 %d 超出时间轴网格最大高度3，已限制为3。形状键: %s" % [height, shape_str], "CustomCard")
+			height = 3
+		
+		# 形状宽度不应超过时间轴网格宽度12
+		if width > 12:
+			GameLogger.warning("卡牌形状宽度 %d 超出时间轴网格最大宽度12，已限制为12。形状键: %s" % [width, shape_str], "CustomCard")
+			width = 12
+		
+		timeline_shape_size = Vector2i(width, height)
+		
+		# 生成坐标数组，例如 1x2 生成 [Vector2i(0,0), Vector2i(1,0)]
+		var parsed_shape: Array[Vector2i] = []
+		for y in range(height):
+			for x in range(width):
+				parsed_shape.append(Vector2i(x, y))
+		
+		timeline_shape_coords = parsed_shape
+		GameLogger.debug("生成传统shape坐标: " + str(parsed_shape) + ", 尺寸: " + str(timeline_shape_size), "CustomCard")
+	else:
+		GameLogger.warning("无法解析传统形状格式: " + shape_str, "CustomCard")
+		timeline_shape_key = "1x1"
+		timeline_shape_size = Vector2i(1, 1)
+		timeline_shape_coords = [Vector2i(0, 0)]
+
 ## 从坐标数组计算形状键名和尺寸
 func _calculate_shape_info_from_coords(coords: Array[Vector2i]) -> void:
 	if coords.is_empty():
@@ -791,6 +908,9 @@ func force_reset_visuals() -> void:
 	_set_shader(false)
 	_request_tooltip(false)
 	is_pressed = false
+	material = original_material
+	if front_face_texture:
+		front_face_texture.material = original_material
 
 
 func _on_gui_input(event: InputEvent):

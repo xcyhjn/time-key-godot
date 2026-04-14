@@ -16,12 +16,18 @@ var original_scale: Vector2 = Vector2.ONE
 var is_selected: bool = false
 var glow_style: StyleBoxFlat  # 记录发光材质
 
+# 自定义尺寸设置（用于外部管理器控制）
+var custom_set_size: Vector2 = Vector2.ZERO
+
 signal card_clicked(card_node)
 
 
 func _ready():
 	# 1. 锁死尺寸，防止面条卡
-	custom_minimum_size = Vector2(125, 175)
+	if custom_set_size != Vector2.ZERO:
+		custom_minimum_size = custom_set_size
+	else:
+		custom_minimum_size = Vector2(125, 175)
 	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -73,9 +79,23 @@ func _on_mouse_entered():
 	tw.tween_property(glow_style, "shadow_color:a", glow_color.a, 0.1)
 	tw.tween_property(glow_style, "border_color:a", glow_color.a, 0.1)
 
-	var main = get_tree().get_first_node_in_group("MainBoard")
-	if main and main.has_method("show_tooltip"):
-		main.show_tooltip(self)
+	# 查找tooltip提供者：优先向上遍历父节点寻找show_tooltip，如果找不到，再作为兜底去寻找MainBoard组
+	var tooltip_provider = null
+	# 优先查找父节点链
+	var current_node = self
+	while current_node:
+		if current_node.has_method("show_tooltip"):
+			tooltip_provider = current_node
+			break
+		current_node = current_node.get_parent()
+	# 兜底：寻找MainBoard组
+	if not tooltip_provider:
+		var main = get_tree().get_first_node_in_group("MainBoard")
+		if main and main.has_method("show_tooltip"):
+			tooltip_provider = main
+	
+	if tooltip_provider:
+		tooltip_provider.show_tooltip(self)
 
 
 func _on_mouse_exited():
@@ -89,9 +109,23 @@ func _on_mouse_exited():
 	tw.tween_property(glow_style, "shadow_color:a", 0.0, 0.1)
 	tw.tween_property(glow_style, "border_color:a", 0.0, 0.1)
 
-	var main = get_tree().get_first_node_in_group("MainBoard")
-	if main and main.has_method("hide_tooltip"):
-		main.hide_tooltip(self)
+	# 查找tooltip提供者：优先向上遍历父节点寻找hide_tooltip，如果找不到，再作为兜底去寻找MainBoard组
+	var tooltip_provider = null
+	# 优先查找父节点链
+	var current_node = self
+	while current_node:
+		if current_node.has_method("hide_tooltip"):
+			tooltip_provider = current_node
+			break
+		current_node = current_node.get_parent()
+	# 兜底：寻找MainBoard组
+	if not tooltip_provider:
+		var main = get_tree().get_first_node_in_group("MainBoard")
+		if main and main.has_method("hide_tooltip"):
+			tooltip_provider = main
+	
+	if tooltip_provider:
+		tooltip_provider.hide_tooltip(self)
 
 
 func _on_gui_input(event: InputEvent):

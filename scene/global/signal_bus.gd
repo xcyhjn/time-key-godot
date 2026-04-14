@@ -46,6 +46,13 @@ signal player_inputs_enabled()
 signal player_inputs_disabled()
 signal game_paused()
 signal game_resumed()
+signal victory_triggered()
+
+# ==========================================
+# 时间币信号
+# ==========================================
+signal timecoin_updated(current_amount: int, delta: int)
+signal timecoin_insufficient(requested: int, available: int)
 
 # ==========================================
 # 战斗相关信号
@@ -192,3 +199,13 @@ func emit_tile_hovered(tile: Area2D, is_hovering: bool) -> void:
 func emit_valid_target_hovered(tile: Area2D, card: Control) -> void:
 	log_signal("valid_target_hovered", [tile, card])
 	valid_target_hovered.emit(tile, card)
+
+
+func emit_timecoin_updated(current_amount: int, delta: int) -> void:
+	log_signal("timecoin_updated", [current_amount, delta])
+	timecoin_updated.emit(current_amount, delta)
+
+
+func emit_timecoin_insufficient(requested: int, available: int) -> void:
+	log_signal("timecoin_insufficient", [requested, available])
+	timecoin_insufficient.emit(requested, available)

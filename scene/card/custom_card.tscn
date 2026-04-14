@@ -1,24 +1,24 @@
 [gd_scene format=3 uid="uid://svpp8j1rmvna"]
 
-[ext_resource type="PackedScene" path="res://addons/card-framework/card.tscn" id="1_i008j"]
+[ext_resource type="PackedScene" uid="uid://brjlo8xing83p" path="res://addons/card-framework/card.tscn" id="1_i008j"]
 [ext_resource type="Script" uid="uid://dqy5v580qccyn" path="res://scene/card/custom_card.gd" id="2_a3le0"]
 
-[node name="Card" instance=ExtResource("1_i008j")]
+[node name="Card" unique_id=445108488 instance=ExtResource("1_i008j")]
 script = ExtResource("2_a3le0")
-float_height = -40.0
-tilt_intensity = 0.15
-time_block_offset = Vector2(-35, -70)
-time_block_scale_factor = 0.0
-time_block_base_size = 40.0
-show_time_block_in_hand = true
 card_name = ""
 card_size = Vector2(150, 210)
 show_front = true
 moving_speed = 2000
 hover_distance = 10
 hover_scale = 1.2
+float_height = -40.0
+tilt_intensity = 0.15
+time_block_offset = Vector2(-35, -70)
+time_block_scale_factor = 0.0
+time_block_base_size = 40.0
+show_time_block_in_hand = true
 
-[node name="MarginContainer" type="MarginContainer" parent="FrontFace/TextureRect" index="0"]
+[node name="MarginContainer" type="MarginContainer" parent="FrontFace/TextureRect" index="0" unique_id=1043172175]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
@@ -27,12 +27,12 @@ offset_bottom = 40.0
 offset_top = 3.0
 offset_bottom = 213.0
 
-[node name="ShadowLayer" type="TextureRect" parent="." index="2"]
+[node name="ShadowLayer" type="TextureRect" parent="." index="2" unique_id=2073023927]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="ColorRect" type="ColorRect" parent="." index="3"]
+[node name="ColorRect" type="ColorRect" parent="." index="3" unique_id=1884108842]
 visible = false
 layout_mode = 0
 offset_left = 3.0
@@ -40,7 +40,7 @@ offset_right = 1430.0
 offset_bottom = 960.0
 mouse_filter = 1
 
-[node name="TimeBlock" type="Control" parent="." index="4"]
+[node name="TimeBlock" type="Control" parent="." index="4" unique_id=613620142]
 anchors_preset = 0
 offset_left = 4.0
 offset_top = 3.0
