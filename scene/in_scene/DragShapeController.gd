@@ -63,97 +63,47 @@ var discard_pile: Node  ## 弃牌区引用
 # ==========================================
 # 工具函数
 # ==========================================
-
+## 统一获取主面板 (MainBoard) 的快捷方法
+func _get_main_board() -> Node:
+	return get_tree().get_first_node_in_group("MainBoard")
 
 ## 获取卡牌管理器
 func _get_card_manager() -> Node:
-	# 直接查找CardManager节点
-	var card_manager = get_node_or_null("../../CardManager")  # 从DragShapeController向上两级到project，查找CardManager子节点
-	if card_manager:
-		GameLogger.debug("找到CardManager节点", "DragShapeController")
-		return card_manager
-	
-	# 备用方案：通过元数据查找
-	var tree_root = get_tree().root
-	if tree_root and tree_root.has_meta("card_manager"):
-		GameLogger.debug("通过树根元数据找到CardManager", "DragShapeController")
-		return tree_root.get_meta("card_manager")
-	
-	# 回退到当前场景元数据
-	var scene_root = get_tree().current_scene
-	if scene_root and scene_root.has_meta("card_manager"):
-		GameLogger.debug("通过场景元数据找到CardManager", "DragShapeController")
-		return scene_root.get_meta("card_manager")
-
-	GameLogger.warning("未找到CardManager", "DragShapeController")
+	var main = _get_main_board()
+	if main and main.get("manager_instance"):
+		return main.manager_instance
 	return null
-
-
+	
 ## 查找弃牌区
 func _find_discard_pile() -> void:
-	"""查找弃牌区，支持多种查找方式，优先级：project节点属性 > 组查找 > 路径查找"""
-	
-	# 方案1：优先查找project节点的discard_pile属性
-	var control_node = _find_project_node()
-	if control_node:
-		var pile = control_node.get("discard_pile")
-		if pile != null and pile is Object and pile.has_method("move_cards"):
-			discard_pile = pile
-			GameLogger.debug("通过project.discard_pile属性找到弃牌区", "DragShapeController")
-			return
-		
-		# 检查project节点是否有弃牌处理方法
-		if control_node.has_method("_handle_discard_effects"):
-			discard_pile = null  # 设置为null，表示使用project系统
-			GameLogger.debug("project.gd有弃牌处理方法，将使用project的弃牌系统", "DragShapeController")
-			return
-	
-	# 方案2：通过组查找弃牌区
-	var discard_group_nodes = get_tree().get_nodes_in_group("DiscardPile")
-	for node in discard_group_nodes:
-		if node is Object and node.has_method("move_cards"):
-			discard_pile = node
-			GameLogger.debug("通过'DiscardPile'组找到弃牌区: " + str(node.get_path()), "DragShapeController")
-			return
-	
-	# 方案3：直接路径查找
-	var simple_paths = [
-		"/root/project/DiscardPile",  # 绝对路径
-		"../DiscardPile",  # 相对路径
-		"DiscardPile"  # 当前节点下的DiscardPile
-	]
-	
-	for path in simple_paths:
-		var node = get_node_or_null(NodePath(path))
-		if node and node is Object and node.has_method("move_cards"):
-			discard_pile = node
-			GameLogger.debug("通过路径找到弃牌区: " + path, "DragShapeController")
-			return
-	
-	# 所有方法都失败
-	if control_node:
-		GameLogger.debug("project.gd存在但没有弃牌系统，将使用回退方案", "DragShapeController")
+	var main = _get_main_board()
+	if main and main.get("discard_pile"):
+		discard_pile = main.discard_pile
+		GameLogger.debug("通过 MainBoard 成功获取 DiscardPile", "DragShapeController")
 	else:
-		GameLogger.warning("未找到弃牌区，卡牌放置后将被销毁而不是进入弃牌区", "DragShapeController")
-
-
+		GameLogger.warning("未找到弃牌区", "DragShapeController")
+		
+## 查找玩家手牌
+func _find_player_hand() -> Node:
+	var main = _get_main_board()
+	if main and main.get("player_hand"):
+		return main.player_hand
+	GameLogger.warning("未找到玩家手牌 PlayerHand", "DragShapeController")
+	return null
+	
 ## 获取HexMap管理器
 func _get_hex_map() -> Node:
-	# 直接定位HexMap节点，路径：从DragShapeController向上两级到project，再到map/HexMap
-	var hex_map = get_node_or_null("../../map/HexMap")
-	if hex_map:
-		GameLogger.debug("找到HexMap节点", "DragShapeController")
-		return hex_map
-	
-	# 备用方案：如果节点结构变化，尝试绝对路径
-	hex_map = get_tree().root.get_node_or_null("/root/in_scene/map/HexMap")
-	if hex_map:
-		GameLogger.debug("通过绝对路径找到HexMap节点", "DragShapeController")
-		return hex_map
-	
-	GameLogger.warning("未找到HexMap节点", "DragShapeController")
+	var main = _get_main_board()
+	if main:
+		# Main 位于 ui/Main, HexMap 位于 map/HexMap
+		var hex_map = main.get_node_or_null("../../map/HexMap")
+		if hex_map:
+			return hex_map
 	return null
-
+	
+## 查找project.gd节点（现在叫 in_scene.gd，即 MainBoard）
+func _find_project_node() -> Node:
+	return _get_main_board()
 # ==========================================
 # 生命周期
 # ==========================================
@@ -693,33 +643,6 @@ func _get_health_bar_manager() -> Node:
 	return null
 
 
-
-
-
-## 查找玩家手牌
-func _find_player_hand() -> Node:
-	var scene_root = get_tree().current_scene
-	if not scene_root:
-		return null
-
-	# 查找手牌节点（通常名为"Hand"或"PlayerHand"）
-	var hand = scene_root.get_node_or_null("Hand")
-	if hand:
-		return hand
-
-	# 尝试通过组名查找
-	var hands = get_tree().get_nodes_in_group("player_hand")
-	if not hands.is_empty():
-		return hands[0]
-
-	# 尝试查找包含"hand"的节点
-	for child in scene_root.get_children():
-		if "hand" in child.name.to_lower():
-			return child
-
-	return null
-
-
 ## 处理自由拖拽逻辑（鼠标不在时间轴上时）
 ## 卡牌自由跟随鼠标移动，不受网格约束
 func _handle_free_drag(mouse_pos: Vector2) -> void:
@@ -1213,25 +1136,6 @@ func end_dragging_success() -> void:
 	# 收起时间轴
 	if timeline_ui.has_method("collapse"):
 		timeline_ui.collapse()
-
-
-## 查找project.gd节点（替代废弃的control.gd）
-func _find_project_node() -> Node:
-	# 直接定位project节点（DragShapeController在ui/TimelineSystem下，project是根节点）
-	var project_node = get_node_or_null("../..")
-	if project_node and project_node.name == "in_scene":
-		GameLogger.debug("找到in_scene节点", "DragShapeController")
-		return project_node
-	
-	# 备用方案：绝对路径
-	project_node = get_tree().root.get_node_or_null("/root/in_scene")
-	if project_node:
-		GameLogger.debug("通过绝对路径找到in_scene节点", "DragShapeController")
-		return project_node
-	
-	return null
-
-
 
 
 

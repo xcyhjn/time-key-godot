@@ -195,30 +195,23 @@ func update_drag_position(new_position: Vector2) -> void:
 
 	global_position = new_position
 
+## 统一获取主面板 (MainBoard) 的快捷方法
+func _get_main_board() -> Node:
+	return get_tree().get_first_node_in_group("MainBoard")
 
-# ==========================================
-# ★ 新增：动态获取 CardManager 的函数
-# ==========================================
+## 动态获取 CardManager 的函数
 func get_card_manager() -> Node:
-	# 尝试通过父节点链查找CardManager
-	var current = get_parent()
-	while current != null:
-		if current.name == "CardManager" or current is CardManager:
-			return current
-		current = current.get_parent()
-	
-	# 备用方案：通过元数据查找
-	var tree_root = get_tree().root
-	if tree_root and tree_root.has_meta("card_manager"):
-		return tree_root.get_meta("card_manager")
-	
-	# 回退到当前场景元数据
-	var scene_root = get_tree().current_scene
-	if scene_root and scene_root.has_meta("card_manager"):
-		return scene_root.get_meta("card_manager")
-	
+	var main = _get_main_board()
+	if main and main.get("manager_instance"):
+		return main.manager_instance
 	return null
 
+## 查找玩家手牌容器
+func _find_player_hand() -> Node:
+	var main = _get_main_board()
+	if main and main.get("player_hand"):
+		return main.player_hand
+	return null
 
 # ==========================================
 # ★ 修改：使用动态获取的引用来操作选中状态
@@ -246,48 +239,6 @@ func toggle_selection() -> void:
 
 			# 更新地块的条件效果（选中卡牌时）
 			_update_map_conditional_effects()
-
-
-## 查找玩家手牌容器
-func _find_player_hand() -> Node:
-	var scene_root = get_tree().current_scene
-	if not scene_root:
-		return null
-
-	# 方法1：直接通过名称查找（project.gd中手牌被命名为"PlayerHand"）
-	var hand = scene_root.get_node_or_null("PlayerHand")
-	if hand:
-		GameLogger.info("找到手牌容器: PlayerHand（通过名称）", "CustomCard")
-		return hand
-
-	# 方法2：通过相对路径查找（手牌可能在当前节点的父节点下）
-	hand = get_node_or_null("../PlayerHand")
-	if hand:
-		GameLogger.info("找到手牌容器: PlayerHand（通过相对路径）", "CustomCard")
-		return hand
-
-	# 方法3：搜索整个场景树中的Hand类型节点
-	var hand_nodes = []
-	_find_hand_nodes_recursive(scene_root, hand_nodes)
-	if not hand_nodes.is_empty():
-		GameLogger.info("找到手牌容器: Hand类型节点（共%d个）" % hand_nodes.size(), "CustomCard")
-		return hand_nodes[0]
-
-	# 方法4：通过组名查找
-	var hands = get_tree().get_nodes_in_group("player_hand")
-	if not hands.is_empty():
-		GameLogger.info("找到手牌容器: player_hand组（共%d个）" % hands.size(), "CustomCard")
-		return hands[0]
-
-	# 方法5：查找包含"hand"的节点（大小写不敏感）
-	for child in scene_root.get_children():
-		if "hand" in child.name.to_lower():
-			GameLogger.info("找到手牌容器: 名称包含'hand'", "CustomCard")
-			return child
-
-	GameLogger.warning("未找到任何手牌容器", "CustomCard")
-	return null
-
 
 ## 递归查找Hand类型节点
 func _find_hand_nodes_recursive(node: Node, result: Array) -> void:
@@ -355,10 +306,11 @@ func force_deselect() -> void:
 
 ## 更新地图地块的条件效果
 func _update_map_conditional_effects() -> void:
-	# 直接定位HexMap节点
-	var hex_map = get_tree().root.get_node_or_null("/root/project/map/HexMap")
-	if hex_map and hex_map.has_method("update_all_stack_conditional_effects"):
-		hex_map.update_all_stack_conditional_effects()
+	var main = _get_main_board()
+	if main:
+		var hex_map = main.get_node_or_null("../../map/HexMap")
+		if hex_map and hex_map.has_method("update_all_stack_conditional_effects"):
+			hex_map.update_all_stack_conditional_effects()
 
 
 func setup_card_data() -> void:
@@ -951,57 +903,22 @@ func _process(delta: float):
 		shadow.position = lerp(shadow.position, target_shadow_pos, delta * 10.0)
 
 
-# ==========================================
-# ★ 重构：打出卡牌不再直接生效，而是移交时间轴排程
-# ==========================================
+## 重构：打出卡牌不再直接生效，而是移交时间轴排程
 func play_card(target_hex: Area2D):
-	# 1. 拦截底层框架：通知框架当前卡牌被放下了，但先不要销毁它
 	is_selected = false
 	var cm = get_card_manager()
 	if cm:
 		cm.deselect_card()
 
-	# 2. 寻找全局的拖拽形状控制器（现在在 TimelineSystem 节点下）
-	# 尝试多种查找方式，适应不同节点层级
-	var drag_controller = null
-
-	# 方案1：从场景根节点查找（最可靠）
-	drag_controller = get_tree().root.get_node_or_null("project/ui/TimelineSystem/DragShapeController")
-	if is_instance_valid(drag_controller):
-		GameLogger.info("✅ 通过方案1找到 DragShapeController", "CustomCard")
-
-	# 方案2：从当前场景查找
-	if not is_instance_valid(drag_controller):
-		drag_controller = get_tree().current_scene.get_node_or_null("ui/TimelineSystem/DragShapeController")
-		if is_instance_valid(drag_controller):
-			GameLogger.info("✅ 通过方案2找到 DragShapeController", "CustomCard")
-
-	# 方案3：尝试查找 TimelineSystem 节点下的控制器
-	if not is_instance_valid(drag_controller):
-		var timeline_system = get_tree().root.find_child("TimelineSystem", true, false)
-		if timeline_system:
-			drag_controller = timeline_system.find_child("DragShapeController", true, false)
-			if is_instance_valid(drag_controller):
-				GameLogger.info("✅ 通过方案3找到 DragShapeController", "CustomCard")
-
-	# 方案4：最后尝试相对路径
-	if not is_instance_valid(drag_controller):
-		drag_controller = get_tree().current_scene.get_node_or_null("TimelineSystem/DragShapeController")
-		if is_instance_valid(drag_controller):
-			GameLogger.info("✅ 通过方案4找到 DragShapeController", "CustomCard")
+	# 直接通过群组寻找 DragShapeController
+	var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
 
 	if drag_controller and drag_controller.has_method("start_dragging"):
-		# 移交控制权：将卡牌自身和目标地块传给控制器，开启时间轴排版模式！
 		GameLogger.info("🃏 卡牌打出！移交 DragShapeController 变形处理...", "CustomCard")
 		drag_controller.start_dragging(self, target_hex)
 	else:
-		# 兜底：如果没找到控制器，直接执行效果（用于不带时间轴的普通测试）
-		GameLogger.warning("❌ 未找到 DragShapeController，尝试的路径均失败！", "CustomCard")
-		GameLogger.warning("场景根节点路径: project/ui/TimelineSystem/DragShapeController", "CustomCard")
-		GameLogger.warning("当前场景路径: ui/TimelineSystem/DragShapeController", "CustomCard")
-		push_warning("未找到 DragShapeController，直接生效！")
+		GameLogger.warning("❌ 未找到 DragShapeController，直接生效！", "CustomCard")
 		apply_effect_immediate(target_hex)
-
 
 # (仅作兜底或无时间轴卡牌使用)
 func apply_effect_immediate(target_hex: Area2D):
