@@ -5,7 +5,7 @@
 extends CanvasLayer
 
 ## 卡牌数据池单例引用 (用于获取时代分类的卡牌)
-var CardDataPool = preload("res://gd_db/CardDataPool.gd")
+var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 
@@ -22,7 +22,7 @@ var CardManager = preload("res://addons/card-framework/card_manager.gd")
 
 ## 外部依赖注入 (必须由主场景在 _ready 中赋值)
 var deck_manager = null  # 必须提供 card_factory 访问
-var draft_card_scene = preload("res://scenes/DraftCard.tscn")
+var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
 
 ## ==========================================
 ## ★ 商店状态变量 - 记录刷新与升级次数

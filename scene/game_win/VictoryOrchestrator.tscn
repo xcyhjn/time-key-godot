@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://b5use3tsyf02j"]
+
+[ext_resource type="Shader" uid="uid://pdp2mrgq6od7" path="res://shaders/hex.gdshader" id="1_bmfi6"]
+[ext_resource type="Texture2D" uid="uid://dbt2ay4xavfrn" path="res://image/key.png" id="1_sk10i"]
+[ext_resource type="Script" uid="uid://jhfri7gnkbx0" path="res://scene/game_win/VictoryOrchestrator.gd" id="1_u7kvi"]
+
+[sub_resource type="Animation" id="Animation_bmfi6"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AnimationRoot/KeyAnchor/KeySprite:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(856.00006, 475)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("AnimationRoot/KeyAnchor/KeySprite:instance_shader_parameters/dissolve_blend")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="Animation" id="Animation_5p1ep"]
+resource_name = "victory_rise"
+length = 4.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AnimationRoot/KeyAnchor/KeySprite:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.5, 3.0010247),
+"transitions": PackedFloat32Array(0.6155722, 1),
+"update": 0,
+"values": [Vector2(940, 540), Vector2(940, 240)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("AnimationRoot/KeyAnchor/KeySprite:instance_shader_parameters/dissolve_blend")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5, 2, 3),
+"transitions": PackedFloat32Array(1, 1, 1.4640858, 1),
+"update": 0,
+"values": [1.0, 0.0, 0.0, 1.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("AnimationRoot/KeyAnchor/KeySprite:instance_shader_parameters/dissolve_blend")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"update": 0,
+"values": []
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_sk10i"]
+_data = {
+&"RESET": SubResource("Animation_bmfi6"),
+&"victory_rise": SubResource("Animation_5p1ep")
+}
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5p1ep"]
+shader = ExtResource("1_bmfi6")
+shader_parameter/max_float_height = -35.0
+shader_parameter/wiggle_speed = 3.5
+shader_parameter/wiggle_amount = 3.0
+shader_parameter/highlight_color = Color(1.5, 1.5, 1.5, 1)
+shader_parameter/select_line_color = Color(1, 1, 1, 1)
+shader_parameter/select_line_thickness = 2.0
+shader_parameter/select_overlay_color = Color(1, 1, 1, 1)
+shader_parameter/select_overlay_alpha = 0.4
+shader_parameter/dissolve_block_size = 40.0
+shader_parameter/dissolve_edge_color = Color(2, 1.5, 0.5, 1)
+
+[node name="VictoryOrchestrator" type="Node2D" unique_id=1747856868]
+script = ExtResource("1_u7kvi")
+
+[node name="AnimationRoot" type="Control" parent="." unique_id=1008726819]
+custom_minimum_size = Vector2(1920, 0)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1933.0
+offset_bottom = 1083.0
+mouse_filter = 2
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="AnimationRoot" unique_id=2063568170]
+root_node = NodePath("../..")
+libraries/ = SubResource("AnimationLibrary_sk10i")
+autoplay = &"victory_rise"
+
+[node name="KeyAnchor" type="Control" parent="AnimationRoot" unique_id=104285933]
+anchors_preset = 0
+offset_right = 1914.0
+offset_bottom = 1092.0
+mouse_filter = 2
+
+[node name="KeySprite" type="Sprite2D" parent="AnimationRoot/KeyAnchor" unique_id=2142473436]
+material = SubResource("ShaderMaterial_5p1ep")
+instance_shader_parameters/dissolve_blend = 0.0
+position = Vector2(856.00006, 475)
+scale = Vector2(0.3, 0.297)
+texture = ExtResource("1_sk10i")

@@ -3,8 +3,6 @@
 extends Node2D
 class_name battle
 
-signal CreateBar(Landform_in, situation, x, y)
-
 @export_group("Assets")
 @export var hex_top_tex: Texture2D
 @export var hex_side_tex: Texture2D
@@ -12,7 +10,7 @@ signal CreateBar(Landform_in, situation, x, y)
 @export var label_bg_tex: Texture2D
 
 @export_group("Grid Generation Settings")
-@export var map_generation_mode: int = 1  # 0=扇形战斗地图, 1=圆形随机地图
+@export var map_generation_mode: int = 0  # 0=扇形战斗地图, 1=圆形随机地图
 
 @export_subgroup("扇形战斗地图设置")
 @export var nexus_height: int = 8
@@ -41,18 +39,38 @@ signal CreateBar(Landform_in, situation, x, y)
 
 const REF_SCALE: float = 0.6
 
-var property_pool : Array[Script] = []
-var Max_Start_landform : int = 5
+# ==========================================
+# 高度视图配置（切换视角后的光柱系统）
+# ==========================================
+@export_group("高度视图配置")
+@export var height_view_pillar_length: float = 50.0  # 光柱长度（向上延伸像素）
+@export var height_view_pillar_width: float = 5.0    # 光柱粗细
+@export var height_view_pillar_color: Color = Color(1.0, 1.0, 1.0, 0.8)  # 光柱颜色（白色带透明度）
+@export var height_view_pillar_offset: Vector2 = Vector2(0, 0)  # 光柱相对方块的位置偏移
+
+@export_subgroup("高度数字标签配置")
+@export var height_label_font_size: int = 32  # 数字字体大小
+@export var height_label_color: Color = Color(1.0, 1.0, 1.0, 1.0)  # 数字颜色
+@export var height_label_outline_color: Color = Color(0.0, 0.0, 0.0, 1.0)  # 数字描边颜色
+@export var height_label_outline_size: int = 2  # 数字描边粗细
+@export var height_label_offset: Vector2 = Vector2(-10, -40)  # 数字位置偏移（相对光柱顶部）
+@export var height_label_font: Font  # 数字字体（可选）
+
+@export_subgroup("高度视图Shader配置")
+@export var height_view_shader_material: ShaderMaterial  # 高度视图专用shader材质
+@export var height_view_hover_speed: float = 1.5  # 鼠标悬浮时光柱上下移动速度
+@export var height_view_hover_amplitude: float = 15.0  # 鼠标悬浮时光柱上下移动幅度
+@export var height_view_click_highlight_color: Color = Color(1.0, 1.0, 1.0, 0.3)  # 点击时白色高亮颜色
+@export var height_view_click_highlight_width: float = 4.0  # 点击时白色边框粗细
 
 # ==========================================
 # 地形系统（整合自 node_2d.gd）
 # ==========================================
-enum TerrainType { BEACH, PLAINS, HILLS, MOUNTAIN, NEXUS_CORE = -1 }
+enum TerrainType { BEACH, PLAINS, HILLS, MOUNTAIN }
 enum LandformType { NONE, MINE, CAVE, VILLAGE, RUINS }  # 整合自 node_2d.gd，用于兼容性
 
 @export_group("地形系统")
 @export var terrain_by_height := {
-	-1 : TerrainType.NEXUS_CORE,
 	1: TerrainType.BEACH,
 	2: TerrainType.PLAINS,
 	3: TerrainType.PLAINS,
@@ -69,9 +87,13 @@ var landform_pool: Array[Script] = []  # 地貌脚本池，在 _ready 中初始�
 var map_data: Dictionary = { }
 # ★ 优化：新增栈缓存字典，方便 O(1) 查找遮挡物
 var stack_nodes: Dictionary = { }
-
-@onready var dim = $"../../ui/DimMenu"
-
+var height_view_compressed: bool = false  # 视角切换状态：是否压缩为1格高度
+var height_view_hovered_stack: Area2D = null  # 高度视图下鼠标悬浮的地块
+var height_view_selected_stack: Area2D = null  # 高度视图下点击选中的地块
+var height_view_original_materials: Dictionary = {}  # 存储地块原始材质（用于恢复）
+var height_view_pillar_tweens: Dictionary = {}  # 存储光柱动画补间
+var is_view_transitioning: bool = false  # ★ 新增：动画状态锁
+var is_visuals_locked: bool = false  # ★ 新增：视觉状态锁，防止拖拽时清除高亮和消融效果
 # ==========================================
 # 外部事件处理系统（整合自 node_2d.gd）
 ## 外部事件设置器（整合自 node_2d.gd）
@@ -114,7 +136,6 @@ func handle_event_logic():
 			print(">> 准备：BOSS 战环境")
 
 func _ready():
-	await dim.use(dim.mode)
 	y_sort_enabled = true
 	# 连接到建筑行为信号
 	Signal_Bus.step_next.connect(_on_step_next)
@@ -124,11 +145,6 @@ func _ready():
 		var features = parts[1].split(",") 
 		# features 将会是 ["enhance", "combine"]
 		for feature in features:
-			if GlobalClock.landform_property_pool.keys().has(feature):
-				print("装载属性：" + feature)
-				for landform_in in GlobalClock.landform_property_pool[feature]:
-					if !property_pool.has(landform_in):
-						property_pool.append(landform_in)
 			print("该房间拥有特性:", feature)
 	print("[HexMap 场景] 已进入，接收到的事件类型为: ", room_type)
 	
@@ -149,6 +165,20 @@ func _ready():
 	handle_event_logic()
 
 	build_map_pipeline()
+	# 绑定现有高度视图切换按钮
+	var height_view_button = get_node_or_null("../ui/HeightViewToggleButton")
+	if not height_view_button:
+		# 尝试其他可能路径
+		height_view_button = get_node_or_null("/root/project/ui/HeightViewToggleButton")
+	if not height_view_button:
+		# 使用find_child查找
+		height_view_button = find_child("HeightViewToggleButton", true, false)
+	
+	if height_view_button:
+		height_view_button.pressed.connect(_on_height_view_toggle_pressed)
+		GameLogger.debug("成功绑定高度视图切换按钮", "HexMap")
+	else:
+		GameLogger.warning("未找到高度视图切换按钮，请确保按钮节点存在", "HexMap")
 
 
 func build_map_pipeline():
@@ -174,61 +204,149 @@ func _generate_map_data():
 			push_error("无效的地图生成模式: " + str(map_generation_mode))
 			_generate_fan_map_data()  # 默认回退
 
-func _generate_fan_map_data():
-	map_data[Vector2(0, 0)] = { "height": nexus_height, "tier": 3, "terrain": TerrainType.NEXUS_CORE }
-	var min_angle = 90.0 - (fan_angle_span / 2.0)
-	var max_angle = 90.0 + (fan_angle_span / 2.0)
-
-	for q in range(-fan_radius, fan_radius + 1):
-		for r in range(-fan_radius, fan_radius + 1):
-			if q == 0 and r == 0: continue
+## 扇形坐标采样器 - 返回满足角度范围的六边形坐标
+func _get_fan_coords(radius: int, angle_span: float, center_angle: float = 90.0) -> Array[Vector2i]:
+	var coords: Array[Vector2i] = []
+	var min_angle = center_angle - (angle_span / 2.0)
+	var max_angle = center_angle + (angle_span / 2.0)
+	
+	for q in range(-radius, radius + 1):
+		for r in range(-radius, radius + 1):
+			if q == 0 and r == 0:
+				continue
+			# 六边形轴向坐标距离公式
 			var dist = (abs(q) + abs(q + r) + abs(r)) / 2
-			if dist <= fan_radius:
+			if dist <= radius:
 				var pixel_pos = _get_hex_pixel_pos(Vector2(q, r))
 				var angle_deg = rad_to_deg(pixel_pos.angle())
-				if angle_deg < 0: angle_deg += 360.0
+				if angle_deg < 0:
+					angle_deg += 360.0
 				if angle_deg >= min_angle and angle_deg <= max_angle:
-					var tier = 3 if dist <= inner_tier_radius else (2 if dist <= inner_tier_radius + 2 else 1)
-					map_data[Vector2(q, r)] = { "height": _roll_height_by_tier(tier), "tier": tier, "terrain": TerrainType.NEXUS_CORE }
+					coords.append(Vector2i(q, r))
+	return coords
 
-func _generate_circular_map_data():
-	#push_error(str(GlobalClock.tile_h_pool.keys()))
-	# 基于 node_2d.gd 的 generate_map_data 函数逻辑
-	map_data.clear()
-	
+
+## 圆形坐标采样器 - 返回圆形区域内的六边形坐标
+func _get_circular_coords(radius: int) -> Array[Vector2i]:
+	var coords: Array[Vector2i] = []
+	for q in range(-radius, radius + 1):
+		for r in range(-radius, radius + 1):
+			if q == 0 and r == 0:
+				continue
+			# 六边形轴向坐标距离公式（确保完美的圆形区域）
+			var dist = (abs(q) + abs(q + r) + abs(r)) / 2
+			if dist <= radius:
+				coords.append(Vector2i(q, r))
+	return coords
+
+
+## 统一数据填充管线 - 将坐标数组转换为地图数据
+## @param coords 六边形坐标数组（Vector2i）
+## @param shape_type 形状类型："fan" 或 "circular"
+## @param shape_params 形状参数（如 angle_span, radius 等）
+func _populate_map_data(coords: Array[Vector2i], shape_type: String, shape_params: Dictionary = {}) -> void:
+	# 初始化随机数生成器
 	var rng = RandomNumberGenerator.new()
 	if use_external_seed and received_text != "":
 		rng.seed = received_text.hash()
 	else:
 		rng.randomize()
-
-	var h_min = base_h_min
-	var h_max = base_h_max
-	if room_type == "battle_elite":
-		h_max += elite_h_bonus
-	elif room_type == "boss_stage":
-		h_max += elite_h_bonus + 1
-
-	# 先生成所有高度 + 地形（圆形六边形网格）
-	for q in range(-map_radius, map_radius + 1):
-		for r in range(-map_radius, map_radius + 1):
-			if abs(q + r) <= map_radius:
-				var coord = Vector2(q, r)  # 使用 Vector2 保持与 hex_map 的兼容性
-				var h = rng.randi_range(h_min, h_max)
-				var terrain = get_terrain_from_height(h)
-
-				map_data[coord] = {
-					"height": h,
-					"terrain": terrain,
-					"landform": null
-				}
-				#push_error(str(GlobalClock.tile_h_pool.keys()))
-				if GlobalClock.tile_h_pool.keys().has(h):
-					GlobalClock.tile_h_pool[h].append(coord)
-					#push_error(str(coord) + "已加入高为" + str(h) + "的数组中\n此数组内含" + str(GlobalClock.tile_h_pool[h]))
 	
+	# 清空现有地图数据
+	map_data.clear()
 	
-	# 地貌放置逻辑在 _assign_terrains_and_enemies 中处理
+	# 特殊处理：扇形地图的核心地块
+	if shape_type == "fan":
+		# 确保中心坐标 (0,0) 作为 nexus_core（使用 Vector2i 统一键类型）
+		var center_coord = Vector2i(0, 0)
+		map_data[center_coord] = {
+			"height": nexus_height,
+			"tier": 3,
+			"terrain": "nexus_core",
+			"terrain_type": "nexus_core",
+			"landform": null
+		}
+	
+	# 遍历所有坐标，填充高度和地形
+	for coord_v2i in coords:
+		# 使用 Vector2i 作为键，统一坐标类型
+		var height: int = 0
+		var tier: int = 1
+		var terrain = ""  # 可存储 String 或 TerrainType 枚举
+		
+		# 根据形状类型计算高度和 tier
+		match shape_type:
+			"fan":
+				# 计算距离（六边形轴向坐标距离）
+				var q = coord_v2i.x
+				var r = coord_v2i.y
+				var dist = (abs(q) + abs(q + r) + abs(r)) / 2
+				# 根据距离分配 tier
+				if dist <= inner_tier_radius:
+					tier = 3
+				elif dist <= inner_tier_radius + 2:
+					tier = 2
+				else:
+					tier = 1
+				# 基于 tier 随机高度
+				height = _roll_height_by_tier_with_rng(tier, rng)
+				# 地形根据高度直接计算
+				terrain = get_terrain_from_height(height)
+			
+			"circular":
+				# 根据房间类型确定高度范围
+				var h_min = base_h_min
+				var h_max = base_h_max
+				if room_type == "battle_elite":
+					h_max += elite_h_bonus
+				elif room_type == "boss_stage":
+					h_max += elite_h_bonus + 1
+				# 随机高度
+				height = rng.randi_range(h_min, h_max)
+				# 根据高度获取地形类型
+				terrain = get_terrain_from_height(height)
+			
+			_:
+				push_error("未知的形状类型: " + shape_type)
+				continue
+		
+		# 构建地块数据
+		var tile_data = {
+			"height": height,
+			"terrain": terrain,
+			"terrain_type": terrain,
+			"landform": null
+		}
+		
+		# 扇形地图额外存储 tier 信息
+		if shape_type == "fan":
+			tile_data["tier"] = tier
+		
+		map_data[coord_v2i] = tile_data
+	
+	GameLogger.debug("地图数据填充完成，形状: " + shape_type + "，坐标数量: " + str(coords.size()), "HexMap")
+
+
+## 带随机数生成器的 tier 高度滚动（用于可重复生成）
+func _roll_height_by_tier_with_rng(tier: int, rng: RandomNumberGenerator) -> int:
+	var roll = rng.randf()
+	if tier == 3:
+		return rng.randi_range(4, 6) if roll < 0.6 else rng.randi_range(2, 3)
+	else:
+		return rng.randi_range(1, 3) if roll < 0.7 else rng.randi_range(3, 4)
+
+
+func _generate_fan_map_data():
+	# 使用形状发生器模式：坐标采样 + 数据填充
+	var coords = _get_fan_coords(fan_radius, fan_angle_span, 90.0)
+	_populate_map_data(coords, "fan", {})
+	GameLogger.info("扇形地图生成完成，坐标数量: " + str(coords.size()), "HexMap")
+
+func _generate_circular_map_data():
+	# 使用形状发生器模式：坐标采样 + 数据填充
+	var coords = _get_circular_coords(map_radius)
+	_populate_map_data(coords, "circular", {})
+	GameLogger.info("圆形地图生成完成，坐标数量: " + str(coords.size()), "HexMap")
 
 func _roll_height_by_tier(tier: int) -> int:
 	var roll = randf()
@@ -250,80 +368,43 @@ func get_terrain_from_height(h: int) -> TerrainType:
 	return TerrainType.MOUNTAIN
 
 
-## 选择合适的地貌（基于高度、地形和随机性）
-func pick_landform() :
-	
-	var landform_in
-	var coord
-	var number = 0
-	if !property_pool.is_empty():
-		for i in range(randi_range( 1, Max_Start_landform - 1)):
-			landform_in = property_pool.pick_random()
-			coord = landform_pick(landform_in)
-			if coord != Vector2(-100, -100):
-				map_data[coord]["landform"] = landform_in.new(coord, self)
-				number += 1
-	for i in range(Max_Start_landform - number):
-		landform_in = landform_pool.pick_random()
-		coord = landform_pick(landform_in)
-		if coord == Vector2(-100, -100):
-			continue
-		map_data[coord]["landform"] = landform_in.new(coord, self)
+## 选择合适的地貌（基于高度、地形和随机性，支持 TerrainType 枚举或 String 类型）
+func pick_landform(h: int, terrain, rng: RandomNumberGenerator, coord: Vector2i) -> landform:
+	# 如果地形是字符串，转换为 TerrainType 枚举
+	var terrain_enum: TerrainType
+	if typeof(terrain) == TYPE_STRING:
+		match terrain:
+			"BEACH": terrain_enum = TerrainType.BEACH
+			"PLAINS": terrain_enum = TerrainType.PLAINS
+			"HILLS": terrain_enum = TerrainType.HILLS
+			"MOUNTAIN": terrain_enum = TerrainType.MOUNTAIN
+			_: terrain_enum = TerrainType.PLAINS  # 默认值
+	else:
+		terrain_enum = terrain as TerrainType
+	var passed: Array[landform] = []
 
-func landform_pick(landform_in : Script) -> Vector2:
-	var buffer =  landform_in.new(Vector2(-100, -100), self)
-	var buffer_pool
-	var coord
-	
-	if buffer.landform_rules.keys().has("require_height") and buffer.landform_rules["require_height"] != null:
-		var index = randi_range(0,buffer.landform_rules["require_height"].size() - 1)
-		buffer_pool = GlobalClock.tile_h_pool[buffer.landform_rules["require_height"][index]].duplicate()
-		coord = randi_range(0, buffer_pool.size() - 1)
-	else :
-		buffer_pool = map_data.keys().duplicate()
-		coord = randi_range(0, buffer_pool.size() - 1)
-	while !buffer_pool.is_empty() and !buffer.get_possible_coords(map_data[buffer_pool[coord]]["height"], map_data[buffer_pool[coord]]["terrain"], map_data[buffer_pool[coord]]) :
-		buffer_pool.pop_at(coord)
-		if buffer_pool.is_empty():
-			break
-		coord = randi_range(0, buffer_pool.size() - 1)
-	print(str(buffer_pool))
-	if buffer_pool.is_empty():
-		buffer.free()
-		return Vector2(-100, -100)
-	elif buffer.get_possible_coords(map_data[buffer_pool[coord]]["height"], map_data[buffer_pool[coord]]["terrain"], map_data[buffer_pool[coord]]):
-		buffer.free()
-		return buffer_pool[coord]
-	else :
-		buffer.free()
-		return Vector2(-100, -100)
+	for landform_script in landform_pool:
+		if landform_script == null:
+			continue
+		var landform_inst = landform_script.new(coord, self)
+		# 使用 landform 的规则检查是否适合放置（coord 已经是 Vector2i 类型）
+		if not landform_inst.get_possible_coords(h, terrain_enum, rng, map_data[coord], true):
+			continue
+		passed.append(landform_inst)
+
+	if passed.is_empty():
+		return null
+
+	return passed[rng.randi_range(0, passed.size() - 1)]
+
 
 func _assign_terrains_and_enemies():
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 	
-	# 第一步：分配地形类型（处理两种地图模式）
-	for coord in map_data.keys():
-		var data = map_data[coord]
-		
-		# 跳过nexus核心（仅扇形地图有）
-		if data.has("terrain") and data["terrain"] == TerrainType.NEXUS_CORE: 
-			continue
-		
-		var height = data["height"]
-		
-		# 圆形地图已经设置了terrain字段，扇形地图需要从高度计算
-		if map_generation_mode == 1:  # 圆形地图
-			# 圆形地图中，terrain字段已经存储了地形类型（来自get_terrain_from_height）
-			# 确保terrain_type字段存在
-			if data.has("terrain"):
-				data["terrain_type"] = data["terrain"]
-		else:  # 扇形地图
-			var terrain_type = get_terrain_from_height(height)
-			data["terrain_type"] = terrain_type
-			data["terrain"] = terrain_type  # 保持向后兼容，但使用枚举值
+
 	
-	# 第二步：根据地貌密度限制放置地貌
+	# 第二步：根据地貌密度限制放置地貌（优化版本）
 	var coords_list = map_data.keys()
 	coords_list.shuffle()  # 随机打乱顺序
 	
@@ -333,27 +414,72 @@ func _assign_terrains_and_enemies():
 	for coord in coords_list:
 		if placed >= max_landform_count:
 			break
-		var data = map_data[coord]
+		
+		var data = map_data[Vector2i(coord)]
 		
 		# 跳过nexus核心
-		if data.has("terrain") and data["terrain"] == TerrainType.NEXUS_CORE:
+		if data.has("terrain") and str(data["terrain"]) == "nexus_core":
 			continue
 		
 		var height = data["height"]
 		var terrain_type = data["terrain_type"]
-	pick_landform()
+		
+		# 确保地形类型有效
+		if terrain_type == null:
+			terrain_type = get_terrain_from_height(height)
+			data["terrain_type"] = terrain_type
+		
+		var landform_inst = pick_landform(height, terrain_type, rng, Vector2i(coord))
+		
+		if landform_inst != null:
+			landform_inst.random_damage()
+			data["landform"] = landform_inst
+			data["landform_type"] = landform_inst.name  # 存储类型名称供参考
+			placed += 1
+	
+	GameLogger.debug("地貌放置完成，总数: " + str(placed) + "，最大限制: " + str(max_landform_count), "HexMap")
 
 
-## 获取地形顶部纹理
-func get_top_tex(terrain: TerrainType) -> Texture2D:
-	if top_tex_by_terrain.size() > terrain and top_tex_by_terrain[terrain] != null:
-		return top_tex_by_terrain[terrain]
+## 获取地形顶部纹理（支持 TerrainType 枚举或 String 类型）
+func get_top_tex(terrain) -> Texture2D:
+	# 处理 String 类型（如 "nexus_core"）
+	if typeof(terrain) == TYPE_STRING:
+		# 如果是特殊地块，返回默认纹理
+		if terrain == "nexus_core":
+			return hex_top_tex
+		# 尝试将字符串转换为 TerrainType 枚举
+		match terrain:
+			"BEACH": return get_top_tex(TerrainType.BEACH)
+			"PLAINS": return get_top_tex(TerrainType.PLAINS)
+			"HILLS": return get_top_tex(TerrainType.HILLS)
+			"MOUNTAIN": return get_top_tex(TerrainType.MOUNTAIN)
+			_: return hex_top_tex
+	
+	# 处理 TerrainType 枚举类型
+	var terrain_int = terrain as int
+	if top_tex_by_terrain.size() > terrain_int and top_tex_by_terrain[terrain_int] != null:
+		return top_tex_by_terrain[terrain_int]
 	return hex_top_tex
 
-## 获取地形侧面纹理
-func get_side_tex(terrain: TerrainType) -> Texture2D:
-	if side_tex_by_terrain.size() > terrain and side_tex_by_terrain[terrain] != null:
-		return side_tex_by_terrain[terrain]
+## 获取地形侧面纹理（支持 TerrainType 枚举或 String 类型）
+func get_side_tex(terrain) -> Texture2D:
+	# 处理 String 类型（如 "nexus_core"）
+	if typeof(terrain) == TYPE_STRING:
+		# 如果是特殊地块，返回默认纹理
+		if terrain == "nexus_core":
+			return hex_side_tex
+		# 尝试将字符串转换为 TerrainType 枚举
+		match terrain:
+			"BEACH": return get_side_tex(TerrainType.BEACH)
+			"PLAINS": return get_side_tex(TerrainType.PLAINS)
+			"HILLS": return get_side_tex(TerrainType.HILLS)
+			"MOUNTAIN": return get_side_tex(TerrainType.MOUNTAIN)
+			_: return hex_side_tex
+	
+	# 处理 TerrainType 枚举类型
+	var terrain_int = terrain as int
+	if side_tex_by_terrain.size() > terrain_int and side_tex_by_terrain[terrain_int] != null:
+		return side_tex_by_terrain[terrain_int]
 	return hex_side_tex
 
 ## 地形类型转字符串（用于调试）
@@ -379,7 +505,7 @@ func _get_hex_pixel_pos(hex_coord: Vector2) -> Vector2:
 	return Vector2(screen_x, screen_y)
 
 
-func _create_stack_at(coord: Vector2, data: Dictionary):
+func _create_stack_at(coord: Vector2i, data: Dictionary):
 	var pos = _get_hex_pixel_pos(coord)
 	var height = data["height"]
 	var current_step_h = step_height * (tile_scale / REF_SCALE)
@@ -422,6 +548,8 @@ func _create_stack_at(coord: Vector2, data: Dictionary):
 	var top_block_y = -(height - 1) * current_step_h
 	collision.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y)
 	stack_container.add_child(collision)
+	# 存储碰撞区引用，用于高度视图模式下的位置调整
+	stack_container.set_meta("collision_node", collision)
 
 	# 地貌生成（使用 landform 系统）
 	var enemy_instance = null
@@ -461,6 +589,28 @@ func _create_stack_at(coord: Vector2, data: Dictionary):
 	stack_container.input_event.connect(_on_stack_input.bind(stack_container))
 
 
+## 局部刷新单个地块的视觉表现（优化性能，避免全局重绘）
+## @param coord 六边形坐标（Vector2i）
+func refresh_tile_visual(coord: Vector2i) -> void:
+	if not map_data.has(coord):
+		GameLogger.warning("尝试刷新不存在的地块坐标: " + str(coord), "HexMap")
+		return
+	
+	# 获取地块数据
+	var data = map_data[coord]
+	
+	# 如果已有视觉节点，先移除
+	if stack_nodes.has(coord):
+		var old_node = stack_nodes[coord]
+		if is_instance_valid(old_node):
+			old_node.queue_free()
+		stack_nodes.erase(coord)
+	
+	# 重新创建视觉节点（_create_stack_at 使用 Vector2i 坐标）
+	_create_stack_at(coord, data)
+	GameLogger.debug("地块视觉刷新完成，坐标: " + str(coord), "HexMap")
+
+
 func get_card_manager() -> Node:
 	# 直接查找CardManager节点（HexMap在map下，CardManager在project下）
 	var card_manager = get_node_or_null("../../CardManager")  # 从HexMap向上两级到project，查找CardManager子节点
@@ -484,6 +634,12 @@ func get_card_manager() -> Node:
 # ★ 选中逻辑与技能施放
 # ==========================================
 func _on_stack_input(viewport: Node, event: InputEvent, shape_idx: int, stack: Area2D):
+	# 高度视图模式：使用专用点击处理
+	if height_view_compressed:
+		_on_stack_input_height_view(viewport, event, shape_idx, stack)
+		return
+	
+	# 原始模式：保持原有逻辑
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			var cm = get_card_manager()
@@ -512,6 +668,16 @@ func _on_stack_input(viewport: Node, event: InputEvent, shape_idx: int, stack: A
 # ★ 悬浮与遮挡检测逻辑
 # ==========================================
 func _on_stack_hover(stack: Area2D, is_entered: bool):
+	# 视觉状态锁：防止拖拽时清除高亮和消融效果
+	if is_visuals_locked:
+		return
+	
+	# 高度视图模式：使用专用悬停处理
+	if height_view_compressed:
+		_on_stack_hover_height_view(stack, is_entered)
+		return
+	
+	# 原始模式：保持原有逻辑
 	if is_entered:
 		if not hovered_stacks.has(stack): hovered_stacks.append(stack)
 	else:
@@ -679,7 +845,7 @@ func update_all_stack_conditional_effects() -> void:
 func _update_occlusion(target_stack: Area2D):
 	# 1. 恢复之前被湮灭的柱子 (倒放)
 	for stack in currently_occluding_stacks:
-		if is_instance_valid(stack) and stack != target_stack:
+		if is_instance_valid(stack):
 			_tween_shader_param(stack, "dissolve_blend", 0.0, 0.15)
 	currently_occluding_stacks.clear()
 
@@ -738,17 +904,14 @@ func _tween_shader_param(stack: Area2D, param_name: String, target_val: float, d
 
 ## 添加地貌视觉（用于地形实体死亡或损坏时更新视觉）
 func add_landform_visual_at(coord: Vector2i) -> void:
-	# 将 Vector2i 转换为 Vector2（用于字典键）
-	var coord_v2 = Vector2(coord)
-	
-	# 检查是否存在对应的栈容器和地貌数据
-	if not stack_nodes.has(coord_v2):
+	# 检查是否存在对应的栈容器和地貌数据（使用 Vector2i 键）
+	if not stack_nodes.has(coord):
 		return
-	if not map_data.has(coord_v2):
+	if not map_data.has(coord):
 		return
 	
-	var stack_container = stack_nodes[coord_v2]
-	var data = map_data[coord_v2]
+	var stack_container = stack_nodes[coord]
+	var data = map_data[coord]
 	
 	# 获取地貌实例
 	var landform_inst = data.get("landform")
@@ -831,3 +994,580 @@ func _unhandled_input(event):
 	if event.is_action_pressed("ui_cancel"): # 按下 Esc
 		# 这里可以写返回地图的代码
 		pass
+
+
+## ==========================================
+## ★ 视角切换系统：压缩地块高度显示
+## ==========================================
+
+## 切换高度视角（压缩为1格高度或恢复原始高度）
+func toggle_height_view() -> void:
+	# ★ 动画状态锁：防止在动画播放期间重复触发
+	if is_view_transitioning:
+		GameLogger.warning("视图切换动画正在进行中，忽略重复操作", "HexMap")
+		return
+	
+	# 设置动画状态锁
+	is_view_transitioning = true
+	GameLogger.debug("开始视图切换动画，锁定状态", "HexMap")
+	
+	# ★ 先切换视图状态标志，确保后续函数使用正确的状态
+	height_view_compressed = not height_view_compressed
+	
+	# 根据新状态调用相应的动画函数
+	if height_view_compressed:
+		_compress_to_single_height_view()
+	else:
+		_restore_original_height_view()
+	
+	# ★ 延迟解锁：等待动画完成后重置状态锁
+	# 最长的动画是0.5秒，设置0.6秒的延迟以确保安全
+	await get_tree().create_timer(0.6).timeout
+	is_view_transitioning = false
+	GameLogger.debug("视图切换动画完成，解锁状态", "HexMap")
+
+## 压缩为单格高度视图（物理坐标扁平化版本）
+func _compress_to_single_height_view() -> void:
+	GameLogger.info("切换到压缩高度视图（物理坐标扁平化）", "HexMap")
+	
+	# 清空材质和位置缓存
+	height_view_original_materials.clear()
+	height_view_hovered_stack = null
+	height_view_selected_stack = null
+	
+	# 计算单格高度步长（用于坐标转换参考）
+	var current_step_h = step_height * (tile_scale / REF_SCALE)
+	
+	for coord in stack_nodes.keys():
+		var stack = stack_nodes[coord]
+		if not is_instance_valid(stack):
+			continue
+		
+		var sprites = stack.get_meta("sprites") as Array
+		var height = stack.get_meta("height") as int
+		var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null  # 安全获取地貌/敌人实例
+		
+		# ★ 保存原始材质和位置，并应用高度视图shader
+		var stack_sprites_data = []
+		for sprite in sprites:
+			if not is_instance_valid(sprite):
+				stack_sprites_data.append(null)
+				continue
+			
+			# 保存原始材质和位置引用
+			var original_material = sprite.material
+			var original_position = sprite.position  # 存储完整的Vector2位置
+			stack_sprites_data.append({
+				"sprite": sprite,
+				"original_material": original_material,
+				"original_position": original_position
+			})
+			
+			# 应用高度视图shader（如果已配置）
+			if height_view_shader_material:
+				sprite.material = height_view_shader_material.duplicate()
+				# 设置默认shader参数
+				sprite.set_instance_shader_parameter("click_highlight", 0.0)
+				sprite.set_instance_shader_parameter("click_highlight_width", height_view_click_highlight_width)
+				sprite.set_instance_shader_parameter("click_highlight_color", height_view_click_highlight_color)
+		
+		# ★ 保存地貌/敌人的原始位置（如果存在）
+		var occupant_data = null
+		if is_instance_valid(occupant):
+			occupant_data = {
+				"node": occupant,
+				"original_position": occupant.position
+			}
+		
+		# ★ 保存碰撞区的原始位置（如果存在）
+		var collision_data = null
+		var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
+		if is_instance_valid(collision):
+			collision_data = {
+				"node": collision,
+				"original_position": collision.position
+			}
+		
+		# 保存这个地块的完整原始数据
+		height_view_original_materials[stack] = {
+			"sprites_data": stack_sprites_data,
+			"height": height,
+			"occupant_data": occupant_data,
+			"collision_data": collision_data
+		}
+		
+		# ★ 计算相对下落差值：顶层方块需要下落的垂直距离
+		# 顶层方块的原始Y坐标：-(height - 1) * current_step_h
+		# 目标Y坐标：0.0（最底部平面）
+		# 下落差值 = 目标Y - 原始Y = 0.0 - (-(height - 1) * current_step_h)
+		var top_block_y = -(height - 1) * current_step_h
+		var drop_delta = 0.0 - top_block_y  # 正数表示需要向下移动的距离
+		
+		if height <= 1:
+			# 高度为1的地块不需要溶解处理，但仍需要归一化保险处理
+			# 计算drop_delta（此时可能为0.0或微小值），确保所有元素同步降落
+			for sprite_data in stack_sprites_data:
+				if sprite_data == null:
+					continue
+				var sprite = sprite_data["sprite"]
+				if not is_instance_valid(sprite):
+					continue
+				
+				# 应用相对位移：当前位置 + 下落差值
+				var target_y = sprite.position.y + drop_delta
+				if abs(drop_delta) > 0.1:  # 只有需要移动时才创建动画
+					_tween_position_y(sprite, target_y, 0.3)
+			
+			# 地貌/敌人应用相对位移同步降落
+			if occupant_data and is_instance_valid(occupant_data["node"]):
+				var occupant_node = occupant_data["node"]
+				var target_y = occupant_node.position.y + drop_delta
+				if abs(drop_delta) > 0.1:
+					_tween_position_y(occupant_node, target_y, 0.3)
+			
+			# 碰撞区应用相对位移同步降落
+			if is_instance_valid(collision):
+				var target_y = collision.position.y + drop_delta
+				if abs(drop_delta) > 0.1:
+					_tween_position_y(collision, target_y, 0.3)
+			
+			_create_height_indicator(stack, height)
+			continue
+		
+		# ==========================================
+		# 高度>1的地块处理逻辑（使用相对位移法则）
+		# ==========================================
+		
+		# 1. 溶解下方所有地形方块（侧面）
+		# 假设前 height 个精灵是地形精灵（索引 0 到 height-1）
+		# 索引 height-1 是顶部地形精灵
+		# 之后的精灵是地貌精灵
+		for i in range(sprites.size()):
+			var sprite = sprites[i]
+			if not is_instance_valid(sprite):
+				continue
+			
+			if i < height - 1:  # 侧面地形精灵
+				# 溶解这个精灵（维持现有逻辑）
+				_tween_shader_param_single(sprite, "dissolve_blend", 1.0, 0.5)
+			else:  # 顶部地形精灵或地貌精灵
+				# 确保完全可见
+				_tween_shader_param_single(sprite, "dissolve_blend", 0.0, 0.1)
+				
+				# ★ 应用相对位移：当前位置 + 下落差值
+				# 这样保持所有顶层精灵和地貌精灵的相对位置关系
+				var target_y = sprite.position.y + drop_delta
+				_tween_position_y(sprite, target_y, 0.5)
+		
+		# 2. 移动地貌/敌人到扁平化位置（使用相对位移）
+		if is_instance_valid(occupant):
+			# ★ 应用相对位移：敌人当前位置 + 下落差值
+			# 不再硬编码 hitbox_offset_y - 20，保持原有精细排版
+			var target_y = occupant.position.y + drop_delta
+			GameLogger.debug("移动敌人，原始Y: " + str(occupant.position.y) + "，drop_delta: " + str(drop_delta) + "，目标Y: " + str(target_y), "HexMap")
+			_tween_position_y(occupant, target_y, 0.5)
+		
+		# 3. 移动碰撞区到扁平化位置（使用相对位移）
+		if is_instance_valid(collision):
+			# ★ 应用相对位移：碰撞区当前位置 + 下落差值
+			# 不再硬编码 hitbox_offset_y，保持原有位置关系
+			var target_y = collision.position.y + drop_delta
+			_tween_position_y(collision, target_y, 0.5)
+		
+		# 4. 创建高度指示器（光柱 + 标签）
+		# 注意：在_create_height_indicator中已经使用真实视觉中心计算锚点
+		_create_height_indicator(stack, height)
+
+## 恢复原始高度视图（物理坐标扁平化版本）
+func _restore_original_height_view() -> void:
+	GameLogger.info("恢复原始高度视图（恢复物理坐标）", "HexMap")
+	
+	# 停止所有光柱动画
+	for stack_key in height_view_pillar_tweens.keys():
+		var tween = height_view_pillar_tweens[stack_key]
+		if is_instance_valid(tween):
+			tween.stop()
+	height_view_pillar_tweens.clear()
+	
+	var total_stacks = 0
+	var total_sprites = 0
+	var total_occupants = 0
+	
+	for coord in stack_nodes.keys():
+		var stack = stack_nodes[coord]
+		if not is_instance_valid(stack):
+			continue
+		
+		total_stacks += 1
+		
+		# ★ 恢复原始材质和位置
+		if height_view_original_materials.has(stack):
+			var stack_data = height_view_original_materials[stack] as Dictionary
+			var stack_sprites_data = stack_data.get("sprites_data", []) as Array
+			var occupant_data = stack_data.get("occupant_data")
+			var collision_data = stack_data.get("collision_data")
+			
+			# 1. 恢复精灵的材质和位置
+			for sprite_data in stack_sprites_data:
+				if sprite_data == null:
+					continue
+				
+				var sprite = sprite_data["sprite"]
+				var original_material = sprite_data.get("original_material")
+				var original_position = sprite_data.get("original_position", Vector2.ZERO)
+				
+				if is_instance_valid(sprite):
+					total_sprites += 1
+					
+					# 恢复材质
+					if original_material:
+						sprite.material = original_material
+					
+					# 恢复原始位置（Y坐标补间动画）
+					var current_y = sprite.position.y
+					var target_y = original_position.y
+					if abs(current_y - target_y) > 0.1:
+						GameLogger.debug("恢复精灵位置，当前Y: " + str(current_y) + "，目标Y: " + str(target_y), "HexMap")
+						_tween_position_y(sprite, target_y, 0.5)
+			
+			# 2. 恢复地貌/敌人的原始位置
+			if occupant_data and is_instance_valid(occupant_data["node"]):
+				var occupant_node = occupant_data["node"]
+				var original_position = occupant_data.get("original_position", Vector2.ZERO)
+				var current_y = occupant_node.position.y
+				var target_y = original_position.y
+				if abs(current_y - target_y) > 0.1:
+					total_occupants += 1
+					GameLogger.debug("恢复敌人位置，当前Y: " + str(current_y) + "，目标Y: " + str(target_y), "HexMap")
+					_tween_position_y(occupant_node, target_y, 0.5)
+			
+			# 3. 恢复碰撞区的原始位置
+			if collision_data and is_instance_valid(collision_data["node"]):
+				var collision_node = collision_data["node"]
+				var original_position = collision_data.get("original_position", Vector2.ZERO)
+				var current_y = collision_node.position.y
+				var target_y = original_position.y
+				if abs(current_y - target_y) > 0.1:
+					_tween_position_y(collision_node, target_y, 0.5)
+		
+		var sprites = stack.get_meta("sprites") as Array
+		var height = stack.get_meta("height") as int
+		
+		# ★ 彻底清除所有精灵的溶解状态（双重保险）
+		# 先直接设置溶解值为0（立即生效）
+		for sprite in sprites:
+			if not is_instance_valid(sprite) or not sprite.material:
+				continue
+			sprite.set_instance_shader_parameter("dissolve_blend", 0.0)
+		
+		# 再使用补间动画确保平滑过渡（如果有需要）
+		for sprite in sprites:
+			if not is_instance_valid(sprite):
+				continue
+			_tween_shader_param_single(sprite, "dissolve_blend", 0.0, 0.3)
+		
+		# 移除高度指示器
+		_remove_height_indicator(stack)
+	
+	GameLogger.info("恢复完成，总计: " + str(total_stacks) + "个地块, " + str(total_sprites) + "个精灵, " + str(total_occupants) + "个敌人/地貌", "HexMap")
+	
+	# 清空状态
+	height_view_hovered_stack = null
+	height_view_selected_stack = null
+	height_view_original_materials.clear()
+
+## 为单个精灵设置shader参数补间（辅助函数）
+func _tween_shader_param_single(sprite: Sprite2D, param_name: String, target_val: float, duration: float) -> void:
+	if not is_instance_valid(sprite) or not sprite.material:
+		return
+	
+	var current_val = sprite.get_instance_shader_parameter(param_name)
+	if current_val == null:
+		current_val = 0.0
+	
+	# 创建补间动画
+	var tw = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_method(func(val: float):
+		if is_instance_valid(sprite) and sprite.material:
+			sprite.set_instance_shader_parameter(param_name, val)
+	, current_val, target_val, duration)
+
+## 为任意节点设置Y坐标补间（辅助函数，用于物理坐标扁平化）
+func _tween_position_y(node: Node2D, target_y: float, duration: float) -> void:
+	if not is_instance_valid(node):
+		return
+	
+	var current_y = node.position.y
+	
+	# 创建补间动画
+	var tw = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_method(func(y_val: float):
+		if is_instance_valid(node):
+			node.position.y = y_val
+	, current_y, target_y, duration)
+
+## 创建高度指示器（光柱 + 高度标签）使用导出参数
+func _create_height_indicator(stack: Area2D, original_height: int) -> void:
+	if not is_instance_valid(stack):
+		return
+	
+	# 移除可能已存在的指示器
+	_remove_height_indicator(stack)
+	
+	# 计算顶部位置
+	var sprites = stack.get_meta("sprites") as Array
+	if sprites.is_empty():
+		return
+	
+	# ★ 精准抓取顶层地砖精灵（避免抓取地貌精灵）
+	# original_height 表示地形精灵的数量，索引 original_height-1 是顶层地砖
+	if original_height <= 0 or original_height - 1 >= sprites.size():
+		GameLogger.error("高度指示器计算错误：original_height=" + str(original_height) + ", sprites.size()=" + str(sprites.size()), "HexMap")
+		return
+	
+	var top_sprite = sprites[original_height - 1]  # 精确获取顶层地砖精灵
+	if not is_instance_valid(top_sprite):
+		return
+	
+	var pillar_position: Vector2
+	
+	if height_view_compressed:
+		# ★ 高度视图压缩模式：使用真实的视觉中心（考虑精灵 Offset(-256,-400)）
+		# 真正的视觉中心是 Vector2(hitbox_offset_x, hitbox_offset_y)
+		pillar_position = Vector2(hitbox_offset_x, hitbox_offset_y) + height_view_pillar_offset
+		GameLogger.debug("压缩模式高度指示器，真实视觉中心锚点: " + str(pillar_position) + "，原始高度: " + str(original_height), "HexMap")
+	else:
+		# 原始模式：基于顶部精灵的垂直位置计算，使用真实视觉中心
+		# 顶部精灵的 position.y 已经考虑了高度堆叠，加上 hitbox_offset_y 得到真实视觉中心
+		pillar_position = Vector2(hitbox_offset_x, top_sprite.position.y + hitbox_offset_y) + height_view_pillar_offset
+		GameLogger.debug("原始模式高度指示器，真实视觉顶部锚点: " + str(pillar_position) + "，原始高度: " + str(original_height), "HexMap")
+	
+	# 创建光柱（Line2D）使用导出参数，长度与原始高度成正比
+	var line = Line2D.new()
+	line.name = "HeightIndicatorLine"
+	line.width = height_view_pillar_width
+	line.default_color = height_view_pillar_color
+	
+	# 计算光柱长度：基础长度 × 原始高度 × 比例因子（0.5使高度为6时不会太长）
+	# 最小长度保证高度为1时也有可见光柱
+	var pillar_length = height_view_pillar_length * original_height * 0.5
+	var min_pillar_length = height_view_pillar_length * 1.5  # 高度为1时的最小长度
+	if pillar_length < min_pillar_length:
+		pillar_length = min_pillar_length
+	
+	line.points = PackedVector2Array([
+		Vector2(0, 0),
+		Vector2(0, -pillar_length)  # 向上延伸，长度与原始高度成正比
+	])
+	line.position = pillar_position  # 定位到计算出的锚点
+	line.z_index = 1000  # 确保在最前面，高于所有降落后的地块
+	stack.add_child(line)
+	
+	# 创建高度标签使用导出参数
+	var label = Label.new()
+	label.name = "HeightIndicatorLabel"
+	label.text = str(original_height)
+	
+	# 应用字体设置
+	if height_label_font:
+		label.add_theme_font_override("font", height_label_font)
+	
+	label.add_theme_font_size_override("font_size", height_label_font_size)
+	label.add_theme_color_override("font_color", height_label_color)
+	label.add_theme_color_override("font_outline_color", height_label_outline_color)
+	label.add_theme_constant_override("outline_size", height_label_outline_size)
+	
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.position = pillar_position + height_label_offset  # 使用导出参数偏移
+	label.z_index = 1001  # 略高于光柱，确保标签可见
+	stack.add_child(label)
+	
+	# 存储引用以便后续移除
+	stack.set_meta("height_indicator_line", line)
+	stack.set_meta("height_indicator_label", label)
+	
+	# ★ 始终存储光柱引用用于动画（在高度视图模式下使用）
+	stack.set_meta("height_view_pillar", line)
+	GameLogger.debug("已存储光柱引用到height_view_pillar元数据", "HexMap")
+
+## 移除高度指示器
+func _remove_height_indicator(stack: Area2D) -> void:
+	if not is_instance_valid(stack):
+		return
+	
+	if stack.has_meta("height_indicator_line"):
+		var line = stack.get_meta("height_indicator_line")
+		if is_instance_valid(line):
+			line.queue_free()
+		stack.set_meta("height_indicator_line", null)
+	
+	if stack.has_meta("height_indicator_label"):
+		var label = stack.get_meta("height_indicator_label")
+		if is_instance_valid(label):
+			label.queue_free()
+		stack.set_meta("height_indicator_label", null)
+	
+	# 清除光柱引用（如果存在）
+	if stack.has_meta("height_view_pillar"):
+		stack.set_meta("height_view_pillar", null)
+
+
+## ==========================================
+## ★ 视角切换按钮 UI
+## ==========================================
+
+
+
+## 按钮按下回调
+func _on_height_view_toggle_pressed() -> void:
+	toggle_height_view()
+
+## ==========================================
+## ★ 高度视图鼠标交互系统
+## ==========================================
+
+## 开始光柱浮动动画（鼠标悬停时调用）
+func _start_pillar_floating_animation(stack: Area2D) -> void:
+	if not height_view_compressed or not is_instance_valid(stack):
+		return
+	
+	# 获取光柱引用
+	var pillar = stack.get_meta("height_view_pillar") if stack.has_meta("height_view_pillar") else null
+	if not is_instance_valid(pillar):
+		GameLogger.debug("光柱引用无效，无法启动浮动动画", "HexMap")
+		return
+	
+	GameLogger.debug("开始光柱浮动动画，幅度: " + str(height_view_hover_amplitude) + "，速度: " + str(height_view_hover_speed), "HexMap")
+	
+	# 停止现有动画（如果存在）
+	if height_view_pillar_tweens.has(stack):
+		var existing_tween = height_view_pillar_tweens[stack]
+		if is_instance_valid(existing_tween):
+			existing_tween.stop()
+	
+	# 创建新的浮动动画
+	var original_y = pillar.position.y
+	var tween = create_tween()
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	
+	# 上下浮动动画
+	tween.tween_property(pillar, "position:y", original_y - height_view_hover_amplitude, height_view_hover_speed / 2.0)
+	tween.tween_property(pillar, "position:y", original_y + height_view_hover_amplitude, height_view_hover_speed)
+	tween.tween_property(pillar, "position:y", original_y, height_view_hover_speed / 2.0)
+	
+	# 保存动画引用
+	height_view_pillar_tweens[stack] = tween
+
+## 停止光柱浮动动画（鼠标离开时调用）
+func _stop_pillar_floating_animation(stack: Area2D) -> void:
+	if not height_view_compressed or not is_instance_valid(stack):
+		return
+	
+	# 停止动画
+	if height_view_pillar_tweens.has(stack):
+		var tween = height_view_pillar_tweens[stack]
+		if is_instance_valid(tween):
+			tween.stop()
+		
+		# 恢复原始位置
+		var pillar = stack.get_meta("height_view_pillar") if stack.has_meta("height_view_pillar") else null
+		if is_instance_valid(pillar):
+			var original_y = pillar.position.y
+			# 快速平滑返回
+			var restore_tween = create_tween()
+			restore_tween.set_trans(Tween.TRANS_SINE)
+			restore_tween.set_ease(Tween.EASE_IN_OUT)
+			restore_tween.tween_property(pillar, "position:y", original_y, 0.2)
+
+## 应用点击高亮效果（点击地块时调用）
+func _apply_click_highlight(stack: Area2D) -> void:
+	if not height_view_compressed or not is_instance_valid(stack):
+		return
+	
+	# 移除之前选中的地块高亮
+	if is_instance_valid(height_view_selected_stack) and height_view_selected_stack != stack:
+		_remove_click_highlight(height_view_selected_stack)
+	
+	# 应用新地块高亮
+	height_view_selected_stack = stack
+	
+	# 通过shader参数应用白色边框
+	var sprites = stack.get_meta("sprites") as Array
+	for sprite in sprites:
+		if not is_instance_valid(sprite) or not sprite.material:
+			continue
+		
+		# 设置点击高亮参数
+		sprite.set_instance_shader_parameter("click_highlight", 1.0)
+		sprite.set_instance_shader_parameter("click_highlight_width", height_view_click_highlight_width)
+		sprite.set_instance_shader_parameter("click_highlight_color", height_view_click_highlight_color)
+
+## 移除点击高亮效果
+func _remove_click_highlight(stack: Area2D) -> void:
+	if not is_instance_valid(stack):
+		return
+	
+	var sprites = stack.get_meta("sprites") as Array
+	for sprite in sprites:
+		if not is_instance_valid(sprite) or not sprite.material:
+			continue
+		
+		# 移除点击高亮
+		sprite.set_instance_shader_parameter("click_highlight", 0.0)
+
+## 高度视图下的鼠标悬停处理
+func _on_stack_hover_height_view(stack: Area2D, is_entered: bool) -> void:
+	# 视觉状态锁：防止拖拽时清除高亮和消融效果
+	if is_visuals_locked:
+		return
+	
+	if not height_view_compressed:
+		return
+	
+	if is_entered:
+		# 鼠标进入：开始光柱浮动动画
+		GameLogger.debug("高度视图鼠标进入地块，启动光柱动画", "HexMap")
+		height_view_hovered_stack = stack
+		_start_pillar_floating_animation(stack)
+	else:
+		# 鼠标离开：停止光柱浮动动画
+		GameLogger.debug("高度视图鼠标离开地块，停止光柱动画", "HexMap")
+		if height_view_hovered_stack == stack:
+			height_view_hovered_stack = null
+		_stop_pillar_floating_animation(stack)
+
+## 高度视图下的鼠标点击处理
+func _on_stack_input_height_view(viewport: Node, event: InputEvent, shape_idx: int, stack: Area2D) -> void:
+	if not height_view_compressed:
+		return
+	
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			# 应用点击高亮效果
+			_apply_click_highlight(stack)
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			# 右键取消高亮
+			if height_view_selected_stack == stack:
+				_remove_click_highlight(stack)
+				height_view_selected_stack = null
+
+
+## 统一开启或关闭所有地块的鼠标交互
+func set_tiles_interactive(enabled: bool) -> void:
+	for stack in stack_nodes.values():
+		if is_instance_valid(stack) and stack is Area2D:
+			stack.input_pickable = enabled
+	GameLogger.debug("地块交互状态已设置为: " + str(enabled), "HexMap")
+
+
+## 锁定或解锁地块的视觉状态（保留当前的高亮和消融效果）
+func set_visuals_locked(locked: bool) -> void:
+	is_visuals_locked = locked
+	GameLogger.debug("地块视觉状态锁已设置为: " + str(locked), "HexMap")
+	# 解锁时，强制清理一下可能残留的错误状态（因为鼠标可能已经移走了）
+	if not locked:
+		hovered_stacks.clear()
+		_update_highlight()

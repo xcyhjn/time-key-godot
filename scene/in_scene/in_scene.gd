@@ -4,8 +4,8 @@ extends Control
 var hand_scene = load("res://addons/card-framework/hand.tscn")
 var pile_scene = load("res://addons/card-framework/pile.tscn")
 # 请确保这里路径正确，必须指向你真实的卡牌场景
-var card_scene_ref = load("res://scenes/custom_card.tscn")
-var pile_viewer_scene = preload("res://scenes/pile_viewer.tscn")
+var card_scene_ref = load("res://scene/card/custom_card.tscn")
+var pile_viewer_scene = preload("res://scene/pile/pile_viewer.tscn")
 
 # 弃牌堆显示
 var player_hand: Hand
@@ -998,7 +998,7 @@ func _on_shop_button_pressed():
 	hide_ui_for_external_scene()
 	
 	# 加载并显示商店场景
-	var shop_scene = preload("res://scenes/rewards/shop.tscn")
+	var shop_scene = preload("res://scene/in_scene/rewards/shop.tscn")
 	if is_instance_valid(shop_scene):
 		var shop_instance = shop_scene.instantiate()
 		add_child(shop_instance)
@@ -1027,7 +1027,7 @@ func _on_acquire_reward_button_pressed():
 	# 隐藏除hexmap和时间币外的所有UI
 	hide_ui_for_external_scene()
 	
-	var acquire_scene = preload("res://scenes/rewards/acquire_reward.tscn")
+	var acquire_scene = preload("res://scene/in_scene/rewards/acquire_reward.tscn")
 	if is_instance_valid(acquire_scene):
 		var acquire_instance = acquire_scene.instantiate()
 		add_child(acquire_instance)
@@ -1052,7 +1052,7 @@ func _on_remove_reward_button_pressed():
 	# 隐藏除hexmap和时间币外的所有UI
 	hide_ui_for_external_scene()
 	
-	var remove_scene = preload("res://scenes/rewards/remove_reward.tscn")
+	var remove_scene = preload("res://scene/in_scene/rewards/remove_reward.tscn")
 	if is_instance_valid(remove_scene):
 		var remove_instance = remove_scene.instantiate()
 		add_child(remove_instance)
@@ -1077,7 +1077,7 @@ func _on_craft_reward_button_pressed():
 	# 隐藏除hexmap和时间币外的所有UI
 	hide_ui_for_external_scene()
 	
-	var craft_scene = preload("res://scenes/rewards/craft_reward.tscn")
+	var craft_scene = preload("res://scene/in_scene/rewards/craft_reward.tscn")
 	if is_instance_valid(craft_scene):
 		var craft_instance = craft_scene.instantiate()
 		add_child(craft_instance)
@@ -1403,7 +1403,7 @@ func _on_victory_triggered() -> void:
 	hide_ui_for_external_scene()
 	
 	# 2. 加载胜利演出场景
-	var victory_scene = preload("res://scenes/ui/VictoryOrchestrator.tscn")
+	var victory_scene = preload("res://scene/game_win/VictoryOrchestrator.tscn")
 	if not is_instance_valid(victory_scene):
 		GameLogger.error("无法加载胜利演出场景", "Project")
 		return

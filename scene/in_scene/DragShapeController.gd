@@ -202,6 +202,11 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	# 发射拖拽开始信号（用于时间轴可视化器）
 	drag_started.emit(card, current_shape_coords)
 
+	# ★ 允许时间轴点击缩放（卡牌选中时）
+	if timeline_ui and timeline_ui.has_method("set_allow_click_to_expand"):
+		timeline_ui.set_allow_click_to_expand(true)
+		GameLogger.debug("已启用时间轴点击缩放权限（卡牌选中中）", "DragShapeController")
+
 	# 唤起时间轴
 	if timeline_ui.has_method("toggle_expand"):
 		timeline_ui.is_expanded = false
@@ -213,11 +218,14 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	GameLogger.debug("已禁用时间轴UI鼠标交互", "DragShapeController")
 	
 	var hex_map = _get_hex_map()
-	if hex_map and hex_map is Control:
-		hex_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		GameLogger.debug("已禁用HexMap鼠标交互", "DragShapeController")
+	if hex_map and hex_map.has_method("set_tiles_interactive"):
+		hex_map.set_tiles_interactive(false)
+		GameLogger.debug("已禁用地块交互", "DragShapeController")
+		# 锁定地块视觉状态，防止鼠标退出信号清除高亮和消融效果
+		if hex_map.has_method("set_visuals_locked"):
+			hex_map.set_visuals_locked(true)
 	else:
-		GameLogger.warning("未找到HexMap节点或不是Control类型", "DragShapeController")
+		GameLogger.warning("未找到HexMap节点或缺少set_tiles_interactive方法", "DragShapeController")
 
 	# 禁用网格单元格鼠标交互
 	_disable_grid_cells_mouse_filter()
@@ -314,9 +322,8 @@ func _process(_delta: float) -> void:
 ## 计算鼠标在时间轴网格上的坐标，更新卡牌位置，验证放置有效性
 ## 更新时间轴网格预览（蓝色/红色高亮）
 func _handle_timeline_hover(mouse_pos: Vector2) -> void:
-	var grid_bg_rect = timeline_ui.grid_background.get_global_rect()
-	var grid_bg_global_pos = grid_bg_rect.position
-	var local_mouse = mouse_pos - grid_bg_global_pos
+	# ★ 修复缩放导致的鼠标网格吸附错位：使用 get_local_mouse_position() 自动剔除父级缩放变换
+	var local_mouse = timeline_ui.grid_background.get_local_mouse_position()
 
 	# 计算网格坐标 - 从timeline_ui获取实际的格子大小和间距，确保与UI设置一致
 	var ui_slot_size = timeline_ui.slot_size if "slot_size" in timeline_ui else slot_size
@@ -326,10 +333,14 @@ func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 	var grid_y = int(local_mouse.y / cell_size)
 	var hover_grid_pos = Vector2i(grid_x, grid_y)
 	
-	# ★ 边界检查：确保网格坐标在合理范围内
+	# ★ 边界检查：确保网格坐标在合理范围内（包括负坐标保护）
 	var grid_width = timeline_ui.grid_width if "grid_width" in timeline_ui else 12
 	var grid_height = timeline_ui.grid_height if "grid_height" in timeline_ui else 3
 	var is_in_grid_bounds = (grid_x >= 0 and grid_x < grid_width and grid_y >= 0 and grid_y < grid_height)
+	# ★ 额外保护：防止在网格左侧或上方悬浮时产生负数数组越界
+	if local_mouse.x < 0 or local_mouse.y < 0:
+		is_in_grid_bounds = false
+		GameLogger.debug("鼠标位于网格背景左侧或上方，标记为无效区域", "DragShapeController")
 	
 	# ★ 修复编译错误：声明未使用的变量（原网格吸附相关变量）
 	# 变量已移除，网格吸附功能已取消
@@ -341,8 +352,7 @@ func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 	# 时间轴悬停调试信息 - 详细版本
 	GameLogger.debug("时间轴悬停调试: \n" +
 		"  - 鼠标位置: " + str(mouse_pos) + "\n" +
-		"  - 网格背景全局位置: " + str(grid_bg_global_pos) + "\n" +
-		"  - 局部鼠标位置: " + str(local_mouse) + "\n" +
+		"  - 网格背景本地鼠标位置: " + str(local_mouse) + " (已自动剔除缩放变换)\n" +
 		"  - 格子大小: " + str(cell_size) + " (ui_slot_size=" + str(ui_slot_size) + ", ui_spacing=" + str(ui_spacing) + ")" + "\n" +
 		"  - 网格坐标: " + str(hover_grid_pos) + "\n" +
 		"  - 网格边界检查: " + str(is_in_grid_bounds) + " (范围: X[0-" + str(grid_width-1) + "], Y[0-" + str(grid_height-1) + "])" + "\n" +
@@ -570,6 +580,11 @@ func _end_dragging() -> void:
 			timeline_ui.collapse()
 		elif timeline_ui.has_method("toggle_expand"):
 			timeline_ui.toggle_expand()
+		
+		# ★ 禁用时间轴点击缩放（卡牌拖拽结束）
+		if timeline_ui.has_method("set_allow_click_to_expand"):
+			timeline_ui.set_allow_click_to_expand(false)
+			GameLogger.debug("已禁用时间轴点击缩放权限（卡牌拖拽结束）", "DragShapeController")
 
 	# 隐藏提示
 	if is_instance_valid(cursor_tooltip):
@@ -607,9 +622,12 @@ func _end_dragging() -> void:
 func _restore_mouse_filters() -> void:
 	# 恢复地块容器鼠标交互
 	var hex_map = _get_hex_map()
-	if hex_map and hex_map is Control:
-		hex_map.mouse_filter = Control.MOUSE_FILTER_PASS
-		GameLogger.debug("已恢复地块容器鼠标交互", "DragShapeController")
+	if hex_map and hex_map.has_method("set_tiles_interactive"):
+		hex_map.set_tiles_interactive(true)
+		GameLogger.debug("已恢复地块交互", "DragShapeController")
+		# 解锁地块视觉状态，允许鼠标悬停事件恢复正常
+		if hex_map.has_method("set_visuals_locked"):
+			hex_map.set_visuals_locked(false)
 
 	# 恢复时间轴UI鼠标交互
 	if timeline_ui and timeline_ui is Control:
@@ -805,17 +823,25 @@ func try_place_shape() -> void:
 		_end_dragging()
 		return
 
-	var grid_bg_rect = timeline_ui.grid_background.get_global_rect()
-	var local_mouse = mouse_pos - grid_bg_rect.position
+	# ★ 修复实际放置判定：与 _handle_timeline_hover 保持一致的坐标计算
+	# 使用 get_local_mouse_position() 自动剔除父级缩放变换，解决视觉预览正确但实际放置位置偏移的 Bug
+	var local_mouse = timeline_ui.grid_background.get_local_mouse_position()
+	
+	# ★ 负数越界保护：防止在网格左侧或上方悬浮时产生无效坐标
+	if local_mouse.x < 0 or local_mouse.y < 0:
+		GameLogger.warning("鼠标位于网格背景左侧或上方，local_mouse=" + str(local_mouse) + "，坐标越界，触发拒绝动画", "DragShapeController")
+		_play_reject_animation()
+		return
 	
 	# 从timeline_ui获取实际的格子大小和间距，确保与UI设置一致
 	var ui_slot_size = timeline_ui.slot_size if "slot_size" in timeline_ui else slot_size
 	var ui_spacing = timeline_ui.spacing if "spacing" in timeline_ui else spacing
+	var cell_size = ui_slot_size + ui_spacing
 	GameLogger.debug("网格计算参数: slot_size=" + str(ui_slot_size) + ", spacing=" + str(ui_spacing) + 
-		", grid_bg_rect=" + str(grid_bg_rect) + ", local_mouse=" + str(local_mouse), "DragShapeController")
+		", cell_size=" + str(cell_size) + ", local_mouse=" + str(local_mouse), "DragShapeController")
 	
-	var grid_x = int(local_mouse.x / (ui_slot_size + ui_spacing))
-	var grid_y = int(local_mouse.y / (ui_slot_size + ui_spacing))
+	var grid_x = int(local_mouse.x / cell_size)
+	var grid_y = int(local_mouse.y / cell_size)
 	var origin_pos = Vector2i(grid_x, grid_y)
 	
 	# ★ 边界检查：确保计算的网格坐标在合理范围内
@@ -984,34 +1010,38 @@ func _play_placement_animation(grid_pos: Vector2i) -> void:
 		timeline_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		GameLogger.debug("已禁用时间轴UI鼠标交互", "DragShapeController")
 
-	# 计算目标位置（时间轴网格中的位置）
-	# 从timeline_ui获取实际的格子大小和间距，确保与UI设置一致
-	var ui_slot_size = timeline_ui.slot_size if "slot_size" in timeline_ui else slot_size
-	var ui_spacing = timeline_ui.spacing if "spacing" in timeline_ui else spacing
+	# ★ 修复缩放导致的卡牌放置动画飞偏：直接使用 grid_cells 字典获取精准位置
+	var grid_cell_center = Vector2.ZERO
+	if "grid_cells" in timeline_ui and timeline_ui.grid_cells.has(grid_pos):
+		var target_cell = timeline_ui.grid_cells[grid_pos]
+		# target_cell.global_position 是绝对精准的（已包含所有父级变换）
+		# size 乘以 timeline_ui 的实际 scale 获取真实视觉大小
+		var actual_cell_size = target_cell.size * timeline_ui.scale
+		grid_cell_center = target_cell.global_position + (actual_cell_size / 2.0) + float_offset
+		GameLogger.debug("使用 grid_cells 精确计算中心点: 目标格子=" + str(target_cell) + 
+			", 全局位置=" + str(target_cell.global_position) + 
+			", 实际大小=" + str(actual_cell_size) + 
+			", 时间轴缩放=" + str(timeline_ui.scale), "DragShapeController")
+	else:
+		# 兜底方案：使用鼠标位置（理论上不应该发生）
+		grid_cell_center = get_global_mouse_position()
+		GameLogger.warning("grid_cells 字典不存在或缺少目标格子，使用鼠标位置作为兜底: " + str(grid_cell_center), "DragShapeController")
 	
-	var snap_x = grid_pos.x * (ui_slot_size + ui_spacing)
-	var snap_y = grid_pos.y * (ui_slot_size + ui_spacing)
-	var grid_cell_top_left = timeline_ui.grid_background.global_position + Vector2(snap_x, snap_y)
-	
-	# 计算网格单元中心位置（卡牌中心应对齐的位置）
-	var cell_size = ui_slot_size + ui_spacing
-	var grid_cell_center = grid_cell_top_left + Vector2(cell_size, cell_size) / 2 + float_offset
-	
-	# 将卡牌中心位置转换为左上角位置
+	# 将卡牌中心位置转换为左上角位置（注意卡牌的目标 scale 是 0.9）
 	var card_top_left = grid_cell_center
 	if current_card.has_method("get_size"):
 		var card_size = current_card.get_size()
-		var card_scale = current_card.scale
-		card_top_left -= card_size * card_scale / 2
+		var target_card_scale = Vector2(0.9, 0.9)  # 卡牌动画目标缩放
+		card_top_left -= card_size * target_card_scale / 2
 		GameLogger.debug("放置动画卡牌位置计算: 网格单元中心=" + str(grid_cell_center) + 
 			", 卡牌大小=" + str(card_size) + 
-			", 缩放=" + str(card_scale) + 
+			", 目标缩放=" + str(target_card_scale) + 
 			", 左上角=" + str(card_top_left), "DragShapeController")
 	
 	GameLogger.debug("放置动画目标位置: " + str(card_top_left) + 
 		", grid_pos=" + str(grid_pos) + 
-		", slot_size=" + str(ui_slot_size) + 
-		", spacing=" + str(ui_spacing), "DragShapeController")
+		", 时间轴缩放=" + str(timeline_ui.scale) + 
+		", 是否使用精确计算=" + str("grid_cells" in timeline_ui and timeline_ui.grid_cells.has(grid_pos)), "DragShapeController")
 
 	# 创建放置动画：飞向网格位置并适当缩小
 	var tw = create_tween()
