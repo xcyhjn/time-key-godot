@@ -1,27 +1,31 @@
 [gd_scene format=3 uid="uid://jek608mf31r8"]
 
-[ext_resource type="Texture2D" uid="uid://ca7ln3w63nyne" path="res://image/behide.png" id="2_6xffl"]
-[ext_resource type="Texture2D" uid="uid://5eq5pmcy6x7l" path="res://image/inscene_block/grass.png" id="2_ioxnp"]
-[ext_resource type="Script" uid="uid://istgpa5ab80k" path="res://scene/in_scene/camera_2d_inscene.gd" id="2_nbemg"]
-[ext_resource type="Script" uid="uid://biddqg06qvndu" path="res://scene/in_scene/hex_map.gd" id="2_uthkf"]
-[ext_resource type="Texture2D" uid="uid://cn6lxb76f7fmb" path="res://image/inscene_block/dirt.png" id="3_djuk3"]
-[ext_resource type="Shader" uid="uid://pdp2mrgq6od7" path="res://shaders/hex.gdshader" id="4_ioxnp"]
-[ext_resource type="Script" uid="uid://bjwid4x1can0t" path="res://scene/in_scene/enermy/health_bar.gd" id="5_ee15a"]
-[ext_resource type="Script" uid="uid://dxge25pjqhhag" path="res://scene/in_scene/in_scene.gd" id="6_a7mxu"]
-[ext_resource type="Texture2D" uid="uid://da1qrxudkpuji" path="res://image/Play.png" id="8_6ipd3"]
-[ext_resource type="Texture2D" uid="uid://dwkqtxwdvfuqx" path="res://image/PlayPause.png" id="9_hyn5d"]
-[ext_resource type="Texture2D" uid="uid://b080xjkdaw1he" path="res://image/fc1084.png" id="10_dsnwd"]
-[ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="11_sa0gx"]
-[ext_resource type="Script" uid="uid://b57d8s2xwou05" path="res://scene/in_scene/timeline/TimelineManager.gd" id="13_agq83"]
-[ext_resource type="Script" uid="uid://cgstk6buif658" path="res://scene/in_scene/DragShapeController.gd" id="14_3560t"]
-[ext_resource type="Shader" uid="uid://dr2hh00drgq38" path="res://shaders/shape_drag_state.gdshader.gdshader" id="15_a7mxu"]
-[ext_resource type="Script" uid="uid://cpufturn45tyx" path="res://scene/in_scene/enermy/enemy_intent_manager.gd" id="15_t5bpg"]
-[ext_resource type="Script" uid="uid://o24takqau3p" path="res://scene/in_scene/timeline/timeline_visualizer.gd" id="16_85ml3"]
-[ext_resource type="Shader" uid="uid://d3sbyeeqsa34" path="res://shaders/pulse_highlight.gdshader.gdshader" id="17_85ml3"]
-[ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="18_y13gh"]
+[ext_resource type="Script" uid="uid://biddqg06qvndu" path="res://scene/in_scene/hex_map.gd" id="1_qt2vb"]
+[ext_resource type="Texture2D" uid="uid://5eq5pmcy6x7l" path="res://image/inscene_block/grass.png" id="2_27d84"]
+[ext_resource type="Texture2D" uid="uid://cn6lxb76f7fmb" path="res://image/inscene_block/dirt.png" id="3_x0x3q"]
+[ext_resource type="Shader" uid="uid://pdp2mrgq6od7" path="res://shaders/hex.gdshader" id="4_tpwa4"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="5_6migj"]
+[ext_resource type="Script" uid="uid://istgpa5ab80k" path="res://scene/in_scene/camera_2d_inscene.gd" id="7_bbffy"]
+[ext_resource type="Texture2D" uid="uid://ca7ln3w63nyne" path="res://image/behide.png" id="8_hr4wu"]
+[ext_resource type="Texture2D" uid="uid://da1qrxudkpuji" path="res://image/Play.png" id="9_5dcpt"]
+[ext_resource type="Texture2D" uid="uid://dwkqtxwdvfuqx" path="res://image/PlayPause.png" id="10_c78qr"]
+[ext_resource type="Texture2D" uid="uid://b080xjkdaw1he" path="res://image/fc1084.png" id="11_oyewm"]
+[ext_resource type="Script" uid="uid://b57d8s2xwou05" path="res://scene/in_scene/timeline/TimelineManager.gd" id="13_4x367"]
+[ext_resource type="Script" uid="uid://cgstk6buif658" path="res://scene/in_scene/DragShapeController.gd" id="14_j0ayu"]
+[ext_resource type="Shader" uid="uid://dr2hh00drgq38" path="res://shaders/shape_drag_state.gdshader.gdshader" id="15_wk3vv"]
+[ext_resource type="Script" uid="uid://cpufturn45tyx" path="res://scene/in_scene/enermy/enemy_intent_manager.gd" id="16_vl7dm"]
+[ext_resource type="Script" uid="uid://o24takqau3p" path="res://scene/in_scene/timeline/timeline_visualizer.gd" id="17_utgoe"]
+[ext_resource type="Script" uid="uid://dxge25pjqhhag" path="res://scene/in_scene/in_scene.gd" id="18_0vlha"]
+[ext_resource type="Shader" uid="uid://d3sbyeeqsa34" path="res://shaders/pulse_highlight.gdshader.gdshader" id="19_b3wb3"]
+[ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="20_lifwa"]
+[ext_resource type="Script" uid="uid://ddrq5364kxv52" path="res://scene/global/global_timecoin.gd" id="21_6ecqr"]
+[ext_resource type="Texture2D" uid="uid://dhlwuga6drnjh" path="res://image/timecoin_ui_back.png" id="22_ma4x0"]
+[ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="23_1wmus"]
+[ext_resource type="Shader" uid="uid://b81yjopqdvi60" path="res://shaders/hourglass_shake.gdshader" id="24_rejwe"]
+[ext_resource type="Texture2D" uid="uid://cxxrld3kjarqv" path="res://image/hourglass.png" id="25_7x3b2"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_djuk3"]
-shader = ExtResource("4_ioxnp")
+shader = ExtResource("4_tpwa4")
 shader_parameter/max_float_height = -35.0
 shader_parameter/wiggle_speed = 3.5
 shader_parameter/wiggle_amount = 5.0
@@ -33,28 +37,39 @@ shader_parameter/select_overlay_alpha = 0.27600001311
 shader_parameter/dissolve_block_size = 40.0
 shader_parameter/dissolve_edge_color = Color(2, 1.5, 0.5, 1)
 
-[node name="project" type="Control" unique_id=125971746]
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_pg1mb"]
+texture = ExtResource("22_ma4x0")
+expand_margin_left = 60.0
+expand_margin_top = 60.0
+expand_margin_right = 60.0
+expand_margin_bottom = 60.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lh47e"]
+shader = ExtResource("24_rejwe")
+shader_parameter/shake_enabled = 0.0
+shader_parameter/shake_intensity = 0.5
+shader_parameter/shake_frequency = 15.0
+shader_parameter/random_seed = 123.456
+shader_parameter/color_pulse_strength = 0.1
+
+[node name="in_scene" type="Control" unique_id=2096814788]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 14.0
-offset_top = 14.0
-offset_right = 14.0
-offset_bottom = 14.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="map" type="Control" parent="." unique_id=523460233]
+[node name="map" type="Control" parent="." unique_id=505748231]
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="HexMap" type="Node2D" parent="map" unique_id=1540088708]
-script = ExtResource("2_uthkf")
-hex_top_tex = ExtResource("2_ioxnp")
-hex_side_tex = ExtResource("3_djuk3")
+[node name="HexMap" type="Node2D" parent="map" unique_id=289534085]
+script = ExtResource("1_qt2vb")
+hex_top_tex = ExtResource("2_27d84")
+hex_side_tex = ExtResource("3_x0x3q")
 block_material = SubResource("ShaderMaterial_djuk3")
 inner_tier_radius = 2
 hitbox_width = 200.0
@@ -62,58 +77,49 @@ hitbox_base_height = 120.0
 hitbox_offset_x = 0.0
 hitbox_offset_y = -100.0
 
-[node name="HealthBar" type="Control" parent="map/HexMap" unique_id=1619581254]
-layout_mode = 3
-anchors_preset = 0
-offset_left = -1804.0
-offset_top = -351.0
-offset_right = 106.0
-offset_bottom = 716.0
-script = ExtResource("5_ee15a")
+[node name="Camera2D" type="Camera2D" parent="map" unique_id=1566374518]
+position = Vector2(965, 539)
+script = ExtResource("7_bbffy")
 
-[node name="Camera2D" type="Camera2D" parent="map" unique_id=388682418]
-position = Vector2(631, 402)
-script = ExtResource("2_nbemg")
-
-[node name="ui" type="CanvasLayer" parent="." unique_id=2081110385]
+[node name="ui" type="CanvasLayer" parent="." unique_id=1684925769]
 layer = 1000
 
-[node name="drop_area" type="Control" parent="ui" unique_id=706571820]
+[node name="drop_area" type="Control" parent="ui" unique_id=149698994]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 2
 
-[node name="drop_list" type="TextureRect" parent="ui/drop_area" unique_id=1780229885]
+[node name="drop_list" type="TextureRect" parent="ui/drop_area" unique_id=1436272842]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="ScrollContainer" type="ScrollContainer" parent="ui/drop_area/drop_list" unique_id=611349573]
+[node name="ScrollContainer" type="ScrollContainer" parent="ui/drop_area/drop_list" unique_id=1136886383]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="card" type="GridContainer" parent="ui/drop_area/drop_list/ScrollContainer" unique_id=1446813935]
+[node name="card" type="GridContainer" parent="ui/drop_area/drop_list/ScrollContainer" unique_id=1549886401]
 layout_mode = 2
 
-[node name="back" type="Button" parent="ui/drop_area" unique_id=1613687336]
+[node name="back" type="Button" parent="ui/drop_area" unique_id=1027671209]
 layout_mode = 0
 offset_right = 8.0
 offset_bottom = 8.0
 
-[node name="DeckButton" type="TextureButton" parent="ui" unique_id=1403410077]
+[node name="DeckButton" type="TextureButton" parent="ui" unique_id=1748254046]
 custom_minimum_size = Vector2(125, 175)
-offset_left = 120.0
-offset_top = 803.0
-offset_right = 591.0526
-offset_bottom = 1468.7896
+offset_left = 73.0
+offset_top = 776.0
+offset_right = 544.0526
+offset_bottom = 1441.7896
 scale = Vector2(0.3, 0.3)
-texture_normal = ExtResource("2_6xffl")
+texture_normal = ExtResource("8_hr4wu")
 ignore_texture_size = true
 
-[node name="Label" type="Label" parent="ui/DeckButton" unique_id=1196368572]
+[node name="Label" type="Label" parent="ui/DeckButton" unique_id=155726935]
 custom_minimum_size = Vector2(-0.35, -40)
 layout_mode = 1
 anchors_preset = 3
@@ -125,20 +131,21 @@ offset_left = -51.052612
 offset_top = -92.4563
 grow_horizontal = 0
 grow_vertical = 0
+theme_override_fonts/font = ExtResource("5_6migj")
 theme_override_font_sizes/font_size = 64
 text = "1"
 
-[node name="DiscardButton" type="TextureButton" parent="ui" unique_id=1801291194]
+[node name="DiscardButton" type="TextureButton" parent="ui" unique_id=809995140]
 custom_minimum_size = Vector2(125, 175)
-offset_left = 1694.0
-offset_top = 748.0
-offset_right = 2164.0
-offset_bottom = 1420.5
+offset_left = 1720.0
+offset_top = 788.0
+offset_right = 2190.0
+offset_bottom = 1460.5
 scale = Vector2(0.3, 0.3)
-texture_normal = ExtResource("2_6xffl")
+texture_normal = ExtResource("8_hr4wu")
 ignore_texture_size = true
 
-[node name="Label" type="Label" parent="ui/DiscardButton" unique_id=1925595441]
+[node name="Label" type="Label" parent="ui/DiscardButton" unique_id=1461265274]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -149,97 +156,188 @@ offset_left = -40.0
 offset_top = -95.83325
 grow_horizontal = 0
 grow_vertical = 0
+theme_override_fonts/font = ExtResource("5_6migj")
 theme_override_font_sizes/font_size = 64
 text = "1"
 
-[node name="StartTurnButton" type="TextureButton" parent="ui" unique_id=763730376]
-offset_left = 125.0
-offset_top = 331.0
-offset_right = 141.0
-offset_bottom = 347.0
+[node name="StartTurnButton" type="TextureButton" parent="ui" unique_id=1659503511]
+offset_left = 37.000004
+offset_top = 328.00003
+offset_right = 53.000004
+offset_bottom = 344.00003
 scale = Vector2(10, 10)
-texture_normal = ExtResource("8_6ipd3")
+texture_normal = ExtResource("9_5dcpt")
 
-[node name="EndTurnButton" type="TextureButton" parent="ui" unique_id=841069993]
-offset_left = 1676.0
-offset_top = 463.0
-offset_right = 1692.0
-offset_bottom = 479.0
+[node name="EndTurnButton" type="TextureButton" parent="ui" unique_id=1176916968]
+offset_left = 1695.0
+offset_top = 410.0
+offset_right = 1711.0
+offset_bottom = 426.0
 scale = Vector2(10, 10)
-texture_normal = ExtResource("9_hyn5d")
+texture_normal = ExtResource("10_c78qr")
 
-[node name="EndCombatButton" type="TextureButton" parent="ui" unique_id=1563764840]
-offset_left = 1658.0
-offset_top = 210.0
-offset_right = 1733.0
-offset_bottom = 274.0
+[node name="EndCombatButton" type="TextureButton" parent="ui" unique_id=1009921236]
+visible = false
+offset_left = 1049.0
+offset_top = 185.0
+offset_right = 1124.0
+offset_bottom = 249.0
 scale = Vector2(3, 3)
-texture_normal = ExtResource("10_dsnwd")
+texture_normal = ExtResource("11_oyewm")
 
-[node name="TimelineUI" type="Control" parent="ui" unique_id=16653193]
+[node name="TimelineUI" type="Control" parent="ui" unique_id=533792028]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 490.0
-offset_right = 1278.0
+offset_left = 271.0
+offset_right = 955.0
 offset_bottom = 211.0
-script = ExtResource("11_sa0gx")
-expanded_offset_y = 50.0
-expanded_offset_x = -200.0
+script = ExtResource("23_1wmus")
 mask_color = Color(0.26657525, 0.26657513, 0.26657534, 0.6)
 mask_layer = 1
 
-[node name="ShapeLayer" type="Control" parent="ui/TimelineUI" unique_id=2107643462]
+[node name="ShapeLayer" type="Control" parent="ui/TimelineUI" unique_id=65457033]
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 2
 
-[node name="GridBackground" type="GridContainer" parent="ui/TimelineUI" unique_id=1213060656]
+[node name="GridBackground" type="GridContainer" parent="ui/TimelineUI" unique_id=199131485]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 columns = 12
 
-[node name="CursorTooltip" type="RichTextLabel" parent="ui" unique_id=596911744]
+[node name="CursorTooltip" type="RichTextLabel" parent="ui" unique_id=12040176]
 offset_right = 40.0
 offset_bottom = 23.0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
+theme_override_fonts/normal_font = ExtResource("5_6migj")
+theme_override_fonts/bold_font = ExtResource("5_6migj")
+theme_override_fonts/bold_italics_font = ExtResource("5_6migj")
+theme_override_fonts/italics_font = ExtResource("5_6migj")
+theme_override_fonts/mono_font = ExtResource("5_6migj")
 
-[node name="TimelineSystem" type="Node" parent="ui" unique_id=1646605329]
+[node name="TimelineSystem" type="Node" parent="ui" unique_id=201653844]
 
-[node name="TimelineManager" type="Node" parent="ui/TimelineSystem" unique_id=243223625]
-script = ExtResource("13_agq83")
+[node name="TimelineManager" type="Node" parent="ui/TimelineSystem" unique_id=2115352708]
+script = ExtResource("13_4x367")
 
-[node name="DragShapeController" type="Node2D" parent="ui/TimelineSystem" unique_id=1167908421]
-script = ExtResource("14_3560t")
+[node name="DragShapeController" type="Node2D" parent="ui/TimelineSystem" unique_id=516552955]
+script = ExtResource("14_j0ayu")
 slot_size = 40.0
 spacing = 2.0
 timeline_ui_path = NodePath("../../TimelineUI")
-drag_shader = ExtResource("15_a7mxu")
+drag_shader = ExtResource("15_wk3vv")
 cursor_tooltip_path = NodePath("../../CursorTooltip")
 timeline_manager_path = NodePath("../TimelineManager")
 
-[node name="EnemyIntentManager" type="Node" parent="ui/TimelineSystem" unique_id=890879926]
-script = ExtResource("15_t5bpg")
+[node name="EnemyIntentManager" type="Node" parent="ui/TimelineSystem" unique_id=1808612265]
+script = ExtResource("16_vl7dm")
 
-[node name="TimelineVisualizer" type="Node2D" parent="ui/TimelineSystem" unique_id=1253387566]
-script = ExtResource("16_85ml3")
+[node name="TimelineVisualizer" type="Node2D" parent="ui/TimelineSystem" unique_id=359348110]
+script = ExtResource("17_utgoe")
 timeline_ui_path = NodePath("../../TimelineUI")
 drag_shape_controller_path = NodePath("../DragShapeController")
 
-[node name="Main" type="Control" parent="ui" unique_id=1689513311]
+[node name="AcquireRewardButton" type="Button" parent="ui" unique_id=1860315344]
+offset_left = 33.0
+offset_top = 86.0
+offset_right = 150.0
+offset_bottom = 139.0
+text = "获取卡牌"
+
+[node name="CraftRewardButton" type="Button" parent="ui" unique_id=1723925105]
+offset_left = 33.0
+offset_top = 152.0
+offset_right = 150.0
+offset_bottom = 205.0
+text = "合成"
+
+[node name="RemoveRewardButton" type="Button" parent="ui" unique_id=1250307217]
+offset_left = 35.0
+offset_top = 220.0
+offset_right = 150.0
+offset_bottom = 271.0
+text = "删卡"
+
+[node name="ShopButton" type="Button" parent="ui" unique_id=827260404]
+offset_left = 35.0
+offset_top = 17.0
+offset_right = 150.0
+offset_bottom = 76.0
+text = "商店"
+
+[node name="HeightViewToggleButton" type="Button" parent="ui" unique_id=1242454706]
+offset_left = 1600.0
+offset_top = 288.0
+offset_right = 1713.0
+offset_bottom = 340.0
+text = "视角切换"
+
+[node name="WinButton" type="Button" parent="ui" unique_id=1004531811]
+offset_left = 85.0
+offset_top = 637.0
+offset_right = 221.0
+offset_bottom = 688.0
+theme_override_fonts/font = ExtResource("5_6migj")
+theme_override_font_sizes/font_size = 32
+text = "胜利结算"
+
+[node name="Main" type="Control" parent="ui" unique_id=921181149]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 2
-script = ExtResource("6_a7mxu")
-pulse_shader = ExtResource("17_85ml3")
+script = ExtResource("18_0vlha")
+pulse_shader = ExtResource("19_b3wb3")
 hand_y_offset = 100.0
 tooltip_bottom_margin = 20
+tooltip_effect_font = ExtResource("5_6migj")
 tooltip_offset_y = 40
 max_keywords_per_column = 5
 
-[node name="DimMenu" parent="ui" unique_id=319208608 instance=ExtResource("18_y13gh")]
+[node name="DimMenu" parent="ui" unique_id=1999609201 instance=ExtResource("20_lifwa")]
 visible = false
+script = null
+
+[node name="GlobalTimecoin" type="Node" parent="." unique_id=512071538]
+script = ExtResource("21_6ecqr")
+
+[node name="TimecoinCanvasLayer" type="CanvasLayer" parent="GlobalTimecoin" unique_id=1912998284]
+layer = 100
+
+[node name="TimecoinContainer" type="PanelContainer" parent="GlobalTimecoin/TimecoinCanvasLayer" unique_id=1557776462]
+custom_minimum_size = Vector2(100, 0)
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -273.0
+offset_top = 40.0
+offset_right = -50.0
+offset_bottom = 143.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxTexture_pg1mb")
+script = ExtResource("23_1wmus")
+
+[node name="HorizontalLayout" type="HBoxContainer" parent="GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer" unique_id=2056948486]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="TimecoinAmount" type="Label" parent="GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer/HorizontalLayout" unique_id=1826048272]
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("5_6migj")
+theme_override_font_sizes/font_size = 40
+text = "0"
+horizontal_alignment = 1
+
+[node name="HourglassIcon" type="TextureRect" parent="GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer/HorizontalLayout" unique_id=2133011414]
+material = SubResource("ShaderMaterial_lh47e")
+layout_mode = 2
+texture = ExtResource("25_7x3b2")
+expand_mode = 3
+stretch_mode = 4

@@ -1,0 +1,72 @@
+[gd_scene format=3 uid="uid://dxo156u2xl6i1"]
+
+[ext_resource type="Script" uid="uid://c6iwuhkwt5581" path="res://scene/in_scene/rewards/ShopManager.gd" id="1_rcy7u"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_le8b7"]
+
+[node name="Shop" type="CanvasLayer" unique_id=1068575831]
+script = ExtResource("1_rcy7u")
+card_display_size = Vector2(200, 280)
+
+[node name="Background" type="Panel" parent="." unique_id=682836356]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ShopGrid" type="GridContainer" parent="." unique_id=715922616]
+offset_left = 118.0
+offset_top = 66.0
+offset_right = 1449.0
+offset_bottom = 934.0
+
+[node name="Sidebar" type="VBoxContainer" parent="." unique_id=841017804]
+offset_left = 1515.0
+offset_top = 104.0
+offset_right = 1835.0
+offset_bottom = 901.0
+theme_override_constants/separation = 60
+alignment = 1
+
+[node name="BtnExit" type="Button" parent="Sidebar" unique_id=452528249]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_le8b7")
+theme_override_font_sizes/font_size = 40
+text = "退出"
+
+[node name="SpacerControl" type="Control" parent="Sidebar" unique_id=205110356]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="RefreshGroup" type="VBoxContainer" parent="Sidebar" unique_id=687945948]
+layout_mode = 2
+
+[node name="BtnRefresh" type="Button" parent="Sidebar/RefreshGroup" unique_id=2035905955]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_le8b7")
+theme_override_font_sizes/font_size = 40
+text = "刷新"
+
+[node name="LabelRefreshCost" type="Label" parent="Sidebar/RefreshGroup" unique_id=38702513]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_le8b7")
+theme_override_font_sizes/font_size = 32
+text = "50timecoin"
+horizontal_alignment = 1
+
+[node name="UpgradeGroup" type="VBoxContainer" parent="Sidebar" unique_id=985998006]
+layout_mode = 2
+
+[node name="BtnUpgrade" type="Button" parent="Sidebar/UpgradeGroup" unique_id=1662057288]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_le8b7")
+theme_override_font_sizes/font_size = 40
+text = "升级商店"
+
+[node name="LabelUpgradeCost" type="Label" parent="Sidebar/UpgradeGroup" unique_id=895755662]
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_le8b7")
+theme_override_font_sizes/font_size = 32
+text = "50timecoin"
+horizontal_alignment = 1

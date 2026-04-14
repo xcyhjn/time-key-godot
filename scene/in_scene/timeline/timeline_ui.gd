@@ -6,18 +6,10 @@ extends Control
 @export var grid_width: int = 12
 @export var grid_height: int = 3
 
-@export_group("Animation Settings")
-@export var expanded_scale: Vector2 = Vector2(1.5, 1.5)
-@export var expanded_offset_y: float = 150.0  # 放大后向下移动的距离
-@export var expanded_offset_x: float = 0.0  # 放大后水平移动的距离
-@export var anim_duration: float = 0.3
-
 @export_group("Layout Settings")
-@export var offset_left_debug: float = 490.0  # 左侧偏移，用于调试布局
-@export var offset_top_debug: float = 0.0  # 顶部偏移，用于调试布局
-@export var offset_right_debug: float = 1278.0  # 右侧偏移，用于调试布局
-@export var offset_bottom_debug: float = 211.0  # 底部偏移，用于调试布局
-@export var apply_offset_on_ready: bool = true  # 是否在_ready时应用offset设置
+@export var margin_top_preset: float = 0.0      # 紧贴屏幕最上沿的距离 (设为0即死死贴住)
+@export var expanded_scale: Vector2 = Vector2(1.5, 1.5)
+@export var anim_duration: float = 0.3
 
 @export_group("卡牌遮罩设置")
 @export var mask_color: Color = Color(0.75, 0.75, 0.75, 0.6)  # 浅灰色半透明遮罩
@@ -27,11 +19,11 @@ extends Control
 @onready var shape_layer = $ShapeLayer
 var background_mask: ColorRect  # 遮罩节点（运行时创建）
 
-var original_pos: Vector2
-var original_scale: Vector2
+
 var is_expanded: bool = false
 var hovered_action: TimelineAction = null
 var grid_cells: Dictionary = { }  # 存储网格单元引用，键：Vector2i，值：ColorRect
+var allow_click_to_expand: bool = false  # 是否允许通过点击缩放时间轴（常态下禁用，仅卡牌选中时启用）
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -74,39 +66,39 @@ func _find_timeline_manager() -> TimelineManager:
 
 
 ## 应用调试用的offset设置
-func _apply_offset_settings() -> void:
-	if not apply_offset_on_ready:
-		GameLogger.debug("跳过offset设置应用（apply_offset_on_ready为false）", "TimelineUI")
-		return
+func _apply_anchor_layout() -> void:
+	GameLogger.debug("应用响应式动态锚点布局", "TimelineUI")
 	
-	# 应用offset设置到Control节点
-	GameLogger.debug("应用offset调试设置: left=" + str(offset_left_debug) + 
-		", top=" + str(offset_top_debug) + 
-		", right=" + str(offset_right_debug) + 
-		", bottom=" + str(offset_bottom_debug), "TimelineUI")
+	# 1. 强制使用 Godot 原生预设：顶部居中
+	set_anchors_preset(Control.PRESET_CENTER_TOP, true)
 	
-	# 设置offset属性
-	offset_left = offset_left_debug
-	offset_top = offset_top_debug
-	offset_right = offset_right_debug
-	offset_bottom = offset_bottom_debug
+	# 2. 动态计算网格的【真实物理宽度】和【真实物理高度】
+	var actual_width = (grid_width * slot_size) + ((grid_width - 1) * spacing)
+	var actual_height = (grid_height * slot_size) + ((grid_height - 1) * spacing)
 	
-	# 验证布局是否有效
-	if offset_bottom <= offset_top:
-		GameLogger.warning("offset_bottom <= offset_top，控件高度可能为负或零！", "TimelineUI")
-		GameLogger.warning("当前值: offset_top=" + str(offset_top) + ", offset_bottom=" + str(offset_bottom), "TimelineUI")
+	# 3. 设置精确的偏移量（完美贴身包裹，彻底解决偏左问题）
+	offset_left = -actual_width / 2.0
+	offset_right = actual_width / 2.0
+	offset_top = margin_top_preset  # 紧贴屏幕顶部
+	offset_bottom = margin_top_preset + actual_height
 	
-	if offset_right <= offset_left:
-		GameLogger.warning("offset_right <= offset_left，控件宽度可能为负或零！", "TimelineUI")
-		GameLogger.warning("当前值: offset_left=" + str(offset_left) + ", offset_right=" + str(offset_right), "TimelineUI")
+	# 4. 强制底层立刻刷新布局，防止 size 计算滞后
+	force_update_transform()
+	
+	# 5. 精确设置缩放中心为【自身顶部正中心】
+	pivot_offset = Vector2(actual_width / 2.0, 0.0)
+	
+	# 6. 确保内部网格背景贴死左上角 (消除内部误差)
+	if is_instance_valid(grid_background):
+		grid_background.position = Vector2.ZERO
+		grid_background.size = size
+	
+	GameLogger.debug("布局应用完成: 真实尺寸(" + str(size.x) + "x" + str(size.y) + "), 缩放中心=" + str(pivot_offset), "TimelineUI")
 
 
 func _ready():
-	# 应用调试用的offset设置
-	_apply_offset_settings()
-	
-	original_pos = position
-	original_scale = scale
+	# 应用响应式锚点布局
+	_apply_anchor_layout()
 
 	# 设置时间轴层级，确保在卡牌之下但在其他UI之上
 	z_index = 100
@@ -129,6 +121,9 @@ func _ready():
 	if timeline_manager:
 		timeline_manager.action_placed.connect(_on_action_placed)
 		timeline_manager.timeline_cleared.connect(_on_timeline_cleared)
+	
+	# 初始化时间轴点击缩放权限为禁用状态
+	set_allow_click_to_expand(false)
 
 
 ## 创建背景遮罩（参考RewardManager的BackgroundMask）
@@ -241,52 +236,45 @@ func _on_timeline_cleared():
 # ==========================================
 func _gui_input(event):
 	# 点击时间轴放大并居中
+	# 常态下禁用点击缩放，只有当选中卡牌后才允许缩放
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		toggle_expand()
+		if allow_click_to_expand:
+			toggle_expand()
+		else:
+			GameLogger.debug("时间轴点击缩放已禁用（allow_click_to_expand=false）", "TimelineUI")
 
 
 func toggle_expand():
 	is_expanded = !is_expanded
 	var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-	# 控制遮罩显示/隐藏
-	GameLogger.debug("toggle_expand: is_expanded=" + str(is_expanded) + ", background_mask=" + str(background_mask), "TimelineUI")
+	
+	# 控制遮罩显示/隐藏 (逻辑不变)
 	if background_mask:
-		GameLogger.debug("遮罩控制: 当前visible=" + str(background_mask.visible) + ", modulate=" + str(background_mask.modulate), "TimelineUI")
 		if is_expanded:
 			background_mask.visible = true
-			GameLogger.debug("遮罩显示，开始淡入动画", "TimelineUI")
-			# 遮罩淡入动画
 			background_mask.modulate = Color.TRANSPARENT
 			tw.parallel().tween_property(background_mask, "modulate", Color.WHITE, anim_duration * 0.5)
 		else:
-			GameLogger.debug("遮罩隐藏，开始淡出动画", "TimelineUI")
-			# 遮罩淡出动画后隐藏
 			tw.parallel().tween_property(background_mask, "modulate", Color.TRANSPARENT, anim_duration * 0.5)
 			tw.tween_callback(func():
 				if background_mask and not is_expanded:
 					background_mask.visible = false
-					GameLogger.debug("遮罩动画完成，设置visible=false", "TimelineUI")
 			)
-
-	# 控制地图交互：时间轴展开时禁用地图交互
+	
+	# 控制地图交互 (逻辑不变)
 	var map_node = get_tree().root.find_child("map", true, false)
 	if map_node and map_node is Control:
-		if is_expanded:
-			# 时间轴展开时，禁用地图交互
-			map_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			GameLogger.debug("时间轴展开，已禁用地图交互", "TimelineUI")
-		else:
-			# 时间轴收起时，恢复地图交互
-			map_node.mouse_filter = Control.MOUSE_FILTER_STOP
-			GameLogger.debug("时间轴收起，已恢复地图交互", "TimelineUI")
-
+		map_node.mouse_filter = Control.MOUSE_FILTER_IGNORE if is_expanded else Control.MOUSE_FILTER_PASS
+	
+	# ★ 核心动画：只需改变 scale，位置交给 Anchor 和 Pivot 自动管理！
 	if is_expanded:
-		tw.tween_property(self, "scale", expanded_scale, anim_duration)
-		tw.parallel().tween_property(self, "position", original_pos + Vector2(expanded_offset_x, expanded_offset_y), anim_duration)
+		tw.parallel().tween_property(self, "scale", expanded_scale, anim_duration)
 	else:
-		tw.tween_property(self, "scale", original_scale, anim_duration)
-		tw.parallel().tween_property(self, "position", original_pos, anim_duration)
+		tw.parallel().tween_property(self, "scale", Vector2.ONE, anim_duration)
+		# 动画结束后重新确认布局
+		tw.tween_callback(func():
+			_apply_anchor_layout()
+		)
 
 
 func _on_block_hovered(action: TimelineAction):
@@ -415,23 +403,24 @@ func _animate_block_placement(block: Panel, target_color: Color) -> void:
 ## 强制收起时间轴（用于卡牌放置后自动返回上方）
 func collapse() -> void:
 	if not is_expanded:
-		return  # 已经收起，无需操作
-
-	# 直接设置状态并执行收起动画
+		return
+	
 	is_expanded = false
 	var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-	# 收起遮罩（如果存在）
+	
 	if background_mask and background_mask.visible:
 		tw.parallel().tween_property(background_mask, "modulate", Color.TRANSPARENT, anim_duration * 0.5)
 		tw.tween_callback(func():
 			if background_mask and not is_expanded:
 				background_mask.visible = false
 		)
-
-	# 收起时间轴
-	tw.tween_property(self, "scale", original_scale, anim_duration)
-	tw.parallel().tween_property(self, "position", original_pos, anim_duration)
+	
+	# 仅缩放回归即可
+	tw.parallel().tween_property(self, "scale", Vector2.ONE, anim_duration)
+	
+	tw.tween_callback(func():
+		_apply_anchor_layout()
+	)
 
 
 ## 更新网格预览：根据形状和位置显示蓝色/红色格子，并检测敌人意图
@@ -538,3 +527,11 @@ func clear_ui() -> void:
 	hovered_action = null
 	
 	GameLogger.debug("时间轴UI已清空", "TimelineUI")
+
+## 设置是否允许点击缩放时间轴
+## 常态下禁用，仅当卡牌选中准备放置时启用
+func set_allow_click_to_expand(allow: bool) -> void:
+	allow_click_to_expand = allow
+	# 允许点击时为 PASS，不允许时为 IGNORE (彻底穿透)
+	mouse_filter = Control.MOUSE_FILTER_PASS if allow else Control.MOUSE_FILTER_IGNORE
+	GameLogger.debug("设置时间轴点击缩放权限: allow=" + str(allow) + " filter=" + str(mouse_filter), "TimelineUI")

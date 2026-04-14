@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://bvwy75nmi8v2q"]
+
+[ext_resource type="Script" uid="uid://c2kaxsrkwq2n8" path="res://scene/in_scene/rewards/CraftReward.gd" id="1_fjv8y"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_e5usn"]
+
+[node name="CraftReward" type="CanvasLayer"]
+script = ExtResource("1_fjv8y")
+
+[node name="BackgroundMask" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.4509804)
+
+[node name="TitleLabel" type="Label" parent="."]
+anchors_preset = -1
+offset_left = 759.0
+offset_top = 94.0
+offset_right = 999.0
+offset_bottom = 174.0
+theme_override_fonts/font = ExtResource("2_e5usn")
+theme_override_font_sizes/font_size = 60
+text = "合成卡牌"
+
+[node name="CraftingBoard" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 279.0
+offset_top = 198.0
+offset_right = 1489.0
+offset_bottom = 856.0
+
+[node name="Slot1" type="Control" parent="CraftingBoard"]
+anchors_preset = 0
+offset_left = 107.0
+offset_top = 6.0
+offset_right = 325.0
+offset_bottom = 306.0
+
+[node name="Slot2" type="Control" parent="CraftingBoard"]
+anchors_preset = 0
+offset_left = 75.0
+offset_top = 276.0
+offset_right = 278.0
+offset_bottom = 548.0
+
+[node name="ResultSlot" type="Control" parent="CraftingBoard"]
+anchors_preset = 0
+offset_left = 913.0
+offset_top = 182.0
+offset_right = 1135.0
+offset_bottom = 461.0
+
+[node name="ConnectionLines" type="Line2D" parent="CraftingBoard"]
+
+[node name="DeckScrollContainer" type="ScrollContainer" parent="."]
+offset_left = 235.0
+offset_top = 216.0
+offset_right = 1540.0
+offset_bottom = 839.0
+metadata/_edit_lock_ = true
+
+[node name="DeckGrid" type="GridContainer" parent="DeckScrollContainer"]
+layout_mode = 2
+
+[node name="BtnBack" type="Button" parent="."]
+offset_left = 94.0
+offset_top = 898.0
+offset_right = 300.0
+offset_bottom = 997.0
+theme_override_fonts/font = ExtResource("2_e5usn")
+theme_override_font_sizes/font_size = 32
+text = "返回"
+
+[node name="BtnConfirm" type="Button" parent="."]
+offset_left = 1469.0
+offset_top = 910.0
+offset_right = 1657.0
+offset_bottom = 998.0
+theme_override_fonts/font = ExtResource("2_e5usn")
+theme_override_font_sizes/font_size = 32
+text = "确认"

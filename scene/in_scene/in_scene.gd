@@ -41,11 +41,22 @@ var drop_area = 4.0 / 7.0
 @onready var deck_count_label = $"../DeckButton/Label"
 @onready var discard_count_label = $"../DiscardButton/Label"
 
+# ★ 新增：局外收获按钮引用
+@onready var shop_button = $"../ShopButton"
+@onready var acquire_reward_button = $"../AcquireRewardButton"
+@onready var remove_reward_button = $"../RemoveRewardButton"
+@onready var craft_reward_button = $"../CraftRewardButton"
+@onready var win_button = $"../WinButton"  # 胜利调试按钮
+
+# ★ 新增：地图和时间币显示引用
+@onready var hex_map = $"../../map/HexMap"
+@onready var global_timecoin = $"../../GlobalTimecoin"
+@onready var timecoin_container = $"../../GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer"
+
 # ★ 新增：回合按钮引用
 @onready var start_turn_button = $"../StartTurnButton"
 @onready var end_turn_button = $"../EndTurnButton"
 @onready var end_combat_button = $"../EndCombatButton"  # 根据你的实际路径修改
-@onready var reward_manager = $"../../RewardManager"  # 刚才拖进来的节点
 @onready var cursor_tooltip = $"../CursorTooltip"  # 指向刚才创建的 Label
 var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
 @onready var timeline_ui = $"../TimelineUI"  # 根据你的实际路径修改
@@ -65,6 +76,9 @@ var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
 @export var tooltip_title_size: int = 18
 @export var tooltip_desc_size: int = 14
 @export var tooltip_desc_color: Color = Color(0.9, 0.9, 0.9, 1.0)
+@export var tooltip_effect_font_size: int = 16  # 卡牌效果文本字体大小
+@export var tooltip_effect_font_color: Color = Color(0.95, 0.95, 0.95, 1.0)  # 卡牌效果文本颜色
+@export var tooltip_effect_font: Font  # 卡牌效果文本字体（可选）
 
 # ================================
 # ★ 导出调整项：悬浮 UI 排版与分列机制
@@ -118,11 +132,11 @@ func _ready() -> void:
 	if is_instance_valid(end_combat_button):
 		end_combat_button.pressed.connect(_on_end_combat_pressed)
 
-	# 将卡组管理器引用传给奖励界面，方便后续删牌/加牌操作
-	if is_instance_valid(reward_manager) and is_instance_valid(manager_instance):
-		reward_manager.deck_manager = manager_instance
-	else:
-		push_warning("project.gd: reward_manager 或 manager_instance 无效，无法设置 deck_manager")
+	## 将卡组管理器引用传给奖励界面，方便后续删牌/加牌操作
+	#if is_instance_valid(reward_manager) and is_instance_valid(manager_instance):
+		#reward_manager.deck_manager = manager_instance
+	#else:
+		#push_warning("project.gd: reward_manager 或 manager_instance 无效，无法设置 deck_manager")
 
 	if is_instance_valid(timeline_manager):
 		if timeline_manager.has_signal("action_hovered_changed"):
@@ -142,6 +156,18 @@ func _ready() -> void:
 	# 初始化时间轴UI引用
 	if timeline_ui:
 		GameLogger.info("TimelineUI已找到: " + timeline_ui.name, "project")
+	
+	# 连接胜利调试按钮
+	if is_instance_valid(win_button):
+		win_button.pressed.connect(_on_win_button_pressed)
+		GameLogger.info("胜利调试按钮已连接", "Project")
+	else:
+		GameLogger.warning("WinButton未找到，胜利调试功能不可用", "Project")
+	
+	# 连接胜利触发信号
+	if Signal_Bus:
+		Signal_Bus.victory_triggered.connect(_on_victory_triggered)
+		GameLogger.info("已连接胜利触发信号", "Project")
 
 
 
@@ -333,6 +359,16 @@ func setup_card_system():
 		start_turn_button.pressed.connect(_on_start_turn_pressed)
 	if is_instance_valid(end_turn_button):
 		end_turn_button.pressed.connect(_on_end_turn_pressed)
+	
+	# ★ 新增：绑定局外收获按钮
+	if is_instance_valid(shop_button):
+		shop_button.pressed.connect(_on_shop_button_pressed)
+	if is_instance_valid(acquire_reward_button):
+		acquire_reward_button.pressed.connect(_on_acquire_reward_button_pressed)
+	if is_instance_valid(remove_reward_button):
+		remove_reward_button.pressed.connect(_on_remove_reward_button_pressed)
+	if is_instance_valid(craft_reward_button):
+		craft_reward_button.pressed.connect(_on_craft_reward_button_pressed)
 
 
 # --- 按钮逻辑修正 ---
@@ -651,6 +687,12 @@ func setup_tooltip_ui():
 	effect_label.bbcode_enabled = true
 	effect_label.fit_content = true
 	effect_label.custom_minimum_size = Vector2(effect_panel_width, 0)
+	# 应用效果文本字体设置
+	effect_label.add_theme_font_size_override("normal_font_size", tooltip_effect_font_size)
+	effect_label.add_theme_color_override("default_color", tooltip_effect_font_color)
+	# 如果提供了自定义字体，应用它
+	if tooltip_effect_font != null:
+		effect_label.add_theme_font_override("normal_font", tooltip_effect_font)
 	margin.add_child(effect_label)
 
 	# ==========================================
@@ -949,6 +991,111 @@ func _on_end_combat_pressed():
 	#这段是打开版面
 	get_tree().get_first_node_in_group("MainBoard").reward_manager.open_reward_screen()
 
+# 商店按钮回调
+func _on_shop_button_pressed():
+	GameLogger.info("🏪 玩家点击商店按钮，进入商店场景", "Project")
+	# 隐藏除hexmap和时间币外的所有UI
+	hide_ui_for_external_scene()
+	
+	# 加载并显示商店场景
+	var shop_scene = preload("res://scenes/rewards/shop.tscn")
+	if is_instance_valid(shop_scene):
+		var shop_instance = shop_scene.instantiate()
+		add_child(shop_instance)
+		# 确保商店场景显示在最上层
+		shop_instance.show()
+		# 设置 CardManager 引用
+		if shop_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
+			shop_instance.set_deck_manager(manager_instance)
+		
+		# 调用open_shop方法初始化商店
+		if shop_instance.has_method("open_shop"):
+			shop_instance.open_shop()
+		elif shop_instance.has_method("open"):
+			shop_instance.open()
+		else:
+			shop_instance.show()
+		
+		# 连接退出信号（如果场景有退出按钮）
+		_connect_exit_signal_for_external_scene(shop_instance)
+	else:
+		GameLogger.error("无法加载商店场景", "Project")
+
+# 获取卡牌奖励按钮回调
+func _on_acquire_reward_button_pressed():
+	GameLogger.info("🎁 玩家点击获取卡牌奖励按钮", "Project")
+	# 隐藏除hexmap和时间币外的所有UI
+	hide_ui_for_external_scene()
+	
+	var acquire_scene = preload("res://scenes/rewards/acquire_reward.tscn")
+	if is_instance_valid(acquire_scene):
+		var acquire_instance = acquire_scene.instantiate()
+		add_child(acquire_instance)
+		acquire_instance.show()
+		if acquire_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
+			acquire_instance.set_deck_manager(manager_instance)
+		
+		# 调用open方法初始化场景
+		if acquire_instance.has_method("open"):
+			acquire_instance.open()
+		else:
+			acquire_instance.show()
+		
+		# 连接退出信号（如果场景有退出按钮）
+		_connect_exit_signal_for_external_scene(acquire_instance)
+	else:
+		GameLogger.error("无法加载获取卡牌奖励场景", "Project")
+
+# 删除卡牌奖励按钮回调
+func _on_remove_reward_button_pressed():
+	GameLogger.info("🗑️ 玩家点击删除卡牌奖励按钮", "Project")
+	# 隐藏除hexmap和时间币外的所有UI
+	hide_ui_for_external_scene()
+	
+	var remove_scene = preload("res://scenes/rewards/remove_reward.tscn")
+	if is_instance_valid(remove_scene):
+		var remove_instance = remove_scene.instantiate()
+		add_child(remove_instance)
+		remove_instance.show()
+		if remove_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
+			remove_instance.set_deck_manager(manager_instance)
+		
+		# 调用open方法初始化场景
+		if remove_instance.has_method("open"):
+			remove_instance.open()
+		else:
+			remove_instance.show()
+		
+		# 连接退出信号（如果场景有退出按钮）
+		_connect_exit_signal_for_external_scene(remove_instance)
+	else:
+		GameLogger.error("无法加载删除卡牌奖励场景", "Project")
+
+# 合成卡牌奖励按钮回调
+func _on_craft_reward_button_pressed():
+	GameLogger.info("🔧 玩家点击合成卡牌奖励按钮", "Project")
+	# 隐藏除hexmap和时间币外的所有UI
+	hide_ui_for_external_scene()
+	
+	var craft_scene = preload("res://scenes/rewards/craft_reward.tscn")
+	if is_instance_valid(craft_scene):
+		var craft_instance = craft_scene.instantiate()
+		add_child(craft_instance)
+		craft_instance.show()
+		if craft_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
+			craft_instance.set_deck_manager(manager_instance)
+		
+		# 调用open方法初始化场景
+		if craft_instance.has_method("open"):
+			craft_instance.open()
+		else:
+			craft_instance.show()
+		
+		# 连接退出信号（如果场景有退出按钮）
+		_connect_exit_signal_for_external_scene(craft_instance)
+	else:
+		GameLogger.error("无法加载合成卡牌奖励场景", "Project")
+
 
 # 当局外界面点击离开/下一关时调用这个函数
 func proceed_to_next_stage():
@@ -1053,6 +1200,251 @@ func set_cursor_tooltip_position(position: Vector2) -> void:
 	elif is_instance_valid(cursor_tooltip):
 		cursor_tooltip.global_position = position
 
+
+## ==========================================
+## ★ 局外场景UI管理函数
+## ==========================================
+
+## 隐藏除hexmap和时间币外的所有UI，为局外场景做准备
+func hide_ui_for_external_scene():
+	GameLogger.info("🔄 隐藏UI，为局外场景做准备", "Project")
+	
+	# 记录需要隐藏的UI元素
+	# 注意：hex_map和timecoin_container会保持显示
+	
+	# 1. 隐藏卡牌系统UI
+	if is_instance_valid(player_hand): player_hand.hide()
+	if is_instance_valid(deck_pile): deck_pile.hide()
+	if is_instance_valid(discard_pile): discard_pile.hide()
+	
+	# 2. 隐藏按钮UI
+	if is_instance_valid(deck_button): deck_button.hide()
+	if is_instance_valid(discard_button): discard_button.hide()
+	if is_instance_valid(start_turn_button): start_turn_button.hide()
+	if is_instance_valid(end_turn_button): end_turn_button.hide()
+	if is_instance_valid(end_combat_button): end_combat_button.hide()
+	
+	# 3. 隐藏时间轴UI
+	if is_instance_valid(timeline_ui): timeline_ui.hide()
+	
+	# 4. 隐藏光标提示
+	if is_instance_valid(cursor_tooltip): cursor_tooltip.hide()
+	if is_instance_valid(cursor_tooltip_panel): cursor_tooltip_panel.hide()
+	
+	# 5. 隐藏tooltip系统
+	hide_tooltip()
+	
+	# 6. 隐藏四个局外按钮（它们会在场景退出时单独恢复）
+	if is_instance_valid(shop_button): shop_button.hide()
+	if is_instance_valid(acquire_reward_button): acquire_reward_button.hide()
+	if is_instance_valid(remove_reward_button): remove_reward_button.hide()
+	if is_instance_valid(craft_reward_button): craft_reward_button.hide()
+	
+	# 7. 隐藏其他可能存在的UI
+	if is_instance_valid(dim): dim.hide()
+	
+	# 8. 确保hexmap和时间币显示
+	if is_instance_valid(hex_map): 
+		hex_map.show()
+		# 确保hexmap在正确层级
+		hex_map.z_index = 0
+	
+	if is_instance_valid(timecoin_container):
+		timecoin_container.show()
+		# 确保时间币UI在最上层
+		timecoin_container.z_index = 100
+	
+	GameLogger.info("✅ UI隐藏完成，hexmap和时间币保持显示", "Project")
+
+## 退出局外场景后，恢复四个局外按钮
+func restore_ui_after_external_scene():
+	GameLogger.info("🔄 恢复四个局外按钮", "Project")
+	
+	# 只恢复四个局外按钮，其他UI保持隐藏状态
+	var buttons_restored = 0
+	if is_instance_valid(shop_button):
+		shop_button.show()
+		GameLogger.debug("商店按钮显示: visible=%s, disabled=%s" % [shop_button.visible, shop_button.disabled], "Project")
+		buttons_restored += 1
+	else:
+		GameLogger.warning("商店按钮引用无效", "Project")
+	
+	if is_instance_valid(acquire_reward_button):
+		acquire_reward_button.show()
+		GameLogger.debug("获取按钮显示: visible=%s, disabled=%s" % [acquire_reward_button.visible, acquire_reward_button.disabled], "Project")
+		buttons_restored += 1
+	else:
+		GameLogger.warning("获取按钮引用无效", "Project")
+	
+	if is_instance_valid(remove_reward_button):
+		remove_reward_button.show()
+		GameLogger.debug("删除按钮显示: visible=%s, disabled=%s" % [remove_reward_button.visible, remove_reward_button.disabled], "Project")
+		buttons_restored += 1
+	else:
+		GameLogger.warning("删除按钮引用无效", "Project")
+	
+	if is_instance_valid(craft_reward_button):
+		craft_reward_button.show()
+		GameLogger.debug("合成按钮显示: visible=%s, disabled=%s" % [craft_reward_button.visible, craft_reward_button.disabled], "Project")
+		buttons_restored += 1
+	else:
+		GameLogger.warning("合成按钮引用无效", "Project")
+	
+	GameLogger.info("✅ 局外按钮已恢复 (恢复数量: %d/4)" % buttons_restored, "Project")
+
+## 完全恢复所有UI（用于返回游戏主界面）
+func restore_all_ui():
+	GameLogger.info("🔄 恢复所有UI", "Project")
+	
+	# 恢复所有之前隐藏的UI元素
+	if is_instance_valid(player_hand): player_hand.show()
+	if is_instance_valid(deck_pile): deck_pile.show()
+	if is_instance_valid(discard_pile): discard_pile.show()
+	
+	if is_instance_valid(deck_button): deck_button.show()
+	if is_instance_valid(discard_button): discard_button.show()
+	if is_instance_valid(start_turn_button): start_turn_button.show()
+	if is_instance_valid(end_turn_button): end_turn_button.show()
+	if is_instance_valid(end_combat_button): end_combat_button.show()
+	
+	if is_instance_valid(timeline_ui): timeline_ui.show()
+	if is_instance_valid(dim): dim.show()
+	
+	# 四个局外按钮也显示
+	if is_instance_valid(shop_button): shop_button.show()
+	if is_instance_valid(acquire_reward_button): acquire_reward_button.show()
+	if is_instance_valid(remove_reward_button): remove_reward_button.show()
+	if is_instance_valid(craft_reward_button): craft_reward_button.show()
+	
+	GameLogger.info("✅ 所有UI已恢复", "Project")
+
+## 连接外部场景的退出信号
+func _connect_exit_signal_for_external_scene(scene_instance: Node):
+	# 尝试连接常见的退出按钮信号
+	# 1. 检查 btn_exit (商店使用)
+	if scene_instance.has_node("btn_exit"):
+		var btn_exit = scene_instance.get_node("btn_exit")
+		if btn_exit is Button and btn_exit.pressed.is_connected(_on_external_scene_exit_pressed):
+			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
+		if btn_exit is Button:
+			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
+			GameLogger.debug("已连接商店退出按钮", "Project")
+	
+	# 2. 检查 btn_back (奖励场景使用)
+	if scene_instance.has_node("btn_back"):
+		var btn_back = scene_instance.get_node("btn_back")
+		if btn_back is Button and btn_back.pressed.is_connected(_on_external_scene_exit_pressed):
+			btn_back.pressed.disconnect(_on_external_scene_exit_pressed)
+		if btn_back is Button:
+			btn_back.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
+			GameLogger.debug("已连接奖励场景返回按钮", "Project")
+	
+	# 3. 检查 BtnExit (带大写)
+	if scene_instance.has_node("BtnExit"):
+		var btn_exit = scene_instance.get_node("BtnExit")
+		if btn_exit is Button and btn_exit.pressed.is_connected(_on_external_scene_exit_pressed):
+			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
+		if btn_exit is Button:
+			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
+			GameLogger.debug("已连接大写退出按钮", "Project")
+	
+	# 4. 检查 BtnBack (带大写)
+	if scene_instance.has_node("BtnBack"):
+		var btn_back = scene_instance.get_node("BtnBack")
+		if btn_back is Button and btn_back.pressed.is_connected(_on_external_scene_exit_pressed):
+			btn_back.pressed.disconnect(_on_external_scene_exit_pressed)
+		if btn_back is Button:
+			btn_back.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
+			GameLogger.debug("已连接大写返回按钮", "Project")
+	
+	# 5. 检查 Sidebar/BtnExit (商店侧边栏退出按钮)
+	if scene_instance.has_node("Sidebar/BtnExit"):
+		var btn_exit = scene_instance.get_node("Sidebar/BtnExit")
+		if btn_exit is Button and btn_exit.pressed.is_connected(_on_external_scene_exit_pressed):
+			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
+		if btn_exit is Button:
+			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
+			GameLogger.debug("已连接侧边栏退出按钮", "Project")
+	
+	# 6. 检查 Sidebar/btn_exit (小写版本)
+	if scene_instance.has_node("Sidebar/btn_exit"):
+		var btn_exit = scene_instance.get_node("Sidebar/btn_exit")
+		if btn_exit is Button and btn_exit.pressed.is_connected(_on_external_scene_exit_pressed):
+			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
+		if btn_exit is Button:
+			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
+			GameLogger.debug("已连接侧边栏小写退出按钮", "Project")
+
+## 外部场景退出按钮回调
+func _on_external_scene_exit_pressed(scene_instance: Node):
+	GameLogger.info("🚪 退出局外场景，恢复UI", "Project")
+	
+	# 0. 先隐藏场景实例，防止覆盖按钮
+	if is_instance_valid(scene_instance):
+		scene_instance.hide()
+		GameLogger.debug("已隐藏场景实例", "Project")
+	
+	# 1. 恢复四个局外按钮
+	restore_ui_after_external_scene()
+	
+	# 2. 移除场景实例
+	if is_instance_valid(scene_instance):
+		scene_instance.queue_free()
+		GameLogger.debug("已移除场景实例", "Project")
+	
+	# 3. 可选：如果需要完全恢复所有UI，可以调用 restore_all_ui()
+	# 但根据需求，只恢复四个局外按钮，其他UI保持隐藏
+
+## 胜利演出触发
+func _on_victory_triggered() -> void:
+	GameLogger.info("🎉 胜利演出触发！开始胜利序列", "Project")
+	
+	# 1. 隐藏所有干扰UI
+	hide_ui_for_external_scene()
+	
+	# 2. 加载胜利演出场景
+	var victory_scene = preload("res://scenes/ui/VictoryOrchestrator.tscn")
+	if not is_instance_valid(victory_scene):
+		GameLogger.error("无法加载胜利演出场景", "Project")
+		return
+	
+	var victory_instance = victory_scene.instantiate()
+	
+	# 3. 计算地图中心位置（用于后续对齐）
+	var map_center = hex_map.global_position if is_instance_valid(hex_map) else Vector2.ZERO
+	
+	# 4. 先将胜利演出添加到场景树（世界坐标系）
+	if is_instance_valid(hex_map):
+		var map_root = hex_map.get_parent()
+		if is_instance_valid(map_root):
+			map_root.add_child(victory_instance)
+			GameLogger.debug("胜利演出已添加到地图根节点: " + map_root.name, "Project")
+		else:
+			add_child(victory_instance)
+			GameLogger.warning("地图根节点无效，回退到Project节点", "Project")
+	else:
+		add_child(victory_instance)
+		GameLogger.warning("HexMap无效，回退到Project节点", "Project")
+	
+	# 5. 精确对齐到地图中心位置（必须在add_child之后设置）
+	victory_instance.global_position = map_center
+	GameLogger.debug("胜利演出已对齐到地图中心: " + str(map_center), "Project")
+	
+	# 6. 调用胜利演出启动方法
+	if victory_instance.has_method("start_performance"):
+		victory_instance.start_performance()
+	else:
+		GameLogger.warning("VictoryOrchestrator 缺少 start_performance 方法", "Project")
+		victory_instance.queue_free()
+
+## 胜利调试按钮回调
+func _on_win_button_pressed() -> void:
+	GameLogger.info("🔧 胜利调试按钮被按下，手动触发胜利序列", "Project")
+	
+	if Signal_Bus:
+		Signal_Bus.victory_triggered.emit()
+	else:
+		GameLogger.error("Signal_Bus不可用，无法触发胜利信号", "Project")
 
 func _process(_delta):
 	pass
