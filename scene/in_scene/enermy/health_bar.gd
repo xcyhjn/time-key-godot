@@ -8,7 +8,6 @@ var BarArray : Array[Node]
 func _ready() -> void:
 	get_parent().CreateBar.connect(Create_Blood_Bar)
 	
-
 # Called when the node enters the scene tree for the first time.
 func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : float):
 	print(str(landform_in.position) + ": 接受信号，制作血条中……")

@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://5eq5pmcy6x7l" path="res://image/inscene_block/grass.png" id="2_27d84"]
 [ext_resource type="Texture2D" uid="uid://cn6lxb76f7fmb" path="res://image/inscene_block/dirt.png" id="3_x0x3q"]
 [ext_resource type="Shader" uid="uid://pdp2mrgq6od7" path="res://shaders/hex.gdshader" id="4_tpwa4"]
+[ext_resource type="Script" uid="uid://bjwid4x1can0t" path="res://scene/in_scene/enermy/health_bar.gd" id="5_1gj6i"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="5_6migj"]
 [ext_resource type="Script" uid="uid://istgpa5ab80k" path="res://scene/in_scene/camera_2d_inscene.gd" id="7_bbffy"]
 [ext_resource type="Texture2D" uid="uid://ca7ln3w63nyne" path="res://image/behide.png" id="8_hr4wu"]
@@ -78,7 +79,11 @@ hitbox_base_height = 120.0
 hitbox_offset_x = 0.0
 hitbox_offset_y = -100.0
 
-[node name="BarManager" type="Node2D" parent="map/HexMap" unique_id=284048703]
+[node name="BarManager" type="Control" parent="map/HexMap" unique_id=1203010473]
+z_index = 1000
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("5_1gj6i")
 
 [node name="Camera2D" type="Camera2D" parent="map" unique_id=1566374518]
 position = Vector2(965, 539)
