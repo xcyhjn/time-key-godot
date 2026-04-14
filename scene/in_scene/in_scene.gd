@@ -47,7 +47,8 @@ var drop_area = 4.0 / 7.0
 @onready var remove_reward_button = $"../RemoveRewardButton"
 @onready var craft_reward_button = $"../CraftRewardButton"
 @onready var win_button = $"../WinButton"  # 胜利调试按钮
-
+@onready var lose_button = $"../LoseButton"
+@onready var game_over_ui = $"../GameOver"
 # ★ 新增：地图和时间币显示引用
 @onready var hex_map = $"../../map/HexMap"
 @onready var timecoin_container = get_node_or_null("/root/in_scene/TimecoinView/TimecoinCanvasLayer/TimecoinContainer")
@@ -167,7 +168,13 @@ func _ready() -> void:
 	if Signal_Bus:
 		Signal_Bus.victory_triggered.connect(_on_victory_triggered)
 		GameLogger.info("已连接胜利触发信号", "Project")
-
+	# 2. 连接失败按钮点击信号
+	if is_instance_valid(lose_button):
+		lose_button.pressed.connect(_on_lose_button_pressed)
+	
+	# 3. 监听全局失败信号
+	if Signal_Bus:
+		Signal_Bus.defeat_triggered.connect(_on_defeat_triggered)
 
 
 ## 游戏开始时生成初始敌人意图
@@ -1431,7 +1438,24 @@ func _on_victory_triggered() -> void:
 	else:
 		GameLogger.warning("VictoryOrchestrator 缺少 start_performance 方法", "Project")
 		victory_instance.queue_free()
-
+# 信号响应：执行实际的动画转换逻辑
+func _on_defeat_triggered():
+	GameLogger.info("💀 收到失败信号，开始失败动画序列", "Project")
+	
+	# 隐藏所有战斗 UI
+	hide_ui_for_external_scene()
+	
+	# 准备结算数据
+	var stats = {
+		"所处时代": str(current_era_value),
+		"因果状态": "彻底断裂",
+		"时间资产": str(GlobalTimecoin.get_timecoins() if GlobalTimecoin else 0),
+		"同步率": "0%"
+	}
+	
+	# 启动动画序列
+	if is_instance_valid(game_over_ui):
+		game_over_ui.start_sequence(stats)
 ## 胜利调试按钮回调
 func _on_win_button_pressed() -> void:
 	GameLogger.info("🔧 胜利调试按钮被按下，手动触发胜利序列", "Project")
@@ -1440,6 +1464,10 @@ func _on_win_button_pressed() -> void:
 		Signal_Bus.victory_triggered.emit()
 	else:
 		GameLogger.error("Signal_Bus不可用，无法触发胜利信号", "Project")
-
+# 按钮点击：只负责发出全局信号
+func _on_lose_button_pressed():
+	GameLogger.info("🔧 玩家点击失败调试按钮", "Project")
+	Signal_Bus.emit_defeat_triggered()
+	
 func _process(_delta):
 	pass

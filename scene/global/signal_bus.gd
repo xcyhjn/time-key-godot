@@ -47,7 +47,7 @@ signal player_inputs_disabled()
 signal game_paused()
 signal game_resumed()
 signal victory_triggered()
-
+signal defeat_triggered()
 # ==========================================
 # 时间币信号
 # ==========================================
@@ -209,3 +209,7 @@ func emit_timecoin_updated(current_amount: int, delta: int) -> void:
 func emit_timecoin_insufficient(requested: int, available: int) -> void:
 	log_signal("timecoin_insufficient", [requested, available])
 	timecoin_insufficient.emit(requested, available)
+
+func emit_defeat_triggered() -> void:
+	log_signal("defeat_triggered")
+	defeat_triggered.emit()
