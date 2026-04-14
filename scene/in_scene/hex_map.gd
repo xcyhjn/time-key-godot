@@ -1130,6 +1130,13 @@ func _compress_to_single_height_view() -> void:
 				if not is_instance_valid(sprite):
 					continue
 				
+				# ★ 新增：核心修复点！
+				# 只有直接挂在 stack（地块根节点）下的精灵，才允许在这里移动。
+				# 因为血条精灵是挂在 hb_node 下的，如果不排除，它会跟着 hb_node 一起被移动两次。
+				if sprite.get_parent() != stack:
+					continue
+				# =======================
+
 				var target_y = sprite.position.y + drop_delta
 				if abs(drop_delta) > 0.1:  
 					_tween_position_y(sprite, target_y, 0.3)
@@ -1140,7 +1147,7 @@ func _compress_to_single_height_view() -> void:
 				if abs(drop_delta) > 0.1:
 					_tween_position_y(occupant_node, target_y, 0.3)
 					
-			# 同步降落血条
+			# 同步降落血条根节点 (hb_node 会带着它里面的进度条一起下落)
 			if health_bar_data and is_instance_valid(health_bar_data["node"]):
 				var hb_node = health_bar_data["node"]
 				var target_y = hb_node.position.y + drop_delta
@@ -1290,7 +1297,8 @@ func _restore_original_height_view() -> void:
 	height_view_original_materials.clear()
 
 ## 为单个精灵设置shader参数补间（辅助函数）
-func _tween_shader_param_single(sprite: Sprite2D, param_name: String, target_val: float, duration: float) -> void:
+# ★ 修复：移除强类型限制 (删除了 : Sprite2D)，以兼容 UI 组件 (TextureProgressBar 等)
+func _tween_shader_param_single(sprite, param_name: String, target_val: float, duration: float) -> void:
 	if not is_instance_valid(sprite) or not sprite.material:
 		return
 	
@@ -1306,7 +1314,8 @@ func _tween_shader_param_single(sprite: Sprite2D, param_name: String, target_val
 	, current_val, target_val, duration)
 
 ## 为任意节点设置Y坐标补间（辅助函数，用于物理坐标扁平化）
-func _tween_position_y(node: Node2D, target_y: float, duration: float) -> void:
+# ★ 修复：移除强类型限制 (删除了 : Node2D)，以兼容 UI 组件 (Control 虽然没继承 Node2D 但也有 position)
+func _tween_position_y(node, target_y: float, duration: float) -> void:
 	if not is_instance_valid(node):
 		return
 	
@@ -1610,30 +1619,6 @@ func recollect_sprites_for_landform(landform_obj: landform) -> void:
 			# 寻找血条内部的所有 Sprite2D 或 TextureRect 并加入精灵列表
 			_find_and_register_ui_sprites(bar_node, sprites_list, height)
 
-## 递归寻找 UI 内部的贴图并赋予初始材质
-func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void:
-	# ★ 精确匹配你 tscn 中的节点类型：TextureProgressBar
-	if node is Sprite2D or node is TextureRect or node is TextureProgressBar:
-		if not list.has(node):
-			if block_material:
-				node.material = block_material.duplicate()
-				node.set_instance_shader_parameter("block_idx", float(height + 1))
-				node.set_instance_shader_parameter("total_height", float(height + 2))
-			list.append(node) # 收编进地块阵列
-			GameLogger.debug("🩸 成功将血条组件收编进地块渲染序列: " + node.name, "HexMap")
-			
-	for child in node.get_children():
-		_find_and_register_ui_sprites(child, list, height)
-
-func _apply_shader_to_ui_sprite(sprite: Sprite2D, list: Array, height: int):
-	if not list.has(sprite):
-		# 赋予与地块一致的材质
-		if block_material:
-			sprite.material = block_material.duplicate()
-			sprite.set_instance_shader_parameter("block_idx", float(height + 1))
-			sprite.set_instance_shader_parameter("total_height", float(height + 2))
-		list.append(sprite)
-
 # ==========================================
 # ★ 血条等外部节点的视觉同步注册系统
 # ==========================================
@@ -1652,3 +1637,19 @@ func register_extra_render_node(coord: Vector2i, node: Node) -> void:
 	
 	# 开始递归寻找并注册 UI 贴图
 	_find_and_register_ui_sprites(node, sprites_list, height)
+
+## 递归寻找 UI 内部的贴图并加入动画更新队列
+func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void:
+	if node is Sprite2D or node is TextureRect or node is TextureProgressBar:
+		if not list.has(node):
+			# ★ 核心修复：只传递高度参数并加入队列，绝对不覆盖它本身的 Material！
+			# 只要传递了这两个参数，上面的 ui_health_bar.gdshader 就会完美执行悬浮和起伏！
+			if node.material:
+				node.set_instance_shader_parameter("block_idx", float(height + 1))
+				node.set_instance_shader_parameter("total_height", float(height + 2))
+			
+			list.append(node) 
+			GameLogger.debug("🩸 成功将血条组件收编进地块渲染序列: " + node.name, "HexMap")
+			
+	for child in node.get_children():
+		_find_and_register_ui_sprites(child, list, height)

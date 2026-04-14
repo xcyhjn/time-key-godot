@@ -40,3 +40,4 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 		# 确保 HexMap 那边已经把地块完全存入字典后再进行收编
 		if landform_in.owner_battle and landform_in.owner_battle.has_method("register_extra_render_node"):
 			landform_in.owner_battle.call_deferred("register_extra_render_node", landform_in.location, HealthBuffer)
+		landform_in.tree_exited.connect(HealthBuffer.queue_free)

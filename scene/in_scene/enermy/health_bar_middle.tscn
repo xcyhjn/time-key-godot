@@ -2,7 +2,13 @@
 
 [ext_resource type="Script" uid="uid://bktd48fpcv6k5" path="res://scene/in_scene/enermy/health_bar_middle.gd" id="1_agoyj"]
 [ext_resource type="Texture2D" uid="uid://cqinuk58l2gdu" path="res://image/UI_Healthbar.png" id="1_x7vo4"]
+[ext_resource type="Shader" uid="uid://bgq3e7ll1b3dr" path="res://shaders/health_bar.gdshader" id="2_ju17x"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="3_4qjl7"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_04802"]
+shader = ExtResource("2_ju17x")
+shader_parameter/dissolve_block_size = 40.0
+shader_parameter/dissolve_edge_color = Color(2, 1.5, 0.5, 1)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_agoyj"]
 atlas = ExtResource("1_x7vo4")
@@ -12,14 +18,15 @@ region = Rect2(4, 26, 58, 6)
 atlas = ExtResource("1_x7vo4")
 region = Rect2(5, 35, 56, 4)
 
-[node name="HealthBarMiddle" type="Control"]
+[node name="HealthBarMiddle" type="Control" unique_id=934375522]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 60.0
 offset_bottom = 40.0
 script = ExtResource("1_agoyj")
 
-[node name="MiddleHealth" type="TextureProgressBar" parent="."]
+[node name="MiddleHealth" type="TextureProgressBar" parent="." unique_id=1965006847]
+material = SubResource("ShaderMaterial_04802")
 layout_mode = 0
 offset_right = 58.0
 offset_bottom = 6.0
@@ -28,7 +35,7 @@ texture_over = SubResource("AtlasTexture_agoyj")
 texture_progress = SubResource("AtlasTexture_4qjl7")
 texture_progress_offset = Vector2(1, 1)
 
-[node name="MiddleInfo" type="Label" parent="."]
+[node name="MiddleInfo" type="Label" parent="." unique_id=578526878]
 layout_mode = 0
 offset_top = -10.0
 offset_right = 228.0
