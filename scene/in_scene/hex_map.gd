@@ -2,7 +2,8 @@
 # 功能: 地块生成与战斗地图管理
 extends Node2D
 class_name battle
-
+#血条信号测试用
+signal CreateBar(landform_in: landform, situation: int, x: float, y: float)
 @export_group("Assets")
 @export var hex_top_tex: Texture2D
 @export var hex_side_tex: Texture2D
@@ -575,7 +576,7 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 			landform_sprite.set_instance_shader_parameter("block_idx", float(height + 1))
 			landform_sprite.set_instance_shader_parameter("total_height", float(height + 2))
 			sprites_in_stack.append(landform_sprite)
-		
+		landform_inst.owner_battle = self # 确保引用正确
 		GameLogger.debug("生成地貌: %s at %s" % [landform_inst.name, coord], "HexMap")
 	
 	# 旧的 enemy 系统已废弃，不再支持

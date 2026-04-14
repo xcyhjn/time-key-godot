@@ -20,6 +20,7 @@
 [ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="20_lifwa"]
 [ext_resource type="Script" uid="uid://ddrq5364kxv52" path="res://scene/global/global_timecoin.gd" id="21_6ecqr"]
 [ext_resource type="Texture2D" uid="uid://dhlwuga6drnjh" path="res://image/timecoin_ui_back.png" id="22_ma4x0"]
+[ext_resource type="Script" uid="uid://berteeiph66x1" path="res://scene/in_scene/timecoin_ui.gd" id="22_nj7no"]
 [ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="23_1wmus"]
 [ext_resource type="Shader" uid="uid://b81yjopqdvi60" path="res://shaders/hourglass_shake.gdshader" id="24_rejwe"]
 [ext_resource type="Texture2D" uid="uid://cxxrld3kjarqv" path="res://image/hourglass.png" id="25_7x3b2"]
@@ -76,6 +77,8 @@ hitbox_width = 200.0
 hitbox_base_height = 120.0
 hitbox_offset_x = 0.0
 hitbox_offset_y = -100.0
+
+[node name="BarManager" type="Node2D" parent="map/HexMap" unique_id=284048703]
 
 [node name="Camera2D" type="Camera2D" parent="map" unique_id=1566374518]
 position = Vector2(965, 539)
@@ -319,7 +322,7 @@ offset_right = -50.0
 offset_bottom = 143.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxTexture_pg1mb")
-script = ExtResource("23_1wmus")
+script = ExtResource("22_nj7no")
 
 [node name="HorizontalLayout" type="HBoxContainer" parent="GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer" unique_id=2056948486]
 layout_mode = 2

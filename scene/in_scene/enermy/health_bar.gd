@@ -15,7 +15,9 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 	if HealthBar != null:
 		var HealthBuffer = HealthBar[situation].instantiate()
 		HealthBuffer.z_index = 999
-		HealthBuffer.position = Vector2(x , y)
+		# 这里的 x, y 是 tile.gd 传过来的 global_position
+		 	# 如果 BarManager 也是 Node2D，则直接设置 position
+		HealthBuffer.global_position = Vector2(x, y)
 		HealthBuffer.scale = Vector2(2.5, 2.5)
 		#print("BloodBar装载" + str(HealthBuffer.get_child(0)))
 		landform_in.Blood_change.connect(HealthBuffer.Blood_change_Handler)
