@@ -240,18 +240,6 @@ func toggle_selection() -> void:
 			# 更新地块的条件效果（选中卡牌时）
 			_update_map_conditional_effects()
 
-## 递归查找Hand类型节点
-func _find_hand_nodes_recursive(node: Node, result: Array) -> void:
-	# 检查是否是Hand类型
-	if node.is_class("Hand"):
-		result.append(node)
-		return
-
-	# 递归搜索子节点
-	for child in node.get_children():
-		_find_hand_nodes_recursive(child, result)
-
-
 func force_deselect() -> void:
 	is_selected = false
 	card_current_state = CustomCardState.IDLE

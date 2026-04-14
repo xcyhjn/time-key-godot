@@ -167,14 +167,12 @@ func _ready():
 
 	build_map_pipeline()
 	# 绑定现有高度视图切换按钮
-	var height_view_button = get_node_or_null("ui/HeightViewToggleButton")
-	if not height_view_button:
-		# 尝试其他可能路径
-		height_view_button = get_node_or_null("/root/project/ui/HeightViewToggleButton")
-	if not height_view_button:
-		# 使用find_child查找
-		height_view_button = find_child("HeightViewToggleButton", true, false)
+	var height_view_button = get_node_or_null("../../ui/HeightViewToggleButton")
 	
+	# 双保险：通过当前场景根节点寻找
+	if not height_view_button and get_tree().current_scene:
+		height_view_button = get_tree().current_scene.get_node_or_null("ui/HeightViewToggleButton")
+		
 	if height_view_button:
 		height_view_button.pressed.connect(_on_height_view_toggle_pressed)
 		GameLogger.debug("成功绑定高度视图切换按钮", "HexMap")
