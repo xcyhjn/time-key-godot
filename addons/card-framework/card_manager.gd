@@ -229,3 +229,22 @@ func play_and_discard(card: Node, target_container_name: String) -> void:
 			card.card_container.remove_card(card)
 		card.hide() 
 		card.call_deferred("queue_free")
+# ==========================================
+# ★ 新增：牌组 ID 管理系统对接接口
+# ==========================================
+
+# 1. 获取当前全局牌组（给删卡、选卡界面用）
+func get_deck_card_ids() -> Array[String]:
+	return GlobalDB.player_deck.duplicate()
+
+# 2. 从全局牌组中永久删卡
+func remove_card_from_deck(card_id: String) -> void:
+	var idx = GlobalDB.player_deck.find(card_id)
+	if idx != -1:
+		GlobalDB.player_deck.remove_at(idx)
+		print("已从全局牌组永久删除卡牌 ID: ", card_id)
+
+# 3. 获得新卡，加入全局牌组
+func add_card_to_deck(card_id: String) -> void:
+	GlobalDB.player_deck.append(card_id)
+	print("已将新卡牌加入全局牌组 ID: ", card_id)

@@ -325,15 +325,11 @@ func setup_card_system():
 		else:
 			push_error("project.gd: 无法实例化 discard_pile！")
 
-	# --- 4. 生成初始卡牌 ---
-	# 注意：确保 "pot" 在你的 JSON 数据里存在
+	# --- 4. 生成初始卡牌 (从全局动态牌组生成) ---
 	if is_instance_valid(manager_instance.card_factory) and is_instance_valid(deck_pile):
-		for i in range(10):
-			manager_instance.card_factory.create_card("1", deck_pile)
-			manager_instance.card_factory.create_card("2", deck_pile)
-			manager_instance.card_factory.create_card("3", deck_pile)
-			#manager_instance.card_factory.create_card("qiangqian", deck_pile)
-			#manager_instance.card_factory.create_card("qiangtan", deck_pile)
+		# ★ 替换原本的硬编码 for i in range(10)
+		for card_id in GlobalDB.player_deck:
+			manager_instance.card_factory.create_card(card_id, deck_pile)
 
 		if deck_pile._held_cards.size() > 0:
 			deck_pile._held_cards.shuffle()

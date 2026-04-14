@@ -581,7 +581,7 @@ func _get_current_deck_card_ids() -> Array[String]:
 	
 	# 备用方案: 返回模拟数据用于测试
 	print("⚠️ 使用模拟牌组数据 (需要对接牌组管理系统)")
-	return ["qiangjin", "bailong"]  # 示例卡牌ID（已移除不存在的pot和hailong）
+	return ["1", "2"]  # 示例卡牌ID（已移除不存在的pot和hailong）
 
 ## 尝试自动查找 CardManager 节点
 func _try_find_card_manager():

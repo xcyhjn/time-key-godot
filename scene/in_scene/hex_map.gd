@@ -555,26 +555,34 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 	
 	if data.has("landform") and data["landform"] != null:
 		var landform_inst = data["landform"]
-		
-		# 直接使用 landform 作为敌人（landform 现在继承 EnemyBase）
 		enemy_instance = landform_inst
 		enemy_instance.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y - 20)
 		stack_container.add_child(enemy_instance)
 		
-		# 添加 landform 视觉精灵（由 attach_visual 方法处理材质和层级）
+		# 添加 landform 视觉精灵
 		landform_inst.attach_visual(stack_container, height, current_step_h, tile_scale)
 		
-		# 获取 landform 视觉精灵用于添加到 sprites 元数据并应用shader
-		var unique_name = "LandformSprite_%s_%s" % [coord.x, coord.y]
-		var landform_sprite = stack_container.get_node_or_null(unique_name)
-		if landform_sprite and block_material:
-			# 为村庄应用shader材质
-			landform_sprite.material = block_material.duplicate()
-			# 建筑在地形之上，block_idx增加1以确保悬浮效果触发
-			landform_sprite.set_instance_shader_parameter("block_idx", float(height + 1))
-			landform_sprite.set_instance_shader_parameter("total_height", float(height + 2))
-			sprites_in_stack.append(landform_sprite)
-		landform_inst.owner_battle = self # 确保引用正确
+		# ★ 修复1：搜索并赋予地貌动态生成的 Sprite2D 材质
+		for child in stack_container.get_children():
+			if child is Sprite2D and child.name.begins_with("LandformSprite_"):
+				if not sprites_in_stack.has(child):
+					if block_material:
+						child.material = block_material.duplicate()
+						child.set_instance_shader_parameter("block_idx", float(height + 1))
+						child.set_instance_shader_parameter("total_height", float(height + 2))
+					sprites_in_stack.append(child)
+					
+		# ★ 修复2：如果敌人是 tscn 实例（如 Grass），提取它内部的 Sprite2D
+		for child in enemy_instance.get_children():
+			if child is Sprite2D:
+				if block_material:
+					child.material = block_material.duplicate()
+					child.set_instance_shader_parameter("block_idx", float(height + 1))
+					child.set_instance_shader_parameter("total_height", float(height + 2))
+				# 将内部精灵也加入栈，确保它能获得高度视图的 Shader
+				sprites_in_stack.append(child)
+				
+		landform_inst.owner_battle = self
 		GameLogger.debug("生成地貌: %s at %s" % [landform_inst.name, coord], "HexMap")
 	
 	# 旧的 enemy 系统已废弃，不再支持
@@ -1149,14 +1157,14 @@ func _compress_to_single_height_view() -> void:
 			if i < height - 1:  # 侧面地形精灵
 				# 溶解这个精灵（维持现有逻辑）
 				_tween_shader_param_single(sprite, "dissolve_blend", 1.0, 0.5)
-			else:  # 顶部地形精灵或地貌精灵
-				# 确保完全可见
+			else:  # 顶部地形精灵或地貌/实体内部精灵
 				_tween_shader_param_single(sprite, "dissolve_blend", 0.0, 0.1)
 				
-				# ★ 应用相对位移：当前位置 + 下落差值
-				# 这样保持所有顶层精灵和地貌精灵的相对位置关系
-				var target_y = sprite.position.y + drop_delta
-				_tween_position_y(sprite, target_y, 0.5)
+				# ★ 修复：只有直接挂在 stack_container 下的精灵才需要单独调整位置
+				# 如果是敌人内部的精灵，它的父节点(occupant)会负责下落，精灵不能再下落了，否则会掉到地下
+				if sprite.get_parent() == stack:
+					var target_y = sprite.position.y + drop_delta
+					_tween_position_y(sprite, target_y, 0.5)
 		
 		# 2. 移动地貌/敌人到扁平化位置（使用相对位移）
 		if is_instance_valid(occupant):

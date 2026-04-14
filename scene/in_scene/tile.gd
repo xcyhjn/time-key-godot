@@ -71,10 +71,10 @@ var step : int
 
 
 @export_group("时间占位系统")
-@export var timeline_shape_key: String = "1x1"  # 形状键名，如 "1x1", "1x2", "2x2"
-@export var timeline_shape_size: Vector2 = Vector2(1, 1)  # 形状尺寸
-var timeline_shape_coords: Array[Vector2] = []  # 形状坐标数组
-var _last_parsed_shape_key: String = ""  # 上次解析的形状键，用于幂等性检查
+@export var timeline_shape_key: String = "1"         # 原始输入的字符串（如 "011"）
+@export var timeline_shape_size: Vector2i = Vector2i(1, 1)  # ★ 必须是 Vector2i
+var timeline_shape_coords: Array[Vector2i] = []             # ★ 必须是 Vector2i
+var _last_parsed_shape_key: String = ""
 
 func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
@@ -156,7 +156,8 @@ func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_s
 	# 动态计算血条位置（适应项目大小变化）
 	var viewport_size = get_viewport().get_visible_rect().size
 	
-	owner_battle.CreateBar.emit(self, Attitude, world_position.x, world_position.y)
+	# 【修改为】使用动态调用来发射信号，完美绕过编译器的静态检测
+	owner_battle.emit_signal("CreateBar", self, Attitude, world_position.x, world_position.y)
 	print(str(position) + ": 唤起血条中")
 	random_damage()
 
@@ -185,110 +186,55 @@ func attach_visual(parent: Node2D, height: int, current_step_h: float, tile_scal
 	_add_landform_sprite(parent, location, height, current_step_h, tile_scale)
 
 
-## 解析矩阵形状
-## 格式: 逗号分隔 "010,111,010" 或 换行分隔 "010\n111\n010"
-## 占用字符: 1
-## 空字符: 0 或其他
-func _parse_matrix_shape(matrix_str: String) -> bool:
+## 核心二进制矩阵解析引擎
+func _parse_matrix_shape(matrix_str: String) -> void:
+	timeline_shape_coords.clear()
 	var rows: Array[String] = []
 	var trimmed = matrix_str.strip_edges()
 	
+	# 智能分行：支持逗号、换行，或者单纯的 "011"
 	if trimmed.contains(","):
-		# 逗号分隔格式
-		for row in trimmed.split(","):
-			var clean = row.strip_edges()
-			if not clean.is_empty():
-				rows.append(clean)
+		rows = Array(trimmed.split(",", false))
+	elif trimmed.contains("\n"):
+		rows = Array(trimmed.split("\n", false))
+	elif trimmed.contains(" ") and (trimmed.contains("0") or trimmed.contains("1")):
+		rows = Array(trimmed.split(" ", false))
 	else:
-		# 换行分隔格式
-		for line in trimmed.split("\n"):
-			var clean = line.strip_edges()
-			if not clean.is_empty():
-				rows.append(clean)
+		rows.append(trimmed)
 	
-	if rows.is_empty():
-		return false
+	if rows.is_empty(): 
+		return
 	
-	# 检查行长度一致
-	var width = rows[0].length()
-	for i in range(1, rows.size()):
-		if rows[i].length() != width:
-			return false
-	
-	# 解析坐标
-	var parsed_shape: Array[Vector2] = []
+	# ★ 严格按照你的需求：只寻找 "1" 并录入坐标
 	for y in range(rows.size()):
-		var row = rows[y]
+		var row = rows[y].strip_edges()
 		for x in range(row.length()):
 			if row[x] == "1":
-				parsed_shape.append(Vector2(x, y))
+				# ★ 确保装入的是 Vector2i
+				timeline_shape_coords.append(Vector2i(x, y))
 	
-	if parsed_shape.is_empty():
-		return false
-	
-	# 计算包围盒（Bounding Box）
-	# 包围盒是包含形状所有占用单元格的最小矩形区域
-	# 作用：
-	# 1. 确定形状的实际尺寸（宽度、高度）
-	# 2. 检查形状是否适合时间轴网格（12x3）
-	# 3. 为形状在时间轴上的放置提供定位参考
-	# 4. 确保视觉显示时形状正确对齐
-	# 
-	# 计算方法：遍历所有占用坐标，找到最小/最大的X和Y值
-	# 初始值设为极大值（最小坐标）和极小值（最大坐标）
-	var min_x = 1000  # 最小X坐标（最左侧）
-	var min_y = 1000  # 最小Y坐标（最上方）
-	var max_x = -1000 # 最大X坐标（最右侧）
-	var max_y = -1000 # 最大Y坐标（最下方）
-	
-	for coord in parsed_shape:
-		min_x = min(min_x, coord.x)  # 更新最小X
-		max_x = max(max_x, coord.x)  # 更新最大X
-		min_y = min(min_y, coord.y)  # 更新最小Y
-		max_y = max(max_y, coord.y)  # 更新最大Y
-	
-	# 包围盒尺寸计算：宽度 = 最大X - 最小X + 1，高度 = 最大Y - 最小Y + 1
-	# 注意：坐标从0开始，所以需要+1来得到实际的单元格数量
-	timeline_shape_size = Vector2(max_x - min_x + 1, max_y - min_y + 1)
-	timeline_shape_coords = parsed_shape
-	
-	# 尺寸警告
-	if timeline_shape_size.y > 3:
-		GameLogger.warning("矩阵形状高度 %d 超出网格最大高度3" % timeline_shape_size.y, "Tile")
-	
-	if timeline_shape_size.x > 12:
-		GameLogger.warning("矩阵形状宽度 %d 超出网格最大宽度12" % timeline_shape_size.x, "Tile")
-	
-	return true
+	# 计算该形状占用的最大尺寸 (Size)
+	if not timeline_shape_coords.is_empty():
+		var max_x = 0
+		var max_y = 0
+		for coord in timeline_shape_coords:
+			max_x = max(max_x, coord.x)
+			max_y = max(max_y, coord.y)
+		# 尺寸 = 最大坐标 + 1
+		timeline_shape_size = Vector2i(max_x + 1, max_y + 1)
+	else:
+		# 兜底空白
+		timeline_shape_size = Vector2i(1, 1)
+		timeline_shape_coords.append(Vector2i(0, 0))
+		
 
-## 解析时间占位形状（统一矩阵格式）
-func parse_timeline_shape() -> void:
-	# 幂等性检查：如果已经解析过当前形状键，则跳过
-	if _last_parsed_shape_key == timeline_shape_key and not timeline_shape_coords.is_empty():
-		return
-	
-	if timeline_shape_key.is_empty():
-		timeline_shape_key = "1"  # 默认1x1矩阵
-	
-	var trimmed_key = timeline_shape_key.strip_edges()
-	
-	# 尝试解析矩阵
-	if _parse_matrix_shape(trimmed_key):
-		_last_parsed_shape_key = timeline_shape_key
-		return
-	
-	# 矩阵解析失败：使用默认1x1
-	GameLogger.warning("无效的矩阵格式: %s，使用默认1x1" % timeline_shape_key, "Tile")
-	timeline_shape_key = "1"
-	_parse_matrix_shape("1")
-	_last_parsed_shape_key = timeline_shape_key
-
-
-
-## 获取时间占位形状坐标
-func get_timeline_shape_coords() -> Array[Vector2]:
+## 获取时间占位形状坐标 (供 TimelineManager 调用)
+func get_intent_shape() -> Array[Vector2i]:
 	parse_timeline_shape()  # 幂等性调用，确保形状已解析
-	return timeline_shape_coords
+	# 确保如果直接在检查器修改了 timeline_shape_key，也能被解析
+	if timeline_shape_coords.is_empty():
+		_parse_matrix_shape(timeline_shape_key)
+	return timeline_shape_coords.duplicate()
 
 
 ## 获取时间占位形状尺寸
@@ -339,13 +285,6 @@ func die() -> void:
 # ★ 敌人意图接口
 # ==========================================
 
-## 获取敌人的时间轴形状（实现 enemy_intent_manager 接口）
-func get_intent_shape() -> Array[Vector2i]:
-	parse_timeline_shape()  # 幂等性调用，确保形状已解析
-	GameLogger.debug("获取地形意图形状: %s, 坐标: %s" % [timeline_shape_key, timeline_shape_coords], "landform")
-	return timeline_shape_coords.duplicate()
-
-
 ## 获取敌人的意图行动（实现 enemy_intent_manager 接口）
 func get_intent_action(target_tile: Node = null) -> TimelineAction:
 	# 创建时间轴行动 - 使用正确的构造函数参数
@@ -369,7 +308,7 @@ func get_intent_action(target_tile: Node = null) -> TimelineAction:
 	return action
 
 
-## 设置时间占位形状
+## 设置时间占位形状 (供外部调用，如 village.gd 里的 set_timeline_shape("011"))
 func set_timeline_shape(shape_key: String) -> void:
 	timeline_shape_key = shape_key
 	parse_timeline_shape()
@@ -394,3 +333,19 @@ func tex_toggle():
 	elif State_Main == Main_State_Pool.Broken:
 		if !landform_damaged_tex.has(tex):
 			tex.texture = landform_tex[0]
+
+## ★ 恢复的幂等性检验函数
+func parse_timeline_shape() -> void:
+	# 如果当前要求解析的 key 和上次一样，并且坐标数组不是空的，直接跳过（节约性能）
+	if _last_parsed_shape_key == timeline_shape_key and not timeline_shape_coords.is_empty():
+		return
+	
+	# 如果没填，给个默认值
+	if timeline_shape_key.is_empty():
+		timeline_shape_key = "1"
+		
+	# 调用你写好的解析引擎
+	_parse_matrix_shape(timeline_shape_key)
+	
+	# 记录下来，下次就不用再解析了
+	_last_parsed_shape_key = timeline_shape_key

@@ -3,6 +3,8 @@
 #class_name GlobalDB
 extends Node
 
+# ★ 新增：玩家当前的逻辑牌组（存储卡牌的 ID 字符串）
+var player_deck: Array[String] = ["1", "2", "3"]
 ## 关键词库：包含颜色和详细解释
 const KEYWORDS: Dictionary = {
 	"消耗": {
