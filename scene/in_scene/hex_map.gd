@@ -1073,7 +1073,7 @@ func _compress_to_single_height_view() -> void:
 				"original_position": original_position
 			})
 			
-			# 应用高度视图shader（如果已配置）
+			# 应用高度视图shader（因为血条贴图已被收编进 sprites 数组，这里会自动给血条换上高度视图的Shader）
 			if height_view_shader_material:
 				sprite.material = height_view_shader_material.duplicate()
 				# 设置默认shader参数
@@ -1088,6 +1088,18 @@ func _compress_to_single_height_view() -> void:
 				"node": occupant,
 				"original_position": occupant.position
 			}
+			
+		# ★ 新增：探测并保存血条的原始位置
+		var health_bar_data = null
+		if is_instance_valid(occupant) and occupant.has_method("get_instance_id"):
+			var bar_manager = get_node_or_null("BarManager")
+			if bar_manager:
+				var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
+				if is_instance_valid(hb_node):
+					health_bar_data = {
+						"node": hb_node,
+						"original_position": hb_node.position
+					}
 		
 		# ★ 保存碰撞区的原始位置（如果存在）
 		var collision_data = null
@@ -1103,19 +1115,14 @@ func _compress_to_single_height_view() -> void:
 			"sprites_data": stack_sprites_data,
 			"height": height,
 			"occupant_data": occupant_data,
-			"collision_data": collision_data
+			"collision_data": collision_data,
+			"health_bar_data": health_bar_data # 存入血条数据
 		}
 		
-		# ★ 计算相对下落差值：顶层方块需要下落的垂直距离
-		# 顶层方块的原始Y坐标：-(height - 1) * current_step_h
-		# 目标Y坐标：0.0（最底部平面）
-		# 下落差值 = 目标Y - 原始Y = 0.0 - (-(height - 1) * current_step_h)
 		var top_block_y = -(height - 1) * current_step_h
 		var drop_delta = 0.0 - top_block_y  # 正数表示需要向下移动的距离
 		
 		if height <= 1:
-			# 高度为1的地块不需要溶解处理，但仍需要归一化保险处理
-			# 计算drop_delta（此时可能为0.0或微小值），确保所有元素同步降落
 			for sprite_data in stack_sprites_data:
 				if sprite_data == null:
 					continue
@@ -1123,19 +1130,23 @@ func _compress_to_single_height_view() -> void:
 				if not is_instance_valid(sprite):
 					continue
 				
-				# 应用相对位移：当前位置 + 下落差值
 				var target_y = sprite.position.y + drop_delta
-				if abs(drop_delta) > 0.1:  # 只有需要移动时才创建动画
+				if abs(drop_delta) > 0.1:  
 					_tween_position_y(sprite, target_y, 0.3)
 			
-			# 地貌/敌人应用相对位移同步降落
 			if occupant_data and is_instance_valid(occupant_data["node"]):
 				var occupant_node = occupant_data["node"]
 				var target_y = occupant_node.position.y + drop_delta
 				if abs(drop_delta) > 0.1:
 					_tween_position_y(occupant_node, target_y, 0.3)
+					
+			# 同步降落血条
+			if health_bar_data and is_instance_valid(health_bar_data["node"]):
+				var hb_node = health_bar_data["node"]
+				var target_y = hb_node.position.y + drop_delta
+				if abs(drop_delta) > 0.1:
+					_tween_position_y(hb_node, target_y, 0.3)
 			
-			# 碰撞区应用相对位移同步降落
 			if is_instance_valid(collision):
 				var target_y = collision.position.y + drop_delta
 				if abs(drop_delta) > 0.1:
@@ -1145,54 +1156,47 @@ func _compress_to_single_height_view() -> void:
 			continue
 		
 		# ==========================================
-		# 高度>1的地块处理逻辑（使用相对位移法则）
+		# 高度>1的地块处理逻辑
 		# ==========================================
 		
-		# 1. 溶解下方所有地形方块（侧面）
-		# 假设前 height 个精灵是地形精灵（索引 0 到 height-1）
-		# 索引 height-1 是顶部地形精灵
-		# 之后的精灵是地貌精灵
 		for i in range(sprites.size()):
 			var sprite = sprites[i]
 			if not is_instance_valid(sprite):
 				continue
 			
 			if i < height - 1:  # 侧面地形精灵
-				# 溶解这个精灵（维持现有逻辑）
 				_tween_shader_param_single(sprite, "dissolve_blend", 1.0, 0.5)
-			else:  # 顶部地形精灵或地貌/实体内部精灵
+			else:  # 顶部地形精灵、地貌实体精灵、血条精灵
 				_tween_shader_param_single(sprite, "dissolve_blend", 0.0, 0.1)
 				
-				# ★ 修复：只有直接挂在 stack_container 下的精灵才需要单独调整位置
-				# 如果是敌人内部的精灵，它的父节点(occupant)会负责下落，精灵不能再下落了，否则会掉到地下
+				# 修复：只有直接挂在 stack 下的精灵单独调整位置
+				# 血条精灵的父级是 HealthBar 根节点，不是 stack，所以会跳过这一步，避免双重下落
 				if sprite.get_parent() == stack:
 					var target_y = sprite.position.y + drop_delta
 					_tween_position_y(sprite, target_y, 0.5)
 		
-		# 2. 移动地貌/敌人到扁平化位置（使用相对位移）
+		# 移动地貌/敌人
 		if is_instance_valid(occupant):
-			# ★ 应用相对位移：敌人当前位置 + 下落差值
-			# 不再硬编码 hitbox_offset_y - 20，保持原有精细排版
 			var target_y = occupant.position.y + drop_delta
-			GameLogger.debug("移动敌人，原始Y: " + str(occupant.position.y) + "，drop_delta: " + str(drop_delta) + "，目标Y: " + str(target_y), "HexMap")
 			_tween_position_y(occupant, target_y, 0.5)
+			
+		# ★ 移动血条UI节点
+		if is_instance_valid(health_bar_data) and is_instance_valid(health_bar_data["node"]):
+			var hb_node = health_bar_data["node"]
+			var target_y = hb_node.position.y + drop_delta
+			_tween_position_y(hb_node, target_y, 0.5)
 		
-		# 3. 移动碰撞区到扁平化位置（使用相对位移）
+		# 移动碰撞区
 		if is_instance_valid(collision):
-			# ★ 应用相对位移：碰撞区当前位置 + 下落差值
-			# 不再硬编码 hitbox_offset_y，保持原有位置关系
 			var target_y = collision.position.y + drop_delta
 			_tween_position_y(collision, target_y, 0.5)
 		
-		# 4. 创建高度指示器（光柱 + 标签）
-		# 注意：在_create_height_indicator中已经使用真实视觉中心计算锚点
 		_create_height_indicator(stack, height)
 
 ## 恢复原始高度视图（物理坐标扁平化版本）
 func _restore_original_height_view() -> void:
 	GameLogger.info("恢复原始高度视图（恢复物理坐标）", "HexMap")
 	
-	# 停止所有光柱动画
 	for stack_key in height_view_pillar_tweens.keys():
 		var tween = height_view_pillar_tweens[stack_key]
 		if is_instance_valid(tween):
@@ -1210,14 +1214,14 @@ func _restore_original_height_view() -> void:
 		
 		total_stacks += 1
 		
-		# ★ 恢复原始材质和位置
 		if height_view_original_materials.has(stack):
 			var stack_data = height_view_original_materials[stack] as Dictionary
 			var stack_sprites_data = stack_data.get("sprites_data", []) as Array
 			var occupant_data = stack_data.get("occupant_data")
 			var collision_data = stack_data.get("collision_data")
+			var health_bar_data = stack_data.get("health_bar_data") # 取出血条数据
 			
-			# 1. 恢复精灵的材质和位置
+			# 1. 恢复精灵
 			for sprite_data in stack_sprites_data:
 				if sprite_data == null:
 					continue
@@ -1228,19 +1232,15 @@ func _restore_original_height_view() -> void:
 				
 				if is_instance_valid(sprite):
 					total_sprites += 1
-					
-					# 恢复材质
 					if original_material:
 						sprite.material = original_material
 					
-					# 恢复原始位置（Y坐标补间动画）
 					var current_y = sprite.position.y
 					var target_y = original_position.y
 					if abs(current_y - target_y) > 0.1:
-						GameLogger.debug("恢复精灵位置，当前Y: " + str(current_y) + "，目标Y: " + str(target_y), "HexMap")
 						_tween_position_y(sprite, target_y, 0.5)
 			
-			# 2. 恢复地貌/敌人的原始位置
+			# 2. 恢复地貌/敌人
 			if occupant_data and is_instance_valid(occupant_data["node"]):
 				var occupant_node = occupant_data["node"]
 				var original_position = occupant_data.get("original_position", Vector2.ZERO)
@@ -1248,10 +1248,18 @@ func _restore_original_height_view() -> void:
 				var target_y = original_position.y
 				if abs(current_y - target_y) > 0.1:
 					total_occupants += 1
-					GameLogger.debug("恢复敌人位置，当前Y: " + str(current_y) + "，目标Y: " + str(target_y), "HexMap")
 					_tween_position_y(occupant_node, target_y, 0.5)
+					
+			# 3. ★ 恢复血条UI位置
+			if health_bar_data and is_instance_valid(health_bar_data["node"]):
+				var hb_node = health_bar_data["node"]
+				var original_position = health_bar_data.get("original_position", Vector2.ZERO)
+				var current_y = hb_node.position.y
+				var target_y = original_position.y
+				if abs(current_y - target_y) > 0.1:
+					_tween_position_y(hb_node, target_y, 0.5)
 			
-			# 3. 恢复碰撞区的原始位置
+			# 4. 恢复碰撞区
 			if collision_data and is_instance_valid(collision_data["node"]):
 				var collision_node = collision_data["node"]
 				var original_position = collision_data.get("original_position", Vector2.ZERO)
@@ -1263,25 +1271,20 @@ func _restore_original_height_view() -> void:
 		var sprites = stack.get_meta("sprites") as Array
 		var height = stack.get_meta("height") as int
 		
-		# ★ 彻底清除所有精灵的溶解状态（双重保险）
-		# 先直接设置溶解值为0（立即生效）
 		for sprite in sprites:
 			if not is_instance_valid(sprite) or not sprite.material:
 				continue
 			sprite.set_instance_shader_parameter("dissolve_blend", 0.0)
 		
-		# 再使用补间动画确保平滑过渡（如果有需要）
 		for sprite in sprites:
 			if not is_instance_valid(sprite):
 				continue
 			_tween_shader_param_single(sprite, "dissolve_blend", 0.0, 0.3)
 		
-		# 移除高度指示器
 		_remove_height_indicator(stack)
 	
 	GameLogger.info("恢复完成，总计: " + str(total_stacks) + "个地块, " + str(total_sprites) + "个精灵, " + str(total_occupants) + "个敌人/地貌", "HexMap")
 	
-	# 清空状态
 	height_view_hovered_stack = null
 	height_view_selected_stack = null
 	height_view_original_materials.clear()
@@ -1581,3 +1584,50 @@ func set_visuals_locked(locked: bool) -> void:
 	if not locked:
 		hovered_stacks.clear()
 		_update_highlight()
+
+# ==========================================
+# ★ 血条 (HealthBuffer) 视觉同步注册系统
+# ==========================================
+## 当血条生成后，将其视觉组件加入到对应的渲染栈中，以便统一Shader和高亮
+func recollect_sprites_for_landform(landform_obj: landform) -> void:
+	var coord = landform_obj.location
+	# 修复：使用你真实的存储字典 stack_nodes
+	if not stack_nodes.has(coord): 
+		return
+	
+	var stack = stack_nodes[coord]
+	if not is_instance_valid(stack):
+		return
+		
+	var sprites_list = stack.get_meta("sprites") as Array
+	var height = stack.get_meta("height") as int
+	
+	# 在 BarManager 中寻找属于这个 landform 的血条 (HealthBuffer模式)
+	var bar_manager = get_node_or_null("BarManager")
+	if bar_manager:
+		var bar_node = bar_manager.get_node_or_null("HealthBar_" + str(landform_obj.get_instance_id()))
+		if bar_node:
+			# 寻找血条内部的所有 Sprite2D 或 TextureRect 并加入精灵列表
+			_find_and_register_ui_sprites(bar_node, sprites_list, height)
+
+## 递归寻找 UI 内部的贴图并赋予初始材质
+func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void:
+	if node is Sprite2D or node is TextureRect:
+		if not list.has(node):
+			if block_material:
+				node.material = block_material.duplicate()
+				node.set_instance_shader_parameter("block_idx", float(height + 1))
+				node.set_instance_shader_parameter("total_height", float(height + 2))
+			list.append(node) # 将血条贴图收编进地块阵列
+			
+	for child in node.get_children():
+		_find_and_register_ui_sprites(child, list, height)
+
+func _apply_shader_to_ui_sprite(sprite: Sprite2D, list: Array, height: int):
+	if not list.has(sprite):
+		# 赋予与地块一致的材质
+		if block_material:
+			sprite.material = block_material.duplicate()
+			sprite.set_instance_shader_parameter("block_idx", float(height + 1))
+			sprite.set_instance_shader_parameter("total_height", float(height + 2))
+		list.append(sprite)
