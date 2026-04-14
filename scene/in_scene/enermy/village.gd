@@ -11,8 +11,8 @@ func _init(location_in : Vector2,battle_in):
 	Max_Blood = 100
 	super._init(
 	"village", 
-	["res://图片/Highest_Building.png"], 
-	["res://图片/Highest_Building_Broken.png"], 
+	["res://image/enermy/villiage/Highest_Building.png"], 
+	["res://image/enermy/villiage/Highest_Building_Broken.png"], 
 	{"require_height": [1, 2, 3, 4, 5], 
 	"chance": 0.3},
 	location_in,

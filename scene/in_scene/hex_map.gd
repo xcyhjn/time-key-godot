@@ -388,7 +388,7 @@ func pick_landform(h: int, terrain, rng: RandomNumberGenerator, coord: Vector2i)
 			continue
 		var landform_inst = landform_script.new(coord, self)
 		# 使用 landform 的规则检查是否适合放置（coord 已经是 Vector2i 类型）
-		if not landform_inst.get_possible_coords(h, terrain_enum, rng, map_data[coord], true):
+		if not landform_inst.get_possible_coords(h, terrain_enum, map_data[coord]):
 			continue
 		passed.append(landform_inst)
 
