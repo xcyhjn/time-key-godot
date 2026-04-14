@@ -1612,13 +1612,15 @@ func recollect_sprites_for_landform(landform_obj: landform) -> void:
 
 ## 递归寻找 UI 内部的贴图并赋予初始材质
 func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void:
-	if node is Sprite2D or node is TextureRect:
+	# ★ 精确匹配你 tscn 中的节点类型：TextureProgressBar
+	if node is Sprite2D or node is TextureRect or node is TextureProgressBar:
 		if not list.has(node):
 			if block_material:
 				node.material = block_material.duplicate()
 				node.set_instance_shader_parameter("block_idx", float(height + 1))
 				node.set_instance_shader_parameter("total_height", float(height + 2))
-			list.append(node) # 将血条贴图收编进地块阵列
+			list.append(node) # 收编进地块阵列
+			GameLogger.debug("🩸 成功将血条组件收编进地块渲染序列: " + node.name, "HexMap")
 			
 	for child in node.get_children():
 		_find_and_register_ui_sprites(child, list, height)
@@ -1631,3 +1633,22 @@ func _apply_shader_to_ui_sprite(sprite: Sprite2D, list: Array, height: int):
 			sprite.set_instance_shader_parameter("block_idx", float(height + 1))
 			sprite.set_instance_shader_parameter("total_height", float(height + 2))
 		list.append(sprite)
+
+# ==========================================
+# ★ 血条等外部节点的视觉同步注册系统
+# ==========================================
+
+## 接收外部节点（如血条），将其内部的贴图加入地块渲染序列
+func register_extra_render_node(coord: Vector2i, node: Node) -> void:
+	if not stack_nodes.has(coord): 
+		GameLogger.warning("注册血条失败：找不到地块坐标 " + str(coord), "HexMap")
+		return
+	
+	var stack = stack_nodes[coord]
+	if not is_instance_valid(stack): return
+	
+	var sprites_list = stack.get_meta("sprites") as Array
+	var height = stack.get_meta("height") as int
+	
+	# 开始递归寻找并注册 UI 贴图
+	_find_and_register_ui_sprites(node, sprites_list, height)

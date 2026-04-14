@@ -79,9 +79,7 @@ hitbox_base_height = 120.0
 hitbox_offset_x = 0.0
 hitbox_offset_y = -100.0
 
-[node name="BarManager" type="Control" parent="map/HexMap" unique_id=1203010473]
-layout_mode = 3
-anchors_preset = 0
+[node name="BarManager" type="Node2D" parent="map/HexMap" unique_id=1828959517]
 script = ExtResource("5_1gj6i")
 
 [node name="Camera2D" type="Camera2D" parent="map" unique_id=1566374518]

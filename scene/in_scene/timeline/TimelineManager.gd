@@ -30,15 +30,15 @@ signal action_hovered_changed(action: TimelineAction, is_hovering: bool)
 
 # 检查一个具体的形状在指定原点是否合法（不越界、不重叠）
 func is_placement_valid(shape_coords: Array[Vector2i], origin: Vector2i) -> bool:
-	GameLogger.debug("TimelineManager.is_placement_valid: shape_coords=%s, origin=%s, grid_size=%d x %d, 当前网格占用数=%d" % [
-		shape_coords, origin, GRID_WIDTH, GRID_HEIGHT, grid.size()
-	], "TimelineManager")
+	#GameLogger.debug("TimelineManager.is_placement_valid: shape_coords=%s, origin=%s, grid_size=%d x %d, 当前网格占用数=%d" % [
+		#shape_coords, origin, GRID_WIDTH, GRID_HEIGHT, grid.size()
+	#], "TimelineManager")
 	
 	# 验证origin本身是否在网格范围内（额外安全检查）
 	if origin.x < 0 or origin.x >= GRID_WIDTH or origin.y < 0 or origin.y >= GRID_HEIGHT:
-		GameLogger.warning("is_placement_valid: origin=%s本身超出网格范围！GRID_WIDTH=%d, GRID_HEIGHT=%d" % [
-			origin, GRID_WIDTH, GRID_HEIGHT
-		], "TimelineManager")
+		#GameLogger.warning("is_placement_valid: origin=%s本身超出网格范围！GRID_WIDTH=%d, GRID_HEIGHT=%d" % [
+			#origin, GRID_WIDTH, GRID_HEIGHT
+		#], "TimelineManager")
 		return false
 	
 	# 检查形状边界是否适合网格
@@ -58,28 +58,28 @@ func is_placement_valid(shape_coords: Array[Vector2i], origin: Vector2i) -> bool
 				max_y = offset.y
 		# 检查X轴边界
 		if origin.x + min_x < 0 or origin.x + max_x >= GRID_WIDTH:
-			GameLogger.warning("is_placement_valid: 形状X轴范围超出网格! origin.x=%d, 形状X范围[%d, %d], GRID_WIDTH=%d" % [
-				origin.x, min_x, max_x, GRID_WIDTH
-			], "TimelineManager")
+			#GameLogger.warning("is_placement_valid: 形状X轴范围超出网格! origin.x=%d, 形状X范围[%d, %d], GRID_WIDTH=%d" % [
+				#origin.x, min_x, max_x, GRID_WIDTH
+			#], "TimelineManager")
 			return false
 		# 检查Y轴边界
 		if origin.y + min_y < 0 or origin.y + max_y >= GRID_HEIGHT:
-			GameLogger.warning("is_placement_valid: 形状Y轴范围超出网格! origin.y=%d, 形状Y范围[%d, %d], GRID_HEIGHT=%d" % [
-				origin.y, min_y, max_y, GRID_HEIGHT
-			], "TimelineManager")
+			#GameLogger.warning("is_placement_valid: 形状Y轴范围超出网格! origin.y=%d, 形状Y范围[%d, %d], GRID_HEIGHT=%d" % [
+				#origin.y, min_y, max_y, GRID_HEIGHT
+			#], "TimelineManager")
 			return false
 	
 	for offset in shape_coords:
 		var target_pos = origin + offset
-		GameLogger.debug("检查坐标: offset=%s, target_pos=%s, 计算: %s + %s" % [
-			offset, target_pos, origin, offset
-		], "TimelineManager")
+		#GameLogger.debug("检查坐标: offset=%s, target_pos=%s, 计算: %s + %s" % [
+			#offset, target_pos, origin, offset
+		#], "TimelineManager")
 
 		# 1. 越界检测
 		if target_pos.x < 0 or target_pos.x >= GRID_WIDTH or target_pos.y < 0 or target_pos.y >= GRID_HEIGHT:
-			GameLogger.warning("越界检测失败: target_pos=%s超出网格范围 (GRID_WIDTH=%d, GRID_HEIGHT=%d)" % [
-				target_pos, GRID_WIDTH, GRID_HEIGHT
-			], "TimelineManager")
+			#GameLogger.warning("越界检测失败: target_pos=%s超出网格范围 (GRID_WIDTH=%d, GRID_HEIGHT=%d)" % [
+				#target_pos, GRID_WIDTH, GRID_HEIGHT
+			#], "TimelineManager")
 			return false
 
 		# 2. 碰撞/重叠检测
@@ -97,9 +97,9 @@ func is_placement_valid(shape_coords: Array[Vector2i], origin: Vector2i) -> bool
 						action_type = "PLAYER"
 				var origin_pos = occupant.get("origin_grid_pos")
 				occupant_info = "TimelineAction(type=" + action_type + ", origin=" + (str(origin_pos) if origin_pos != null else "N/A") + ")"
-			GameLogger.warning("碰撞检测失败: target_pos=%s已被占用，当前占用者: %s" % [
-				target_pos, occupant_info
-			], "TimelineManager")
+			#GameLogger.warning("碰撞检测失败: target_pos=%s已被占用，当前占用者: %s" % [
+				#target_pos, occupant_info
+			#], "TimelineManager")
 			return false
 
 	GameLogger.debug("放置验证通过: shape_coords=%s, origin=%s, 所有坐标在网格范围内且无碰撞" % [
@@ -110,9 +110,9 @@ func is_placement_valid(shape_coords: Array[Vector2i], origin: Vector2i) -> bool
 
 # 尝试放置一个行动到时间轴
 func place_action(action: TimelineAction, origin: Vector2i) -> bool:
-	GameLogger.debug("place_action: 开始放置行动，origin=%s, type=%s" % [
-		origin, "PLAYER" if action.type == TimelineAction.Type.PLAYER else "ENEMY"
-	], "TimelineManager")
+	#GameLogger.debug("place_action: 开始放置行动，origin=%s, type=%s" % [
+		#origin, "PLAYER" if action.type == TimelineAction.Type.PLAYER else "ENEMY"
+	#], "TimelineManager")
 	
 	if not is_placement_valid(action.shape_coords, origin):
 		GameLogger.warning("place_action: 验证失败，无法放置", "TimelineManager")
