@@ -18,7 +18,6 @@
 [ext_resource type="Script" uid="uid://dxge25pjqhhag" path="res://scene/in_scene/in_scene.gd" id="18_0vlha"]
 [ext_resource type="Shader" uid="uid://d3sbyeeqsa34" path="res://shaders/pulse_highlight.gdshader.gdshader" id="19_b3wb3"]
 [ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="20_lifwa"]
-[ext_resource type="Script" uid="uid://ddrq5364kxv52" path="res://scene/global/global_timecoin.gd" id="21_6ecqr"]
 [ext_resource type="Texture2D" uid="uid://dhlwuga6drnjh" path="res://image/timecoin_ui_back.png" id="22_ma4x0"]
 [ext_resource type="Script" uid="uid://berteeiph66x1" path="res://scene/in_scene/timecoin_ui.gd" id="22_nj7no"]
 [ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="23_1wmus"]
@@ -305,13 +304,12 @@ max_keywords_per_column = 5
 visible = false
 script = null
 
-[node name="GlobalTimecoin" type="Node" parent="." unique_id=512071538]
-script = ExtResource("21_6ecqr")
+[node name="TimecoinView" type="Node" parent="." unique_id=512071538]
 
-[node name="TimecoinCanvasLayer" type="CanvasLayer" parent="GlobalTimecoin" unique_id=1912998284]
+[node name="TimecoinCanvasLayer" type="CanvasLayer" parent="TimecoinView" unique_id=1912998284]
 layer = 100
 
-[node name="TimecoinContainer" type="PanelContainer" parent="GlobalTimecoin/TimecoinCanvasLayer" unique_id=1557776462]
+[node name="TimecoinContainer" type="PanelContainer" parent="TimecoinView/TimecoinCanvasLayer" unique_id=1557776462]
 custom_minimum_size = Vector2(100, 0)
 anchors_preset = 1
 anchor_left = 1.0
@@ -324,12 +322,12 @@ grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxTexture_pg1mb")
 script = ExtResource("22_nj7no")
 
-[node name="HorizontalLayout" type="HBoxContainer" parent="GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer" unique_id=2056948486]
+[node name="HorizontalLayout" type="HBoxContainer" parent="TimecoinView/TimecoinCanvasLayer/TimecoinContainer" unique_id=2056948486]
 layout_mode = 2
 theme_override_constants/separation = 30
 alignment = 1
 
-[node name="TimecoinAmount" type="Label" parent="GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer/HorizontalLayout" unique_id=1826048272]
+[node name="TimecoinAmount" type="Label" parent="TimecoinView/TimecoinCanvasLayer/TimecoinContainer/HorizontalLayout" unique_id=1826048272]
 custom_minimum_size = Vector2(80, 40)
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
@@ -338,7 +336,7 @@ theme_override_font_sizes/font_size = 40
 text = "0"
 horizontal_alignment = 1
 
-[node name="HourglassIcon" type="TextureRect" parent="GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer/HorizontalLayout" unique_id=2133011414]
+[node name="HourglassIcon" type="TextureRect" parent="TimecoinView/TimecoinCanvasLayer/TimecoinContainer/HorizontalLayout" unique_id=2133011414]
 material = SubResource("ShaderMaterial_lh47e")
 layout_mode = 2
 texture = ExtResource("25_7x3b2")

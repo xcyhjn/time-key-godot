@@ -4,6 +4,7 @@ var era : int
 var phase : int
 var speed_index: int = 1
 
+
 signal choose
 signal choose_confirm
 signal choose_cancel

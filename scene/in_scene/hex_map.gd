@@ -583,6 +583,9 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 				sprites_in_stack.append(child)
 				
 		landform_inst.owner_battle = self
+		# ★ 新增：如果该地貌的态度是敌人，则加入 Enemies 组
+		if landform_inst.Attitude == landform_inst.Attitude_Pool.Enemy:
+			landform_inst.add_to_group("Enemies")
 		GameLogger.debug("生成地貌: %s at %s" % [landform_inst.name, coord], "HexMap")
 	
 	# 旧的 enemy 系统已废弃，不再支持

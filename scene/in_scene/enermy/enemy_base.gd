@@ -14,6 +14,7 @@ var current_hp: int
 
 
 func _ready() -> void:
+	add_to_group("Enemies") # ★ 新增：实体敌人也自动加入组
 	current_hp = max_hp
 	GameLogger.info("【生成】%s 降临了！HP: %d" % [enemy_name, current_hp], "EnemyBase")
 

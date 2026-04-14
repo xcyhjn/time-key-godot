@@ -142,6 +142,18 @@ func place_action(action: TimelineAction, origin: Vector2i) -> bool:
 
 # 结算整个时间轴，从左到右(时间)，从上到下(并发)
 func resolve_timeline() -> void:
+	# ==========================================
+	# ★ 核心新增：在开始结算（和清空网格）之前，先计算空位并增加时间币
+	# ==========================================
+	var total_slots = GRID_WIDTH * GRID_HEIGHT
+	var occupied_slots = grid.size()
+	var empty_slots = total_slots - occupied_slots
+	
+	if empty_slots > 0 and GlobalTimecoin:
+		GlobalTimecoin.add_from_timeline(empty_slots)
+		GameLogger.info("💰 回合结算前：检测到 %d 个空位，已发放时间币" % empty_slots, "TimelineManager")
+	# ==========================================
+
 	# 外层循环：时间列 (X轴)
 	for x in range(GRID_WIDTH):
 		# 内层循环：并发层 (Y轴)

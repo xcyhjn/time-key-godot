@@ -25,8 +25,9 @@ signal hover_position_changed(grid_pos: Vector2i, is_valid: bool)  ## 悬停位�
 # 导出变量 - 视觉效果
 # ==========================================# 导出变量 - 视觉效果
 @export_group("视觉效果")
-@export var drag_shader: Shader  ## 拖拽时的着色器
-@export var float_offset: Vector2 = Vector2(-15, -15)  ## 悬浮偏移量
+@export var drag_shader: Shader
+@export var float_offset: Vector2 = Vector2(-15, -15)
+@export var mouse_grab_offset: Vector2 = Vector2.ZERO # ★ 新增：鼠标抓取偏移，(0,0)表示完美吸附在卡牌中心
 
 # 导出变量 - 动画设置
 @export_group("动画设置")
@@ -234,9 +235,10 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 		var actual_card_center = actual_card_global_pos + actual_card_size * Vector2(scale_factor, scale_factor) / 2
 		GameLogger.debug("卡牌中心计算完成: " + str(actual_card_center), "DragShapeController")
 		
-		# 使用目标缩放计算的卡牌中心计算拖拽偏移
-		drag_offset = mouse_pos - actual_card_center
-		GameLogger.debug("拖拽偏移计算: " + str(drag_offset), "DragShapeController")
+		# ★ 修复拖拽偏移：废弃容易出错的全局坐标换算，直接使用用户定义的抓取偏移
+		# 默认值为 Vector2.ZERO，意味着鼠标会精确地按在卡牌的视觉中心点上
+		drag_offset = mouse_grab_offset
+		GameLogger.debug("拖拽偏移锁定为: " + str(drag_offset), "DragShapeController")
 
 		# 3. 应用拖拽着色器
 		if card.material and drag_shader:

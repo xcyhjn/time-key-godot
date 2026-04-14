@@ -50,8 +50,7 @@ var drop_area = 4.0 / 7.0
 
 # ★ 新增：地图和时间币显示引用
 @onready var hex_map = $"../../map/HexMap"
-@onready var global_timecoin = $"../../GlobalTimecoin"
-@onready var timecoin_container = $"../../GlobalTimecoin/TimecoinCanvasLayer/TimecoinContainer"
+@onready var timecoin_container = get_node_or_null("/root/in_scene/TimecoinView/TimecoinCanvasLayer/TimecoinContainer")
 
 # ★ 新增：回合按钮引用
 @onready var start_turn_button = $"../StartTurnButton"

@@ -25,6 +25,7 @@ MapState="*uid://d3x5dg5yo75f5"
 GlobalClock="*uid://82svss58r3m6"
 Signal_Bus="*uid://db1rpjhabup7l"
 GlobalDB="*uid://c42gcxvrqf4h7"
+GlobalTimecoin="*uid://ddrq5364kxv52"
 
 [display]
 
