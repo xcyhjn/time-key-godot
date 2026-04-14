@@ -211,11 +211,11 @@ func _switch_to_win_screen() -> void:
 	
 	# 切换场景
 	if GlobalClock and GlobalClock.has_method("switch_to_scene"):
-		GlobalClock.switch_to_scene("res://scenes/ui/game_win_screen.tscn")
+		GlobalClock.switch_to_scene("res://scene/game_win/game_win_screen.tscn")
 	else:
 		GameLogger.error("GlobalClock无效或缺少switch_to_scene方法", "VictoryOrchestrator")
 		# 备用方案：直接切换场景
-		var err = get_tree().change_scene_to_file("res://scenes/ui/game_win_screen.tscn")
+		var err = get_tree().change_scene_to_file("res://scene/game_win/game_win_screen.tscn")
 		if err != OK:
 			GameLogger.error("直接场景切换失败: " + str(err), "VictoryOrchestrator")
 	

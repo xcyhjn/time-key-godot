@@ -167,7 +167,7 @@ func _ready():
 
 	build_map_pipeline()
 	# 绑定现有高度视图切换按钮
-	var height_view_button = get_node_or_null("../ui/HeightViewToggleButton")
+	var height_view_button = get_node_or_null("ui/HeightViewToggleButton")
 	if not height_view_button:
 		# 尝试其他可能路径
 		height_view_button = get_node_or_null("/root/project/ui/HeightViewToggleButton")

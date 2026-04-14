@@ -146,7 +146,7 @@ func _get_hex_map() -> Node:
 		return hex_map
 	
 	# 备用方案：如果节点结构变化，尝试绝对路径
-	hex_map = get_tree().root.get_node_or_null("/root/project/map/HexMap")
+	hex_map = get_tree().root.get_node_or_null("/root/in_scene/map/HexMap")
 	if hex_map:
 		GameLogger.debug("通过绝对路径找到HexMap节点", "DragShapeController")
 		return hex_map
@@ -1219,14 +1219,14 @@ func end_dragging_success() -> void:
 func _find_project_node() -> Node:
 	# 直接定位project节点（DragShapeController在ui/TimelineSystem下，project是根节点）
 	var project_node = get_node_or_null("../..")
-	if project_node and project_node.name == "project":
-		GameLogger.debug("找到project节点", "DragShapeController")
+	if project_node and project_node.name == "in_scene":
+		GameLogger.debug("找到in_scene节点", "DragShapeController")
 		return project_node
 	
 	# 备用方案：绝对路径
-	project_node = get_tree().root.get_node_or_null("/root/project")
+	project_node = get_tree().root.get_node_or_null("/root/in_scene")
 	if project_node:
-		GameLogger.debug("通过绝对路径找到project节点", "DragShapeController")
+		GameLogger.debug("通过绝对路径找到in_scene节点", "DragShapeController")
 		return project_node
 	
 	return null
