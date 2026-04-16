@@ -25,6 +25,7 @@
 [ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="23_1wmus"]
 [ext_resource type="Shader" uid="uid://b81yjopqdvi60" path="res://shaders/hourglass_shake.gdshader" id="24_rejwe"]
 [ext_resource type="Texture2D" uid="uid://cxxrld3kjarqv" path="res://image/hourglass.png" id="25_7x3b2"]
+[ext_resource type="Texture2D" uid="uid://bks043lephgga" path="res://image/texture/FDA2A135E3966CB2DAEB7B49CE9EC876.jpg" id="26_cmmty"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_djuk3"]
 shader = ExtResource("4_tpwa4")
@@ -60,6 +61,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="Parallax2D" type="Parallax2D" parent="." unique_id=733942815]
+scroll_scale = Vector2(0.5, 0.5)
+repeat_size = Vector2(3000, 3000)
+repeat_times = 10
+ignore_camera_scroll = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Parallax2D" unique_id=1002480340]
+texture_repeat = 2
+texture = ExtResource("26_cmmty")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 3000, 3000)
 
 [node name="map" type="Control" parent="." unique_id=505748231]
 anchors_preset = 0
