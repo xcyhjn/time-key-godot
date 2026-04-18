@@ -76,13 +76,9 @@ func _get_card_manager() -> Node:
 	return null
 	
 ## 查找弃牌区
-func _find_discard_pile() -> void:
+func _find_discard_pile() -> Node:
 	var main = _get_main_board()
-	if main and main.get("discard_pile"):
-		discard_pile = main.discard_pile
-		GameLogger.debug("通过 MainBoard 成功获取 DiscardPile", "DragShapeController")
-	else:
-		GameLogger.warning("未找到弃牌区", "DragShapeController")
+	return main.discard_pile if main else null
 		
 ## 查找玩家手牌
 func _find_player_hand() -> Node:
@@ -1095,80 +1091,20 @@ func end_dragging_success() -> void:
 
 	# 处理弃牌逻辑
 	if is_instance_valid(current_card):
-		var card_moved_to_discard = false
-		# ... 后续代码保持不变 ...
-		# 方案1：优先使用project.gd的弃牌系统
-		var control_node = _find_project_node()
-		if control_node:
-			GameLogger.debug("找到project节点，尝试使用其弃牌系统", "DragShapeController")
+		var discard_pile_node = _find_discard_pile()
+		var main_board = _get_main_board()
+
+		# 直接尝试移入弃牌区
+		if is_instance_valid(discard_pile_node) and discard_pile_node.has_method("move_cards"):
+			discard_pile_node.move_cards([current_card])
+			GameLogger.info("卡牌已移入弃牌区: %s" % current_card.name, "DragShapeController")
 			
-			# 检查project是否有discard_pile属性 - 使用安全的get方法
-			var discard_pile_ref = control_node.get("discard_pile")
-			if discard_pile_ref != null:
-				if discard_pile_ref is Object:
-					# 安全检查是否有move_cards方法
-					var has_move_cards_method = false
-					if discard_pile_ref is Object:
-						has_move_cards_method = discard_pile_ref.has_method("move_cards")
-					
-					if has_move_cards_method:
-						# 将卡牌移动到弃牌区
-						discard_pile_ref.move_cards([current_card])
-						GameLogger.info("通过project.gd将卡牌移入弃牌区: %s" % current_card.name, "DragShapeController")
-						card_moved_to_discard = true
-					else:
-						GameLogger.debug("discard_pile对象没有move_cards方法", "DragShapeController")
-				else:
-					GameLogger.debug("discard_pile属性不是有效的对象", "DragShapeController")
-			else:
-				GameLogger.debug("project节点没有discard_pile属性", "DragShapeController")
-			
-			# 如果project有弃牌处理方法，调用它（即使卡牌没有移动到弃牌区）
-			# 使用安全的方式检查方法是否存在
-			var has_discard_effects_method = false
-			if control_node is Object:
-				has_discard_effects_method = control_node.has_method("_handle_discard_effects")
-			
-			if has_discard_effects_method:
-				GameLogger.info("调用project.gd的弃牌效果处理方法: %s" % current_card.name, "DragShapeController")
-				control_node.call_deferred("_handle_discard_effects", current_card)
-		
-		# 方案2：如果project.gd不可用，使用DragShapeController找到的弃牌区引用
-		if not card_moved_to_discard and discard_pile:
-			# 安全检查是否有move_cards方法
-			var has_move_cards_method = false
-			if discard_pile is Object:
-				has_move_cards_method = discard_pile.has_method("move_cards")
-			
-			if has_move_cards_method:
-				GameLogger.info("使用DragShapeController的弃牌区将卡牌移入弃牌区: %s" % current_card.name, "DragShapeController")
-				# 确保卡牌状态恢复
-				current_card.mouse_filter = Control.MOUSE_FILTER_STOP
-				current_card.modulate = Color.WHITE
-				current_card.scale = Vector2.ONE
-				# 将卡牌移入弃牌区
-				discard_pile.move_cards([current_card])
-				card_moved_to_discard = true
-		
-		# 方案3：如果以上都失败，尝试重新查找弃牌区
-		if not card_moved_to_discard:
-			GameLogger.debug("弃牌区未找到，尝试重新查找...", "DragShapeController")
-			_find_discard_pile()
-			
-			if discard_pile:
-				# 安全检查是否有move_cards方法
-				var has_move_cards_method = false
-				if discard_pile is Object:
-					has_move_cards_method = discard_pile.has_method("move_cards")
-				
-				if has_move_cards_method:
-					GameLogger.info("重新查找后找到弃牌区，将卡牌移入弃牌区", "DragShapeController")
-					discard_pile.move_cards([current_card])
-					card_moved_to_discard = true
-		
-		# 方案4：终极回退 - 返回手牌
-		if not card_moved_to_discard:
-			GameLogger.warning("未找到弃牌区，让卡牌返回手牌: %s" % current_card.name, "DragShapeController")
+			# 触发弃牌效果
+			if is_instance_valid(main_board) and main_board.has_method("_handle_discard_effects"):
+				main_board.call_deferred("_handle_discard_effects", current_card)
+		else:
+			# 终极回退
+			GameLogger.warning("未找到有效弃牌区，卡牌将返回手牌", "DragShapeController")
 			_return_card_to_hand(current_card)
 
 	# 收起时间轴
