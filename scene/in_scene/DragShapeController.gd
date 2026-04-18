@@ -135,18 +135,26 @@ func _ready() -> void:
 # ==========================================
 
 
-## 启动拖拽模式（在玩家点击合法地块后调用）
+## 启动拖拽模式
 func start_dragging(card: Control, target_tile: Node) -> void:
 	is_dragging = true
 	current_card = card
 	current_target_tile = target_tile
 
-	# 从卡牌数据中获取初始形状
-	var raw_shape = card.card_info.get("shape", [Vector2i(0, 0)])
-	current_shape_coords = _convert_to_vector2i_array(raw_shape)
-	GameLogger.debug("卡牌形状: " + str(current_shape_coords), "DragShapeController")
+	# ==========================================
+	# ★ 核心修复：优先读取卡牌已解析的标准坐标数组
+	# ==========================================
+	if "timeline_shape_coords" in card and not card.timeline_shape_coords.is_empty():
+		# 直接同步卡牌内部已经由优化系统计算出的坐标
+		current_shape_coords = card.timeline_shape_coords.duplicate()
+		GameLogger.debug("从实体卡牌继承解析坐标: " + str(current_shape_coords), "DragShapeController")
+	else:
+		# 兜底逻辑：如果卡牌没解析，再尝试读 card_info
+		var raw_shape = card.card_info.get("shape", [Vector2i(0, 0)])
+		current_shape_coords = _convert_to_vector2i_array(raw_shape)
+		GameLogger.warning("卡牌未包含预解析坐标，执行临时转换", "DragShapeController")
 
-	# 发射拖拽开始信号（用于时间轴可视化器）
+	# 发射拖拽开始信号
 	drag_started.emit(card, current_shape_coords)
 
 	# ★ 允许时间轴点击缩放（卡牌选中时）
