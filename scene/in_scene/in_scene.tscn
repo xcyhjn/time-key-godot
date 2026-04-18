@@ -63,8 +63,9 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Parallax2D" type="Parallax2D" parent="." unique_id=733942815]
-scroll_scale = Vector2(0.5, 0.5)
+scroll_scale = Vector2(0.8, 0.8)
 repeat_size = Vector2(3000, 3000)
+autoscroll = Vector2(-5, -5)
 repeat_times = 10
 ignore_camera_scroll = true
 
