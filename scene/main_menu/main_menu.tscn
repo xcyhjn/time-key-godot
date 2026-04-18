@@ -7,11 +7,21 @@
 [ext_resource type="Texture2D" uid="uid://b2n28xtpsessh" path="res://image/clock/point.png" id="4_eo5a4"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="5_lt21p"]
 [ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="6_kvq8n"]
+[ext_resource type="Shader" uid="uid://dds2wgl5nur3p" path="res://shaders/out_scene_ui_shader.gdshader" id="7_eo5a4"]
 [ext_resource type="Shader" uid="uid://dy01xyj3taymq" path="res://shaders/color_BG.gdshader" id="7_wbtty"]
 [ext_resource type="Script" uid="uid://c77sa0nlxsqs6" path="res://scene/color_bg.gd" id="8_3k2ij"]
 [ext_resource type="PackedScene" uid="uid://dr75xppin3p6f" path="res://scene/main_menu/menu_set/main_set.tscn" id="8_e1cfd"]
 [ext_resource type="PackedScene" uid="uid://b3oxrni5xbtas" path="res://scene/main_menu/menu_guide/main_guide.tscn" id="9_cta3x"]
+[ext_resource type="Script" uid="uid://caibwbt7glmkg" path="res://scene/main_menu/main_menu_button/new_game_btn.gd" id="9_lt21p"]
 [ext_resource type="PackedScene" uid="uid://diy1bx2xob7ix" path="res://scene/main_menu/menu_quit/main_quit.tscn" id="10_tm7m5"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lt21p"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -10.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_j5v2v"]
 shader = ExtResource("7_wbtty")
@@ -94,7 +104,6 @@ text = "时之钥"
 horizontal_alignment = 1
 
 [node name="ButtonGroup" type="VBoxContainer" parent="UI_Layer/LayoutControl" unique_id=258662952]
-clip_contents = true
 layout_mode = 0
 offset_left = 1584.0
 offset_top = 589.0
@@ -104,10 +113,12 @@ theme_override_constants/separation = 16
 alignment = 1
 
 [node name="NewGameBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1844238358]
+material = SubResource("ShaderMaterial_lt21p")
 layout_mode = 2
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
 text = "新游戏"
+script = ExtResource("9_lt21p")
 
 [node name="NewGameBtn2" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1485156821]
 layout_mode = 2
