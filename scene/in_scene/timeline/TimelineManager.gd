@@ -115,19 +115,19 @@ func place_action(action: TimelineAction, origin: Vector2i) -> bool:
 	#], "TimelineManager")
 	
 	if not is_placement_valid(action.shape_coords, origin):
-		GameLogger.warning("place_action: 验证失败，无法放置", "TimelineManager")
+		#GameLogger.warning("place_action: 验证失败，无法放置", "TimelineManager")
 		return false
 
 	action.origin_grid_pos = origin
 	var abs_coords = action.get_absolute_coords()
-	GameLogger.debug("place_action: 绝对坐标=%s, 网格当前占用数=%d" % [
-		abs_coords, grid.size()
-	], "TimelineManager")
+	#GameLogger.debug("place_action: 绝对坐标=%s, 网格当前占用数=%d" % [
+		#abs_coords, grid.size()
+	#], "TimelineManager")
 
 	# 占据所有网格点
 	for coord in abs_coords:
 		grid[coord] = action
-		GameLogger.debug("place_action: 占据坐标 %s" % coord, "TimelineManager")
+		#GameLogger.debug("place_action: 占据坐标 %s" % coord, "TimelineManager")
 
 	GameLogger.info("place_action: 行动放置成功！origin=%s, 行动ID=%s" % [
 		origin, str(action.get_instance_id()) if is_instance_valid(action) else "无效"
@@ -166,14 +166,14 @@ func resolve_timeline() -> void:
 				# 1. 执行行动的实际效果
 				GameLogger.debug("执行时间轴位置 %s 的行动！来源：%s" % [pos, action.source_node], "TimelineManager")
 				action_executed.emit(action)
-				# TODO: 在这里调用你的战斗结算系统 CombatSystem.execute(action)
+				# TODO: 在这里调用你的战斗结算系统 
 
 				# 2. ★ 核心需求：连带清空机制
 				var all_occupied = action.get_absolute_coords()
 				for occupied_pos in all_occupied:
 					grid.erase(occupied_pos)
 
-	# 结算结束后，时代值 +1 (在这里调用你的 GameState 逻辑)
+	# 结算结束后，时代值 +1  TODO
 	GameLogger.info("回合结算完毕，时代值 +1！", "TimelineManager")
 
 	# 彻底清空，确保无残留
@@ -196,14 +196,14 @@ func resolve_timeline() -> void:
 # ==========================================
 func find_random_available_spot(shape_coords: Array[Vector2i]) -> Vector2i:
 	if shape_coords.is_empty():
-		GameLogger.warning("find_random_available_spot: 形状坐标数组为空", "TimelineManager")
+		#GameLogger.warning("find_random_available_spot: 形状坐标数组为空", "TimelineManager")
 		return Vector2i(-1, -1)
 	
 	var valid_spots: Array[Vector2i] = []
 	
-	GameLogger.debug("find_random_available_spot: 寻找形状 %s 的可用位置，网格范围 %d x %d" % [
-		shape_coords, GRID_WIDTH, GRID_HEIGHT
-	], "TimelineManager")
+	#GameLogger.debug("find_random_available_spot: 寻找形状 %s 的可用位置，网格范围 %d x %d" % [
+		#shape_coords, GRID_WIDTH, GRID_HEIGHT
+	#], "TimelineManager")
 	
 	# 网格适配优化：计算形状的X和Y轴范围，减少不必要的原点测试
 	var min_shape_x = shape_coords[0].x
@@ -222,9 +222,9 @@ func find_random_available_spot(shape_coords: Array[Vector2i]) -> Vector2i:
 	
 	var shape_width = max_shape_x - min_shape_x + 1
 	var shape_height = max_shape_y - min_shape_y + 1
-	GameLogger.debug("形状范围: X[%d, %d](宽度=%d), Y[%d, %d](高度=%d)" % [
-		min_shape_x, max_shape_x, shape_width, min_shape_y, max_shape_y, shape_height
-	], "TimelineManager")
+	#GameLogger.debug("形状范围: X[%d, %d](宽度=%d), Y[%d, %d](高度=%d)" % [
+		#min_shape_x, max_shape_x, shape_width, min_shape_y, max_shape_y, shape_height
+	#], "TimelineManager")
 	
 	# 网格适配：根据形状尺寸确定可能的原点范围
 	# 时间轴网格宽度为12（0-11），原点x必须满足：0 ≤ x + min_shape_x 且 x + max_shape_x ≤ 11
@@ -234,39 +234,40 @@ func find_random_available_spot(shape_coords: Array[Vector2i]) -> Vector2i:
 	var min_valid_y = max(0, -min_shape_y)  # 确保 y + min_shape_y ≥ 0
 	var max_valid_y = min(GRID_HEIGHT - 1, GRID_HEIGHT - 1 - max_shape_y)  # 确保 y + max_shape_y ≤ 2
 	
-	GameLogger.debug("可能的原点范围: X[%d, %d], Y[%d, %d]" % [min_valid_x, max_valid_x, min_valid_y, max_valid_y], "TimelineManager")
+	#GameLogger.debug("可能的原点范围: X[%d, %d], Y[%d, %d]" % [min_valid_x, max_valid_x, min_valid_y, max_valid_y], "TimelineManager")
 	
 	if min_valid_x > max_valid_x:
-		GameLogger.warning("find_random_available_spot: 形状宽度 %d 不适合网格宽度 %d" % [shape_width, GRID_WIDTH], "TimelineManager")
+		#GameLogger.warning("find_random_available_spot: 形状宽度 %d 不适合网格宽度 %d" % [shape_width, GRID_WIDTH], "TimelineManager")
 		return Vector2i(-1, -1)
 	
 	if min_valid_y > max_valid_y:
-		GameLogger.warning("find_random_available_spot: 形状高度 %d 不适合网格高度 %d" % [shape_height, GRID_HEIGHT], "TimelineManager")
+		#GameLogger.warning("find_random_available_spot: 形状高度 %d 不适合网格高度 %d" % [shape_height, GRID_HEIGHT], "TimelineManager")
 		return Vector2i(-1, -1)
 
 	# 遍历可能的网格位置（使用优化后的范围）
 	for x in range(min_valid_x, max_valid_x + 1):
 		for y in range(min_valid_y, max_valid_y + 1):
 			var test_origin = Vector2i(x, y)
-			GameLogger.debug("测试原点: %s, 形状偏移量: %s" % [test_origin, shape_coords], "TimelineManager")
+			#GameLogger.debug("测试原点: %s, 形状偏移量: %s" % [test_origin, shape_coords], "TimelineManager")
 			# 如果这个位置能放下该形状，就存进备选库
 			if is_placement_valid(shape_coords, test_origin):
 				valid_spots.append(test_origin)
-				GameLogger.debug("原点 %s 验证通过" % test_origin, "TimelineManager")
+				#GameLogger.debug("原点 %s 验证通过" % test_origin, "TimelineManager")
 			else:
-				GameLogger.debug("原点 %s 验证失败" % test_origin, "TimelineManager")
+				#GameLogger.debug("原点 %s 验证失败" % test_origin, "TimelineManager")
+				pass
 
-	GameLogger.debug("find_random_available_spot: 找到 %d 个可用位置: %s" % [
-		valid_spots.size(), valid_spots
-	], "TimelineManager")
+	#GameLogger.debug("find_random_available_spot: 找到 %d 个可用位置: %s" % [
+		#valid_spots.size(), valid_spots
+	#], "TimelineManager")
 	
 	# 如果有备选空位，使用 Godot 自带的强大 pick_random() 随机挑一个
 	if valid_spots.size() > 0:
 		var selected = valid_spots.pick_random()
-		GameLogger.debug("随机选择原点: %s" % selected, "TimelineManager")
+		#GameLogger.debug("随机选择原点: %s" % selected, "TimelineManager")
 		return selected
 
-	GameLogger.warning("find_random_available_spot: 未找到可用位置", "TimelineManager")
+	#GameLogger.warning("find_random_available_spot: 未找到可用位置", "TimelineManager")
 	return Vector2i(-1, -1)  # 彻底没位置了
 
 
@@ -282,7 +283,7 @@ func generate_enemy_intents(enemies_on_board: Array):
 	for enemy in enemies_on_board:
 		# 1. 检查是否达到了时间轴拥挤上限
 		if current_intent_count >= max_enemy_intents_per_turn:
-			GameLogger.warning("⚠️ 时间轴已满载，不再生成额外敌方意图！", "TimelineManager")
+			#GameLogger.warning("⚠️ 时间轴已满载，不再生成额外敌方意图！", "TimelineManager")
 			break
 
 		if not is_instance_valid(enemy): continue
@@ -309,9 +310,10 @@ func generate_enemy_intents(enemies_on_board: Array):
 				# 写入时间轴！
 				place_action(action, spot)
 				current_intent_count += 1
-				GameLogger.info("👾 敌人 %s 成功在随机位置 %s 部署了意图！" % [enemy.name, spot], "TimelineManager")
+				#GameLogger.info("👾 敌人 %s 成功在随机位置 %s 部署了意图！" % [enemy.name, spot], "TimelineManager")
 			else:
-				GameLogger.warning("⚠️ 找不到能放下形状 %s 的空位了！" % shape, "TimelineManager")
+				#GameLogger.warning("⚠️ 找不到能放下形状 %s 的空位了！" % shape, "TimelineManager")
+				pass
 
 
 func _on_block_hovered(action: TimelineAction):
@@ -329,7 +331,7 @@ func _on_block_exited():
 
 ## 清除网格中的所有占用
 func clear_grid() -> void:
-	GameLogger.info("清除时间轴网格，当前占用数: " + str(grid.size()), "TimelineManager")
+	#GameLogger.info("清除时间轴网格，当前占用数: " + str(grid.size()), "TimelineManager")
 	grid.clear()
 	hovered_action = null
 	timeline_cleared.emit()

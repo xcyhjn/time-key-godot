@@ -1,11 +1,12 @@
 [gd_scene format=3 uid="uid://jek608mf31r8"]
 
+[ext_resource type="Texture2D" uid="uid://bks043lephgga" path="res://image/texture/FDA2A135E3966CB2DAEB7B49CE9EC876.jpg" id="1_1gj6i"]
 [ext_resource type="Script" uid="uid://biddqg06qvndu" path="res://scene/in_scene/hex_map.gd" id="1_qt2vb"]
 [ext_resource type="Texture2D" uid="uid://5eq5pmcy6x7l" path="res://image/inscene_block/grass.png" id="2_27d84"]
 [ext_resource type="Texture2D" uid="uid://cn6lxb76f7fmb" path="res://image/inscene_block/dirt.png" id="3_x0x3q"]
 [ext_resource type="Shader" uid="uid://pdp2mrgq6od7" path="res://shaders/hex.gdshader" id="4_tpwa4"]
-[ext_resource type="Script" uid="uid://bjwid4x1can0t" path="res://scene/in_scene/enermy/health_bar.gd" id="5_1gj6i"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="5_6migj"]
+[ext_resource type="Script" uid="uid://bjwid4x1can0t" path="res://scene/in_scene/enermy/health_bar.gd" id="6_cmmty"]
 [ext_resource type="Script" uid="uid://istgpa5ab80k" path="res://scene/in_scene/camera_2d_inscene.gd" id="7_bbffy"]
 [ext_resource type="Texture2D" uid="uid://ca7ln3w63nyne" path="res://image/behide.png" id="8_hr4wu"]
 [ext_resource type="Texture2D" uid="uid://da1qrxudkpuji" path="res://image/Play.png" id="9_5dcpt"]
@@ -25,7 +26,6 @@
 [ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="23_1wmus"]
 [ext_resource type="Shader" uid="uid://b81yjopqdvi60" path="res://shaders/hourglass_shake.gdshader" id="24_rejwe"]
 [ext_resource type="Texture2D" uid="uid://cxxrld3kjarqv" path="res://image/hourglass.png" id="25_7x3b2"]
-[ext_resource type="Texture2D" uid="uid://bks043lephgga" path="res://image/texture/FDA2A135E3966CB2DAEB7B49CE9EC876.jpg" id="26_cmmty"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_djuk3"]
 shader = ExtResource("4_tpwa4")
@@ -33,6 +33,8 @@ shader_parameter/max_float_height = -35.0
 shader_parameter/wiggle_speed = 3.5
 shader_parameter/wiggle_amount = 5.0
 shader_parameter/highlight_color = Color(1, 1, 1, 1)
+shader_parameter/select_line_color = Color(1, 1, 1, 1)
+shader_parameter/select_line_thickness = 2.0
 shader_parameter/select_overlay_color = Color(1, 1, 1, 1)
 shader_parameter/select_overlay_alpha = 0.27600001311
 shader_parameter/dissolve_block_size = 40.0
@@ -62,16 +64,14 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Parallax2D" type="Parallax2D" parent="." unique_id=733942815]
-scroll_scale = Vector2(0.8, 0.8)
+[node name="Parallax2D" type="Parallax2D" parent="." unique_id=1135641846]
 repeat_size = Vector2(3000, 3000)
-autoscroll = Vector2(-5, -5)
+autoscroll = Vector2(5, 5)
 repeat_times = 10
-ignore_camera_scroll = true
 
-[node name="Sprite2D" type="Sprite2D" parent="Parallax2D" unique_id=1002480340]
+[node name="Sprite2D" type="Sprite2D" parent="Parallax2D" unique_id=778221907]
 texture_repeat = 2
-texture = ExtResource("26_cmmty")
+texture = ExtResource("1_1gj6i")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 3000, 3000)
@@ -91,9 +91,10 @@ hitbox_width = 200.0
 hitbox_base_height = 120.0
 hitbox_offset_x = 0.0
 hitbox_offset_y = -100.0
+show_height_pillars = false
 
-[node name="BarManager" type="Node2D" parent="map/HexMap" unique_id=1828959517]
-script = ExtResource("5_1gj6i")
+[node name="BarManager" type="Node2D" parent="map/HexMap" unique_id=284048703]
+script = ExtResource("6_cmmty")
 
 [node name="Camera2D" type="Camera2D" parent="map" unique_id=1566374518]
 position = Vector2(965, 539)

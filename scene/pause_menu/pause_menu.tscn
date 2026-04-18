@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://cje2v37jkgv16" path="res://scene/options_menu.tscn" id="3_05uyy"]
 [ext_resource type="Theme" uid="uid://w172uwoow3s3" path="res://theme/OptionsMenu.theme" id="4_2nc7s"]
 [ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="4_p81d2"]
+[ext_resource type="PackedScene" uid="uid://diy1bx2xob7ix" path="res://scene/main_menu/menu_quit/main_quit.tscn" id="6_orv4q"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_nwcfo"]
 shader = ExtResource("1_hdmo1")
@@ -91,3 +92,10 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = ExtResource("4_p81d2")
 text = "退出游戏"
+
+[node name="MainQuit" parent="MainContainer" unique_id=1881415037 instance=ExtResource("6_orv4q")]
+layer = 1000
+visible = false
+
+[connection signal="button_down" from="MainContainer/MenuContainer/SaveOptions/ButtonGroup/SaveToTitle" to="MainContainer" method="_on_save_to_title_button_down"]
+[connection signal="button_down" from="MainContainer/MenuContainer/SaveOptions/ButtonGroup/Quit" to="MainContainer" method="_on_quit_button_down"]

@@ -9,6 +9,7 @@ var player_hex: Vector2i = Vector2i.ZERO
 var current_tier: int = 0
 var has_cut: bool = false
 var chosen_char_index: int = -1
+var ui_settled: bool = false
 
 # 清除数据（用于新游戏或重置）
 func reset():
@@ -19,3 +20,4 @@ func reset():
 	current_tier = 0
 	has_cut = false
 	chosen_char_index = -1
+	ui_settled = false

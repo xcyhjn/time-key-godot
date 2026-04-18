@@ -2,8 +2,8 @@ extends Control
 
 # 引用背景
 @onready var bg_rect = $BackgroundShader
-# 引用新的内容容器（包含 OptionsMenu 和 SaveOptions）
 @onready var content = $MenuContainer
+@onready var quit = $MainQuit
 
 # 记录内容的原始位置
 var original_content_pos: Vector2
@@ -78,3 +78,9 @@ func set_shader_slant(value: float):
 	# 必须确保 ColorRect 上挂载了 ShaderMaterial
 	if bg_rect.material:
 		bg_rect.material.set_shader_parameter("slant_offset", value)
+
+func _on_save_to_title_button_down() -> void:
+	pass # Replace with function body.
+
+func _on_quit_button_down() -> void:
+	quit.play_entrance()

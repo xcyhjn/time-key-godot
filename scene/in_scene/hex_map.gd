@@ -44,6 +44,8 @@ const REF_SCALE: float = 0.6
 # 高度视图配置（切换视角后的光柱系统）
 # ==========================================
 @export_group("高度视图配置")
+@export var show_height_pillars: bool = true  # 是否生成光柱
+@export var show_height_labels: bool = true   # 是否生成数字
 @export var height_view_pillar_length: float = 50.0  # 光柱长度（向上延伸像素）
 @export var height_view_pillar_width: float = 5.0    # 光柱粗细
 @export var height_view_pillar_color: Color = Color(1.0, 1.0, 1.0, 0.8)  # 光柱颜色（白色带透明度）
@@ -1333,85 +1335,64 @@ func _create_height_indicator(stack: Area2D, original_height: int) -> void:
 	if not is_instance_valid(stack):
 		return
 	
-	# 移除可能已存在的指示器
 	_remove_height_indicator(stack)
 	
-	# 计算顶部位置
 	var sprites = stack.get_meta("sprites") as Array
 	if sprites.is_empty():
 		return
 	
-	# ★ 精准抓取顶层地砖精灵（避免抓取地貌精灵）
-	# original_height 表示地形精灵的数量，索引 original_height-1 是顶层地砖
 	if original_height <= 0 or original_height - 1 >= sprites.size():
-		GameLogger.error("高度指示器计算错误：original_height=" + str(original_height) + ", sprites.size()=" + str(sprites.size()), "HexMap")
 		return
 	
-	var top_sprite = sprites[original_height - 1]  # 精确获取顶层地砖精灵
+	var top_sprite = sprites[original_height - 1]
 	if not is_instance_valid(top_sprite):
 		return
 	
 	var pillar_position: Vector2
-	
 	if height_view_compressed:
-		# ★ 高度视图压缩模式：使用真实的视觉中心（考虑精灵 Offset(-256,-400)）
-		# 真正的视觉中心是 Vector2(hitbox_offset_x, hitbox_offset_y)
 		pillar_position = Vector2(hitbox_offset_x, hitbox_offset_y) + height_view_pillar_offset
-		GameLogger.debug("压缩模式高度指示器，真实视觉中心锚点: " + str(pillar_position) + "，原始高度: " + str(original_height), "HexMap")
 	else:
-		# 原始模式：基于顶部精灵的垂直位置计算，使用真实视觉中心
-		# 顶部精灵的 position.y 已经考虑了高度堆叠，加上 hitbox_offset_y 得到真实视觉中心
 		pillar_position = Vector2(hitbox_offset_x, top_sprite.position.y + hitbox_offset_y) + height_view_pillar_offset
-		GameLogger.debug("原始模式高度指示器，真实视觉顶部锚点: " + str(pillar_position) + "，原始高度: " + str(original_height), "HexMap")
-	
-	# 创建光柱（Line2D）使用导出参数，长度与原始高度成正比
-	var line = Line2D.new()
-	line.name = "HeightIndicatorLine"
-	line.width = height_view_pillar_width
-	line.default_color = height_view_pillar_color
-	
-	# 计算光柱长度：基础长度 × 原始高度 × 比例因子（0.5使高度为6时不会太长）
-	# 最小长度保证高度为1时也有可见光柱
-	var pillar_length = height_view_pillar_length * original_height * 0.5
-	var min_pillar_length = height_view_pillar_length * 1.5  # 高度为1时的最小长度
-	if pillar_length < min_pillar_length:
-		pillar_length = min_pillar_length
-	
-	line.points = PackedVector2Array([
-		Vector2(0, 0),
-		Vector2(0, -pillar_length)  # 向上延伸，长度与原始高度成正比
-	])
-	line.position = pillar_position  # 定位到计算出的锚点
-	line.z_index = 1000  # 确保在最前面，高于所有降落后的地块
-	stack.add_child(line)
-	
-	# 创建高度标签使用导出参数
-	var label = Label.new()
-	label.name = "HeightIndicatorLabel"
-	label.text = str(original_height)
-	
-	# 应用字体设置
-	if height_label_font:
-		label.add_theme_font_override("font", height_label_font)
-	
-	label.add_theme_font_size_override("font_size", height_label_font_size)
-	label.add_theme_color_override("font_color", height_label_color)
-	label.add_theme_color_override("font_outline_color", height_label_outline_color)
-	label.add_theme_constant_override("outline_size", height_label_outline_size)
-	
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.position = pillar_position + height_label_offset  # 使用导出参数偏移
-	label.z_index = 1001  # 略高于光柱，确保标签可见
-	stack.add_child(label)
-	
-	# 存储引用以便后续移除
-	stack.set_meta("height_indicator_line", line)
-	stack.set_meta("height_indicator_label", label)
-	
-	# ★ 始终存储光柱引用用于动画（在高度视图模式下使用）
-	stack.set_meta("height_view_pillar", line)
-	GameLogger.debug("已存储光柱引用到height_view_pillar元数据", "HexMap")
+
+	# --- 修改点 1：控制光柱生成 ---
+	if show_height_pillars:
+		var line = Line2D.new()
+		line.name = "HeightIndicatorLine"
+		line.width = height_view_pillar_width
+		line.default_color = height_view_pillar_color
+		
+		var pillar_length = height_view_pillar_length * original_height * 0.5
+		var min_pillar_length = height_view_pillar_length * 1.5
+		if pillar_length < min_pillar_length:
+			pillar_length = min_pillar_length
+		
+		line.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -pillar_length)])
+		line.position = pillar_position
+		line.z_index = 1000
+		stack.add_child(line)
+		stack.set_meta("height_indicator_line", line)
+		stack.set_meta("height_view_pillar", line)
+
+	# --- 修改点 2：控制数字标签生成 ---
+	if show_height_labels:
+		var label = Label.new()
+		label.name = "HeightIndicatorLabel"
+		label.text = str(original_height)
+		
+		if height_label_font:
+			label.add_theme_font_override("font", height_label_font)
+		
+		label.add_theme_font_size_override("font_size", height_label_font_size)
+		label.add_theme_color_override("font_color", height_label_color)
+		label.add_theme_color_override("font_outline_color", height_label_outline_color)
+		label.add_theme_constant_override("outline_size", height_label_outline_size)
+		
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.position = pillar_position + height_label_offset
+		label.z_index = 1001
+		stack.add_child(label)
+		stack.set_meta("height_indicator_label", label)
 
 ## 移除高度指示器
 func _remove_height_indicator(stack: Area2D) -> void:

@@ -24,6 +24,7 @@ extends Control
 @onready var clock = $UI/CartoonUI/Clock
 @onready var point = $UI/CartoonUI/Clock/Point
 @onready var mask = $UI/CartoonUI/ColorBG
+@onready var char_pic = $UI/CartoonUI/MenuUI/Control/character
 
 var received_text: String = "" 
 var tile_data = {}
@@ -53,6 +54,7 @@ func _ready():
 		await point.stopped
 		await mask.start_iris_out(0.23)
 		cartoon.move_clock_to_ui(clock)
+		MapState.ui_settled = true
 	
 	_update_visual_states()
 	
@@ -116,9 +118,14 @@ func _load_from_global():
 	
 	if has_cut:
 		if MapState.chosen_char_index != -1:
-			player_sprite.texture = view.tex_player_icons[MapState.chosen_char_index]
+			var tex = view.tex_player_icons[MapState.chosen_char_index]
+			player_sprite.texture = tex
+			char_pic.texture = tex
 	else:
 		player_sprite.texture = view.tex_player_unknown
+		
+	if MapState.ui_settled:
+		cartoon.snap_clock_to_ui(clock)
 	
 	_refresh_view()
 	
@@ -198,6 +205,7 @@ func _move_to(target):
 			await char_tween.finished
 			if chosen_char_index >= 0 and chosen_char_index < view.tex_player_icons.size():
 				player_sprite.texture = view.tex_player_icons[chosen_char_index]
+				char_pic.texture = view.tex_player_icons[chosen_char_index]
 			var bang_tween = create_tween()
 			bang_tween.set_parallel(true)
 			bang_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -370,6 +378,7 @@ func _save_to_global():
 	MapState.current_tier = current_tier
 	MapState.has_cut = has_cut
 	MapState.chosen_char_index = chosen_char_index
+	MapState.ui_settled = true
 
 func _switch_scene_with_data(path: String, data: String):
 	if path == "" or not FileAccess.file_exists(path): return
