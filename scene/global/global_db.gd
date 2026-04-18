@@ -4,20 +4,20 @@
 extends Node
 
 # ★ 新增：玩家当前的逻辑牌组（存储卡牌的 ID 字符串）
-var player_deck: Array[String] = ["1", "2", "3"]
+var player_deck: Array[String] = ["1", "1","1","1","1","1","1","2","2","2","3","3","3","3",]
 ## 关键词库：包含颜色和详细解释
 const KEYWORDS: Dictionary = {
 	"消耗": {
 		"color": "#aaaaaa",
 		"desc": "打出这张牌后，将其置入消耗区而不是弃牌堆"
 	},
-	"洗脑": {
+	"抬升": {
 		"color": "#cda4ff",
-		"desc": "将目标转化为信徒"
+		"desc": "地块高度上升1"
 	},
-	"易伤": {
+	"下降": {
 		"color": "#ff4d4d",
-		"desc": "使目标受到的所有攻击伤害增加50%"
+		"desc": "地块高度下降1"
 	},
 	"中毒": {
 		"color": "#3b632800",

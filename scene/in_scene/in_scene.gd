@@ -17,7 +17,8 @@ var pile_viewer
 # 卡组数量
 var current_deck_count: int = 0
 var current_discard_count: int = 0
-
+# ★ 新增修复：抽牌与洗牌的并发锁，防止多重点击打断 await 逻辑
+var is_processing_deck: bool = false
 # ==========================================
 # ★ 新增修复：补充缺失的全局状态变量
 # ==========================================
@@ -396,9 +397,12 @@ func update_counts_and_ui():
 
 # --- 新增：抽牌堆的输入处理 (左键抽牌，右键查看) ---
 func _on_deck_button_gui_input(event: InputEvent):
+	# ★ 第一道防线：如果正在洗牌或抽牌，屏蔽此按钮的所有点击
+	if is_processing_deck:
+		return
+		
 	# 检查是否是鼠标按键事件
 	if event is InputEventMouseButton and event.pressed:
-
 		# --- 左键点击：抽牌 ---
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			GameLogger.debug("左键点击抽牌堆：尝试抽牌...", "Project")
@@ -408,11 +412,9 @@ func _on_deck_button_gui_input(event: InputEvent):
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			GameLogger.debug("右键点击抽牌堆：查看剩余卡牌", "Project")
 			if deck_pile._held_cards.size() > 0:
-				# 直接复用 PileViewer，传入 deck_pile 即可
 				pile_viewer.open_pile_view(deck_pile, manager_instance)
 			else:
 				GameLogger.warning("抽牌堆是空的，没东西看！", "Project")
-
 
 func _on_discard_button_pressed():
 	# 点击弃牌堆按钮 -> 查看弃牌堆
@@ -450,27 +452,31 @@ func _on_start_turn_pressed():
 func _on_end_turn_pressed():
 	GameLogger.info("⏳ 玩家点击回合结束，开始时间轴结算...", "Project")
 
-	# 禁用 UI，防止结算期间玩家乱点
+	# 1. 禁用 UI，防止结算期间玩家乱点
 	disable_player_inputs()
 
-	# 1. 弃置所有手牌
+	# ★ 新增修复：强制打断当前可能正在被玩家举在空中的卡牌
+	var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
+	if is_instance_valid(drag_controller) and drag_controller.has_method("force_cancel_drag"):
+		drag_controller.force_cancel_drag()
+	
+	# ★ 新增修复：挂起一帧，确保拖拽卡牌已经完成了 parent 的切换（重新回到手牌）
+	await get_tree().process_frame 
+
+	# 2. 弃置所有手牌
 	discard_all_hand_cards()
 
-	# 2. 触发 TimelineManager 的结算引擎 (从上到下，从左到右)
+	# 3. 触发 TimelineManager 的结算引擎 (从上到下，从左到右)
 	timeline_manager.resolve_timeline()
 
-	# 注意：如果你需要在每个行动之间有动画延迟，你需要把 resolve_timeline 改造成
-	# 返回 Signal 或包含 await 的协程。这里为了逻辑连贯先使用同步逻辑。
-
-	# 3. 触发建筑行为（建筑扩张等）
+	# 4. 触发建筑行为（建筑扩张等）
 	Signal_Bus.step_next.emit(current_era_value, 0)  # step=当前时代值, behavior=0
 
-	# 4. 结算完毕后，UI 彻底清空
-	timeline_ui.clear_ui()  # 你原本代码里写的清空函数
+	# 5. 结算完毕后，UI 彻底清空
+	timeline_ui.clear_ui()
 
-	# 5. 开启新回合！
+	# 6. 开启新回合！
 	start_new_turn()
-
 
 func start_new_turn():
 	GameLogger.info("☀️ 新回合开始！", "Project")
@@ -540,9 +546,19 @@ func discard_all_hand_cards():
 
 # --- 抽牌逻辑 ---
 func attempt_draw_cards(count: int):
+	# ★ 拦截：如果锁正在开启，说明前一次抽牌/洗牌 await 还没结束，直接无视请求
+	if is_processing_deck:
+		GameLogger.warning("正在处理牌堆动画，忽略重复的抽牌请求", "Project")
+		return
+		
 	if player_hand._held_cards.size() >= 7:
 		GameLogger.warning("手牌已满，无法摸牌！", "Project")
 		return
+
+	# ★ 上锁
+	is_processing_deck = true
+	# ★ 禁用所有卡牌相关交互，防止抽牌途中玩家强行拖走刚抽一半的卡
+	disable_player_inputs()
 
 	GameLogger.info("开始摸牌，数量：%d" % count, "Project")
 	for i in range(count):
@@ -555,11 +571,9 @@ func attempt_draw_cards(count: int):
 				GameLogger.warning("抽牌堆和弃牌堆都空了，无法继续抽牌！", "Project")
 				break  # 真的没牌了，只能停止
 
-		# --- 步骤 2: 再次检查牌堆 (因为刚才可能刚洗过) ---
-		# 注意：不要用 else，因为洗牌后这里就会变成 true，从而在同一次循环里把牌抽上来
+		# --- 步骤 2: 再次检查牌堆 ---
 		if deck_pile._held_cards.size() > 0:
 			var top_card = deck_pile._held_cards.back()
-
 			player_hand.move_cards([top_card])
 
 			# 等待一帧，确保物理移动和数据更新
@@ -568,6 +582,9 @@ func attempt_draw_cards(count: int):
 			# 抽卡间隔动画
 			await get_tree().create_timer(0.1).timeout
 
+	# ★ 解锁并恢复输入
+	is_processing_deck = false
+	enable_player_inputs()
 
 # --- 弃牌判定逻辑 (拖拽松手) ---
 func _input(event):

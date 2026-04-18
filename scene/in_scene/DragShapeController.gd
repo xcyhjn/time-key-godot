@@ -1206,3 +1206,20 @@ func _is_placement_valid(grid_pos: Vector2i) -> bool:
 		return false
 
 	return timeline_manager.is_placement_valid(current_shape_coords, grid_pos)
+
+## ==========================================
+## ★ 强制打断拖拽（供外部事件、回合结束时调用）
+## ==========================================
+func force_cancel_drag() -> void:
+	if not is_dragging or not is_instance_valid(current_card):
+		return
+	
+	GameLogger.info("被外部强制打断拖拽，卡牌准备返回手牌", "DragShapeController")
+	
+	# 清除时间轴预览网格与高亮
+	if timeline_ui and timeline_ui.has_method("clear_grid_preview"):
+		timeline_ui.clear_grid_preview()
+	_clear_effect_preview()
+	
+	# 隐式调用内部清理逻辑，将卡牌移回手牌容器
+	_end_dragging()
