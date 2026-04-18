@@ -146,6 +146,11 @@ func _ready() -> void:
 			push_warning("project.gd: timeline_manager 没有 action_hovered_changed 信号！")
 	else:
 		push_warning("project.gd: timeline_manager 无效！")
+		# ★ 新增：将结算信号直接转交给 EffectProcessor
+		var effect_processor = $TimelineSystem/EffectProcessor
+		if is_instance_valid(effect_processor):
+			if not timeline_manager.action_executed.is_connected(effect_processor.execute_action):
+				timeline_manager.action_executed.connect(effect_processor.execute_action)
 	
 	# ★ 游戏开始时生成敌人意图（第一次生成敌人时）
 	# 延迟一帧调用，确保所有敌人都已初始化并添加到Enemies组
@@ -176,7 +181,7 @@ func _ready() -> void:
 	# 3. 监听全局失败信号
 	if Signal_Bus:
 		Signal_Bus.defeat_triggered.connect(_on_defeat_triggered)
-
+	
 
 ## 游戏开始时生成初始敌人意图
 ## 确保在第一次生成敌人时也在时间轴上部署意图

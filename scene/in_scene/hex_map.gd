@@ -85,6 +85,16 @@ enum LandformType { NONE, MINE, CAVE, VILLAGE, RUINS }  # 整合自 node_2d.gd�
 @export var side_tex_by_terrain: Array[Texture2D]
 @export var max_landform_ratio: float = 0.35  # 最多35%格子有地貌（可调）
 
+# ==========================================
+# 地形升降动画配置
+# ==========================================
+@export_group("地形升降动画 (Elevation Animation)")
+@export var ele_anim_duration: float = 0.8  # 升降过程的耗时
+@export var ele_shake_intensity: float = 6.0 # 升降前地壳震动的像素幅度
+@export var ele_shake_duration: float = 0.3  # 地壳震动的准备时间
+@export var ele_trans_type: Tween.TransitionType = Tween.TRANS_ELASTIC # 弹性缓冲，效果最好
+@export var ele_ease_type: Tween.EaseType = Tween.EASE_OUT
+
 var landform_pool: Array[Script] = []  # 地貌脚本池，在 _ready 中初始化
 
 var map_data: Dictionary = { }
@@ -1634,3 +1644,110 @@ func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void
 			
 	for child in node.get_children():
 		_find_and_register_ui_sprites(child, list, height)
+
+# ==========================================
+# ★ 动态地形升降引擎 (支持多组件同步)
+# ==========================================
+func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
+	if delta_height == 0 or not is_instance_valid(stack): return
+	
+	var old_height = stack.get_meta("height") as int
+	var new_height = clampi(old_height + delta_height, 1, 99) # 限制高度下限为1
+	var actual_delta = new_height - old_height
+	if actual_delta == 0: return
+
+	# 1. 搜集需要一起移动的所有视觉组件（地形、碰撞箱、建筑、血条）
+	var moving_parts = []
+	var sprites = stack.get_meta("sprites") as Array
+	moving_parts.append_array(sprites)
+	
+	var collision = stack.get_meta("collision_node")
+	if is_instance_valid(collision): moving_parts.append(collision)
+	
+	var occupant = stack.get_meta("occupant")
+	if is_instance_valid(occupant): 
+		moving_parts.append(occupant)
+		# 抓取悬浮在外部的血条
+		var bar_manager = get_node_or_null("BarManager")
+		if bar_manager:
+			var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
+			if is_instance_valid(hb_node): moving_parts.append(hb_node)
+
+	# 2. 更新底层数据字典
+	stack.set_meta("height", new_height)
+	for coord in stack_nodes.keys():
+		if stack_nodes[coord] == stack:
+			map_data[coord]["height"] = new_height
+			break
+
+	var current_step_h = step_height * (tile_scale / REF_SCALE)
+	var y_offset = -(actual_delta * current_step_h) # Godot中向上是负Y方向
+
+	# 3. 动画序列：震动 -> 升降 -> 底层方块增删
+	var tw = create_tween()
+	
+	# 【阶段A：剧烈震动】
+	var shake_steps = 6
+	var step_time = ele_shake_duration / shake_steps
+	var original_positions = {}
+	
+	for part in moving_parts:
+		if is_instance_valid(part):
+			original_positions[part] = part.position
+	
+	for i in range(shake_steps):
+		for part in moving_parts:
+			if is_instance_valid(part):
+				var rand_offset = Vector2(randf_range(-ele_shake_intensity, ele_shake_intensity), 0)
+				tw.tween_property(part, "position", original_positions[part] + rand_offset, step_time)
+				
+	# 【阶段B：平滑升降】
+	tw.parallel() # 确保震动后立刻无缝平移
+	for part in moving_parts:
+		if is_instance_valid(part):
+			var target_pos = original_positions[part] + Vector2(0, y_offset)
+			tw.parallel().tween_property(part, "position", target_pos, ele_anim_duration)\
+				.set_trans(ele_trans_type).set_ease(ele_ease_type)
+
+	# 【阶段C：视觉方块补齐或摧毁】(动画结束瞬间执行)
+	tw.tween_callback(func():
+		if actual_delta > 0:
+			# 抬升：在最底层补充方块
+			var coord = stack_nodes.find_key(stack)
+			var terrain_type = map_data[coord]["terrain_type"]
+			var side_tex = get_side_tex(terrain_type)
+			
+			for i in range(old_height, new_height):
+				var new_sprite = Sprite2D.new()
+				new_sprite.texture = side_tex
+				new_sprite.centered = false
+				new_sprite.offset = Vector2(-256, -400)
+				# 位置放在原最底层的下方
+				new_sprite.position.y = original_positions[sprites[0]].y + (i - old_height + 1) * current_step_h
+				new_sprite.scale = Vector2(tile_scale, tile_scale)
+				new_sprite.modulate = Color(0.8, 0.8, 0.8) # 侧边调暗
+				
+				if block_material:
+					new_sprite.material = block_material.duplicate()
+					new_sprite.set_instance_shader_parameter("block_idx", float(i))
+					
+				stack.add_child(new_sprite)
+				stack.move_child(new_sprite, 0) # 移入渲染最底层
+				sprites.insert(0, new_sprite)
+				
+		elif actual_delta < 0:
+			# 下降：从底层开始摧毁被掩盖的方块
+			var remove_count = abs(actual_delta)
+			for i in range(remove_count):
+				if sprites.size() > 1: # 保护至少剩一层地皮
+					var bottom_sprite = sprites[0]
+					sprites.pop_front()
+					bottom_sprite.queue_free()
+					
+		# 更新Shader总高度，防止消融特效断层
+		for i in range(sprites.size()):
+			if is_instance_valid(sprites[i]) and sprites[i].material:
+				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
+				
+		GameLogger.info("⛰️ 地块升降完毕，坐标新高度: " + str(new_height), "HexMap")
+	)

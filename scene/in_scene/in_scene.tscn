@@ -19,6 +19,7 @@
 [ext_resource type="Script" uid="uid://o24takqau3p" path="res://scene/in_scene/timeline/timeline_visualizer.gd" id="17_utgoe"]
 [ext_resource type="Script" uid="uid://dxge25pjqhhag" path="res://scene/in_scene/in_scene.gd" id="18_0vlha"]
 [ext_resource type="Shader" uid="uid://d3sbyeeqsa34" path="res://shaders/pulse_highlight.gdshader.gdshader" id="19_b3wb3"]
+[ext_resource type="Script" uid="uid://cv8cgv4jtf7vw" path="res://scene/in_scene/effect/effect_processor.gd" id="19_kuo1e"]
 [ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="20_lifwa"]
 [ext_resource type="PackedScene" uid="uid://cwskcr8vc6as3" path="res://scene/game_over/game_over.tscn" id="20_nj7no"]
 [ext_resource type="Texture2D" uid="uid://dhlwuga6drnjh" path="res://image/timecoin_ui_back.png" id="22_ma4x0"]
@@ -258,6 +259,9 @@ script = ExtResource("16_vl7dm")
 script = ExtResource("17_utgoe")
 timeline_ui_path = NodePath("../../TimelineUI")
 drag_shape_controller_path = NodePath("../DragShapeController")
+
+[node name="EffectProcessor" type="Node" parent="ui/TimelineSystem" unique_id=1767787453]
+script = ExtResource("19_kuo1e")
 
 [node name="AcquireRewardButton" type="Button" parent="ui" unique_id=1860315344]
 offset_left = 33.0
