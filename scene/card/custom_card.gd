@@ -779,7 +779,13 @@ func apply_stat_modifier(stat_name: String, amount: float, is_multiplier: bool =
 # 拦截并重写状态进入逻辑
 func _enter_state(state: DraggableState, from_state: DraggableState) -> void:
 	super._enter_state(state, from_state)  # 先让底层插件处理它的全局计数器
-
+	
+	# ==========================================
+	# ★ 核心修复 1：拦截拖拽状态！
+	# 如果卡牌正在被拖拽，彻底无视底层框架的悬浮、高亮事件
+	# ==========================================
+	if card_current_state == CustomCardState.DRAGGING:
+		return
 	# ==========================================
 	# ★ 核心冲突修复：如果卡牌处于“选中悬浮”状态，
 	# 坚决拦截底层框架的视觉重置！让 toggle_selection 接管全场。
@@ -851,20 +857,21 @@ func force_reset_visuals() -> void:
 	material = original_material
 	if front_face_texture:
 		front_face_texture.material = original_material
-
+	set_card_transparency(1.0)
 
 func _on_gui_input(event: InputEvent):
+	# ★ 核心修复 2：拖拽期间禁止卡牌响应任何鼠标点击！
+	if card_current_state == CustomCardState.DRAGGING:
+		return
+		
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			toggle_selection()
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			# 右键永远用于取消选中
 			if is_selected:
 				force_deselect()
 
-	# ★ 核心：拦截事件，防止框架的原生拖拽代码执行
 	get_viewport().set_input_as_handled()
-
 
 # ==========================================
 # ★ 小丑牌核心：实时鼠标向量倾斜追踪

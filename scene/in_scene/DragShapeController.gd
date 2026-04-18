@@ -243,6 +243,10 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 		# 3. 应用拖拽着色器
 		if card.material and drag_shader:
 			card.material = drag_shader.duplicate()
+			
+			# ★ 新增修复 1：在拖拽期间彻底禁用卡牌自身的鼠标检测
+			# 防止在拖拽跟随过程中鼠标意外触发卡牌自带的悬浮高亮 Shader
+			card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 		# 4. 应用缩放动画（使用前面计算的scale_factor）
 		var tw = create_tween()
@@ -1056,11 +1060,43 @@ func end_dragging_success() -> void:
 	# 发射拖拽结束信号（用于时间轴可视化器）
 	if is_instance_valid(current_card):
 		drag_ended.emit(current_card, true)  # true表示已放置
+		
+		# ==========================================
+		# ★ 核心修复 4：彻底剥离拖拽 Shader 与状态
+		# 强制调用刚才完善的重置函数，洗掉所有拖拽特效
+		# ==========================================
+		if current_card.has_method("force_reset_visuals"):
+			current_card.force_reset_visuals()
+		
+		# 将卡牌内部状态机硬重置为闲置状态
+		if "card_current_state" in current_card:
+			current_card.card_current_state = 0 # 0 对应 CustomCardState.IDLE
+			
+		current_card.mouse_filter = Control.MOUSE_FILTER_STOP
+		current_card.modulate = Color.WHITE
+		current_card.scale = Vector2.ONE
+		
+		# ========================================================
+		# ★ 新增修复 2：将卡牌送入弃牌区前，彻底剥离拖拽Shader，恢复原始外观
+		# ========================================================
+		if "original_material" in current_card:
+			current_card.material = current_card.original_material
+			# 如果卡牌有正面贴图引用，一并恢复
+			var tex_node = current_card.get("front_face_texture")
+			if tex_node and "material" in tex_node:
+				tex_node.material = current_card.original_material
+				
+		# 关闭底层卡牌框架的高亮逻辑，并恢复透明度
+		if current_card.has_method("_set_shader"):
+			current_card._set_shader(false) 
+		if current_card.has_method("set_card_transparency"):
+			current_card.set_card_transparency(1.0)
+		# ========================================================
 
 	# 处理弃牌逻辑
 	if is_instance_valid(current_card):
 		var card_moved_to_discard = false
-		
+		# ... 后续代码保持不变 ...
 		# 方案1：优先使用project.gd的弃牌系统
 		var control_node = _find_project_node()
 		if control_node:
