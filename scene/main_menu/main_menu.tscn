@@ -11,16 +11,63 @@
 [ext_resource type="Shader" uid="uid://dy01xyj3taymq" path="res://shaders/color_BG.gdshader" id="7_wbtty"]
 [ext_resource type="Script" uid="uid://c77sa0nlxsqs6" path="res://scene/color_bg.gd" id="8_3k2ij"]
 [ext_resource type="PackedScene" uid="uid://dr75xppin3p6f" path="res://scene/main_menu/menu_set/main_set.tscn" id="8_e1cfd"]
+[ext_resource type="Texture2D" uid="uid://p3hand8ct6vu" path="res://image/main_menu/u_l_1.png" id="8_wbtty"]
 [ext_resource type="PackedScene" uid="uid://b3oxrni5xbtas" path="res://scene/main_menu/menu_guide/main_guide.tscn" id="9_cta3x"]
+[ext_resource type="Texture2D" uid="uid://dh8ohe5k8scha" path="res://image/main_menu/u_l_a.png" id="9_e1cfd"]
 [ext_resource type="Script" uid="uid://caibwbt7glmkg" path="res://scene/main_menu/main_menu_button/new_game_btn.gd" id="9_lt21p"]
 [ext_resource type="PackedScene" uid="uid://diy1bx2xob7ix" path="res://scene/main_menu/menu_quit/main_quit.tscn" id="10_tm7m5"]
+[ext_resource type="Texture2D" uid="uid://lwpe2l5dsn11" path="res://image/main_menu/u_l_4.png" id="11_cta3x"]
+[ext_resource type="Texture2D" uid="uid://dovmwav0leyla" path="res://image/main_menu/m_L_1.png" id="13_cta3x"]
+[ext_resource type="Texture2D" uid="uid://ciwjuse75t2v2" path="res://image/main_menu/m_l_a.png" id="14_tm7m5"]
+[ext_resource type="Script" uid="uid://cohfod5yi888t" path="res://scene/main_menu/new_game_btn_2.gd" id="15_42r2u"]
+[ext_resource type="Texture2D" uid="uid://d144awqy6e4t7" path="res://image/main_menu/m_l_4.png" id="16_hlrsq"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_lt21p"]
 shader = ExtResource("7_eo5a4")
 shader_parameter/is_hovered = false
-shader_parameter/float_height = -10.0
+shader_parameter/float_height = -4.0
 shader_parameter/breathe_speed = 3.0
 shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cta3x"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -2.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_e1cfd"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -15.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 10.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hlrsq"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -4.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uuivk"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -2.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ykkdi"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -15.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 10.0
 shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_j5v2v"]
@@ -103,49 +150,125 @@ bbcode_enabled = true
 text = "时之钥"
 horizontal_alignment = 1
 
-[node name="ButtonGroup" type="VBoxContainer" parent="UI_Layer/LayoutControl" unique_id=258662952]
-layout_mode = 0
-offset_left = 1584.0
+[node name="ButtonGroup" type="Control" parent="UI_Layer/LayoutControl" unique_id=1221673290]
+anchors_preset = 0
+offset_left = 1386.0
 offset_top = 589.0
 offset_right = 1858.0
 offset_bottom = 1023.0
-theme_override_constants/separation = 16
-alignment = 1
 
-[node name="NewGameBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1844238358]
+[node name="NewGameBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=802708860 node_paths=PackedStringArray("target_label")]
+z_index = 1
 material = SubResource("ShaderMaterial_lt21p")
-layout_mode = 2
+layout_mode = 0
+offset_left = -1125.0
+offset_top = -324.0
+offset_right = -1062.6667
+offset_bottom = -297.16666
+scale = Vector2(8, 6)
 size_flags_vertical = 3
-theme = ExtResource("6_kvq8n")
-text = "新游戏"
+texture_normal = ExtResource("8_wbtty")
+texture_pressed = ExtResource("9_e1cfd")
+texture_hover = ExtResource("9_e1cfd")
+texture_focused = ExtResource("9_e1cfd")
+ignore_texture_size = true
 script = ExtResource("9_lt21p")
+target_label = NodePath("../NewGameLabel")
 
-[node name="NewGameBtn2" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1485156821]
-layout_mode = 2
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/NewGameBtn" unique_id=29212046]
+z_index = -1
+material = SubResource("ShaderMaterial_cta3x")
+layout_mode = 0
+offset_right = 64.0
+offset_bottom = 28.0
+texture = ExtResource("11_cta3x")
+
+[node name="NewGameLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=591468537]
+z_index = 2
+material = SubResource("ShaderMaterial_e1cfd")
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 1
+anchors_preset = -1
+offset_left = -977.0
+offset_top = -289.0
+offset_right = -785.0
+offset_bottom = -203.0
+theme_override_fonts/font = ExtResource("5_lt21p")
+theme_override_font_sizes/font_size = 64
+text = "新游戏"
+
+[node name="NewGameBtn2" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=783800481 node_paths=PackedStringArray("target_label")]
+z_index = 1
+texture_filter = 1
+material = SubResource("ShaderMaterial_hlrsq")
+layout_mode = 1
+anchors_preset = -1
+offset_left = -1125.0
+offset_top = -135.0
+offset_right = -1061.0
+offset_bottom = -106.333336
+scale = Vector2(8, 6)
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
-text = "以种子新游戏"
+texture_normal = ExtResource("13_cta3x")
+texture_pressed = ExtResource("14_tm7m5")
+texture_hover = ExtResource("14_tm7m5")
+texture_focused = ExtResource("14_tm7m5")
+script = ExtResource("15_42r2u")
+target_label = NodePath("../NewGame2Label")
+
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/NewGameBtn2" unique_id=200098101]
+z_index = -1
+material = SubResource("ShaderMaterial_uuivk")
+layout_mode = 0
+offset_right = 64.0
+offset_bottom = 28.0
+texture = ExtResource("16_hlrsq")
+
+[node name="NewGame2Label" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=93853440]
+z_index = 2
+material = SubResource("ShaderMaterial_ykkdi")
+layout_mode = 0
+offset_left = -1055.0
+offset_top = -100.0
+offset_right = -799.0
+offset_bottom = -14.0
+theme_override_fonts/font = ExtResource("5_lt21p")
+theme_override_font_sizes/font_size = 64
+text = "种子游戏"
 
 [node name="ContinueBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1886552923]
-layout_mode = 2
+layout_mode = 0
+offset_top = 150.0
+offset_right = 274.0
+offset_bottom = 209.0
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
 text = "继续游戏"
 
 [node name="SettingsBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1697753290]
-layout_mode = 2
+layout_mode = 0
+offset_top = 225.0
+offset_right = 274.0
+offset_bottom = 284.0
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
 text = "设置"
 
 [node name="DatabaseBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=355481249]
-layout_mode = 2
+layout_mode = 0
+offset_top = 300.0
+offset_right = 274.0
+offset_bottom = 359.0
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
 text = "数据库"
 
 [node name="QuitBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=337002970]
-layout_mode = 2
+layout_mode = 0
+offset_top = 375.0
+offset_right = 274.0
+offset_bottom = 434.0
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
 text = "退出游戏"
@@ -154,6 +277,7 @@ text = "退出游戏"
 layout_mode = 2
 
 [node name="ColorBG" type="ColorRect" parent="." unique_id=1123055899]
+z_index = 3
 material = SubResource("ShaderMaterial_j5v2v")
 layout_mode = 1
 anchors_preset = 15
@@ -165,6 +289,7 @@ size_flags_vertical = 4
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
 script = ExtResource("8_3k2ij")
+metadata/_edit_lock_ = true
 
 [node name="UI" type="Control" parent="." unique_id=266235427]
 layout_mode = 1
