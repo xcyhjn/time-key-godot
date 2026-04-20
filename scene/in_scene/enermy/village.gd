@@ -2,7 +2,7 @@ class_name village
 extends landform
 
 static var Library : Array[Vector2]
-var possible_neighbor : Array[Vector2]
+var possible_neighbor : Array[Vector2i]
 
 
 
@@ -31,19 +31,19 @@ func _init(location_in : Vector2,battle_in):
 		owner_battle.add_landform_visual_at(target)
 
 func get_possible_neighbor_coords(tile_info, rng: RandomNumberGenerator):
-	var result : Array[Vector2] = []
+	var result : Array[Vector2i] = []
 	for coord in neighbors:
 		# 安全检查：确保字典中存在该坐标的键
-		var coord_key = Vector2(coord)  # 转换为 Vector2 作为字典键
+		var coord_key = Vector2i(coord)  # 转换为 Vector2 作为字典键
 		if not tile_info.has(coord_key):
 			continue
 		var tile_data = tile_info[coord_key]
 		
-		# ★ 修改：无视地形高度检查，只要该地块没有被其他地貌占用即可扩张
-		# 原逻辑：if get_possible_coords(tile_data["h"], tile_data["terrain"], rng, tile_data, false):
-		# 新逻辑：只检查是否已有地貌（支持两种键名），忽略高度、地形类型和概率检查
-		if get_possible_coords(tile_data["h"], tile_data["terrain"], tile_data):
-			continue  # 已被占用，跳过
+		# ★ 修复：调用新版签名，只传 坐标 和 整个地图数据(tile_info)
+		# 注意：get_possible_coords 返回 true 代表可以放置。如果要找空地，应该取反 (not)。
+		# 如果你之前写了自定义的 check_can_expand(tile_data)，也可以直接用那个。
+		if not get_possible_coords(coord_key, tile_info):
+			continue  # 无法放置或已被占用，跳过
 		
 		result.append(coord)
 	return result

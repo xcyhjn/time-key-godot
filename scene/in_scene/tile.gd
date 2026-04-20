@@ -35,7 +35,7 @@ var State_Vice : int
 @export var landform_damaged_tex : Array[Texture2D]      # 索引 = LandformType（损坏态）
 
 var damage_rate : float = 0
-var location : Vector2
+var location : Vector2i
 
 var HP : float
 var BloodBar
@@ -50,13 +50,13 @@ var will : bool
 
 var willing_pool : Dictionary
 
-const HEX_DIRS := [
-	Vector2(1, 0),
-	Vector2(1, -1),
-	Vector2(0, -1),
-	Vector2(-1, 0),
-	Vector2(-1, 1),
-	Vector2(0, 1),
+const HEX_DIRS : Array[Vector2i] = [
+	Vector2i(1, 0),
+	Vector2i(1, -1),
+	Vector2i(0, -1),
+	Vector2i(-1, 0),
+	Vector2i(-1, 1),
+	Vector2i(0, 1),
 ]
 
 enum Attitude_Pool {
@@ -66,7 +66,7 @@ var Attitude = Attitude_Pool.Middle
 
 var possible_behaviour : Array[Callable]
 
-var neighbors : Array[Vector2]
+var neighbors : Array[Vector2i]
 var step : int
 
 
@@ -101,23 +101,30 @@ func random_damage() -> void:
 	take_damage(randi_range(0, Max_Blood * 0.3))
 	
 
-func get_neighbor_coords(center: Vector2) -> Array[Vector2]:
-	var result: Array[Vector2] = []
+func get_neighbor_coords(center: Vector2i) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
 	for dir in HEX_DIRS:
 		var next = center + dir
 		if abs(next[1] + next[0]) <= 4 and abs(next[1]) <= 4 and abs(next[0]) <= 4:
 			result.append(next)
 	return result
 
-func get_possible_coords(h: int, terrain: int, tile_info : Dictionary) -> bool:
-	if landform_rules.keys().has("require_height") and !landform_rules["require_height"].has(h) :
+func get_possible_coords(coord : Vector2i, tile_info : Dictionary) -> bool:
+	var c = Vector2i(coord) # 安全转换
+	if not tile_info.has(c): return false
+	
+	var data = tile_info[c]
+	var h = data.get("height", 0)
+	var terrain = data.get("terrain_type", 0)
+	
+	if landform_rules.keys().has("require_height") and !landform_rules["require_height"].has(tile_info[coord]["height"]) :
 		return false
-	if landform_rules.keys().has("require_terrain") and !landform_rules["require_terrain"].has(terrain):
+	if landform_rules.keys().has("require_terrain") and !landform_rules["require_terrain"].has(tile_info[coord]["terrain"]):
 		return false
-	if !tile_info.has("landform")  or tile_info["landform"] != null:
+	if !tile_info[coord].has("landform")  or tile_info[coord]["landform"] != null:
 		return false
 	return true
-
+	
 func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_step_h: float, tile_scale : float) -> void:
 	var tex: Texture2D = null
 	if State_Main == Main_State_Pool.Broken:
