@@ -1751,3 +1751,25 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 				
 		GameLogger.info("⛰️ 地块升降完毕，坐标新高度: " + str(new_height), "HexMap")
 	)
+
+# 在 hex_map.gd (class_name battle) 中添加：
+
+## 安全获取地块上的占位实体（地貌或敌人）
+func get_entity_at_hex(coord: Vector2i) -> Node:
+	if not stack_nodes.has(coord):
+		return null
+	
+	var stack = stack_nodes[coord]
+	if is_instance_valid(stack) and stack.has_meta("occupant"):
+		var entity = stack.get_meta("occupant")
+		if is_instance_valid(entity):
+			return entity
+	return null
+
+## 检查实体是否存活/有效
+func is_entity_alive(entity: Node) -> bool:
+	if not is_instance_valid(entity) or entity.is_queued_for_deletion():
+		return false
+	if entity.has("HP") and entity.HP <= 0:
+		return false
+	return true

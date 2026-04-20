@@ -1,49 +1,45 @@
+# 路径: scene/in_scene/timeline/EffectProcessor.gd
 class_name EffectProcessor
-extends Node
+extends RefCounted
 
-var hex_map: Node
-
-func _ready():
-	# 延迟获取地图引用，防止场景未加载完
-	call_deferred("_setup_references")
-
-func _setup_references():
-	var main_board = get_tree().get_first_node_in_group("MainBoard")
-	if main_board:
-		hex_map = main_board.get_node_or_null("../../map/HexMap")
-
-# ==========================================
-# ★ 核心枢纽：遍历执行标准化的效果数组
-# ==========================================
-func execute_action(action: TimelineAction):
-	var target_stack = action.target_tile as Area2D
-	if not is_instance_valid(target_stack): return
+## 核心入口：处理时间轴上的行动
+static func process_action(action: TimelineAction, tree: SceneTree) -> void:
+	var command_queue: Array[EffectCommand] = []
 	
-	# ★ 核心改动：不再解析字符串，直接读取结构化的 effects 数组
-	var effects_array = action.action_data.get("effects", [])
-	
-	for effect in effects_array:
-		var effect_type = effect.get("type", "")
-		var effect_value = effect.get("value", 0)
+	if action.type == TimelineAction.Type.PLAYER:
+		command_queue = _parse_player_card(action, tree)
+	elif action.type == TimelineAction.Type.ENEMY:
+		command_queue = _parse_enemy_intent(action, tree)
 		
-		match effect_type:
-			"damage":
-				_apply_damage(target_stack, effect_value)
-			"elevation":
-				_apply_elevation(target_stack, effect_value)
-			# 未来可以无限扩展："heal", "add_shield", "stun" 等等
+	# 队列按顺序执行 (Command Pattern 的核心优势)
+	for cmd in command_queue:
+		await cmd.execute(tree)
 
-# ==========================================
-# 具体效果的原子逻辑
-# ==========================================
-func _apply_damage(target_stack: Area2D, amount: int):
-	var occupant = target_stack.get_meta("occupant")
-	if is_instance_valid(occupant) and occupant.has_method("take_damage"):
-		occupant.take_damage(amount)
-		Signal_Bus.emit_damage_dealt(occupant, amount)
-		GameLogger.info("💥 造成伤害: %d" % amount, "EffectProcessor")
+## 解析玩家卡牌 JSON 数据，生成命令队列
+static func _parse_player_card(action: TimelineAction, tree: SceneTree) -> Array[EffectCommand]:
+	var queue: Array[EffectCommand] = []
+	var data = action.action_data
+	var map_node = tree.current_scene.get_node_or_null("map/HexMap") # 根据你的场景树获取
+	
+	# --- 方式A: 使用新的结构化 effects 数组 (推荐) ---
+	if data.has("effects") and typeof(data["effects"]) == TYPE_ARRAY:
+		for eff in data["effects"]:
+			if eff["type"] == "damage":
+				var cmd = DamageCommand.new(eff["value"])
+				cmd.source = action.source_node
+				cmd.target_tile = action.target_tile
+				cmd.hex_map = map_node
+				queue.append(cmd)
+			# 此处可以扩展 elif eff["type"] == "heal" 等
+			
+	# --- 方式B: 兼容老版本，正则/字符串暴力解析你的 "造成1点伤害" ---
+	else:
+		pass
+	return queue
 
-func _apply_elevation(target_stack: Area2D, delta_height: int):
-	if is_instance_valid(hex_map) and hex_map.has_method("animate_elevation_change"):
-		hex_map.animate_elevation_change(target_stack, delta_height)
-		GameLogger.info("⛰️ 改变地块高度: %d" % delta_height, "EffectProcessor")
+## 解析敌方意图，生成命令队列
+static func _parse_enemy_intent(action: TimelineAction, tree: SceneTree) -> Array[EffectCommand]:
+	var queue: Array[EffectCommand] = []
+	# 敌人的行为解析逻辑（例如：扩张、攻击）
+	# TODO: 返回相应的 EnemyExpandCommand, EnemyAttackCommand 等
+	return queue

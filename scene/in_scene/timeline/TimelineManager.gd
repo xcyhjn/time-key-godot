@@ -138,13 +138,9 @@ func place_action(action: TimelineAction, origin: Vector2i) -> bool:
 # ==========================================
 # ★ 结算逻辑 (需求 4)
 # ==========================================
-
-
 # 结算整个时间轴，从左到右(时间)，从上到下(并发)
 func resolve_timeline() -> void:
-	# ==========================================
-	# ★ 核心新增：在开始结算（和清空网格）之前，先计算空位并增加时间币
-	# ==========================================
+	# === 时间币结算逻辑保持不变 ===
 	var total_slots = GRID_WIDTH * GRID_HEIGHT
 	var occupied_slots = grid.size()
 	var empty_slots = total_slots - occupied_slots
@@ -152,10 +148,14 @@ func resolve_timeline() -> void:
 	if empty_slots > 0 and GlobalTimecoin:
 		GlobalTimecoin.add_from_timeline(empty_slots)
 		GameLogger.info("💰 回合结算前：检测到 %d 个空位，已发放时间币" % empty_slots, "TimelineManager")
-	# ==========================================
 
-	# 外层循环：时间列 (X轴)
+	# 用于记录已经结算过的多格行动，防止巨型卡牌被结算多次
+	var processed_actions: Array[TimelineAction] = []
+
+	# 外层循环：时间列 (X轴，代表时间的流动)
 	for x in range(GRID_WIDTH):
+		var has_action_in_this_column = false
+		
 		# 内层循环：并发层 (Y轴)
 		for y in range(GRID_HEIGHT):
 			var pos = Vector2i(x, y)
@@ -163,29 +163,37 @@ func resolve_timeline() -> void:
 			if grid.has(pos):
 				var action: TimelineAction = grid[pos]
 
-				# 1. 执行行动的实际效果
-				GameLogger.debug("执行时间轴位置 %s 的行动！来源：%s" % [pos, action.source_node], "TimelineManager")
-				action_executed.emit(action)
-				# TODO: 在这里调用你的战斗结算系统 
+				# 防止占多格的行动被重复结算
+				if not processed_actions.has(action):
+					processed_actions.append(action)
+					has_action_in_this_column = true
+					
+					GameLogger.debug("正在执行时间轴 [%d, %d] 的行动..." % [x, y], "TimelineManager")
+					action_executed.emit(action)
+					
+					# ★ 核心改动：把行动丢给 EffectProcessor 结算，并阻塞等待动画表现完成
+					await EffectProcessor.process_action(action, get_tree())
 
-				# 2. ★ 核心需求：连带清空机制
-				var all_occupied = action.get_absolute_coords()
-				for occupied_pos in all_occupied:
-					grid.erase(occupied_pos)
+					# 结算完毕后，立刻清理它在网格上占据的所有格子
+					var all_occupied = action.get_absolute_coords()
+					for occupied_pos in all_occupied:
+						grid.erase(occupied_pos)
+		
+		# ★ 表现优化：如果这一列（这一秒）发生了行动，额外稍微停顿一下，体现出时间轴从左到右的“推进感”
+		if has_action_in_this_column:
+			await get_tree().create_timer(0.2).timeout
 
-	# 结算结束后，时代值 +1  TODO
-	GameLogger.info("回合结算完毕，时代值 +1！", "TimelineManager")
+	GameLogger.info("回合结算完毕，时代值即将 +1！", "TimelineManager")
 
-	# 彻底清空，确保无残留
+	# 彻底清空兜底
 	grid.clear()
 
-	# ★ 优化：回合结束强制清除高亮状态，防幽灵悬浮
+	# 强制清除高亮状态
 	if hovered_action != null:
 		action_hovered_changed.emit(hovered_action, false)
 		hovered_action = null
 
 	timeline_cleared.emit()
-
 # ==========================================
 # ★ 敌方 AI 辅助寻位与生成
 # ==========================================

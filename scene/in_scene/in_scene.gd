@@ -452,35 +452,27 @@ func _on_start_turn_pressed():
 
 	# 你还可以在这里触发：地块上敌人的中毒掉血、技能冷却减少等逻辑
 
+# 在 in_scene.gd 中，找到 _on_end_turn_pressed() 并替换：
 
-# 绑在 UI 的 "回合结束" 按钮上
 func _on_end_turn_pressed():
 	GameLogger.info("⏳ 玩家点击回合结束，开始时间轴结算...", "Project")
 
-	# 1. 禁用 UI，防止结算期间玩家乱点
+	# 禁用 UI，防止结算期间玩家乱点
 	disable_player_inputs()
 
-	# ★ 新增修复：强制打断当前可能正在被玩家举在空中的卡牌
-	var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
-	if is_instance_valid(drag_controller) and drag_controller.has_method("force_cancel_drag"):
-		drag_controller.force_cancel_drag()
-	
-	# ★ 新增修复：挂起一帧，确保拖拽卡牌已经完成了 parent 的切换（重新回到手牌）
-	await get_tree().process_frame 
-
-	# 2. 弃置所有手牌
+	# 1. 弃置所有手牌
 	discard_all_hand_cards()
 
-	# 3. 触发 TimelineManager 的结算引擎 (从上到下，从左到右)
-	timeline_manager.resolve_timeline()
+	# 2. ★ 核心改动：加上 await！等待时间轴的每一列特效和扣血逐步播放完毕
+	await timeline_manager.resolve_timeline()
 
-	# 4. 触发建筑行为（建筑扩张等）
-	Signal_Bus.step_next.emit(current_era_value, 0)  # step=当前时代值, behavior=0
+	# 3. 触发建筑行为（建筑扩张等）
+	Signal_Bus.step_next.emit(current_era_value, 0)
 
-	# 5. 结算完毕后，UI 彻底清空
+	# 4. 结算完毕后，UI 彻底清空
 	timeline_ui.clear_ui()
 
-	# 6. 开启新回合！
+	# 5. 开启新回合！
 	start_new_turn()
 
 func start_new_turn():
