@@ -19,8 +19,24 @@
 [ext_resource type="Texture2D" uid="uid://lwpe2l5dsn11" path="res://image/main_menu/u_l_4.png" id="11_cta3x"]
 [ext_resource type="Texture2D" uid="uid://dovmwav0leyla" path="res://image/main_menu/m_L_1.png" id="13_cta3x"]
 [ext_resource type="Texture2D" uid="uid://ciwjuse75t2v2" path="res://image/main_menu/m_l_a.png" id="14_tm7m5"]
-[ext_resource type="Script" uid="uid://cohfod5yi888t" path="res://scene/main_menu/new_game_btn_2.gd" id="15_42r2u"]
+[ext_resource type="Script" uid="uid://cohfod5yi888t" path="res://scene/main_menu/main_menu_button/new_game_btn_2.gd" id="15_42r2u"]
 [ext_resource type="Texture2D" uid="uid://d144awqy6e4t7" path="res://image/main_menu/m_l_4.png" id="16_hlrsq"]
+[ext_resource type="Texture2D" uid="uid://cqeqx8hrx37cs" path="res://image/main_menu/u_r_1.png" id="17_fsfq8"]
+[ext_resource type="Texture2D" uid="uid://cwme4lxdlr1r4" path="res://image/main_menu/d_l_1.png" id="17_uuivk"]
+[ext_resource type="Texture2D" uid="uid://gl73a3yreg48" path="res://image/main_menu/d_l_a.png" id="18_fsfq8"]
+[ext_resource type="Texture2D" uid="uid://dafj7vdy5gv3n" path="res://image/main_menu/u_r_a.png" id="18_osy6q"]
+[ext_resource type="Script" uid="uid://sj0b72upg6f7" path="res://scene/main_menu/main_menu_button/continue_btn.gd" id="19_osy6q"]
+[ext_resource type="Texture2D" uid="uid://cyfd1hce86j1d" path="res://image/main_menu/u_r_4.png" id="19_soelm"]
+[ext_resource type="Script" uid="uid://c5hvqsqjvkx6e" path="res://scene/main_menu/settings_btn.gd" id="23_fvcaw"]
+[ext_resource type="Texture2D" uid="uid://cs1upj428xxwv" path="res://image/main_menu/d_l_4.png" id="24_o3if4"]
+[ext_resource type="Texture2D" uid="uid://tx070roonw5m" path="res://image/main_menu/m_r_1.png" id="25_t6h3x"]
+[ext_resource type="Texture2D" uid="uid://m7vmxfjy8b3w" path="res://image/main_menu/r_m_a.png" id="26_18pke"]
+[ext_resource type="Script" uid="uid://dnrqvp530whor" path="res://scene/main_menu/main_menu_button/database_btn.gd" id="27_ojiqs"]
+[ext_resource type="Texture2D" uid="uid://dtpi3yu0n0fmb" path="res://image/main_menu/r_m_4.png" id="28_p4mry"]
+[ext_resource type="Texture2D" uid="uid://b4rx4me78iwa2" path="res://image/main_menu/d_r_1.png" id="29_j1w8f"]
+[ext_resource type="Texture2D" uid="uid://bxwuu3uqpjnw2" path="res://image/main_menu/d_r_a.png" id="30_w2se8"]
+[ext_resource type="Script" uid="uid://b7sbvyw6iv3r2" path="res://scene/main_menu/main_menu_button/quit_btn.gd" id="31_lxs3d"]
+[ext_resource type="Texture2D" uid="uid://dqy8gsn4bbwh5" path="res://image/main_menu/d_r_4.png" id="32_87akv"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_lt21p"]
 shader = ExtResource("7_eo5a4")
@@ -70,6 +86,102 @@ shader_parameter/breathe_speed = 3.0
 shader_parameter/breathe_amplitude = 10.0
 shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_soelm"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -4.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_osy6q"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -2.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fsfq8"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -15.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 10.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o3if4"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -4.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fxk28"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -2.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8byyq"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -15.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 10.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_j1w8f"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -4.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_w2se8"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -2.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lxs3d"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -15.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 10.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ag1gi"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -4.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nxw06"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -2.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 2.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6y2nn"]
+shader = ExtResource("7_eo5a4")
+shader_parameter/is_hovered = false
+shader_parameter/float_height = -15.0
+shader_parameter/breathe_speed = 3.0
+shader_parameter/breathe_amplitude = 10.0
+shader_parameter/highlight_color = Color(1.2, 1.2, 1.2, 1)
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_j5v2v"]
 shader = ExtResource("7_wbtty")
 shader_parameter/circle_size = 1.0
@@ -84,6 +196,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rq7sb")
+metadata/_edit_vertical_guides_ = [261.0, 961.0, 1660.0]
+metadata/_edit_horizontal_guides_ = [271.0, 460.0, 811.0]
 
 [node name="BG_Layer" type="Control" parent="." unique_id=2142051917]
 layout_mode = 1
@@ -104,6 +218,7 @@ size_flags_vertical = 4
 texture = ExtResource("2_3k2ij")
 expand_mode = 1
 stretch_mode = 6
+metadata/_edit_lock_ = true
 
 [node name="Clock" type="Sprite2D" parent="BG_Layer" unique_id=2037557903]
 position = Vector2(960, 540)
@@ -237,40 +352,156 @@ theme_override_fonts/font = ExtResource("5_lt21p")
 theme_override_font_sizes/font_size = 64
 text = "种子游戏"
 
-[node name="ContinueBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1886552923]
-layout_mode = 0
-offset_top = 150.0
-offset_right = 274.0
-offset_bottom = 209.0
+[node name="ContinueBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1505173921 node_paths=PackedStringArray("target_label")]
+z_index = 1
+material = SubResource("ShaderMaterial_soelm")
+layout_mode = 1
+offset_left = -240.0
+offset_top = -323.0
+offset_right = -176.0
+offset_bottom = -295.0
+scale = Vector2(8, 6)
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
+texture_normal = ExtResource("17_fsfq8")
+texture_pressed = ExtResource("18_osy6q")
+texture_hover = ExtResource("18_osy6q")
+texture_focused = ExtResource("18_osy6q")
+script = ExtResource("19_osy6q")
+target_label = NodePath("../ContinueLabel")
+
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/ContinueBtn" unique_id=232822984]
+z_index = -1
+material = SubResource("ShaderMaterial_osy6q")
+layout_mode = 0
+offset_right = 64.0
+offset_bottom = 28.0
+texture = ExtResource("19_soelm")
+
+[node name="ContinueLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1473997688]
+z_index = 2
+material = SubResource("ShaderMaterial_fsfq8")
+layout_mode = 0
+offset_left = -102.0
+offset_top = -296.0
+offset_right = 154.0
+offset_bottom = -210.0
+theme_override_fonts/font = ExtResource("5_lt21p")
+theme_override_font_sizes/font_size = 64
 text = "继续游戏"
 
-[node name="SettingsBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1697753290]
-layout_mode = 0
-offset_top = 225.0
-offset_right = 274.0
-offset_bottom = 284.0
+[node name="SettingsBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=580868492 node_paths=PackedStringArray("target_label")]
+z_index = 1
+material = SubResource("ShaderMaterial_o3if4")
+layout_mode = 1
+offset_left = -1124.0
+offset_top = 55.0
+offset_right = -1060.0
+offset_bottom = 83.0
+scale = Vector2(8, 6)
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
+texture_normal = ExtResource("17_uuivk")
+texture_pressed = ExtResource("18_fsfq8")
+texture_hover = ExtResource("18_fsfq8")
+texture_focused = ExtResource("18_fsfq8")
+script = ExtResource("23_fvcaw")
+target_label = NodePath("../SettingsLabel")
+
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/SettingsBtn" unique_id=1476203552]
+z_index = -1
+material = SubResource("ShaderMaterial_fxk28")
+layout_mode = 1
+offset_right = 64.0
+offset_bottom = 28.0
+texture = ExtResource("24_o3if4")
+
+[node name="SettingsLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=887961930]
+z_index = 2
+material = SubResource("ShaderMaterial_8byyq")
+layout_mode = 1
+offset_left = -953.0
+offset_top = 92.0
+offset_right = -825.0
+offset_bottom = 178.0
+theme_override_fonts/font = ExtResource("5_lt21p")
+theme_override_font_sizes/font_size = 64
 text = "设置"
 
-[node name="DatabaseBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=355481249]
-layout_mode = 0
-offset_top = 300.0
-offset_right = 274.0
-offset_bottom = 359.0
+[node name="DatabaseBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1880106136 node_paths=PackedStringArray("target_label")]
+z_index = 1
+material = SubResource("ShaderMaterial_j1w8f")
+layout_mode = 1
+offset_left = -238.0
+offset_top = -136.0
+offset_right = -174.0
+offset_bottom = -108.0
+scale = Vector2(8, 6)
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
+texture_normal = ExtResource("25_t6h3x")
+texture_pressed = ExtResource("26_18pke")
+texture_hover = ExtResource("26_18pke")
+texture_focused = ExtResource("26_18pke")
+script = ExtResource("27_ojiqs")
+target_label = NodePath("../DatabaseLabel")
+
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/DatabaseBtn" unique_id=1140585720]
+z_index = -1
+material = SubResource("ShaderMaterial_w2se8")
+layout_mode = 1
+offset_right = 64.0
+offset_bottom = 28.0
+texture = ExtResource("28_p4mry")
+
+[node name="DatabaseLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=627651502]
+z_index = 2
+material = SubResource("ShaderMaterial_lxs3d")
+layout_mode = 0
+offset_left = -26.0
+offset_top = -98.0
+offset_right = 166.0
+offset_bottom = -12.0
+theme_override_fonts/font = ExtResource("5_lt21p")
+theme_override_font_sizes/font_size = 64
 text = "数据库"
 
-[node name="QuitBtn" type="Button" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=337002970]
-layout_mode = 0
-offset_top = 375.0
-offset_right = 274.0
-offset_bottom = 434.0
+[node name="QuitBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=970292280 node_paths=PackedStringArray("target_label")]
+z_index = 1
+material = SubResource("ShaderMaterial_ag1gi")
+layout_mode = 1
+offset_left = -239.0
+offset_top = 53.0
+offset_right = -175.0
+offset_bottom = 81.0
+scale = Vector2(8, 6)
 size_flags_vertical = 3
 theme = ExtResource("6_kvq8n")
+texture_normal = ExtResource("29_j1w8f")
+texture_pressed = ExtResource("30_w2se8")
+texture_hover = ExtResource("30_w2se8")
+texture_focused = ExtResource("30_w2se8")
+script = ExtResource("31_lxs3d")
+target_label = NodePath("../QuitLabel")
+
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/QuitBtn" unique_id=889426257]
+z_index = -1
+material = SubResource("ShaderMaterial_nxw06")
+layout_mode = 0
+offset_right = 64.0
+offset_bottom = 28.0
+texture = ExtResource("32_87akv")
+
+[node name="QuitLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=412794128]
+z_index = 2
+material = SubResource("ShaderMaterial_6y2nn")
+layout_mode = 0
+offset_left = -90.0
+offset_top = 89.0
+offset_right = 166.0
+offset_bottom = 175.0
+theme_override_fonts/font = ExtResource("5_lt21p")
+theme_override_font_sizes/font_size = 64
 text = "退出游戏"
 
 [node name="ProgressBar" type="ProgressBar" parent="UI_Layer" unique_id=1830231392]
