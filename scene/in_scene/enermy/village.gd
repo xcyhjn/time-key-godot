@@ -152,6 +152,9 @@ func all_expand_done(tile_info : Dictionary, rng : RandomNumberGenerator) -> voi
 
 
 func Behavior(Step, info_in, Other, beha):
+	# 如果村庄已经变成废墟，则不再执行任何扩张行为
+	if State_Main == Main_State_Pool.Broken:
+		return
 	print(step)
 	if beha != -1:
 		willing = beha

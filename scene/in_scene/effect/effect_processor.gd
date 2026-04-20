@@ -1,4 +1,18 @@
-# 路径: scene/in_scene/timeline/EffectProcessor.gd
+# ==========================================
+# 脚本名称: EffectProcessor.gd
+# 功能概述: 时间轴结算的核心枢纽，负责将卡牌/敌人的静态数据转化为可执行的动态命令队列。
+# ------------------------------------------
+# 【数据接收】
+# - 来源: TimelineManager (在 resolve_timeline 协程中调用)。
+# - 内容: TimelineAction 对象（包含卡牌的原始 JSON 数据 action_data、释放者 source_node、目标地块 target_tile）以及 SceneTree。
+# ------------------------------------------
+# 【数据处理】
+# - 逻辑: 解析卡牌/敌人的 JSON 数据。将 effects 数组转换为结构化的 EffectCommand (如 DamageCommand) 实例，并组装成一个命令队列 (Array)。
+# ------------------------------------------
+# 【数据发送】
+# - 目标: 各种具体的 EffectCommand (例如 DamageCommand)。
+# - 时机: 在解析完成后，立刻通过 for 循环依次 await 调用各个 Command 的 execute() 方法。
+# ==========================================
 class_name EffectProcessor
 extends RefCounted
 

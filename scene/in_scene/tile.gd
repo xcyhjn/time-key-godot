@@ -135,6 +135,9 @@ func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_s
 	# 使用唯一名称避免命名冲突
 	lf_sprite.name = "LandformSprite_%s_%s" % [coord.x, coord.y]
 	lf_sprite.texture = tex
+	# 【关键修复】：将新创建的精灵引用存入类的成员变量 self.tex
+	# 这样 die() 里的 tex_toggle() 才能找到这个节点
+	self.tex = lf_sprite
 	lf_sprite.centered = false
 	lf_sprite.scale = Vector2(tile_scale, tile_scale)
 	# 移除硬编码的z_index，让父容器控制渲染层级
@@ -159,7 +162,7 @@ func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_s
 	# 【修改为】使用动态调用来发射信号，完美绕过编译器的静态检测
 	owner_battle.emit_signal("CreateBar", self, Attitude, world_position.x, world_position.y)
 	print(str(position) + ": 唤起血条中")
-	random_damage()
+	#random_damage()  该条为血条调试相关
 
 
 	parent.add_child(lf_sprite)
@@ -265,21 +268,24 @@ func State_Update():
 	else: 
 		Revived()
 
-## 重写：死亡逻辑（标记为损坏状态）
 func die() -> void:
 	GameLogger.info("【地形实体死亡】%s 被摧毁" % landform_name, "landform")
 	State_Main = Main_State_Pool.Broken
+	
+	# 因为上面【修复1】赋值了 self.tex，现在可以直接无缝切换为战损贴图了
 	tex_toggle()
 	
 	damage_rate = 1.0
 	
-	# 如果有 owner_battle，通知更新视觉
-	if owner_battle and owner_battle.has_method("add_landform_visual_at"):
-		owner_battle.add_landform_visual_at(location)
+	# 【修复 3】既然已经用 tex_toggle() 切换了贴图，就不需要再通知 HexMap 重新生成整个视觉了
+	# 注释掉下面这两行，彻底切断死循环路径
+	# if owner_battle and owner_battle.has_method("add_landform_visual_at"):
+	# 	owner_battle.add_landform_visual_at(location)
 	
-	# 调用父类死亡逻辑
-	free()
-
+	# 【修复 4】删掉 free()！！！
+	# 地貌变成“废墟”后，它依然是一个占据格子的实体，只是贴图变了。
+	# 如果直接 free() 销毁内存，HexMap 去查这个格子时就会导致 Null 空指针崩溃！
+	# free()
 
 # ==========================================
 # ★ 敌人意图接口
@@ -323,17 +329,28 @@ func Captured():
 	tex_toggle()
 
 func tex_toggle():
+	# 安全检查：如果精灵节点还没创建（或者为空），直接返回
 	if tex == null:
-		print("纹理模块为空")
+		# print("纹理模块为空")
 		return
 		
+	# 根据不同的主状态切换纹理
 	if State_Main == Main_State_Pool.Normal or State_Main == Main_State_Pool.Captured:
-		if !landform_tex.has(tex):
-			tex.texture = landform_tex[0]
+		# 检查数组是否为空，并且当前纹理是否不是我们要的那个（避免重复赋值）
+		if landform_tex.size() > 0:
+			if tex.texture != landform_tex[0]:
+				tex.texture = landform_tex[0]
+				
 	elif State_Main == Main_State_Pool.Broken:
-		if !landform_damaged_tex.has(tex):
-			tex.texture = landform_tex[0]
-
+		# 修复点：对于损坏状态，应该使用 landform_damaged_tex 数组
+		if landform_damaged_tex.size() > 0:
+			if tex.texture != landform_damaged_tex[0]:
+				tex.texture = landform_damaged_tex[0]
+		else:
+			# 如果万一没有配置损坏贴图，作为兜底，可以使用原图
+			if landform_tex.size() > 0:
+				tex.texture = landform_tex[0]
+				
 ## ★ 恢复的幂等性检验函数
 func parse_timeline_shape() -> void:
 	# 如果当前要求解析的 key 和上次一样，并且坐标数组不是空的，直接跳过（节约性能）
