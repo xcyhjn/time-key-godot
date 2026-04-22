@@ -3,12 +3,17 @@
 [ext_resource type="Script" uid="uid://cunn5cqnog06j" path="res://scene/out_scene/out_scene_map_exp.gd" id="1_12582"]
 [ext_resource type="Script" uid="uid://iqptkkak618a" path="res://scene/out_scene/map_generator.gd" id="2_hewn3"]
 [ext_resource type="Script" uid="uid://es427lfaorir" path="res://scene/out_scene/map_renderer.gd" id="3_jf5bm"]
-[ext_resource type="Texture2D" uid="uid://btok7tsvprh6x" path="res://image/outscene_block/out-block_grass.png" id="4_qlwg0"]
+[ext_resource type="Texture2D" uid="uid://c0cgumefxdgxf" path="res://image/outscene_block/out-block_grass.png" id="4_qlwg0"]
+[ext_resource type="Texture2D" uid="uid://bywba4vkcrfpa" path="res://image/outscene_block/out-block_forest.png" id="5_0l8be"]
 [ext_resource type="Texture2D" uid="uid://ckleisa7b53ix" path="res://image/character/0.png" id="5_3ibov"]
+[ext_resource type="Texture2D" uid="uid://c5be0mct7ooii" path="res://image/outscene_block/out-block_stone.png" id="6_k6tjf"]
 [ext_resource type="Texture2D" uid="uid://clmskb2txvt60" path="res://image/character/4.png" id="6_kk43y"]
+[ext_resource type="Texture2D" uid="uid://d1641r781eegp" path="res://image/outscene_block/out-block_desert.png" id="7_8fe0i"]
 [ext_resource type="Texture2D" uid="uid://xbd8c5egci0x" path="res://image/character/6.png" id="7_imcbm"]
+[ext_resource type="Texture2D" uid="uid://cgi1dv3n2y5e" path="res://image/outscene_block/out-block_mystery.png" id="8_17nnv"]
 [ext_resource type="Texture2D" uid="uid://co8i5blrnxgh1" path="res://image/character/3.png" id="8_54d4p"]
 [ext_resource type="Texture2D" uid="uid://b6wcaiqkgvxkv" path="res://image/character/1.png" id="9_7i5u7"]
+[ext_resource type="Texture2D" uid="uid://dxb3gvf5qkf2k" path="res://image/outscene_block/out-block_snow_mount.png" id="9_ugiw8"]
 [ext_resource type="Texture2D" uid="uid://cphi4s8ntu5o1" path="res://image/character/2.png" id="10_0l8be"]
 [ext_resource type="Texture2D" uid="uid://c75hg8m3usdvp" path="res://image/character/5.png" id="11_k6tjf"]
 [ext_resource type="Texture2D" uid="uid://8a5nuiwyndcx" path="res://image/inscene_block/snow.png" id="12_8fe0i"]
@@ -29,6 +34,9 @@
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="25_3ibov"]
 [ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="25_q2y5e"]
 [ext_resource type="Texture2D" uid="uid://bohhy3b6w0eff" path="res://image/pole.png" id="27_jf5bm"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_2aorf"]
+load_path = "res://.godot/imported/out-block_grass.png-fc63eecee49babab7777cbd485dbb6fa.ctex"
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3ibov"]
 texture = ExtResource("17_qlwg0")
@@ -200,17 +208,20 @@ script = ExtResource("1_12582")
 
 [node name="MapGenerator" type="Node" parent="." unique_id=575033209]
 script = ExtResource("2_hewn3")
+weight_normal = 50
+weight_elite = 20
+weight_event = 20
 
 [node name="MapRenderer" type="Node2D" parent="." unique_id=162266069]
 script = ExtResource("3_jf5bm")
 tex_normal = ExtResource("4_qlwg0")
-tex_elite = ExtResource("4_qlwg0")
-tex_event = ExtResource("4_qlwg0")
-tex_boss = ExtResource("4_qlwg0")
-tex_start = ExtResource("4_qlwg0")
-tex_mountain = ExtResource("4_qlwg0")
+tex_elite = ExtResource("5_0l8be")
+tex_event = ExtResource("6_k6tjf")
+tex_boss = ExtResource("7_8fe0i")
+tex_start = ExtResource("8_17nnv")
+tex_mountain = ExtResource("9_ugiw8")
 tex_player_unknown = ExtResource("5_3ibov")
-tex_chars = Array[Texture2D]([ExtResource("4_qlwg0"), ExtResource("4_qlwg0"), ExtResource("4_qlwg0"), ExtResource("4_qlwg0"), ExtResource("4_qlwg0"), ExtResource("4_qlwg0")])
+tex_chars = Array[Texture2D]([SubResource("CompressedTexture2D_2aorf"), SubResource("CompressedTexture2D_2aorf"), SubResource("CompressedTexture2D_2aorf"), SubResource("CompressedTexture2D_2aorf"), SubResource("CompressedTexture2D_2aorf"), SubResource("CompressedTexture2D_2aorf")])
 tex_player_icons = Array[Texture2D]([ExtResource("6_kk43y"), ExtResource("7_imcbm"), ExtResource("8_54d4p"), ExtResource("9_7i5u7"), ExtResource("10_0l8be"), ExtResource("11_k6tjf")])
 icon_enhance = ExtResource("12_8fe0i")
 icon_delete = ExtResource("13_17nnv")

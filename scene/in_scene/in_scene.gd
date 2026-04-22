@@ -47,7 +47,6 @@ var drop_area = 4.0 / 7.0
 @onready var acquire_reward_button = $"../AcquireRewardButton"
 @onready var remove_reward_button = $"../RemoveRewardButton"
 @onready var craft_reward_button = $"../CraftRewardButton"
-@onready var win_button = $"../WinButton"  # 胜利调试按钮
 @onready var lose_button = $"../LoseButton"
 @onready var game_over_ui = $"../GameOver"
 # ★ 新增：地图和时间币显示引用
@@ -63,6 +62,7 @@ var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
 @onready var timeline_ui = $"../TimelineUI"  # 根据你的实际路径修改
 @onready var timeline_manager = $"../TimelineSystem/TimelineManager"
 @onready var dim = $"../DimMenu"
+@onready var win = $"../GameWinScreen"
 
 # ================================
 # ★ 导出调整项：词条 UI 外观
@@ -163,17 +163,6 @@ func _ready() -> void:
 	if timeline_ui:
 		GameLogger.info("TimelineUI已找到: " + timeline_ui.name, "project")
 	
-	# 连接胜利调试按钮
-	if is_instance_valid(win_button):
-		win_button.pressed.connect(_on_win_button_pressed)
-		GameLogger.info("胜利调试按钮已连接", "Project")
-	else:
-		GameLogger.warning("WinButton未找到，胜利调试功能不可用", "Project")
-	
-	# 连接胜利触发信号
-	if Signal_Bus:
-		Signal_Bus.victory_triggered.connect(_on_victory_triggered)
-		GameLogger.info("已连接胜利触发信号", "Project")
 	# 2. 连接失败按钮点击信号
 	if is_instance_valid(lose_button):
 		lose_button.pressed.connect(_on_lose_button_pressed)
@@ -1256,9 +1245,6 @@ func hide_ui_for_external_scene():
 	if is_instance_valid(remove_reward_button): remove_reward_button.hide()
 	if is_instance_valid(craft_reward_button): craft_reward_button.hide()
 	
-	# 7. 隐藏其他可能存在的UI
-	if is_instance_valid(dim): dim.hide()
-	
 	# 8. 确保hexmap和时间币显示
 	if is_instance_valid(hex_map): 
 		hex_map.show()
@@ -1324,7 +1310,6 @@ func restore_all_ui():
 	if is_instance_valid(end_combat_button): end_combat_button.show()
 	
 	if is_instance_valid(timeline_ui): timeline_ui.show()
-	if is_instance_valid(dim): dim.show()
 	
 	# 四个局外按钮也显示
 	if is_instance_valid(shop_button): shop_button.show()
@@ -1411,47 +1396,6 @@ func _on_external_scene_exit_pressed(scene_instance: Node):
 	# 3. 可选：如果需要完全恢复所有UI，可以调用 restore_all_ui()
 	# 但根据需求，只恢复四个局外按钮，其他UI保持隐藏
 
-## 胜利演出触发
-func _on_victory_triggered() -> void:
-	GameLogger.info("🎉 胜利演出触发！开始胜利序列", "Project")
-	
-	# 1. 隐藏所有干扰UI
-	hide_ui_for_external_scene()
-	
-	# 2. 加载胜利演出场景
-	var victory_scene = preload("res://scene/game_win/VictoryOrchestrator.tscn")
-	if not is_instance_valid(victory_scene):
-		GameLogger.error("无法加载胜利演出场景", "Project")
-		return
-	
-	var victory_instance = victory_scene.instantiate()
-	
-	# 3. 计算地图中心位置（用于后续对齐）
-	var map_center = hex_map.global_position if is_instance_valid(hex_map) else Vector2.ZERO
-	
-	# 4. 先将胜利演出添加到场景树（世界坐标系）
-	if is_instance_valid(hex_map):
-		var map_root = hex_map.get_parent()
-		if is_instance_valid(map_root):
-			map_root.add_child(victory_instance)
-			GameLogger.debug("胜利演出已添加到地图根节点: " + map_root.name, "Project")
-		else:
-			add_child(victory_instance)
-			GameLogger.warning("地图根节点无效，回退到Project节点", "Project")
-	else:
-		add_child(victory_instance)
-		GameLogger.warning("HexMap无效，回退到Project节点", "Project")
-	
-	# 5. 精确对齐到地图中心位置（必须在add_child之后设置）
-	victory_instance.global_position = map_center
-	GameLogger.debug("胜利演出已对齐到地图中心: " + str(map_center), "Project")
-	
-	# 6. 调用胜利演出启动方法
-	if victory_instance.has_method("start_performance"):
-		victory_instance.start_performance()
-	else:
-		GameLogger.warning("VictoryOrchestrator 缺少 start_performance 方法", "Project")
-		victory_instance.queue_free()
 # 信号响应：执行实际的动画转换逻辑
 func _on_defeat_triggered():
 	GameLogger.info("💀 收到失败信号，开始失败动画序列", "Project")
@@ -1470,18 +1414,11 @@ func _on_defeat_triggered():
 	# 启动动画序列
 	if is_instance_valid(game_over_ui):
 		game_over_ui.start_sequence(stats)
-## 胜利调试按钮回调
-func _on_win_button_pressed() -> void:
-	GameLogger.info("🔧 胜利调试按钮被按下，手动触发胜利序列", "Project")
-	
-	if Signal_Bus:
-		Signal_Bus.victory_triggered.emit()
-	else:
-		GameLogger.error("Signal_Bus不可用，无法触发胜利信号", "Project")
+
 # 按钮点击：只负责发出全局信号
 func _on_lose_button_pressed():
 	GameLogger.info("🔧 玩家点击失败调试按钮", "Project")
 	Signal_Bus.emit_defeat_triggered()
 	
-func _process(_delta):
-	pass
+func _on_win_button_button_down() -> void:
+	win._on_victory_triggered()

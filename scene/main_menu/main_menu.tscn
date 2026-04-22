@@ -14,12 +14,10 @@
 [ext_resource type="Texture2D" uid="uid://p3hand8ct6vu" path="res://image/main_menu/u_l_1.png" id="8_wbtty"]
 [ext_resource type="PackedScene" uid="uid://b3oxrni5xbtas" path="res://scene/main_menu/menu_guide/main_guide.tscn" id="9_cta3x"]
 [ext_resource type="Texture2D" uid="uid://dh8ohe5k8scha" path="res://image/main_menu/u_l_a.png" id="9_e1cfd"]
-[ext_resource type="Script" uid="uid://caibwbt7glmkg" path="res://scene/main_menu/main_menu_button/new_game_btn.gd" id="9_lt21p"]
 [ext_resource type="PackedScene" uid="uid://diy1bx2xob7ix" path="res://scene/main_menu/menu_quit/main_quit.tscn" id="10_tm7m5"]
 [ext_resource type="Texture2D" uid="uid://lwpe2l5dsn11" path="res://image/main_menu/u_l_4.png" id="11_cta3x"]
 [ext_resource type="Texture2D" uid="uid://dovmwav0leyla" path="res://image/main_menu/m_L_1.png" id="13_cta3x"]
 [ext_resource type="Texture2D" uid="uid://ciwjuse75t2v2" path="res://image/main_menu/m_l_a.png" id="14_tm7m5"]
-[ext_resource type="Script" uid="uid://cohfod5yi888t" path="res://scene/main_menu/main_menu_button/new_game_btn_2.gd" id="15_42r2u"]
 [ext_resource type="Texture2D" uid="uid://d144awqy6e4t7" path="res://image/main_menu/m_l_4.png" id="16_hlrsq"]
 [ext_resource type="Texture2D" uid="uid://cqeqx8hrx37cs" path="res://image/main_menu/u_r_1.png" id="17_fsfq8"]
 [ext_resource type="Texture2D" uid="uid://cwme4lxdlr1r4" path="res://image/main_menu/d_l_1.png" id="17_uuivk"]
@@ -27,18 +25,17 @@
 [ext_resource type="Texture2D" uid="uid://dafj7vdy5gv3n" path="res://image/main_menu/u_r_a.png" id="18_osy6q"]
 [ext_resource type="Script" uid="uid://sj0b72upg6f7" path="res://scene/main_menu/main_menu_button/continue_btn.gd" id="19_osy6q"]
 [ext_resource type="Texture2D" uid="uid://cyfd1hce86j1d" path="res://image/main_menu/u_r_4.png" id="19_soelm"]
-[ext_resource type="Script" uid="uid://c5hvqsqjvkx6e" path="res://scene/main_menu/main_menu_button/settings_btn.gd" id="23_fvcaw"]
 [ext_resource type="Texture2D" uid="uid://cs1upj428xxwv" path="res://image/main_menu/d_l_4.png" id="24_o3if4"]
 [ext_resource type="Texture2D" uid="uid://tx070roonw5m" path="res://image/main_menu/m_r_1.png" id="25_t6h3x"]
 [ext_resource type="Texture2D" uid="uid://m7vmxfjy8b3w" path="res://image/main_menu/r_m_a.png" id="26_18pke"]
-[ext_resource type="Script" uid="uid://dnrqvp530whor" path="res://scene/main_menu/main_menu_button/database_btn.gd" id="27_ojiqs"]
 [ext_resource type="Texture2D" uid="uid://dtpi3yu0n0fmb" path="res://image/main_menu/r_m_4.png" id="28_p4mry"]
 [ext_resource type="Texture2D" uid="uid://b4rx4me78iwa2" path="res://image/main_menu/d_r_1.png" id="29_j1w8f"]
 [ext_resource type="Texture2D" uid="uid://bxwuu3uqpjnw2" path="res://image/main_menu/d_r_a.png" id="30_w2se8"]
-[ext_resource type="Script" uid="uid://b7sbvyw6iv3r2" path="res://scene/main_menu/main_menu_button/quit_btn.gd" id="31_lxs3d"]
 [ext_resource type="Texture2D" uid="uid://dqy8gsn4bbwh5" path="res://image/main_menu/d_r_4.png" id="32_87akv"]
+[ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="33_t6h3x"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_lt21p"]
+resource_local_to_scene = true
 shader = ExtResource("7_eo5a4")
 shader_parameter/is_hovered = false
 shader_parameter/float_height = -4.0
@@ -272,7 +269,7 @@ offset_top = 589.0
 offset_right = 1858.0
 offset_bottom = 1023.0
 
-[node name="NewGameBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=802708860 node_paths=PackedStringArray("target_label")]
+[node name="NewGameBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=802708860 node_paths=PackedStringArray("target_label") groups=["target"]]
 z_index = 1
 material = SubResource("ShaderMaterial_lt21p")
 layout_mode = 0
@@ -287,10 +284,10 @@ texture_pressed = ExtResource("9_e1cfd")
 texture_hover = ExtResource("9_e1cfd")
 texture_focused = ExtResource("9_e1cfd")
 ignore_texture_size = true
-script = ExtResource("9_lt21p")
+script = ExtResource("19_osy6q")
 target_label = NodePath("../NewGameLabel")
 
-[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/NewGameBtn" unique_id=29212046]
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/NewGameBtn" unique_id=29212046 groups=["btn"]]
 z_index = -1
 material = SubResource("ShaderMaterial_cta3x")
 layout_mode = 0
@@ -298,7 +295,7 @@ offset_right = 64.0
 offset_bottom = 28.0
 texture = ExtResource("11_cta3x")
 
-[node name="NewGameLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=591468537]
+[node name="NewGameLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=591468537 groups=["btn"]]
 z_index = 2
 material = SubResource("ShaderMaterial_e1cfd")
 custom_minimum_size = Vector2(12, 12)
@@ -312,7 +309,7 @@ theme_override_fonts/font = ExtResource("5_lt21p")
 theme_override_font_sizes/font_size = 64
 text = "新游戏"
 
-[node name="NewGameBtn2" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=783800481 node_paths=PackedStringArray("target_label")]
+[node name="NewGameBtn2" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=783800481 node_paths=PackedStringArray("target_label") groups=["target"]]
 z_index = 1
 texture_filter = 1
 material = SubResource("ShaderMaterial_hlrsq")
@@ -329,10 +326,10 @@ texture_normal = ExtResource("13_cta3x")
 texture_pressed = ExtResource("14_tm7m5")
 texture_hover = ExtResource("14_tm7m5")
 texture_focused = ExtResource("14_tm7m5")
-script = ExtResource("15_42r2u")
+script = ExtResource("19_osy6q")
 target_label = NodePath("../NewGame2Label")
 
-[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/NewGameBtn2" unique_id=200098101]
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/NewGameBtn2" unique_id=200098101 groups=["btn"]]
 z_index = -1
 material = SubResource("ShaderMaterial_uuivk")
 layout_mode = 0
@@ -340,7 +337,7 @@ offset_right = 64.0
 offset_bottom = 28.0
 texture = ExtResource("16_hlrsq")
 
-[node name="NewGame2Label" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=93853440]
+[node name="NewGame2Label" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=93853440 groups=["btn"]]
 z_index = 2
 material = SubResource("ShaderMaterial_ykkdi")
 layout_mode = 0
@@ -352,7 +349,7 @@ theme_override_fonts/font = ExtResource("5_lt21p")
 theme_override_font_sizes/font_size = 64
 text = "种子游戏"
 
-[node name="ContinueBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1505173921 node_paths=PackedStringArray("target_label")]
+[node name="ContinueBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1505173921 node_paths=PackedStringArray("target_label") groups=["target"]]
 z_index = 1
 material = SubResource("ShaderMaterial_soelm")
 layout_mode = 1
@@ -370,7 +367,7 @@ texture_focused = ExtResource("18_osy6q")
 script = ExtResource("19_osy6q")
 target_label = NodePath("../ContinueLabel")
 
-[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/ContinueBtn" unique_id=232822984]
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/ContinueBtn" unique_id=232822984 groups=["btn"]]
 z_index = -1
 material = SubResource("ShaderMaterial_osy6q")
 layout_mode = 0
@@ -378,7 +375,7 @@ offset_right = 64.0
 offset_bottom = 28.0
 texture = ExtResource("19_soelm")
 
-[node name="ContinueLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1473997688]
+[node name="ContinueLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1473997688 groups=["btn"]]
 z_index = 2
 material = SubResource("ShaderMaterial_fsfq8")
 layout_mode = 0
@@ -390,7 +387,7 @@ theme_override_fonts/font = ExtResource("5_lt21p")
 theme_override_font_sizes/font_size = 64
 text = "继续游戏"
 
-[node name="SettingsBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=580868492 node_paths=PackedStringArray("target_label")]
+[node name="SettingsBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=580868492 node_paths=PackedStringArray("target_label") groups=["target"]]
 z_index = 1
 material = SubResource("ShaderMaterial_o3if4")
 layout_mode = 1
@@ -405,10 +402,10 @@ texture_normal = ExtResource("17_uuivk")
 texture_pressed = ExtResource("18_fsfq8")
 texture_hover = ExtResource("18_fsfq8")
 texture_focused = ExtResource("18_fsfq8")
-script = ExtResource("23_fvcaw")
+script = ExtResource("19_osy6q")
 target_label = NodePath("../SettingsLabel")
 
-[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/SettingsBtn" unique_id=1476203552]
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/SettingsBtn" unique_id=1476203552 groups=["btn"]]
 z_index = -1
 material = SubResource("ShaderMaterial_fxk28")
 layout_mode = 1
@@ -416,7 +413,7 @@ offset_right = 64.0
 offset_bottom = 28.0
 texture = ExtResource("24_o3if4")
 
-[node name="SettingsLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=887961930]
+[node name="SettingsLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=887961930 groups=["btn"]]
 z_index = 2
 material = SubResource("ShaderMaterial_8byyq")
 layout_mode = 1
@@ -428,7 +425,7 @@ theme_override_fonts/font = ExtResource("5_lt21p")
 theme_override_font_sizes/font_size = 64
 text = "设置"
 
-[node name="DatabaseBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1880106136 node_paths=PackedStringArray("target_label")]
+[node name="DatabaseBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=1880106136 node_paths=PackedStringArray("target_label") groups=["target"]]
 z_index = 1
 material = SubResource("ShaderMaterial_j1w8f")
 layout_mode = 1
@@ -443,10 +440,10 @@ texture_normal = ExtResource("25_t6h3x")
 texture_pressed = ExtResource("26_18pke")
 texture_hover = ExtResource("26_18pke")
 texture_focused = ExtResource("26_18pke")
-script = ExtResource("27_ojiqs")
+script = ExtResource("19_osy6q")
 target_label = NodePath("../DatabaseLabel")
 
-[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/DatabaseBtn" unique_id=1140585720]
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/DatabaseBtn" unique_id=1140585720 groups=["btn"]]
 z_index = -1
 material = SubResource("ShaderMaterial_w2se8")
 layout_mode = 1
@@ -454,7 +451,7 @@ offset_right = 64.0
 offset_bottom = 28.0
 texture = ExtResource("28_p4mry")
 
-[node name="DatabaseLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=627651502]
+[node name="DatabaseLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=627651502 groups=["btn"]]
 z_index = 2
 material = SubResource("ShaderMaterial_lxs3d")
 layout_mode = 0
@@ -466,7 +463,7 @@ theme_override_fonts/font = ExtResource("5_lt21p")
 theme_override_font_sizes/font_size = 64
 text = "数据库"
 
-[node name="QuitBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=970292280 node_paths=PackedStringArray("target_label")]
+[node name="QuitBtn" type="TextureButton" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=970292280 node_paths=PackedStringArray("target_label") groups=["target"]]
 z_index = 1
 material = SubResource("ShaderMaterial_ag1gi")
 layout_mode = 1
@@ -481,10 +478,10 @@ texture_normal = ExtResource("29_j1w8f")
 texture_pressed = ExtResource("30_w2se8")
 texture_hover = ExtResource("30_w2se8")
 texture_focused = ExtResource("30_w2se8")
-script = ExtResource("31_lxs3d")
+script = ExtResource("19_osy6q")
 target_label = NodePath("../QuitLabel")
 
-[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/QuitBtn" unique_id=889426257]
+[node name="TextureRect" type="TextureRect" parent="UI_Layer/LayoutControl/ButtonGroup/QuitBtn" unique_id=889426257 groups=["btn"]]
 z_index = -1
 material = SubResource("ShaderMaterial_nxw06")
 layout_mode = 0
@@ -492,7 +489,7 @@ offset_right = 64.0
 offset_bottom = 28.0
 texture = ExtResource("32_87akv")
 
-[node name="QuitLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=412794128]
+[node name="QuitLabel" type="Label" parent="UI_Layer/LayoutControl/ButtonGroup" unique_id=412794128 groups=["btn"]]
 z_index = 2
 material = SubResource("ShaderMaterial_6y2nn")
 layout_mode = 0
@@ -505,6 +502,7 @@ theme_override_font_sizes/font_size = 64
 text = "退出游戏"
 
 [node name="ProgressBar" type="ProgressBar" parent="UI_Layer" unique_id=1830231392]
+visible = false
 layout_mode = 2
 
 [node name="ColorBG" type="ColorRect" parent="." unique_id=1123055899]
@@ -533,6 +531,11 @@ visible = false
 
 [node name="MainQuit" parent="UI" unique_id=1887165798 instance=ExtResource("10_tm7m5")]
 visible = false
+
+[node name="DimMenu" parent="UI" unique_id=59612590 instance=ExtResource("33_t6h3x")]
+layer = 3
+visible = false
+mode = 0
 
 [connection signal="button_down" from="UI_Layer/LayoutControl/ButtonGroup/NewGameBtn" to="." method="_on_new_game_btn_button_down"]
 [connection signal="button_down" from="UI_Layer/LayoutControl/ButtonGroup/NewGameBtn2" to="." method="_on_new_game_btn_2_button_down"]

@@ -7,12 +7,16 @@ extends Control
 @onready var Quit = $UI/MainQuit
 @onready var Clock = $BG_Layer/Clock/Point
 @onready var Mask = $ColorBG
+@onready var point = $BG_Layer/Clock/Point
+@onready var dim = $UI/DimMenu
 
 var progress: Array[float] = []
 # 用于暂存点击不同按钮时产生的参数
 var pending_data: String = ""
 
 func _ready() -> void:
+	await dim.use(1,1)
+	Global.clock.emit(1)
 	set_process(false)
 	$UI_Layer/ProgressBar.hide()
 
@@ -26,15 +30,12 @@ func _process(_delta: float) -> void:
 		set_process(false)
 		$UI_Layer/ProgressBar.value = 100.0
 		
-		# --- 关键逻辑：手动实例化并传参 ---
 		var packed_scene = ResourceLoader.load_threaded_get(Scene_path)
 		var next_scene_instance = packed_scene.instantiate()
 		
-		# 检查目标场景是否有接收变量，并赋值
 		if "received_text" in next_scene_instance:
 			next_scene_instance.received_text = pending_data
 		
-		# 将新场景添加到根节点并切换
 		get_tree().root.add_child(next_scene_instance)
 		get_tree().current_scene = next_scene_instance
 		

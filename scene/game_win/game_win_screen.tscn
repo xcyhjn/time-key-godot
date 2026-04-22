@@ -2,19 +2,94 @@
 
 [ext_resource type="Script" uid="uid://cy0g58qqgk2jm" path="res://scene/game_win/game_win_screen.gd" id="1_d0xcn"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="1_urptx"]
+[ext_resource type="PackedScene" uid="uid://b5use3tsyf02j" path="res://scene/game_win/VictoryOrchestrator.tscn" id="2_lwhgw"]
+[ext_resource type="Shader" uid="uid://deqrai4geldgl" path="res://shaders/game_over.gdshader" id="2_wp7al"]
+[ext_resource type="Script" uid="uid://bqeuvplxa0ymv" path="res://scene/game_over/post_process.gd" id="3_e4dgu"]
+[ext_resource type="Script" uid="uid://dnrjp7vwdxrjy" path="res://scene/game_over/ui_layout.gd" id="3_tywwa"]
+[ext_resource type="Texture2D" uid="uid://c7twpxiq65ml" path="res://image/black rect.png" id="7_e4dgu"]
+[ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="13_tanxl"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xtwem"]
+resource_local_to_scene = true
+shader = ExtResource("2_wp7al")
+shader_parameter/grayscale_amount = 0.0
+shader_parameter/burn_intensity = 0.0
+
+[sub_resource type="Gradient" id="Gradient_lwhgw"]
+resource_local_to_scene = true
+offsets = PackedFloat32Array(0, 0.50454545, 1)
+colors = PackedColorArray(0, 0, 0, 0, 0.5330367, 0.5330367, 0.5330366, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_tywwa"]
+resource_local_to_scene = true
+gradient = SubResource("Gradient_lwhgw")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_nduad"]
+resource_local_to_scene = true
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(960, 540, 1)
+direction = Vector3(1, -0.5, 0)
+initial_velocity_min = 15.0
+initial_velocity_max = 45.0
+gravity = Vector3(0, -15, 0)
+scale_min = 2.0
+scale_max = 4.0
+color_ramp = SubResource("GradientTexture1D_tywwa")
 
 [node name="GameWinScreen" type="CanvasLayer" unique_id=1932943052]
+layer = 100
 script = ExtResource("1_d0xcn")
+custom_font = ExtResource("1_urptx")
 
-[node name="ColorRect" type="ColorRect" parent="." unique_id=1838026212]
+[node name="PostProcess" type="ColorRect" parent="." unique_id=243028744]
+visible = false
+material = SubResource("ShaderMaterial_xtwem")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.4392157)
+mouse_filter = 2
+script = ExtResource("3_e4dgu")
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=435320368]
+[node name="VFX_Ashes" type="GPUParticles2D" parent="." unique_id=760083226]
+visible = false
+position = Vector2(960, 540)
+amount = 200
+lifetime = 4.0
+visibility_rect = Rect2(0, 0, 1920, 1080)
+process_material = SubResource("ParticleProcessMaterial_nduad")
+
+[node name="VictoryOrchestrator" parent="." unique_id=1747856868 instance=ExtResource("2_lwhgw")]
+
+[node name="UI_Layout" type="Control" parent="." unique_id=765579825]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_tywwa")
+
+[node name="Title" type="Label" parent="UI_Layout" unique_id=626841609]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.35
+anchor_right = 1.0
+anchor_bottom = 0.35
+offset_top = -32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("1_urptx")
+theme_override_font_sizes/font_size = 48
+horizontal_alignment = 1
+
+[node name="DataFlow" type="VBoxContainer" parent="UI_Layout" unique_id=1448927215]
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -26,48 +101,39 @@ offset_right = 20.0
 offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
+pivot_offset = Vector2(918, -937)
+mouse_filter = 2
+theme_override_constants/separation = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=817485781]
-layout_mode = 2
+[node name="menu_btn" type="TextureButton" parent="UI_Layout" unique_id=1369010683]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.75
+anchor_right = 0.5
+anchor_bottom = 0.75
+offset_left = -100.0
+offset_top = -120.0
+offset_right = 100.0
+grow_horizontal = 2
+grow_vertical = 0
+texture_normal = ExtResource("7_e4dgu")
 
-[node name="Title" type="Label" parent="CenterContainer/VBoxContainer" unique_id=472068169]
-layout_mode = 2
+[node name="Label" type="Label" parent="UI_Layout/menu_btn" unique_id=913890771]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_fonts/font = ExtResource("1_urptx")
-theme_override_font_sizes/font_size = 100
-text = "游戏胜利"
+theme_override_font_sizes/font_size = 32
+text = "返回"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="Control" type="Control" parent="CenterContainer/VBoxContainer" unique_id=2007732100]
-custom_minimum_size = Vector2(0, 100)
-layout_mode = 2
+[node name="DimMenu" parent="UI_Layout" unique_id=59612590 instance=ExtResource("13_tanxl")]
+visible = false
 
-[node name="SubTitle" type="Label" parent="CenterContainer/VBoxContainer" unique_id=773398987]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("1_urptx")
-theme_override_font_sizes/font_size = 72
-text = "时之钥彻底摧毁"
-horizontal_alignment = 1
-
-[node name="Control2" type="Control" parent="CenterContainer/VBoxContainer" unique_id=586392607]
-custom_minimum_size = Vector2(0, 80)
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer" unique_id=905811957]
-layout_mode = 2
-alignment = 1
-
-[node name="BtnQuit" type="Button" parent="CenterContainer/VBoxContainer/HBoxContainer" unique_id=1538550723]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("1_urptx")
-theme_override_font_sizes/font_size = 60
-text = "退出游戏"
-
-[node name="Control" type="Control" parent="CenterContainer/VBoxContainer/HBoxContainer" unique_id=1955663223]
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-
-[node name="BtnMainMenu" type="Button" parent="CenterContainer/VBoxContainer/HBoxContainer" unique_id=1886582627]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("1_urptx")
-theme_override_font_sizes/font_size = 60
-text = "回到主菜单"
+[connection signal="button_down" from="UI_Layout/menu_btn" to="." method="_on_btn_main_menu_button_down"]

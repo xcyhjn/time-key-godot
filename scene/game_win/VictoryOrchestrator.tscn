@@ -16,7 +16,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector2(856.00006, 475)]
+"values": [Vector2(960, 540)]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -44,7 +44,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0.5, 3.0010247),
 "transitions": PackedFloat32Array(0.6155722, 1),
 "update": 0,
-"values": [Vector2(940, 540), Vector2(940, 240)]
+"values": [Vector2(960, 540), Vector2(960, 240)]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -104,7 +104,6 @@ mouse_filter = 2
 [node name="AnimationPlayer" type="AnimationPlayer" parent="AnimationRoot" unique_id=2063568170]
 root_node = NodePath("../..")
 libraries/ = SubResource("AnimationLibrary_sk10i")
-autoplay = &"victory_rise"
 
 [node name="KeyAnchor" type="Control" parent="AnimationRoot" unique_id=104285933]
 anchors_preset = 0
@@ -115,6 +114,6 @@ mouse_filter = 2
 [node name="KeySprite" type="Sprite2D" parent="AnimationRoot/KeyAnchor" unique_id=2142473436]
 material = SubResource("ShaderMaterial_5p1ep")
 instance_shader_parameters/dissolve_blend = 0.0
-position = Vector2(856.00006, 475)
+position = Vector2(960, 540)
 scale = Vector2(0.3, 0.297)
 texture = ExtResource("1_sk10i")

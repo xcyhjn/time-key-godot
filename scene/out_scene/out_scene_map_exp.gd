@@ -44,7 +44,7 @@ var chosen_char_index: int = -1
 func _ready():
 	# 检查是否有保存的状态
 	if MapState.is_initialized:
-		await dim.use(1)
+		await dim.use(1,1)
 		_load_from_global()
 	else:
 		_init_new_map()
@@ -367,7 +367,7 @@ func _enter_room_logic(target):
 			data_str = "event_stage"
 			target_scene = event_scene
 	data_str = data_str + " " + map_seed
-	await dim.use(0)
+	await dim.use(0,0)
 	_switch_scene_with_data(target_scene, data_str)
 
 func _save_to_global():
