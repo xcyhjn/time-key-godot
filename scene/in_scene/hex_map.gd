@@ -93,11 +93,14 @@ enum LandformType { NONE, MINE, CAVE, VILLAGE, RUINS }  # 整合自 node_2d.gd�
 # 地形升降动画配置
 # ==========================================
 @export_group("地形升降动画 (Elevation Animation)")
-@export var ele_anim_duration: float = 0.8  # 升降过程的耗时
+@export var ele_anim_duration: float = 0.4  # 升降过程的耗时
 @export var ele_shake_intensity: float = 6.0 # 升降前地壳震动的像素幅度
-@export var ele_shake_duration: float = 0.3  # 地壳震动的准备时间
+@export var ele_shake_duration: float = 0.2  # 地壳震动的准备时间
 @export var ele_trans_type: Tween.TransitionType = Tween.TRANS_ELASTIC # 弹性缓冲，效果最好
 @export var ele_ease_type: Tween.EaseType = Tween.EASE_OUT
+@export var elevation_move_distance: float = 48.0 #地块升降高度控制
+# ★ 新增：控制物理补块（侧面贴图）生成时的垂直间距
+@export var filler_block_spacing: float = 0.0
 
 var landform_pool: Array[Script] = []  # 地貌脚本池，在 _ready 中初始化
 var neutral_pool: Array[Script] = []
@@ -1793,7 +1796,7 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	var actual_delta = new_height - old_height
 	if actual_delta == 0: return
 
-	# 1. 搜集需要一起移动的所有视觉组件（地形、碰撞箱、建筑、血条）
+	# 1. 搜集需要一起移动的所有视觉组件（保持你原来的代码不变）
 	var moving_parts = []
 	var sprites = stack.get_meta("sprites") as Array
 	moving_parts.append_array(sprites)
@@ -1804,23 +1807,31 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	var occupant = stack.get_meta("occupant")
 	if is_instance_valid(occupant): 
 		moving_parts.append(occupant)
-		# 抓取悬浮在外部的血条
 		var bar_manager = get_node_or_null("BarManager")
 		if bar_manager:
 			var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
 			if is_instance_valid(hb_node): moving_parts.append(hb_node)
 
-	# 2. 更新底层数据字典
+	# 2. ★ 核心修补：更新底层数据字典并维护全局高度池
 	stack.set_meta("height", new_height)
 	for coord in stack_nodes.keys():
 		if stack_nodes[coord] == stack:
 			map_data[coord]["height"] = new_height
+			
+			# 维护 GlobalClock.tile_h_pool 保证 AI 和刷怪判定不崩溃
+			if GlobalClock and "tile_h_pool" in GlobalClock:
+				if GlobalClock.tile_h_pool.has(old_height):
+					GlobalClock.tile_h_pool[old_height].erase(coord)
+				if not GlobalClock.tile_h_pool.has(new_height):
+					GlobalClock.tile_h_pool[new_height] = []
+				GlobalClock.tile_h_pool[new_height].append(coord)
 			break
-
+	# ★ 修改点：使用新导出的 elevation_move_distance 计算位移偏移量
+	# 这样你就可以独立控制“移动了多少距离”，而不会改变“地块之间叠多高”
 	var current_step_h = step_height * (tile_scale / REF_SCALE)
-	var y_offset = -(actual_delta * current_step_h) # Godot中向上是负Y方向
-
-	# 3. 动画序列：震动 -> 升降 -> 底层方块增删
+	var y_offset_movement = -(actual_delta * elevation_move_distance)
+	
+	# 3. 动画序列（保持你原来的逻辑）
 	var tw = create_tween()
 	
 	# 【阶段A：剧烈震动】
@@ -1839,57 +1850,58 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 				tw.tween_property(part, "position", original_positions[part] + rand_offset, step_time)
 				
 	# 【阶段B：平滑升降】
-	tw.parallel() # 确保震动后立刻无缝平移
+	tw.parallel() 
 	for part in moving_parts:
 		if is_instance_valid(part):
-			var target_pos = original_positions[part] + Vector2(0, y_offset)
+			# 所有移动组件（包含碰撞格）现在统一使用 elevation_move_distance 的位移
+			var target_pos = original_positions[part] + Vector2(0, y_offset_movement)
 			tw.parallel().tween_property(part, "position", target_pos, ele_anim_duration)\
 				.set_trans(ele_trans_type).set_ease(ele_ease_type)
-
-	# 【阶段C：视觉方块补齐或摧毁】(动画结束瞬间执行)
+	# 【阶段C：视觉方块补齐或摧毁】
 	tw.tween_callback(func():
 		if actual_delta > 0:
-			# 抬升：在最底层补充方块
 			var coord = stack_nodes.find_key(stack)
 			var terrain_type = map_data[coord]["terrain_type"]
 			var side_tex = get_side_tex(terrain_type)
-			
+
 			for i in range(old_height, new_height):
 				var new_sprite = Sprite2D.new()
 				new_sprite.texture = side_tex
 				new_sprite.centered = false
 				new_sprite.offset = Vector2(-256, -400)
-				# 位置放在原最底层的下方
-				new_sprite.position.y = original_positions[sprites[0]].y + (i - old_height + 1) * current_step_h
+
+				# ★ 核心修改 2：使用 filler_block_spacing 控制新生成补块的坐标
+				# 这样补块的排列就会与您的位移完美对齐，不再受原贴图高度限制
+				new_sprite.position.y = original_positions[sprites[0]].y + (i - old_height + 1) * (filler_block_spacing * (tile_scale / REF_SCALE))
+
 				new_sprite.scale = Vector2(tile_scale, tile_scale)
-				new_sprite.modulate = Color(0.8, 0.8, 0.8) # 侧边调暗
-				
+				new_sprite.modulate = Color(0.8, 0.8, 0.8) 
+
 				if block_material:
 					new_sprite.material = block_material.duplicate()
 					new_sprite.set_instance_shader_parameter("block_idx", float(i))
 					
 				stack.add_child(new_sprite)
-				stack.move_child(new_sprite, 0) # 移入渲染最底层
+				stack.move_child(new_sprite, 0) 
 				sprites.insert(0, new_sprite)
 				
 		elif actual_delta < 0:
-			# 下降：从底层开始摧毁被掩盖的方块
+			# 删除逻辑保持原样
 			var remove_count = abs(actual_delta)
 			for i in range(remove_count):
-				if sprites.size() > 1: # 保护至少剩一层地皮
+				if sprites.size() > 1: 
 					var bottom_sprite = sprites[0]
 					sprites.pop_front()
 					bottom_sprite.queue_free()
-					
-		# 更新Shader总高度，防止消融特效断层
+
+		# 更新 Shader 总高度（保持原样）
 		for i in range(sprites.size()):
 			if is_instance_valid(sprites[i]) and sprites[i].material:
 				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
-				
-		GameLogger.info("⛰️ 地块升降完毕，坐标新高度: " + str(new_height), "HexMap")
 	)
-
-# 在 hex_map.gd (class_name battle) 中添加：
+	
+	# ★ 核心修补：在此阻塞函数，使时间轴在这个动画播放完之前停滞！
+	await tw.finished
 
 ## 安全获取地块上的占位实体（地貌或敌人）
 func get_entity_at_hex(coord: Vector2i) -> Node:
