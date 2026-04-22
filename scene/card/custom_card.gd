@@ -50,6 +50,9 @@ const TIMELINE_SHAPE_TEXTURES: Dictionary = {
 	# 可扩展更多形状
 }
 
+# ★ 新增：卡牌影响范围 (AOE) 相对坐标
+var effect_range_offsets: Array[Vector2i] = [Vector2i(0, 0)] # 默认仅影响自身
+
 # 时间占位图片设置
 @export_group("时间占位图片设置")
 @export var time_block_offset: Vector2 = Vector2.ZERO  # 位置偏移量
@@ -309,7 +312,9 @@ func setup_card_data() -> void:
 	# ==========================================
 	var raw_shape = card_info.get("shape", ["1"]) # 默认给个单格
 	_normalize_and_parse_shape(raw_shape)
-	
+	# ★ 新增：解析卡牌六边形作用范围
+	var raw_range = card_info.get("effect_range", 0) 
+	_parse_hex_effect_range(raw_range)
 	# 显示时间占位图片（如果启用手牌显示）
 	if show_time_block_in_hand:
 		show_timeline_shape()
@@ -787,3 +792,33 @@ func apply_effect_immediate(target_hex: Area2D):
 	GameLogger.info("对地块 %s 直接释放了效果！" % target_hex.position, "CustomCard")
 	# ... 直接结算的逻辑 ...
 	queue_free()
+	
+## ★ 解析六边形范围
+func _parse_hex_effect_range(range_data: Variant) -> void:
+	effect_range_offsets.clear()
+	
+	# 情况1：填的是一个整数（代表半径）。例如 1 代表自身+周围6格
+	if typeof(range_data) == TYPE_INT or typeof(range_data) == TYPE_FLOAT:
+		var radius = int(range_data)
+		for q in range(-radius, radius + 1):
+			for r in range(max(-radius, -q - radius), min(radius, -q + radius) + 1):
+				effect_range_offsets.append(Vector2i(q, r))
+				
+	# 情况2：填的是自定义坐标偏移数组，比如 ["0,0", "1,0", "0,1"]
+	elif typeof(range_data) == TYPE_ARRAY:
+		for item in range_data:
+			if typeof(item) == TYPE_STRING:
+				var parts = item.split(",")
+				if parts.size() == 2:
+					effect_range_offsets.append(Vector2i(int(parts[0]), int(parts[1])))
+					
+	# 兜底：如果解析失败，仅作用于自身
+	if effect_range_offsets.is_empty():
+		effect_range_offsets.append(Vector2i(0, 0))
+
+## 获取以指定坐标为中心的绝对影响范围
+func get_absolute_effect_range(center_coord: Vector2i) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for offset in effect_range_offsets:
+		result.append(center_coord + offset)
+	return result
