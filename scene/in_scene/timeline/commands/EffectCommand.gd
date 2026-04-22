@@ -17,7 +17,8 @@ class_name EffectCommand
 extends RefCounted
 
 var source: Node
-var target_tile: Area2D
+# ★ 核心改动：将其变为数组，接收 AOE 范围内的所有地块
+var target_tiles: Array[Area2D] = []
 var hex_map: Node2D # 指向 battle 实例
 
 # 虚函数，所有具体效果必须实现

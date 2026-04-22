@@ -903,7 +903,7 @@ func _clear_all_aoe_highlights() -> void:
 	for stack in current_aoe_stacks:
 		change_tile_state(stack, TileVisualState.IDLE)
 	current_aoe_stacks.clear()
-## 计算范围并驱动状态机 (新增 main_board 参数)
+## 计算范围并驱动状态机 (所有范围内地块享受同等高亮)
 func _update_aoe_display(card: Control, center_stack: Area2D, main_board: Node) -> void:
 	var new_aoe_stacks: Array[Area2D] = []
 	var center_coord = stack_nodes.find_key(center_stack)
@@ -916,23 +916,23 @@ func _update_aoe_display(card: Control, center_stack: Area2D, main_board: Node) 
 			if stack_nodes.has(coord) and is_instance_valid(stack_nodes[coord]):
 				new_aoe_stacks.append(stack_nodes[coord])
 	
-	# 1. 状态卸载
+	# 1. 状态卸载：旧的范围内有，但新范围内没有的地块，恢复平静
 	for stack in current_aoe_stacks:
 		if not new_aoe_stacks.has(stack):
 			change_tile_state(stack, TileVisualState.IDLE)
 			
-	# 2. 状态加载
+	# 2. 状态加载：判断中心点是否合法，决定全境是亮金边还是亮灰边
 	var is_valid = _is_stack_valid_target(center_stack)
+	var target_state = TileVisualState.HOVER_TARGET_VALID if is_valid else TileVisualState.HOVER_TARGET_INVALID
+	
 	for stack in new_aoe_stacks:
-		if stack == center_stack:
-			change_tile_state(stack, TileVisualState.HOVER_TARGET_VALID if is_valid else TileVisualState.HOVER_TARGET_INVALID)
-		else:
-			change_tile_state(stack, TileVisualState.AOE_RANGE)
+		# ★ 核心改动：不再区分 center_stack，范围内的地块全部赋予相同的最高级高亮
+		change_tile_state(stack, target_state)
 			
 	# 3. 记录当前列表
 	current_aoe_stacks = new_aoe_stacks
 	
-	# 4. ★ 修复报错：通过 MainBoard 调用 UI 更新
+	# 4. 更新 Tooltip 文本位置
 	if main_board and main_board.has_method("update_target_selection_hover"):
 		main_board.update_target_selection_hover(center_stack, card)
 # ==========================================
@@ -1192,266 +1192,96 @@ func toggle_height_view() -> void:
 	is_view_transitioning = false
 	GameLogger.debug("视图切换动画完成，解锁状态", "HexMap")
 
-## 压缩为单格高度视图（物理坐标扁平化版本）
+## 压缩为平铺视图 (利用缓存精准归位)
 func _compress_to_single_height_view() -> void:
-	GameLogger.info("切换到压缩高度视图（物理坐标扁平化）", "HexMap")
-	
-	# 清空材质和位置缓存
-	height_view_original_materials.clear()
-	height_view_hovered_stack = null
-	height_view_selected_stack = null
-	
-	# 计算单格高度步长（用于坐标转换参考）
-	var current_step_h = step_height * (tile_scale / REF_SCALE)
+	GameLogger.info("切换到平铺视图", "HexMap")
+	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
 	
 	for coord in stack_nodes.keys():
 		var stack = stack_nodes[coord]
-		if not is_instance_valid(stack):
-			continue
+		if not is_instance_valid(stack): continue
 		
 		var sprites = stack.get_meta("sprites") as Array
 		var height = stack.get_meta("height") as int
-		var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null  # 安全获取地貌/敌人实例
+		var top_block_y = -(height - 1) * current_step_h
+		var drop_delta = 0.0 - top_block_y
 		
-		# ★ 保存原始材质和位置，并应用高度视图shader
+		# 1. 记录所有原始数据，用于恢复
 		var stack_sprites_data = []
-		for sprite in sprites:
-			if not is_instance_valid(sprite):
-				stack_sprites_data.append(null)
-				continue
-			
-			# 保存原始材质和位置引用
-			var original_material = sprite.material
-			var original_position = sprite.position  # 存储完整的Vector2位置
-			stack_sprites_data.append({
-				"sprite": sprite,
-				"original_material": original_material,
-				"original_position": original_position
-			})
-			
-			# 应用高度视图shader（因为血条贴图已被收编进 sprites 数组，这里会自动给血条换上高度视图的Shader）
-			if height_view_shader_material:
-				sprite.material = height_view_shader_material.duplicate()
-				# 设置默认shader参数
-				sprite.set_instance_shader_parameter("click_highlight", 0.0)
-				sprite.set_instance_shader_parameter("click_highlight_width", height_view_click_highlight_width)
-				sprite.set_instance_shader_parameter("click_highlight_color", height_view_click_highlight_color)
+		for s in sprites:
+			if is_instance_valid(s):
+				stack_sprites_data.append({"sprite": s, "original_position": s.position})
+				# ★ 开启平铺模式 Shader，关掉上下浮动！
+				if s.material: s.set_instance_shader_parameter("is_flat_view", 1.0)
+
+		var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
+		var occ_data = {"node": occupant, "original_position": occupant.position} if is_instance_valid(occupant) else null
 		
-		# ★ 保存地貌/敌人的原始位置（如果存在）
-		var occupant_data = null
-		if is_instance_valid(occupant):
-			occupant_data = {
-				"node": occupant,
-				"original_position": occupant.position
-			}
-			
-		# ★ 新增：探测并保存血条的原始位置
-		var health_bar_data = null
-		if is_instance_valid(occupant) and occupant.has_method("get_instance_id"):
-			var bar_manager = get_node_or_null("BarManager")
-			if bar_manager:
-				var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
-				if is_instance_valid(hb_node):
-					health_bar_data = {
-						"node": hb_node,
-						"original_position": hb_node.position
-					}
-		
-		# ★ 保存碰撞区的原始位置（如果存在）
-		var collision_data = null
 		var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-		if is_instance_valid(collision):
-			collision_data = {
-				"node": collision,
-				"original_position": collision.position
-			}
+		var col_data = {"node": collision, "original_position": collision.position} if is_instance_valid(collision) else null
 		
-		# 保存这个地块的完整原始数据
+		var hb_data = null
+		var bar_manager = get_node_or_null("BarManager")
+		if bar_manager and is_instance_valid(occupant):
+			var hb = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
+			if is_instance_valid(hb): hb_data = {"node": hb, "original_position": hb.position}
+
 		height_view_original_materials[stack] = {
 			"sprites_data": stack_sprites_data,
-			"height": height,
-			"occupant_data": occupant_data,
-			"collision_data": collision_data,
-			"health_bar_data": health_bar_data # 存入血条数据
+			"occupant_data": occ_data,
+			"collision_data": col_data,
+			"health_bar_data": hb_data
 		}
-		
-		var top_block_y = -(height - 1) * current_step_h
-		var drop_delta = 0.0 - top_block_y  # 正数表示需要向下移动的距离
-		
-		if height <= 1:
-			for sprite_data in stack_sprites_data:
-				if sprite_data == null:
-					continue
-				var sprite = sprite_data["sprite"]
-				if not is_instance_valid(sprite):
-					continue
-				
-				# ★ 新增：核心修复点！
-				# 只有直接挂在 stack（地块根节点）下的精灵，才允许在这里移动。
-				# 因为血条精灵是挂在 hb_node 下的，如果不排除，它会跟着 hb_node 一起被移动两次。
-				if sprite.get_parent() != stack:
-					continue
-				# =======================
 
-				var target_y = sprite.position.y + drop_delta
-				if abs(drop_delta) > 0.1:  
-					_tween_position_y(sprite, target_y, 0.3)
-			
-			if occupant_data and is_instance_valid(occupant_data["node"]):
-				var occupant_node = occupant_data["node"]
-				var target_y = occupant_node.position.y + drop_delta
-				if abs(drop_delta) > 0.1:
-					_tween_position_y(occupant_node, target_y, 0.3)
-					
-			# 同步降落血条根节点 (hb_node 会带着它里面的进度条一起下落)
-			if health_bar_data and is_instance_valid(health_bar_data["node"]):
-				var hb_node = health_bar_data["node"]
-				var target_y = hb_node.position.y + drop_delta
-				if abs(drop_delta) > 0.1:
-					_tween_position_y(hb_node, target_y, 0.3)
-			
-			if is_instance_valid(collision):
-				var target_y = collision.position.y + drop_delta
-				if abs(drop_delta) > 0.1:
-					_tween_position_y(collision, target_y, 0.3)
-			
-			_create_height_indicator(stack, height)
-			continue
-		
-		# ==========================================
-		# 高度>1的地块处理逻辑
-		# ==========================================
-		
+		# 2. 执行下落压平动画
 		for i in range(sprites.size()):
-			var sprite = sprites[i]
-			if not is_instance_valid(sprite):
-				continue
-			
-			if i < height - 1:  # 侧面地形精灵
-				_tween_shader_param_single(sprite, "dissolve_blend", 1.0, 0.5)
-			else:  # 顶部地形精灵、地貌实体精灵、血条精灵
-				_tween_shader_param_single(sprite, "dissolve_blend", 0.0, 0.1)
-				
-				# 修复：只有直接挂在 stack 下的精灵单独调整位置
-				# 血条精灵的父级是 HealthBar 根节点，不是 stack，所以会跳过这一步，避免双重下落
-				if sprite.get_parent() == stack:
-					var target_y = sprite.position.y + drop_delta
-					_tween_position_y(sprite, target_y, 0.5)
-		
-		# 移动地貌/敌人
-		if is_instance_valid(occupant):
-			var target_y = occupant.position.y + drop_delta
-			_tween_position_y(occupant, target_y, 0.5)
-			
-		# ★ 移动血条UI节点
-		if is_instance_valid(health_bar_data) and is_instance_valid(health_bar_data["node"]):
-			var hb_node = health_bar_data["node"]
-			var target_y = hb_node.position.y + drop_delta
-			_tween_position_y(hb_node, target_y, 0.5)
-		
-		# 移动碰撞区
-		if is_instance_valid(collision):
-			var target_y = collision.position.y + drop_delta
-			_tween_position_y(collision, target_y, 0.5)
-		
+			var s = sprites[i]
+			if not is_instance_valid(s): continue
+			if i < height - 1:
+				_tween_shader_param_single(s, "dissolve_blend", 1.0, 0.3) # 侧边隐身
+			else:
+				if s.get_parent() == stack:
+					_tween_position_y(s, s.position.y + drop_delta, 0.3)
+
+		if is_instance_valid(occupant): _tween_position_y(occupant, occupant.position.y + drop_delta, 0.3)
+		if is_instance_valid(collision): _tween_position_y(collision, collision.position.y + drop_delta, 0.3)
+		if hb_data and is_instance_valid(hb_data["node"]): _tween_position_y(hb_data["node"], hb_data["node"].position.y + drop_delta, 0.3)
+
 		_create_height_indicator(stack, height)
 
-## 恢复原始高度视图（物理坐标扁平化版本）
+## 恢复 3D 视图
 func _restore_original_height_view() -> void:
-	GameLogger.info("恢复原始高度视图（恢复物理坐标）", "HexMap")
-	
-	for stack_key in height_view_pillar_tweens.keys():
-		var tween = height_view_pillar_tweens[stack_key]
-		if is_instance_valid(tween):
-			tween.stop()
-	height_view_pillar_tweens.clear()
-	
-	var total_stacks = 0
-	var total_sprites = 0
-	var total_occupants = 0
-	
+	GameLogger.info("恢复3D视图", "HexMap")
 	for coord in stack_nodes.keys():
 		var stack = stack_nodes[coord]
-		if not is_instance_valid(stack):
-			continue
-		
-		total_stacks += 1
+		if not is_instance_valid(stack): continue
 		
 		if height_view_original_materials.has(stack):
-			var stack_data = height_view_original_materials[stack] as Dictionary
-			var stack_sprites_data = stack_data.get("sprites_data", []) as Array
-			var occupant_data = stack_data.get("occupant_data")
-			var collision_data = stack_data.get("collision_data")
-			var health_bar_data = stack_data.get("health_bar_data") # 取出血条数据
+			var cached = height_view_original_materials[stack]
 			
-			# 1. 恢复精灵
-			for sprite_data in stack_sprites_data:
-				if sprite_data == null:
-					continue
-				
-				var sprite = sprite_data["sprite"]
-				var original_material = sprite_data.get("original_material")
-				var original_position = sprite_data.get("original_position", Vector2.ZERO)
-				
-				if is_instance_valid(sprite):
-					total_sprites += 1
-					if original_material:
-						sprite.material = original_material
-					
-					var current_y = sprite.position.y
-					var target_y = original_position.y
-					if abs(current_y - target_y) > 0.1:
-						_tween_position_y(sprite, target_y, 0.5)
+			for s_data in cached["sprites_data"]:
+				var s = s_data["sprite"]
+				if is_instance_valid(s):
+					# ★ 关闭平铺模式，允许再次上下浮动
+					if s.material: s.set_instance_shader_parameter("is_flat_view", 0.0)
+					if s.get_parent() == stack:
+						_tween_position_y(s, s_data["original_position"].y, 0.3)
 			
-			# 2. 恢复地貌/敌人
-			if occupant_data and is_instance_valid(occupant_data["node"]):
-				var occupant_node = occupant_data["node"]
-				var original_position = occupant_data.get("original_position", Vector2.ZERO)
-				var current_y = occupant_node.position.y
-				var target_y = original_position.y
-				if abs(current_y - target_y) > 0.1:
-					total_occupants += 1
-					_tween_position_y(occupant_node, target_y, 0.5)
-					
-			# 3. ★ 恢复血条UI位置
-			if health_bar_data and is_instance_valid(health_bar_data["node"]):
-				var hb_node = health_bar_data["node"]
-				var original_position = health_bar_data.get("original_position", Vector2.ZERO)
-				var current_y = hb_node.position.y
-				var target_y = original_position.y
-				if abs(current_y - target_y) > 0.1:
-					_tween_position_y(hb_node, target_y, 0.5)
-			
-			# 4. 恢复碰撞区
-			if collision_data and is_instance_valid(collision_data["node"]):
-				var collision_node = collision_data["node"]
-				var original_position = collision_data.get("original_position", Vector2.ZERO)
-				var current_y = collision_node.position.y
-				var target_y = original_position.y
-				if abs(current_y - target_y) > 0.1:
-					_tween_position_y(collision_node, target_y, 0.5)
-		
-		var sprites = stack.get_meta("sprites") as Array
-		var height = stack.get_meta("height") as int
-		
-		for sprite in sprites:
-			if not is_instance_valid(sprite) or not sprite.material:
-				continue
-			sprite.set_instance_shader_parameter("dissolve_blend", 0.0)
-		
-		for sprite in sprites:
-			if not is_instance_valid(sprite):
-				continue
-			_tween_shader_param_single(sprite, "dissolve_blend", 0.0, 0.3)
-		
-		_remove_height_indicator(stack)
-	
-	GameLogger.info("恢复完成，总计: " + str(total_stacks) + "个地块, " + str(total_sprites) + "个精灵, " + str(total_occupants) + "个敌人/地貌", "HexMap")
-	
-	height_view_hovered_stack = null
-	height_view_selected_stack = null
-	height_view_original_materials.clear()
+			if cached["occupant_data"] and is_instance_valid(cached["occupant_data"]["node"]):
+				_tween_position_y(cached["occupant_data"]["node"], cached["occupant_data"]["original_position"].y, 0.3)
+			if cached["collision_data"] and is_instance_valid(cached["collision_data"]["node"]):
+				_tween_position_y(cached["collision_data"]["node"], cached["collision_data"]["original_position"].y, 0.3)
+			if cached["health_bar_data"] and is_instance_valid(cached["health_bar_data"]["node"]):
+				_tween_position_y(cached["health_bar_data"]["node"], cached["health_bar_data"]["original_position"].y, 0.3)
 
+		var sprites = stack.get_meta("sprites") as Array
+		for s in sprites:
+			if is_instance_valid(s):
+				_tween_shader_param_single(s, "dissolve_blend", 0.0, 0.3)
+
+		_remove_height_indicator(stack)
+		
+	height_view_original_materials.clear()
 ## 为单个精灵设置shader参数补间（辅助函数）
 # ★ 修复：移除强类型限制 (删除了 : Sprite2D)，以兼容 UI 组件 (TextureProgressBar 等)
 func _tween_shader_param_single(sprite, param_name: String, target_val: float, duration: float) -> void:
@@ -1469,21 +1299,11 @@ func _tween_shader_param_single(sprite, param_name: String, target_val: float, d
 			sprite.set_instance_shader_parameter(param_name, val)
 	, current_val, target_val, duration)
 
-## 为任意节点设置Y坐标补间（辅助函数，用于物理坐标扁平化）
-# ★ 修复：移除强类型限制 (删除了 : Node2D)，以兼容 UI 组件 (Control 虽然没继承 Node2D 但也有 position)
 func _tween_position_y(node, target_y: float, duration: float) -> void:
-	if not is_instance_valid(node):
-		return
-	
-	var current_y = node.position.y
-	
-	# 创建补间动画
+	if not is_instance_valid(node): return
 	var tw = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tw.tween_method(func(y_val: float):
-		if is_instance_valid(node):
-			node.position.y = y_val
-	, current_y, target_y, duration)
-
+	tw.tween_property(node, "position:y", target_y, duration)
+	
 ## 创建高度指示器（光柱 + 高度标签）使用导出参数
 func _create_height_indicator(stack: Area2D, original_height: int) -> void:
 	if not is_instance_valid(stack):
@@ -1710,33 +1530,25 @@ func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void
 	for child in node.get_children():
 		_find_and_register_ui_sprites(child, list, height)
 
-## 增强版：处理地块升降（包含并发锁、安全读取、边界销毁判定）
+## 增强版：处理地块升降（完美融合2D与3D视效隔离）
 func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	if delta_height == 0 or not is_instance_valid(stack): return
 	
-	# ==========================================
-	# ★ 核心修复 1：地块异步锁 (防止同一地块多张卡牌并行踩踏)
-	# ==========================================
 	while is_instance_valid(stack) and stack.has_meta("is_animating") and stack.get_meta("is_animating"):
-		await get_tree().process_frame # 挂起当前协程，排队等待上一波动画结束
+		await get_tree().process_frame 
 		
 	if not is_instance_valid(stack): return
-	stack.set_meta("is_animating", true) # 上锁
-	# ==========================================
+	stack.set_meta("is_animating", true)
 
 	var old_height = stack.get_meta("height") as int
 	var new_height = old_height + delta_height
-	
 	var coord = stack_nodes.find_key(stack)
 	if coord == null: 
 		stack.set_meta("is_animating", false)
 		return
 		
-	# --- 简易高度上下限判定 ---
 	if new_height > max_height or new_height <= min_height:
-		GameLogger.warning("地块高度触碰极限 (%d)，准备销毁" % new_height, "HexMap")
 		await _perform_tile_destruction(stack, coord)
-		# 销毁后节点已被删除，不需要解锁，直接返回
 		return
 		
 	new_height = clampi(new_height, 1, 99)
@@ -1745,66 +1557,119 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 		stack.set_meta("is_animating", false)
 		return
 
+	# --- 数据更新 ---
+	stack.set_meta("height", new_height)
+	map_data[coord]["height"] = new_height
+	if GlobalClock and "tile_h_pool" in GlobalClock:
+		if GlobalClock.tile_h_pool.has(old_height): GlobalClock.tile_h_pool[old_height].erase(coord)
+		if not GlobalClock.tile_h_pool.has(new_height): GlobalClock.tile_h_pool[new_height] = []
+		GlobalClock.tile_h_pool[new_height].append(coord)
+
+	var sprites = stack.get_meta("sprites") as Array
+	var terrain_type = map_data[coord]["terrain_type"]
+	var side_tex = get_side_tex(terrain_type)
+	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
+
 	# ==========================================
-	# ★ 核心修复 2：安全读取 Meta (has_meta 保驾护航)
+	# ★ 平铺视图分支：拦截 3D 动画，采用纯数字反馈，并更新后台 3D 坐标！
+	# ==========================================
+	if height_view_compressed:
+		if actual_delta > 0:
+			# 找到 3D 状态下的底部坐标
+			var cached_data = height_view_original_materials.get(stack)
+			var orig_bottom_y = 0.0
+			if cached_data and not cached_data["sprites_data"].is_empty():
+				orig_bottom_y = cached_data["sprites_data"][0]["original_position"].y
+
+			for k in range(actual_delta):
+				var new_sprite = Sprite2D.new()
+				new_sprite.texture = side_tex
+				new_sprite.centered = false
+				new_sprite.offset = Vector2(-256, -400)
+				# 物理上它生成在地下（理论3D位置）
+				new_sprite.position.y = orig_bottom_y - (k * current_step_h)
+				new_sprite.scale = Vector2(tile_scale, tile_scale)
+				new_sprite.modulate = Color(0.8, 0.8, 0.8) 
+				
+				if block_material:
+					new_sprite.material = block_material.duplicate()
+					new_sprite.material.set_shader_parameter("is_flat_view", 1.0)
+					new_sprite.material.set_shader_parameter("dissolve_blend", 1.0) # 侧面立即隐身
+					
+				stack.add_child(new_sprite)
+				stack.move_child(new_sprite, k) 
+				sprites.insert(k, new_sprite)
+				
+				# ★ 更新进字典，以便切回 3D 视图时能找到它
+				if cached_data:
+					cached_data["sprites_data"].insert(k, {"sprite": new_sprite, "original_material": new_sprite.material, "original_position": new_sprite.position})
+					
+		elif actual_delta < 0:
+			var cached_data = height_view_original_materials.get(stack)
+			for i in range(abs(actual_delta)):
+				if sprites.size() > 1: 
+					var bottom_sprite = sprites[0]
+					sprites.pop_front()
+					bottom_sprite.queue_free()
+					if cached_data: cached_data["sprites_data"].pop_front()
+
+		# ★ 修正顶部元素的理论 3D 位置缓存 (重要！决定了切回3D时悬浮在多高)
+		var cached_data = height_view_original_materials.get(stack)
+		if cached_data:
+			var new_top_y = -(new_height - 1) * current_step_h
+			cached_data["sprites_data"][-1]["original_position"].y = new_top_y
+			if cached_data["occupant_data"]: cached_data["occupant_data"]["original_position"].y = new_top_y + hitbox_offset_y - 20
+			if cached_data["collision_data"]: cached_data["collision_data"]["original_position"].y = new_top_y + hitbox_offset_y
+			if cached_data["health_bar_data"]: cached_data["health_bar_data"]["original_position"].y = new_top_y + hitbox_offset_y - 20
+
+		# 重置 Shader 序号
+		for i in range(sprites.size()):
+			if is_instance_valid(sprites[i]) and sprites[i].material:
+				sprites[i].set_instance_shader_parameter("block_idx", float(i))
+				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
+
+		# ★ 精美的 UI 弹跳动画
+		var label = stack.get_meta("height_indicator_label") if stack.has_meta("height_indicator_label") else null
+		if is_instance_valid(label):
+			label.text = str(new_height)
+			var tw_label = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw_label.tween_property(label, "scale", Vector2(1.8, 1.8), 0.2)
+			tw_label.parallel().tween_property(label, "modulate", Color(1.0, 0.2, 0.2), 0.2) # 变大变红
+			tw_label.tween_property(label, "scale", Vector2.ONE, 0.3)
+			tw_label.parallel().tween_property(label, "modulate", Color.WHITE, 0.3)
+			await tw_label.finished
+
+		stack.set_meta("is_animating", false)
+		return
+
+	# ==========================================
+	# ★ 3D 视图分支：保持壮观的物理震动拔地而起
 	# ==========================================
 	var moving_parts = []
-	var sprites = stack.get_meta("sprites") as Array
 	moving_parts.append_array(sprites)
-	
 	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
 	if is_instance_valid(collision): moving_parts.append(collision)
-	
 	var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
 	if is_instance_valid(occupant): 
 		moving_parts.append(occupant)
 		var bar_manager = get_node_or_null("BarManager")
 		if bar_manager:
 			var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
-			if is_instance_valid(hb_node): moving_parts.append(hb_node)
-	# ==========================================
+			if is_instance_valid(hb_node) and hb_node.get_parent() not in moving_parts: moving_parts.append(hb_node)
 
-	# 更新底层数据字典并维护全局高度池
-	stack.set_meta("height", new_height)
-	map_data[coord]["height"] = new_height
-	
-	if GlobalClock and "tile_h_pool" in GlobalClock:
-		if GlobalClock.tile_h_pool.has(old_height):
-			GlobalClock.tile_h_pool[old_height].erase(coord)
-		if not GlobalClock.tile_h_pool.has(new_height):
-			GlobalClock.tile_h_pool[new_height] = []
-		GlobalClock.tile_h_pool[new_height].append(coord)
-		
 	var y_offset_movement = -(actual_delta * elevation_move_distance)
-	
-	# 提取原位置 (使用 ID 作为键防止字典报错)
 	var original_positions = {}
 	for part in moving_parts:
-		if is_instance_valid(part):
-			original_positions[part.get_instance_id()] = part.position
+		if is_instance_valid(part): original_positions[part.get_instance_id()] = part.position
 
-	# 动画序列
 	var tw = create_tween().set_parallel(true).set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	
 	for part in moving_parts:
-		if is_instance_valid(part):
-			# ★ 核心修复：防止双重位移
-			# 如果该部件的父节点也在移动列表中（例如进度条的父节点是 hb_node），
-			# 则跳过该部件的独立位移，它会随父节点一起正确移动。
-			if part.get_parent() in moving_parts:
-				continue
+		if is_instance_valid(part) and part.get_parent() not in moving_parts:
 			var p_id = part.get_instance_id()
 			var target_pos = original_positions[p_id] + Vector2(0, y_offset_movement)
-			
 			tw.tween_property(part, "position:x", original_positions[p_id].x + randf_range(-5,5), 0.1)
-			tw.chain().tween_property(part, "position", target_pos, ele_anim_duration)\
-				.set_trans(ele_trans_type).set_ease(ele_ease_type)
+			tw.chain().tween_property(part, "position", target_pos, ele_anim_duration).set_trans(ele_trans_type).set_ease(ele_ease_type)
 
-	var terrain_type = map_data[coord]["terrain_type"]
-	var side_tex = get_side_tex(terrain_type)
-	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
-
-	# 阶段C：视觉方块补齐或摧毁
 	tw.chain().tween_callback(func():
 		if actual_delta > 0:
 			var orig_bottom_y = original_positions[sprites[0].get_instance_id()].y
@@ -1816,36 +1681,29 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 				new_sprite.position.y = orig_bottom_y - (k * current_step_h)
 				new_sprite.scale = Vector2(tile_scale, tile_scale)
 				new_sprite.modulate = Color(0.8, 0.8, 0.8) 
-
-				if block_material:
-					new_sprite.material = block_material.duplicate()
-					
+				if block_material: new_sprite.material = block_material.duplicate()
 				stack.add_child(new_sprite)
 				stack.move_child(new_sprite, k) 
 				sprites.insert(k, new_sprite)
-				
 		elif actual_delta < 0:
-			var remove_count = abs(actual_delta)
-			for i in range(remove_count):
+			for i in range(abs(actual_delta)):
 				if sprites.size() > 1: 
 					var bottom_sprite = sprites[0]
 					sprites.pop_front()
 					bottom_sprite.queue_free()
 
-		# 重置 Shader 序号，防止消融描边错乱
 		for i in range(sprites.size()):
 			if is_instance_valid(sprites[i]) and sprites[i].material:
 				sprites[i].set_instance_shader_parameter("block_idx", float(i))
 				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
+				
+		var label = stack.get_meta("height_indicator_label") if stack.has_meta("height_indicator_label") else null
+		if is_instance_valid(label): label.text = str(new_height)
 	)
 	
-	# 等待动画完成
 	await tw.finished
+	if is_instance_valid(stack): stack.set_meta("is_animating", false)
 	
-	# 解锁地块，允许下一张卡牌的效果跟进
-	if is_instance_valid(stack):
-		stack.set_meta("is_animating", false)
-		
 ## 安全获取地块上的占位实体（地貌或敌人）
 func get_entity_at_hex(coord: Vector2i) -> Node:
 	if not stack_nodes.has(coord):

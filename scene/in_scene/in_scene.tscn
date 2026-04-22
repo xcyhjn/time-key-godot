@@ -33,11 +33,16 @@ shader = ExtResource("4_tpwa4")
 shader_parameter/max_float_height = -35.0
 shader_parameter/wiggle_speed = 3.5
 shader_parameter/wiggle_amount = 5.0
-shader_parameter/highlight_color = Color(1, 1, 1, 1)
-shader_parameter/select_line_color = Color(1, 1, 1, 1)
-shader_parameter/select_line_thickness = 2.0
-shader_parameter/select_overlay_color = Color(1, 1, 1, 1)
-shader_parameter/select_overlay_alpha = 0.27600001311
+shader_parameter/highlight_width = 4.0
+shader_parameter/dissolve_block_size = 40.0
+shader_parameter/dissolve_edge_color = Color(2, 1.5, 0.5, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kuo1e"]
+shader = ExtResource("4_tpwa4")
+shader_parameter/max_float_height = -35.0
+shader_parameter/wiggle_speed = 3.5
+shader_parameter/wiggle_amount = 3.0
+shader_parameter/highlight_width = 4.0
 shader_parameter/dissolve_block_size = 40.0
 shader_parameter/dissolve_edge_color = Color(2, 1.5, 0.5, 1)
 
@@ -93,6 +98,7 @@ hitbox_base_height = 120.0
 hitbox_offset_x = 0.0
 hitbox_offset_y = -100.0
 show_height_pillars = false
+height_view_shader_material = SubResource("ShaderMaterial_kuo1e")
 
 [node name="BarManager" type="Node2D" parent="map/HexMap" unique_id=284048703]
 script = ExtResource("6_cmmty")

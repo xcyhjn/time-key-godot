@@ -8,21 +8,22 @@ var elevation_value: int
 
 func _init(amt: int):
 	self.elevation_value = amt
-
 func execute(tree: SceneTree) -> void:
-	# 校验地块和地图是否存在
-	if not is_instance_valid(hex_map) or not is_instance_valid(target_tile):
-		GameLogger.warning("地块升降失败，目标地块或地图实例已丢失", "ElevationCommand")
+	if not is_instance_valid(hex_map) or target_tiles.is_empty():
 		return
 		
-	GameLogger.info("执行地形改造命令：变化值 %d" % elevation_value, "ElevationCommand")
+	GameLogger.info("执行地形改造：变动值 %d，波及地块数 %d" % [elevation_value, target_tiles.size()], "ElevationCommand")
 	
-	# 确认地图中有你编写好的动画方法
 	if hex_map.has_method("animate_elevation_change"):
-		# 由于我们刚刚在 animate_elevation_change 最后加了 await，这里也能用 await 挂起时间轴
-		await hex_map.animate_elevation_change(target_tile, elevation_value)
+		# 1. 并行触发：循环调用所有地块的升降动画
+		# 此时我们不使用 await，让它们瞬间在同一帧内同时开始抖动和升起
+		for tile in target_tiles:
+			if is_instance_valid(tile):
+				hex_map.animate_elevation_change(tile, elevation_value)
+		
+		# 2. 统一阻塞：由于动画都在并行，我们只需让时间轴等待一个固定时间。
+		# 你的 hexmap 里震动0.2秒 + 升降0.4秒 = 0.6秒。
+		# 为了视觉稳定感，等待 0.8 秒后，再执行卡牌的下一个效果（比如伤害）。
+		await tree.create_timer(0.8).timeout
 	else:
 		GameLogger.error("HexMap 缺少 animate_elevation_change 方法！", "ElevationCommand")
-		
-	# 如果有通用的烟尘粒子特效，也可以在此时调用 VFXManager
-	# await VFXManager.play_vfx("earth_shake", target_tile.global_position, tree)
