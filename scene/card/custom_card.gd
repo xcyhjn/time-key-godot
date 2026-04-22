@@ -246,12 +246,16 @@ func toggle_selection() -> void:
 func force_deselect() -> void:
 	is_selected = false
 	card_current_state = CustomCardState.IDLE
-	var cm = get_card_manager()  # 获取管理器
+	var cm = get_card_manager()  
 	if cm:
-		cm.deselect_card()  # 通知管理器取消选中
+		cm.deselect_card()  
 
-	# 隐藏时间占位图片并恢复卡牌透明度
-	hide_timeline_shape()
+	# ★ 核心修复：不要无条件隐藏！根据卡牌设定来决定
+	if show_time_block_in_hand:
+		show_timeline_shape()
+	else:
+		hide_timeline_shape()
+		
 	set_card_transparency(1.0)  # 恢复完全不透明
 	material = original_material
 	if front_face_texture:
@@ -263,38 +267,19 @@ func force_deselect() -> void:
 	tw.tween_property(self, "scale", card_original_scale, 0.3)
 	tw.tween_property(self, "rotation", 0.0, 0.3)
 
-	# 更新地块的条件效果（取消选中卡牌时）
 	_update_map_conditional_effects()
 
-	# 确保卡牌返回手牌容器
 	var hand = _find_player_hand()
 	if hand:
-		GameLogger.info("找到手牌容器: %s (类型: %s)" % [hand.name, hand.get_class()], "CustomCard")
-
-		# 检查手牌容器是否有add_card方法
 		if hand.has_method("add_card"):
-			# 记录卡牌当前状态
-			GameLogger.info("卡牌当前父节点: %s" % (get_parent().name if get_parent() else "null"), "CustomCard")
-			GameLogger.info("尝试调用hand.add_card()...", "CustomCard")
-
-			# 调用card-framework的add_card方法
 			hand.add_card(self)
-			GameLogger.info("卡牌已通过add_card()返回手牌容器", "CustomCard")
 		else:
-			GameLogger.warning("手牌容器没有add_card方法，尝试直接重新父级化", "CustomCard")
-			# 备用方案：直接将卡牌添加到手牌容器
 			var current_parent = get_parent()
 			if current_parent != hand:
 				if current_parent:
 					current_parent.remove_child(self)
 				hand.add_child(self)
-				GameLogger.info("卡牌已通过重新父级化返回手牌容器", "CustomCard")
-			else:
-				GameLogger.info("卡牌已经在手牌容器中", "CustomCard")
-	else:
-		GameLogger.warning("无法找到手牌容器", "CustomCard")
-
-
+				
 ## 更新地图地块的条件效果
 func _update_map_conditional_effects() -> void:
 	var main = _get_main_board()
@@ -730,6 +715,12 @@ func force_reset_visuals() -> void:
 	if front_face_texture:
 		front_face_texture.material = original_material
 	set_card_transparency(1.0)
+	# ★ 核心修复：当卡牌洗切、抽卡回手时，框架会调用这个重置函数
+	# 我们在这里事件驱动地重新唤醒时间占位图片，0性能损耗！
+	if show_time_block_in_hand:
+		show_timeline_shape()
+	else:
+		hide_timeline_shape()
 
 func _on_gui_input(event: InputEvent):
 	# ★ 核心修复 2：拖拽期间禁止卡牌响应任何鼠标点击！
