@@ -3,7 +3,7 @@
 	"front_image": "2.png",
 	"效果" : "地块抬升1或者下降1",
 	"effects": [
-	{ "type": "elevation", "value": 1 }
+	{ "type": "elevation", "value": 4 }
   ],
 	"shape": "11",
 	"时代" : "2",

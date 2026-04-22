@@ -11,7 +11,7 @@
 class_name EffectProcessor
 extends RefCounted
 
-## 核心入口：处理时间轴上的行动
+## 优化版：支持多命令完美的并行执行 (Fire and Forget 模式)
 static func process_action(action: TimelineAction, tree: SceneTree) -> void:
 	var command_queue: Array[EffectCommand] = []
 	
@@ -20,9 +20,17 @@ static func process_action(action: TimelineAction, tree: SceneTree) -> void:
 	elif action.type == TimelineAction.Type.ENEMY:
 		command_queue = _parse_enemy_intent(action, tree)
 		
-	# 队列按顺序执行
+	if command_queue.is_empty():
+		return
+		
+	# --- Godot 4 并行执行改进 ---
 	for cmd in command_queue:
-		await cmd.execute(tree)
+		cmd.execute(tree)
+		
+	# 由于我们上面没有去 await 它们，时间轴不知道它们什么时候播完。
+	# TODO 我们在此处统一让时间轴等待一个固定的时间（例如整个动画耗时 1.2 秒），
+	# 等动画集体播完后，时间轴再移动到下一格。
+	await tree.create_timer(1.2).timeout
 
 ## 解析玩家卡牌 JSON 数据，生成命令队列
 static func _parse_player_card(action: TimelineAction, tree: SceneTree) -> Array[EffectCommand]:
