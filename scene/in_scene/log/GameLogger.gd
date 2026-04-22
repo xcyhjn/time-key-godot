@@ -11,7 +11,7 @@ enum LogLevel {
 # 日志文件管理配置
 @export_group("日志基础设置")
 @export var current_log_level: LogLevel = LogLevel.DEBUG
-@export var enabled: bool = true
+@export var enabled: bool = false
 @export var log_to_file: bool = false
 @export var log_file_path: String = "user://game.log"
 @export var log_to_project: bool = true  #在项目的文件夹中写入日志

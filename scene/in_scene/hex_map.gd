@@ -1789,49 +1789,64 @@ func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void
 	for child in node.get_children():
 		_find_and_register_ui_sprites(child, list, height)
 
-## 增强版：处理地块升降（包含边界销毁判定与动画补齐修复）
+## 增强版：处理地块升降（包含并发锁、安全读取、边界销毁判定）
 func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	if delta_height == 0 or not is_instance_valid(stack): return
 	
+	# ==========================================
+	# ★ 核心修复 1：地块异步锁 (防止同一地块多张卡牌并行踩踏)
+	# ==========================================
+	while is_instance_valid(stack) and stack.has_meta("is_animating") and stack.get_meta("is_animating"):
+		await get_tree().process_frame # 挂起当前协程，排队等待上一波动画结束
+		
+	if not is_instance_valid(stack): return
+	stack.set_meta("is_animating", true) # 上锁
+	# ==========================================
+
 	var old_height = stack.get_meta("height") as int
-	var new_height = old_height + delta_height # 这里不急着 clampi，为了判断是否出界
+	var new_height = old_height + delta_height
 	
-	# 获取地块坐标键
 	var coord = stack_nodes.find_key(stack)
-	if coord == null: return
-	
-	# --- 1. 简易高度上下限判定 (出界则执行销毁) ---
+	if coord == null: 
+		stack.set_meta("is_animating", false)
+		return
+		
+	# --- 简易高度上下限判定 ---
 	if new_height > max_height or new_height <= min_height:
 		GameLogger.warning("地块高度触碰极限 (%d)，准备销毁" % new_height, "HexMap")
 		await _perform_tile_destruction(stack, coord)
+		# 销毁后节点已被删除，不需要解锁，直接返回
 		return
 		
-	# 如果没出界，再限制合法范围
 	new_height = clampi(new_height, 1, 99)
 	var actual_delta = new_height - old_height
-	if actual_delta == 0: return
+	if actual_delta == 0: 
+		stack.set_meta("is_animating", false)
+		return
 
-	# 1. 搜集需要一起移动的所有视觉组件
+	# ==========================================
+	# ★ 核心修复 2：安全读取 Meta (has_meta 保驾护航)
+	# ==========================================
 	var moving_parts = []
 	var sprites = stack.get_meta("sprites") as Array
 	moving_parts.append_array(sprites)
 	
-	var collision = stack.get_meta("collision_node")
+	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
 	if is_instance_valid(collision): moving_parts.append(collision)
 	
-	var occupant = stack.get_meta("occupant")
+	var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
 	if is_instance_valid(occupant): 
 		moving_parts.append(occupant)
 		var bar_manager = get_node_or_null("BarManager")
 		if bar_manager:
 			var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
 			if is_instance_valid(hb_node): moving_parts.append(hb_node)
+	# ==========================================
 
-	# 2. ★ 核心修补：更新底层数据字典并维护全局高度池
+	# 更新底层数据字典并维护全局高度池
 	stack.set_meta("height", new_height)
 	map_data[coord]["height"] = new_height
 	
-	# 维护 GlobalClock.tile_h_pool 保证 AI 和刷怪判定不崩溃
 	if GlobalClock and "tile_h_pool" in GlobalClock:
 		if GlobalClock.tile_h_pool.has(old_height):
 			GlobalClock.tile_h_pool[old_height].erase(coord)
@@ -1841,47 +1856,43 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 		
 	var y_offset_movement = -(actual_delta * elevation_move_distance)
 	
-	# 核心修复点：使用 ID 作为键，防止 Dictionary 报错
+	# 提取原位置 (使用 ID 作为键防止字典报错)
 	var original_positions = {}
 	for part in moving_parts:
 		if is_instance_valid(part):
 			original_positions[part.get_instance_id()] = part.position
-			
-	# 3. 动画序列
+
+	# 动画序列
 	var tw = create_tween().set_parallel(true).set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	
-	# 阶段A & B：震动并平滑移动
 	for part in moving_parts:
 		if is_instance_valid(part):
+			# ★ 核心修复：防止双重位移
+			# 如果该部件的父节点也在移动列表中（例如进度条的父节点是 hb_node），
+			# 则跳过该部件的独立位移，它会随父节点一起正确移动。
+			if part.get_parent() in moving_parts:
+				continue
 			var p_id = part.get_instance_id()
 			var target_pos = original_positions[p_id] + Vector2(0, y_offset_movement)
 			
-			# 添加一点抖动感，随后跟随目标位置
 			tw.tween_property(part, "position:x", original_positions[p_id].x + randf_range(-5,5), 0.1)
 			tw.chain().tween_property(part, "position", target_pos, ele_anim_duration)\
 				.set_trans(ele_trans_type).set_ease(ele_ease_type)
 
-	# 提前获取贴图数据给回调函数使用
 	var terrain_type = map_data[coord]["terrain_type"]
 	var side_tex = get_side_tex(terrain_type)
+	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
 
-	# 【阶段C：视觉方块补齐或摧毁】
+	# 阶段C：视觉方块补齐或摧毁
 	tw.chain().tween_callback(func():
 		if actual_delta > 0:
-			# 获取原先最底下方块的 Y 坐标
 			var orig_bottom_y = original_positions[sprites[0].get_instance_id()].y
-			var spacing_y = filler_block_spacing * (tile_scale / REF_SCALE)
-			
-			# k 代表我们要补的第几个方块 (k=0 是最底下，k=1 是上面一层)
 			for k in range(actual_delta):
 				var new_sprite = Sprite2D.new()
 				new_sprite.texture = side_tex
 				new_sprite.centered = false
 				new_sprite.offset = Vector2(-256, -400)
-
-				# 修复1：向上叠加。用原底座坐标减去偏移量
-				new_sprite.position.y = orig_bottom_y - (k * spacing_y)
-				
+				new_sprite.position.y = orig_bottom_y - (k * current_step_h)
 				new_sprite.scale = Vector2(tile_scale, tile_scale)
 				new_sprite.modulate = Color(0.8, 0.8, 0.8) 
 
@@ -1889,14 +1900,10 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 					new_sprite.material = block_material.duplicate()
 					
 				stack.add_child(new_sprite)
-				
-				# 修复2：确保渲染顺序。k=0插在第0层，k=1插在第1层。
-				# 这样越往上的方块就能正确地覆盖下方的方块。
 				stack.move_child(new_sprite, k) 
 				sprites.insert(k, new_sprite)
 				
 		elif actual_delta < 0:
-			# 删除逻辑保持不变
 			var remove_count = abs(actual_delta)
 			for i in range(remove_count):
 				if sprites.size() > 1: 
@@ -1904,17 +1911,20 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 					sprites.pop_front()
 					bottom_sprite.queue_free()
 
-		# 修复3：一劳永逸。重新给整根柱子的方块从下到上排一次号
-		# 这样 Shader 里的高亮和消融动画才不会乱套
+		# 重置 Shader 序号，防止消融描边错乱
 		for i in range(sprites.size()):
 			if is_instance_valid(sprites[i]) and sprites[i].material:
 				sprites[i].set_instance_shader_parameter("block_idx", float(i))
 				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
 	)
 	
-	# 等待所有动画执行完毕
+	# 等待动画完成
 	await tw.finished
 	
+	# 解锁地块，允许下一张卡牌的效果跟进
+	if is_instance_valid(stack):
+		stack.set_meta("is_animating", false)
+		
 ## 安全获取地块上的占位实体（地貌或敌人）
 func get_entity_at_hex(coord: Vector2i) -> Node:
 	if not stack_nodes.has(coord):
@@ -1935,36 +1945,23 @@ func is_entity_alive(entity: Node) -> bool:
 		return false
 	return true
 
-## 地块毁灭序列：抖动 + 像素湮灭
+## 执行毁灭流程
 func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
 	var sprites = stack.get_meta("sprites") as Array
-	var tw = create_tween().set_parallel(true).set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	GameLogger.info("交由 VFXManager 播放地块毁灭动画: " + str(coord), "HexMap")
 	
-	GameLogger.info("播放地块毁灭动画: " + str(coord), "HexMap")
+	# ★ 核心解耦：等待 VFXManager 的表现播完
+	await VFXManager.play_tile_destruction_vfx(sprites, get_tree())
 	
-	for s in sprites:
-		if is_instance_valid(s):
-			# 1. 剧烈左右抖动
-			for i in range(5):
-				tw.tween_property(s, "position:x", s.position.x + randf_range(-10, 10), 0.05)
-				tw.chain().tween_property(s, "position:x", s.position.x, 0.05)
-			
-			# 2. 像素湮灭 (使用你提供的 Shader 参数)
-			if s.material:
-				tw.tween_method(func(v): s.set_instance_shader_parameter("dissolve_blend", v), 0.0, 1.0, 1.0)
-	
-	await tw.finished
-	
-	# --- 彻底清除地块数据 ---
+	# 表现播完后，执行逻辑抹除
 	if is_instance_valid(stack):
 		stack.queue_free()
 	
 	stack_nodes.erase(coord)
 	map_data.erase(coord)
 	
-	# 如果有地貌/敌人，记得从组里移除
 	var occupant = stack.get_meta("occupant")
 	if is_instance_valid(occupant):
 		occupant.queue_free()
 	
-	GameLogger.info("地块已从地图抹除: " + str(coord), "HexMap")
+	GameLogger.info("地块已从地图彻底抹除: " + str(coord), "HexMap")

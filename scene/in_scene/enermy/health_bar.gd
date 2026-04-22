@@ -18,6 +18,7 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 	if HealthBar != null and situation < HealthBar.size():
 		var HealthBuffer = HealthBar[situation].instantiate()
 		
+		
 		# ==========================================
 		# ★ 新增：纹理安全截断校验
 		# 自动遍历内部节点，寻找 TextureProgressBar 并检查纹理
@@ -37,7 +38,8 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 			HealthBuffer.queue_free()
 			return
 		# ==========================================
-
+		# ★ 新增：关闭血条及其所有子节点的鼠标拦截
+		_set_mouse_ignore_recursive(HealthBuffer)
 		HealthBuffer.z_index = 999
 		
 		# 为血条节点设置唯一名称，方便 HexMap 查找
@@ -64,3 +66,10 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 			landform_in.owner_battle.call_deferred("register_extra_render_node", landform_in.location, HealthBuffer)
 		
 		landform_in.tree_exited.connect(HealthBuffer.queue_free)
+
+# ★ 新增：递归设置鼠标忽略函数
+func _set_mouse_ignore_recursive(node: Node):
+	if node is Control:
+		node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_set_mouse_ignore_recursive(child)
