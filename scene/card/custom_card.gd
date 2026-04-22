@@ -746,10 +746,12 @@ func _on_gui_input(event: InputEvent):
 	get_viewport().set_input_as_handled()
 
 # ==========================================
-# ★ 小丑牌核心：实时鼠标向量倾斜追踪
+# ★ 实时检测与追踪
 # ==========================================
 func _process(delta: float):
-	if not is_selected: return
+	# ★ 恢复：只保留拖拽倾斜跟踪，把之前的轮询查找代码全删了
+	if not is_selected: 
+		return
 
 	# 获取鼠标相对于卡牌中心的局部坐标
 	var center = size / 2.0
@@ -768,8 +770,6 @@ func _process(delta: float):
 	if shadow:
 		var target_shadow_pos = Vector2(10, 20) - (clamped_offset * 0.05)
 		shadow.position = lerp(shadow.position, target_shadow_pos, delta * 10.0)
-
-
 ## 重构：打出卡牌不再直接生效，而是移交时间轴排程
 func play_card(target_hex: Area2D):
 	is_selected = false

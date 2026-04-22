@@ -34,7 +34,8 @@ void vertex() {
 }
 
 void fragment() {
-    vec4 tex_color = texture(TEXTURE, UV);
+    // ★ 核心修复：必须乘以 COLOR，否则代码里的 modulate.a = 0.0 彻底无效！
+    vec4 tex_color = texture(TEXTURE, UV) * COLOR;
     vec4 final_color = tex_color;
 
     // 1. 消融逻辑 (用于平铺隐藏侧边，或地块彻底被毁)
@@ -51,7 +52,7 @@ void fragment() {
         }
     }
 
-    // 2. 状态机高亮逻辑 (3D 和 平铺 无缝共用！)
+    // 2. 状态机高亮逻辑 (3D 和 平铺 无缝共用)
     if (is_selected_blend > 0.5) {
         if (tex_color.a == 0.0) {
             vec2 pixel_size = TEXTURE_PIXEL_SIZE * highlight_width;

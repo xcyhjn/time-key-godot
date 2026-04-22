@@ -956,25 +956,17 @@ func update_target_selection_hover(hovered_stack: Area2D, active_card: Control):
 	set_cursor_tooltip_position(mouse_pos + Vector2(20, -30))
 
 	if is_valid_target(hovered_stack, active_card):
-		# ★ 合法目标：显示地块白色 Shader，计算并显示伤害
-		_set_stack_selected_shader(hovered_stack, true)
-
-		# ★ 修复：改为读取 card_info，并且获取你的 "ATK" 属性
+		# ★ 核心修复：坚决不在这里修改 Shader！全权交由 HexMap 的状态机处理
 		var dmg = active_card.card_info.get("ATK", 0) if "card_info" in active_card else 0
 		cursor_tooltip.text = "-" + str(dmg)
 		cursor_tooltip.add_theme_color_override("font_color", Color.RED)
 		cursor_tooltip.show()
-
-		# （这里还可以获取敌人的节点，让敌人变红闪烁）
-
 	else:
-		# ★ 非法目标：不播放变白 Shader，只显示灰色字
-		_set_stack_selected_shader(hovered_stack, false)
+		# ★ 核心修复：坚决不在这里修改 Shader！
 		cursor_tooltip.text = "无效果"
 		cursor_tooltip.add_theme_color_override("font_color", Color.GRAY)
 		cursor_tooltip.show()
-
-
+		
 func _on_end_combat_pressed():
 	GameLogger.info("🏆 战斗结束！进入局外卡牌操作阶段！", "Project")
 

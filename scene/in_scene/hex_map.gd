@@ -110,15 +110,17 @@ enum LandformType { NONE, MINE, CAVE, VILLAGE, RUINS }  # 整合自 node_2d.gd�
 # ★ 视觉状态机定义
 # ==========================================
 enum TileVisualState {
-	IDLE,                  # 闲置
-	HOVER_TARGET_VALID,    # 作为有效目标的中心
-	HOVER_TARGET_INVALID,  # 作为无效目标的中心
-	AOE_RANGE              # 作为范围波及的边缘地块
+	IDLE, HOVER_TARGET_VALID, HOVER_TARGET_INVALID, AOE_RANGE
 }
 
-# 记录当前被范围覆盖的地块，用于快速卸载 Shader
-var current_aoe_stacks: Array[Area2D] = []
+# ★ 新增：全局视角状态机
+enum MapViewState { 
+	VIEW_3D, 
+	VIEW_FLAT 
+}
+var current_view_state: MapViewState = MapViewState.VIEW_3D
 
+var current_aoe_stacks: Array[Area2D] = []
 var landform_pool: Array[Script] = []  # 地貌脚本池，在 _ready 中初始化
 var neutral_pool: Array[Script] = []
 var enemy_pool: Array[Script] = []
@@ -126,10 +128,11 @@ var enemy_pool: Array[Script] = []
 var map_data: Dictionary = { }
 # ★ 优化：新增栈缓存字典，方便 O(1) 查找遮挡物
 var stack_nodes: Dictionary = { }
-var height_view_compressed: bool = false  # 视角切换状态：是否压缩为1格高度
+var height_view_original_materials: Dictionary = {} #优化后字典，上面那个可能可以删除 TODO 
+#var height_view_compressed: bool = false  # 视角切换状态：是否压缩为1格高度
 var height_view_hovered_stack: Area2D = null  # 高度视图下鼠标悬浮的地块
 var height_view_selected_stack: Area2D = null  # 高度视图下点击选中的地块
-var height_view_original_materials: Dictionary = {}  # 存储地块原始材质（用于恢复）
+#var height_view_original_materials: Dictionary = {}  # 存储地块原始材质（用于恢复）
 var height_view_pillar_tweens: Dictionary = {}  # 存储光柱动画补间
 var is_view_transitioning: bool = false  # ★ 新增：动画状态锁
 var is_visuals_locked: bool = false  # ★ 新增：视觉状态锁，防止拖拽时清除高亮和消融效果
@@ -681,9 +684,8 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 	var stack_container = Area2D.new()
 	stack_container.position = pos
 	map_root.add_child(stack_container)
-	stack_nodes[coord] = stack_container  # 记录进字典
+	stack_nodes[coord] = stack_container
 
-	# 获取地形类型，默认 PLAINS
 	var terrain_type = data.get("terrain_type", TerrainType.PLAINS)
 	var top_tex = get_top_tex(terrain_type)
 	var side_tex = get_side_tex(terrain_type)
@@ -694,44 +696,53 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 		sprite.texture = top_tex if i == height - 1 else side_tex
 		sprite.centered = false
 		sprite.offset = Vector2(-256, -400)
-		sprite.position.y = -i * current_step_h
 		sprite.scale = Vector2(tile_scale, tile_scale)
 
 		if block_material:
-			sprite.material = block_material.duplicate()  # 必须 Duplicate 才能独立发光消融
+			sprite.material = block_material.duplicate()
 			sprite.set_instance_shader_parameter("block_idx", float(i))
-			sprite.set_instance_shader_parameter("total_height", float(height))  # ★ 注入总高度
+			sprite.set_instance_shader_parameter("total_height", float(height))
+		
+		# ★ 核心修复：生成方块时，严格判断当前是否处于平铺视图
+		if current_view_state == MapViewState.VIEW_FLAT:
+			if sprite.material:
+				sprite.material.set_instance_shader_parameter("is_flat_view", 1.0)
+			if i < height - 1:
+				sprite.visible = false
+				sprite.modulate.a = 0.0
+			else:
+				sprite.position.y = 0.0
+		else:
+			# 3D 视图正常生成
+			sprite.position.y = -i * current_step_h
+			if i < height - 1: sprite.modulate = Color(0.8, 0.8, 0.8)
 
-		if i < height - 1: sprite.modulate = Color(0.8, 0.8, 0.8)
 		stack_container.add_child(sprite)
 		sprites_in_stack.append(sprite)
 
-	# 碰撞箱生成
 	var collision = CollisionPolygon2D.new()
-	var w = hitbox_width; var h = hitbox_base_height
+	var w = hitbox_width
+	var h = hitbox_base_height
 	collision.polygon = PackedVector2Array([
 		Vector2(-w / 4.0, -h / 2.0), Vector2(w / 4.0, -h / 2.0), Vector2(w / 2.0, 0),
 		Vector2(w / 4.0, h / 2.0), Vector2(-w / 4.0, h / 2.0), Vector2(-w / 2.0, 0)
 	])
-	var top_block_y = -(height - 1) * current_step_h
+	
+	# ★ 核心修复：如果是平铺视角，碰撞格必须贴地
+	var top_block_y = 0.0 if current_view_state == MapViewState.VIEW_FLAT else -(height - 1) * current_step_h
 	collision.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y)
 	stack_container.add_child(collision)
-	# 存储碰撞区引用，用于高度视图模式下的位置调整
 	stack_container.set_meta("collision_node", collision)
 
-	# 地貌生成（使用 landform 系统）
 	var enemy_instance = null
-	
 	if data.has("landform") and data["landform"] != null:
 		var landform_inst = data["landform"]
 		enemy_instance = landform_inst
 		enemy_instance.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y - 20)
 		stack_container.add_child(enemy_instance)
 		
-		# 添加 landform 视觉精灵
 		landform_inst.attach_visual(stack_container, height, current_step_h, tile_scale)
 		
-		# ★ 修复1：搜索并赋予地貌动态生成的 Sprite2D 材质
 		for child in stack_container.get_children():
 			if child is Sprite2D and child.name.begins_with("LandformSprite_"):
 				if not sprites_in_stack.has(child):
@@ -739,26 +750,24 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 						child.material = block_material.duplicate()
 						child.set_instance_shader_parameter("block_idx", float(height + 1))
 						child.set_instance_shader_parameter("total_height", float(height + 2))
+						if current_view_state == MapViewState.VIEW_FLAT:
+							child.material.set_instance_shader_parameter("is_flat_view", 1.0)
 					sprites_in_stack.append(child)
 					
-		# ★ 修复2：如果敌人是 tscn 实例（如 Grass），提取它内部的 Sprite2D
 		for child in enemy_instance.get_children():
 			if child is Sprite2D:
 				if block_material:
 					child.material = block_material.duplicate()
 					child.set_instance_shader_parameter("block_idx", float(height + 1))
 					child.set_instance_shader_parameter("total_height", float(height + 2))
-				# 将内部精灵也加入栈，确保它能获得高度视图的 Shader
+					if current_view_state == MapViewState.VIEW_FLAT:
+						child.material.set_instance_shader_parameter("is_flat_view", 1.0)
 				sprites_in_stack.append(child)
 				
 		landform_inst.owner_battle = self
-		# ★ 新增：如果该地貌的态度是敌人，则加入 Enemies 组
 		if landform_inst.Attitude == landform_inst.Attitude_Pool.Enemy:
 			landform_inst.add_to_group("Enemies")
-		GameLogger.debug("生成地貌: %s at %s" % [landform_inst.name, coord], "HexMap")
 	
-	# 旧的 enemy 系统已废弃，不再支持
-
 	stack_container.set_meta("sprites", sprites_in_stack)
 	stack_container.set_meta("height", height)
 	stack_container.set_meta("occupant", enemy_instance)
@@ -766,7 +775,10 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 	stack_container.mouse_entered.connect(_on_stack_hover.bind(stack_container, true))
 	stack_container.mouse_exited.connect(_on_stack_hover.bind(stack_container, false))
 	stack_container.input_event.connect(_on_stack_input.bind(stack_container))
-
+	
+	# 如果处于平铺视角，补齐顶部的数字标签
+	if current_view_state == MapViewState.VIEW_FLAT:
+		_create_height_indicator(stack_container, height)
 
 ## 局部刷新单个地块的视觉表现（优化性能，避免全局重绘）
 ## @param coord 六边形坐标（Vector2i）
@@ -847,7 +859,7 @@ func _on_stack_hover(stack: Area2D, is_entered: bool):
 	if is_visuals_locked: return
 	
 	# 高度平铺视图的光柱动画保留
-	if height_view_compressed:
+	if current_view_state == MapViewState.VIEW_FLAT:
 		if is_entered:
 			height_view_hovered_stack = stack
 			_start_pillar_floating_animation(stack)
@@ -900,9 +912,19 @@ func _update_highlight():
 			_clear_all_aoe_highlights()
 			
 func _clear_all_aoe_highlights() -> void:
+	# ★ 核心修复 2：极其严格地清理所有被状态机接管的高亮残留
 	for stack in current_aoe_stacks:
 		change_tile_state(stack, TileVisualState.IDLE)
 	current_aoe_stacks.clear()
+	
+	if is_instance_valid(selected_stack):
+		change_tile_state(selected_stack, TileVisualState.IDLE)
+		selected_stack = null
+		
+	if is_instance_valid(active_stack):
+		change_tile_state(active_stack, TileVisualState.IDLE)
+		active_stack = null
+		
 ## 计算范围并驱动状态机 (所有范围内地块享受同等高亮)
 func _update_aoe_display(card: Control, center_stack: Area2D, main_board: Node) -> void:
 	var new_aoe_stacks: Array[Area2D] = []
@@ -974,41 +996,49 @@ func _cancel_card_selection() -> void:
 
 ## 更新所有地块的条件效果（在卡牌选中状态变化时调用）
 func update_all_stack_conditional_effects() -> void:
-	var cm = get_card_manager()
-	if not cm: return
-
-	var selected_card = cm.get("current_selected_card")
-
-	# 遍历所有地块
-	for stack in stack_nodes.values():
-		if not is_instance_valid(stack): continue
-
-		var sprites = stack.get_meta("sprites") as Array
-		if sprites.is_empty() or not sprites[0].material: continue
-
-		if selected_card:
-			# 有选中卡牌，应用条件效果
-			var is_valid = _is_stack_valid_target(stack)
-			for sprite in sprites:
-				if sprite.material:
-					if is_valid:
-						sprite.material.set_shader_parameter("is_valid_target", true)
-						sprite.material.set_shader_parameter("is_invalid_target", false)
-					else:
-						sprite.material.set_shader_parameter("is_valid_target", false)
-						sprite.material.set_shader_parameter("is_invalid_target", true)
-		else:
-			# 没有选中卡牌，清除条件效果
-			for sprite in sprites:
-				if sprite.material:
-					sprite.material.set_shader_parameter("is_valid_target", false)
-					sprite.material.set_shader_parameter("is_invalid_target", false)
+	## 原有方法是为了兼容旧版 custom_card.gd 的调用。
+	## 既然现在全面使用了状态机，我们只需要在这里强制清空所有高亮即可，防止残留。
+	_clear_all_aoe_highlights()
+	
+	#var cm = get_card_manager()
+	#if not cm: return
+#
+	#var selected_card = cm.get("current_selected_card")
+#
+	## 遍历所有地块
+	#for stack in stack_nodes.values():
+		#if not is_instance_valid(stack): continue
+#
+		#var sprites = stack.get_meta("sprites") as Array
+		#if sprites.is_empty() or not sprites[0].material: continue
+#
+		#if selected_card:
+			## 有选中卡牌，应用条件效果
+			#var is_valid = _is_stack_valid_target(stack)
+			#for sprite in sprites:
+				#if sprite.material:
+					#if is_valid:
+						#sprite.material.set_shader_parameter("is_valid_target", true)
+						#sprite.material.set_shader_parameter("is_invalid_target", false)
+					#else:
+						#sprite.material.set_shader_parameter("is_valid_target", false)
+						#sprite.material.set_shader_parameter("is_invalid_target", true)
+		#else:
+			## 没有选中卡牌，清除条件效果
+			#for sprite in sprites:
+				#if sprite.material:
+					#sprite.material.set_shader_parameter("is_valid_target", false)
+					#sprite.material.set_shader_parameter("is_invalid_target", false)
 
 
 # ==========================================
 # ★ 核心：动态湮灭遮挡物
 # ==========================================
 func _update_occlusion(target_stack: Area2D):
+	# ★ 核心修复 1：在平铺视角下，彻底禁用防遮挡机制！
+	if current_view_state == MapViewState.VIEW_FLAT: 
+		return
+
 	# 1. 恢复之前被湮灭的柱子 (倒放)
 	for stack in currently_occluding_stacks:
 		if is_instance_valid(stack):
@@ -1027,20 +1057,14 @@ func _update_occlusion(target_stack: Area2D):
 		if stack == target_stack: continue
 		var s_pos = stack.position
 
-		# 物理上在前面 (Y轴靠下，Godot中越向下Y越大越晚渲染)
 		if s_pos.y > t_pos.y:
-			# X轴有重叠 (视觉上有交集)
 			if abs(s_pos.x - t_pos.x) < hitbox_width * 0.8:
 				var s_h = stack.get_meta("height")
 				var s_top_y = s_pos.y - (s_h - 1) * current_step_h
 
-				# 如果前方方块的顶部 高于 后方方块的底部(视线被阻挡)
 				if s_top_y < t_pos.y:
 					currently_occluding_stacks.append(stack)
-					# 触发 0.25秒的极速湮灭！保留20%可见度（0.8）以便点击
 					_tween_shader_param(stack, "dissolve_blend", 0.8, 0.25)
-
-
 # ==========================================
 # 通用 Shader Tween 控制器
 # ==========================================
@@ -1165,123 +1189,20 @@ func _unhandled_input(event):
 ## ==========================================
 ## ★ 视角切换系统：压缩地块高度显示
 ## ==========================================
-
-## 切换高度视角（压缩为1格高度或恢复原始高度）
+## 切换视角状态机
 func toggle_height_view() -> void:
-	# ★ 动画状态锁：防止在动画播放期间重复触发
-	if is_view_transitioning:
-		GameLogger.warning("视图切换动画正在进行中，忽略重复操作", "HexMap")
-		return
-	
-	# 设置动画状态锁
+	if is_view_transitioning: return
 	is_view_transitioning = true
-	GameLogger.debug("开始视图切换动画，锁定状态", "HexMap")
 	
-	# ★ 先切换视图状态标志，确保后续函数使用正确的状态
-	height_view_compressed = not height_view_compressed
-	
-	# 根据新状态调用相应的动画函数
-	if height_view_compressed:
+	if current_view_state == MapViewState.VIEW_3D:
+		current_view_state = MapViewState.VIEW_FLAT
 		_compress_to_single_height_view()
 	else:
+		current_view_state = MapViewState.VIEW_3D
 		_restore_original_height_view()
-	
-	# ★ 延迟解锁：等待动画完成后重置状态锁
-	# 最长的动画是0.5秒，设置0.6秒的延迟以确保安全
-	await get_tree().create_timer(0.6).timeout
+		
+	await get_tree().create_timer(0.4).timeout
 	is_view_transitioning = false
-	GameLogger.debug("视图切换动画完成，解锁状态", "HexMap")
-
-## 压缩为平铺视图 (利用缓存精准归位)
-func _compress_to_single_height_view() -> void:
-	GameLogger.info("切换到平铺视图", "HexMap")
-	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
-	
-	for coord in stack_nodes.keys():
-		var stack = stack_nodes[coord]
-		if not is_instance_valid(stack): continue
-		
-		var sprites = stack.get_meta("sprites") as Array
-		var height = stack.get_meta("height") as int
-		var top_block_y = -(height - 1) * current_step_h
-		var drop_delta = 0.0 - top_block_y
-		
-		# 1. 记录所有原始数据，用于恢复
-		var stack_sprites_data = []
-		for s in sprites:
-			if is_instance_valid(s):
-				stack_sprites_data.append({"sprite": s, "original_position": s.position})
-				# ★ 开启平铺模式 Shader，关掉上下浮动！
-				if s.material: s.set_instance_shader_parameter("is_flat_view", 1.0)
-
-		var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
-		var occ_data = {"node": occupant, "original_position": occupant.position} if is_instance_valid(occupant) else null
-		
-		var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-		var col_data = {"node": collision, "original_position": collision.position} if is_instance_valid(collision) else null
-		
-		var hb_data = null
-		var bar_manager = get_node_or_null("BarManager")
-		if bar_manager and is_instance_valid(occupant):
-			var hb = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
-			if is_instance_valid(hb): hb_data = {"node": hb, "original_position": hb.position}
-
-		height_view_original_materials[stack] = {
-			"sprites_data": stack_sprites_data,
-			"occupant_data": occ_data,
-			"collision_data": col_data,
-			"health_bar_data": hb_data
-		}
-
-		# 2. 执行下落压平动画
-		for i in range(sprites.size()):
-			var s = sprites[i]
-			if not is_instance_valid(s): continue
-			if i < height - 1:
-				_tween_shader_param_single(s, "dissolve_blend", 1.0, 0.3) # 侧边隐身
-			else:
-				if s.get_parent() == stack:
-					_tween_position_y(s, s.position.y + drop_delta, 0.3)
-
-		if is_instance_valid(occupant): _tween_position_y(occupant, occupant.position.y + drop_delta, 0.3)
-		if is_instance_valid(collision): _tween_position_y(collision, collision.position.y + drop_delta, 0.3)
-		if hb_data and is_instance_valid(hb_data["node"]): _tween_position_y(hb_data["node"], hb_data["node"].position.y + drop_delta, 0.3)
-
-		_create_height_indicator(stack, height)
-
-## 恢复 3D 视图
-func _restore_original_height_view() -> void:
-	GameLogger.info("恢复3D视图", "HexMap")
-	for coord in stack_nodes.keys():
-		var stack = stack_nodes[coord]
-		if not is_instance_valid(stack): continue
-		
-		if height_view_original_materials.has(stack):
-			var cached = height_view_original_materials[stack]
-			
-			for s_data in cached["sprites_data"]:
-				var s = s_data["sprite"]
-				if is_instance_valid(s):
-					# ★ 关闭平铺模式，允许再次上下浮动
-					if s.material: s.set_instance_shader_parameter("is_flat_view", 0.0)
-					if s.get_parent() == stack:
-						_tween_position_y(s, s_data["original_position"].y, 0.3)
-			
-			if cached["occupant_data"] and is_instance_valid(cached["occupant_data"]["node"]):
-				_tween_position_y(cached["occupant_data"]["node"], cached["occupant_data"]["original_position"].y, 0.3)
-			if cached["collision_data"] and is_instance_valid(cached["collision_data"]["node"]):
-				_tween_position_y(cached["collision_data"]["node"], cached["collision_data"]["original_position"].y, 0.3)
-			if cached["health_bar_data"] and is_instance_valid(cached["health_bar_data"]["node"]):
-				_tween_position_y(cached["health_bar_data"]["node"], cached["health_bar_data"]["original_position"].y, 0.3)
-
-		var sprites = stack.get_meta("sprites") as Array
-		for s in sprites:
-			if is_instance_valid(s):
-				_tween_shader_param_single(s, "dissolve_blend", 0.0, 0.3)
-
-		_remove_height_indicator(stack)
-		
-	height_view_original_materials.clear()
 ## 为单个精灵设置shader参数补间（辅助函数）
 # ★ 修复：移除强类型限制 (删除了 : Sprite2D)，以兼容 UI 组件 (TextureProgressBar 等)
 func _tween_shader_param_single(sprite, param_name: String, target_val: float, duration: float) -> void:
@@ -1323,7 +1244,7 @@ func _create_height_indicator(stack: Area2D, original_height: int) -> void:
 		return
 	
 	var pillar_position: Vector2
-	if height_view_compressed:
+	if current_view_state == MapViewState.VIEW_FLAT:
 		pillar_position = Vector2(hitbox_offset_x, hitbox_offset_y) + height_view_pillar_offset
 	else:
 		pillar_position = Vector2(hitbox_offset_x, top_sprite.position.y + hitbox_offset_y) + height_view_pillar_offset
@@ -1399,7 +1320,7 @@ func _on_height_view_toggle_pressed() -> void:
 
 ## 开始光柱浮动动画（鼠标悬停时调用）
 func _start_pillar_floating_animation(stack: Area2D) -> void:
-	if not height_view_compressed or not is_instance_valid(stack):
+	if not current_view_state == MapViewState.VIEW_FLAT or not is_instance_valid(stack):
 		return
 	
 	# 获取光柱引用
@@ -1433,7 +1354,7 @@ func _start_pillar_floating_animation(stack: Area2D) -> void:
 
 ## 停止光柱浮动动画（鼠标离开时调用）
 func _stop_pillar_floating_animation(stack: Area2D) -> void:
-	if not height_view_compressed or not is_instance_valid(stack):
+	if not current_view_state == MapViewState.VIEW_FLAT or not is_instance_valid(stack):
 		return
 	
 	# 停止动画
@@ -1465,11 +1386,17 @@ func set_tiles_interactive(enabled: bool) -> void:
 func set_visuals_locked(locked: bool) -> void:
 	is_visuals_locked = locked
 	GameLogger.debug("地块视觉状态锁已设置为: " + str(locked), "HexMap")
-	# 解锁时，强制清理一下可能残留的错误状态（因为鼠标可能已经移走了）
-	if not locked:
+	
+	if locked:
+		# 当卡牌被拖走时，立即清空所有高亮
+		_clear_all_aoe_highlights()
+		var main_board = get_tree().get_first_node_in_group("MainBoard")
+		if main_board and is_instance_valid(main_board.get("cursor_tooltip")):
+			main_board.cursor_tooltip.hide()
+	else:
+		# ★ 核心修复：解锁时主动强制刷新一次！防止鼠标不动导致 Shader 幽灵卡死！
 		hovered_stacks.clear()
 		_update_highlight()
-
 # ==========================================
 # ★ 血条 (HealthBuffer) 视觉同步注册系统
 # ==========================================
@@ -1530,7 +1457,7 @@ func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void
 	for child in node.get_children():
 		_find_and_register_ui_sprites(child, list, height)
 
-## 增强版：处理地块升降（完美融合2D与3D视效隔离）
+## 增强版：处理地块升降（融合了安全偏移逻辑）
 func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	if delta_height == 0 or not is_instance_valid(stack): return
 	
@@ -1557,7 +1484,7 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 		stack.set_meta("is_animating", false)
 		return
 
-	# --- 数据更新 ---
+	# --- 统一数据更新 ---
 	stack.set_meta("height", new_height)
 	map_data[coord]["height"] = new_height
 	if GlobalClock and "tile_h_pool" in GlobalClock:
@@ -1571,41 +1498,51 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
 
 	# ==========================================
-	# ★ 平铺视图分支：拦截 3D 动画，采用纯数字反馈，并更新后台 3D 坐标！
+	# ★ 平铺视图分支：拦截 3D 动画，采用纯数字反馈，并精准更新后台 3D 缓存！
 	# ==========================================
-	if height_view_compressed:
+	if current_view_state == MapViewState.VIEW_FLAT:
+		var cached_data = height_view_original_materials.get(stack)
+		
+		# ★ 核心修复：更新现有组件的3D坐标缓存，完美保留UI和地貌的局部相对偏移
+		var delta_y = -(actual_delta * elevation_move_distance)
+		if cached_data:
+			for s_data in cached_data["sprites_data"]:
+				s_data["original_position"].y += delta_y
+			if cached_data["occupant_data"]: cached_data["occupant_data"]["original_position"].y += delta_y
+			if cached_data["collision_data"]: cached_data["collision_data"]["original_position"].y += delta_y
+			if cached_data["health_bar_data"]: cached_data["health_bar_data"]["original_position"].y += delta_y
+
 		if actual_delta > 0:
-			# 找到 3D 状态下的底部坐标
-			var cached_data = height_view_original_materials.get(stack)
 			var orig_bottom_y = 0.0
 			if cached_data and not cached_data["sprites_data"].is_empty():
-				orig_bottom_y = cached_data["sprites_data"][0]["original_position"].y
+				# 逆向推导出移动前的最底层 3D 坐标
+				orig_bottom_y = cached_data["sprites_data"][0]["original_position"].y - delta_y
 
 			for k in range(actual_delta):
 				var new_sprite = Sprite2D.new()
 				new_sprite.texture = side_tex
 				new_sprite.centered = false
 				new_sprite.offset = Vector2(-256, -400)
-				# 物理上它生成在地下（理论3D位置）
-				new_sprite.position.y = orig_bottom_y - (k * current_step_h)
+				
+				new_sprite.visible = false 
+				new_sprite.modulate.a = 0.0 
+				new_sprite.position.y = 0.0 
 				new_sprite.scale = Vector2(tile_scale, tile_scale)
-				new_sprite.modulate = Color(0.8, 0.8, 0.8) 
 				
 				if block_material:
 					new_sprite.material = block_material.duplicate()
 					new_sprite.material.set_shader_parameter("is_flat_view", 1.0)
-					new_sprite.material.set_shader_parameter("dissolve_blend", 1.0) # 侧面立即隐身
 					
 				stack.add_child(new_sprite)
 				stack.move_child(new_sprite, k) 
 				sprites.insert(k, new_sprite)
 				
-				# ★ 更新进字典，以便切回 3D 视图时能找到它
+				# ★ 暗中存入字典：为切回 3D 预留数据
 				if cached_data:
-					cached_data["sprites_data"].insert(k, {"sprite": new_sprite, "original_material": new_sprite.material, "original_position": new_sprite.position})
+					var new_3d_y = orig_bottom_y - (k * current_step_h)
+					cached_data["sprites_data"].insert(k, {"sprite": new_sprite, "original_material": new_sprite.material, "original_position": Vector2(new_sprite.position.x, new_3d_y)})
 					
 		elif actual_delta < 0:
-			var cached_data = height_view_original_materials.get(stack)
 			for i in range(abs(actual_delta)):
 				if sprites.size() > 1: 
 					var bottom_sprite = sprites[0]
@@ -1613,51 +1550,43 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 					bottom_sprite.queue_free()
 					if cached_data: cached_data["sprites_data"].pop_front()
 
-		# ★ 修正顶部元素的理论 3D 位置缓存 (重要！决定了切回3D时悬浮在多高)
-		var cached_data = height_view_original_materials.get(stack)
-		if cached_data:
-			var new_top_y = -(new_height - 1) * current_step_h
-			cached_data["sprites_data"][-1]["original_position"].y = new_top_y
-			if cached_data["occupant_data"]: cached_data["occupant_data"]["original_position"].y = new_top_y + hitbox_offset_y - 20
-			if cached_data["collision_data"]: cached_data["collision_data"]["original_position"].y = new_top_y + hitbox_offset_y
-			if cached_data["health_bar_data"]: cached_data["health_bar_data"]["original_position"].y = new_top_y + hitbox_offset_y - 20
-
-		# 重置 Shader 序号
 		for i in range(sprites.size()):
 			if is_instance_valid(sprites[i]) and sprites[i].material:
 				sprites[i].set_instance_shader_parameter("block_idx", float(i))
 				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
 
-		# ★ 精美的 UI 弹跳动画
+		# 纯二维数字弹跳动画
 		var label = stack.get_meta("height_indicator_label") if stack.has_meta("height_indicator_label") else null
 		if is_instance_valid(label):
 			label.text = str(new_height)
 			var tw_label = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			tw_label.tween_property(label, "scale", Vector2(1.8, 1.8), 0.2)
-			tw_label.parallel().tween_property(label, "modulate", Color(1.0, 0.2, 0.2), 0.2) # 变大变红
+			tw_label.parallel().tween_property(label, "modulate", Color(1.0, 0.2, 0.2), 0.2) 
 			tw_label.tween_property(label, "scale", Vector2.ONE, 0.3)
 			tw_label.parallel().tween_property(label, "modulate", Color.WHITE, 0.3)
 			await tw_label.finished
 
 		stack.set_meta("is_animating", false)
 		return
-
 	# ==========================================
-	# ★ 3D 视图分支：保持壮观的物理震动拔地而起
+	# ★ 3D 视图分支：安全相对移动
 	# ==========================================
 	var moving_parts = []
 	moving_parts.append_array(sprites)
 	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
 	if is_instance_valid(collision): moving_parts.append(collision)
+	
 	var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
 	if is_instance_valid(occupant): 
 		moving_parts.append(occupant)
 		var bar_manager = get_node_or_null("BarManager")
 		if bar_manager:
 			var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
-			if is_instance_valid(hb_node) and hb_node.get_parent() not in moving_parts: moving_parts.append(hb_node)
+			# ★ 防二次移动：血条父级不是 stack_nodes 时才能独立移动
+			if is_instance_valid(hb_node) and hb_node.get_parent() not in moving_parts: 
+				moving_parts.append(hb_node)
 
-	var y_offset_movement = -(actual_delta * elevation_move_distance)
+	var y_offset_movement = -(actual_delta * current_step_h)
 	var original_positions = {}
 	for part in moving_parts:
 		if is_instance_valid(part): original_positions[part.get_instance_id()] = part.position
@@ -1672,13 +1601,13 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 
 	tw.chain().tween_callback(func():
 		if actual_delta > 0:
-			var orig_bottom_y = original_positions[sprites[0].get_instance_id()].y
 			for k in range(actual_delta):
 				var new_sprite = Sprite2D.new()
 				new_sprite.texture = side_tex
 				new_sprite.centered = false
 				new_sprite.offset = Vector2(-256, -400)
-				new_sprite.position.y = orig_bottom_y - (k * current_step_h)
+				# 新泥块总是插在底部，坐标依序为 0, -48, -96
+				new_sprite.position.y = -(k) * current_step_h
 				new_sprite.scale = Vector2(tile_scale, tile_scale)
 				new_sprite.modulate = Color(0.8, 0.8, 0.8) 
 				if block_material: new_sprite.material = block_material.duplicate()
@@ -1696,9 +1625,6 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 			if is_instance_valid(sprites[i]) and sprites[i].material:
 				sprites[i].set_instance_shader_parameter("block_idx", float(i))
 				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
-				
-		var label = stack.get_meta("height_indicator_label") if stack.has_meta("height_indicator_label") else null
-		if is_instance_valid(label): label.text = str(new_height)
 	)
 	
 	await tw.finished
@@ -1805,6 +1731,108 @@ func change_tile_state(stack: Area2D, new_state: TileVisualState) -> void:
 			tw.tween_method(func(val: float): if is_instance_valid(s): s.set_instance_shader_parameter("highlight_blend", val), cur_h_blend, target_highlight_blend, 0.15)
 			tw.tween_method(func(val: float): if is_instance_valid(s): s.set_instance_shader_parameter("is_selected_blend", val), cur_s_blend, target_selected_blend, 0.15)
 
+## 压缩为平铺视图 (利用缓存精准归位)
+func _compress_to_single_height_view() -> void:
+	GameLogger.info("状态机切换 -> 平铺视图", "HexMap")
+	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
+	height_view_original_materials.clear()
+	
+	for coord in stack_nodes.keys():
+		var stack = stack_nodes[coord]
+		if not is_instance_valid(stack): continue
+		
+		var sprites = stack.get_meta("sprites") as Array
+		var height = stack.get_meta("height") as int
+		
+		# 1. 精确记录所有原始位置，用于恢复
+		var stack_sprites_data = []
+		for s in sprites:
+			if is_instance_valid(s):
+				stack_sprites_data.append({"sprite": s, "original_position": s.position})
+				if s.material: s.set_instance_shader_parameter("is_flat_view", 1.0)
+
+		var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
+		var occ_data = {"node": occupant, "original_position": occupant.position} if is_instance_valid(occupant) else null
+		
+		var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
+		var col_data = {"node": collision, "original_position": collision.position} if is_instance_valid(collision) else null
+		
+		var hb_data = null
+		var bar_manager = get_node_or_null("BarManager")
+		if bar_manager and is_instance_valid(occupant):
+			var hb = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
+			if is_instance_valid(hb): hb_data = {"node": hb, "original_position": hb.position}
+
+		# 写入缓存字典
+		height_view_original_materials[stack] = {
+			"sprites_data": stack_sprites_data,
+			"occupant_data": occ_data,
+			"collision_data": col_data,
+			"health_bar_data": hb_data
+		}
+
+		# 2. 执行下落压平动画 (计算需要下落的高度差)
+		var drop_delta = (height - 1) * current_step_h
+		
+		for i in range(sprites.size()):
+			var s = sprites[i]
+			if not is_instance_valid(s): continue
+			if i < height - 1:
+				# 侧面土块：渐隐，随后关闭渲染
+				var tw = create_tween()
+				tw.tween_property(s, "modulate:a", 0.0, 0.3)
+				tw.tween_callback(func(): s.visible = false)
+			else:
+				# 顶部方块：落到地表
+				if s.get_parent() == stack:
+					_tween_position_y(s, s.position.y + drop_delta, 0.3)
+
+		if is_instance_valid(occupant): _tween_position_y(occupant, occupant.position.y + drop_delta, 0.3)
+		if is_instance_valid(collision): _tween_position_y(collision, collision.position.y + drop_delta, 0.3)
+		if hb_data and is_instance_valid(hb_data["node"]): _tween_position_y(hb_data["node"], hb_data["node"].position.y + drop_delta, 0.3)
+
+		_create_height_indicator(stack, height)
+
+## 恢复 3D 视图 (直接从字典中精准读取坐标)
+func _restore_original_height_view() -> void:
+	GameLogger.info("恢复 3D 视图", "HexMap")
+	
+	for coord in stack_nodes.keys():
+		var stack = stack_nodes[coord]
+		if not is_instance_valid(stack): continue
+		
+		if height_view_original_materials.has(stack):
+			var cached = height_view_original_materials[stack]
+			
+			# 1. 恢复地形方块
+			for s_data in cached["sprites_data"]:
+				var s = s_data["sprite"]
+				if is_instance_valid(s):
+					if s.material: s.set_instance_shader_parameter("is_flat_view", 0.0)
+					if s.get_parent() == stack:
+						_tween_position_y(s, s_data["original_position"].y, 0.3)
+			
+			# 2. 恢复外挂组件
+			if cached["occupant_data"] and is_instance_valid(cached["occupant_data"]["node"]):
+				_tween_position_y(cached["occupant_data"]["node"], cached["occupant_data"]["original_position"].y, 0.3)
+			if cached["collision_data"] and is_instance_valid(cached["collision_data"]["node"]):
+				_tween_position_y(cached["collision_data"]["node"], cached["collision_data"]["original_position"].y, 0.3)
+			if cached["health_bar_data"] and is_instance_valid(cached["health_bar_data"]["node"]):
+				_tween_position_y(cached["health_bar_data"]["node"], cached["health_bar_data"]["original_position"].y, 0.3)
+
+		# 3. 侧边方块恢复可见
+		var sprites = stack.get_meta("sprites") as Array
+		var height = stack.get_meta("height") as int
+		for i in range(sprites.size()):
+			var s = sprites[i]
+			if is_instance_valid(s) and i < height - 1:
+				s.visible = true
+				var tw = create_tween()
+				tw.tween_property(s, "modulate:a", 1.0, 0.3)
+
+		_remove_height_indicator(stack)
+		
+	height_view_original_materials.clear()
 #由状态机管理，暂时保留 TODO
 ### 应用点击高亮效果（点击地块时调用）
 #func _apply_click_highlight(stack: Area2D) -> void:
