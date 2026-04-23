@@ -236,9 +236,9 @@ func toggle_selection() -> void:
 			tw.tween_property(self, "position", Vector2(card_original_position.x, card_original_position.y + float_height), 0.2)
 			tw.tween_property(self, "scale", card_original_scale * 1.1, 0.2)
 
-			# 显示时间占位图片并调整卡牌透明度（方案A）
+			# 选中待选地块阶段不再给卡牌加蒙版，只有进入时间占位拖拽阶段才半透明。
 			show_timeline_shape()
-			set_card_transparency(0.5)  # 半透明
+			set_card_transparency(1.0)
 
 			# 更新地块的条件效果（选中卡牌时）
 			_update_map_conditional_effects()

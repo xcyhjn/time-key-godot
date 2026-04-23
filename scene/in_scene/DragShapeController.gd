@@ -189,6 +189,8 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	# 1. 通知卡牌进入拖拽状态
 	if card.has_method("enter_dragging_state"):
 		card.enter_dragging_state()
+	if card.has_method("set_card_transparency"):
+		card.set_card_transparency(0.5)
 
 	# 2. 将卡牌从手牌容器移除，成为场景根节点的子节点
 	var original_parent = card.get_parent()

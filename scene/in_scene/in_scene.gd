@@ -593,6 +593,22 @@ func attempt_draw_cards(count: int):
 
 # --- 弃牌判定逻辑 (拖拽松手) ---
 func _input(event):
+	# 在“已选中卡牌但尚未进入时间占位拖拽”阶段，右键任意位置都可以取消选牌。
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
+		var is_dragging_timeline_shape = false
+		if drag_controller and drag_controller.get("is_dragging") != null:
+			is_dragging_timeline_shape = drag_controller.is_dragging
+		
+		if not is_dragging_timeline_shape:
+			var cm = manager_instance
+			var selected_card = cm.get("current_selected_card") if cm else null
+			if is_instance_valid(selected_card) and selected_card.has_method("force_deselect"):
+				selected_card.force_deselect()
+				hide_tooltip()
+				get_viewport().set_input_as_handled()
+				return
+
 	# 【修复重点】删除了之前这里检测 deck_pile 距离的代码，因为现在用按钮了
 
 	# 截获“空地释放”实现弃牌
