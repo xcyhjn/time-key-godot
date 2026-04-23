@@ -416,8 +416,6 @@ func get_terrain_from_height(h: int) -> TerrainType:
 	if h <= 3: return TerrainType.PLAINS
 	if h == 4: return TerrainType.HILLS
 	return TerrainType.MOUNTAIN
-
-
 # ==========================================
 # 2. 配额抽取逻辑
 # ==========================================
@@ -715,7 +713,7 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 		else:
 			# 3D 视图正常生成
 			sprite.position.y = -i * current_step_h
-			if i < height - 1: sprite.modulate = Color(0.8, 0.8, 0.8)
+			if i < height - 1: sprite.modulate = Color(1.0, 1.0, 1.0)
 
 		stack_container.add_child(sprite)
 		sprites_in_stack.append(sprite)
@@ -819,7 +817,6 @@ func get_card_manager() -> Node:
 		return scene_root.get_meta("card_manager")
 	
 	return null
-
 
 # ==========================================
 # ★ 统一的点击输入处理 (支持 3D & 平铺视图)
@@ -961,7 +958,6 @@ func _update_aoe_display(card: Control, center_stack: Area2D, main_board: Node) 
 # ★ 新增：条件地块效果系统
 # ==========================================
 
-
 ## 判断地块是否是卡牌的有效目标
 func _is_stack_valid_target(stack: Area2D) -> bool:
 	var cm = get_card_manager()
@@ -1000,37 +996,6 @@ func update_all_stack_conditional_effects() -> void:
 	## 既然现在全面使用了状态机，我们只需要在这里强制清空所有高亮即可，防止残留。
 	_clear_all_aoe_highlights()
 	
-	#var cm = get_card_manager()
-	#if not cm: return
-#
-	#var selected_card = cm.get("current_selected_card")
-#
-	## 遍历所有地块
-	#for stack in stack_nodes.values():
-		#if not is_instance_valid(stack): continue
-#
-		#var sprites = stack.get_meta("sprites") as Array
-		#if sprites.is_empty() or not sprites[0].material: continue
-#
-		#if selected_card:
-			## 有选中卡牌，应用条件效果
-			#var is_valid = _is_stack_valid_target(stack)
-			#for sprite in sprites:
-				#if sprite.material:
-					#if is_valid:
-						#sprite.material.set_shader_parameter("is_valid_target", true)
-						#sprite.material.set_shader_parameter("is_invalid_target", false)
-					#else:
-						#sprite.material.set_shader_parameter("is_valid_target", false)
-						#sprite.material.set_shader_parameter("is_invalid_target", true)
-		#else:
-			## 没有选中卡牌，清除条件效果
-			#for sprite in sprites:
-				#if sprite.material:
-					#sprite.material.set_shader_parameter("is_valid_target", false)
-					#sprite.material.set_shader_parameter("is_invalid_target", false)
-
-
 # ==========================================
 # ★ 核心：动态湮灭遮挡物
 # ==========================================
@@ -1609,7 +1574,7 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 				# 新泥块总是插在底部，坐标依序为 0, -48, -96
 				new_sprite.position.y = -(k) * current_step_h
 				new_sprite.scale = Vector2(tile_scale, tile_scale)
-				new_sprite.modulate = Color(0.8, 0.8, 0.8) 
+				new_sprite.modulate = Color(1.0, 1.0, 1.0)
 				if block_material: new_sprite.material = block_material.duplicate()
 				stack.add_child(new_sprite)
 				stack.move_child(new_sprite, k) 
@@ -1833,135 +1798,3 @@ func _restore_original_height_view() -> void:
 		_remove_height_indicator(stack)
 		
 	height_view_original_materials.clear()
-#由状态机管理，暂时保留 TODO
-### 应用点击高亮效果（点击地块时调用）
-#func _apply_click_highlight(stack: Area2D) -> void:
-	#if not height_view_compressed or not is_instance_valid(stack):
-		#return
-	#
-	## 移除之前选中的地块高亮
-	#if is_instance_valid(height_view_selected_stack) and height_view_selected_stack != stack:
-		#_remove_click_highlight(height_view_selected_stack)
-	#
-	## 应用新地块高亮
-	#height_view_selected_stack = stack
-	#
-	## 通过shader参数应用白色边框
-	#var sprites = stack.get_meta("sprites") as Array
-	#for sprite in sprites:
-		#if not is_instance_valid(sprite) or not sprite.material:
-			#continue
-		#
-		## 设置点击高亮参数
-		#sprite.set_instance_shader_parameter("click_highlight", 1.0)
-		#sprite.set_instance_shader_parameter("click_highlight_width", height_view_click_highlight_width)
-		#sprite.set_instance_shader_parameter("click_highlight_color", height_view_click_highlight_color)
-#
-### 移除点击高亮效果
-#func _remove_click_highlight(stack: Area2D) -> void:
-	#if not is_instance_valid(stack):
-		#return
-	#
-	#var sprites = stack.get_meta("sprites") as Array
-	#for sprite in sprites:
-		#if not is_instance_valid(sprite) or not sprite.material:
-			#continue
-		#
-		## 移除点击高亮
-		#sprite.set_instance_shader_parameter("click_highlight", 0.0)
-#
-### 高度视图下的鼠标悬停处理
-#func _on_stack_hover_height_view(stack: Area2D, is_entered: bool) -> void:
-	## 视觉状态锁：防止拖拽时清除高亮和消融效果
-	#if is_visuals_locked:
-		#return
-	#
-	#if not height_view_compressed:
-		#return
-	#
-	#if is_entered:
-		## 鼠标进入：开始光柱浮动动画
-		#GameLogger.debug("高度视图鼠标进入地块，启动光柱动画", "HexMap")
-		#height_view_hovered_stack = stack
-		#_start_pillar_floating_animation(stack)
-	#else:
-		## 鼠标离开：停止光柱浮动动画
-		#GameLogger.debug("高度视图鼠标离开地块，停止光柱动画", "HexMap")
-		#if height_view_hovered_stack == stack:
-			#height_view_hovered_stack = null
-		#_stop_pillar_floating_animation(stack)
-#
-### 高度视图下的鼠标点击处理
-#func _on_stack_input_height_view(viewport: Node, event: InputEvent, shape_idx: int, stack: Area2D) -> void:
-	#if not height_view_compressed:
-		#return
-	#
-	#if event is InputEventMouseButton and event.pressed:
-		#if event.button_index == MOUSE_BUTTON_LEFT:
-			## 应用点击高亮效果
-			#_apply_click_highlight(stack)
-		#elif event.button_index == MOUSE_BUTTON_RIGHT:
-			## 右键取消高亮
-			#if height_view_selected_stack == stack:
-				#_remove_click_highlight(stack)
-				#height_view_selected_stack = null
-
-
-#使用状态机代替，暂时保留 TODO
-### 应用条件地块效果
-#func _apply_conditional_effects(stack: Area2D) -> void:
-	#if not is_instance_valid(stack): return
-#
-	#var cm = get_card_manager()
-	#if not cm: return
-#
-	#var selected_card = cm.get("current_selected_card")
-	#if not selected_card:
-		## 没有选中卡牌，只显示普通悬浮效果
-		#_clear_conditional_effects(stack)
-		#return
-#
-	## 判断地块是否是有效目标
-	#var is_valid = _is_stack_valid_target(stack)
-#
-	## 应用Shader效果
-	#var sprites = stack.get_meta("sprites") as Array
-	#if sprites.is_empty() or not sprites[0].material: return
-#
-	#for sprite in sprites:
-		#if sprite.material:
-			#if is_valid:
-				## 有效目标地块：变白效果
-				#sprite.material.set_shader_parameter("is_valid_target", true)
-				#sprite.material.set_shader_parameter("is_invalid_target", false)
-			#else:
-				## 无效目标地块：灰色"无效果"显示
-				#sprite.material.set_shader_parameter("is_valid_target", false)
-				#sprite.material.set_shader_parameter("is_invalid_target", true)
-#
-#使用状态机代替，暂时保留 TODO
-### 清除条件地块效果
-#func _clear_conditional_effects(stack: Area2D) -> void:
-	#if not is_instance_valid(stack): return
-#
-	#var sprites = stack.get_meta("sprites") as Array
-	#if sprites.is_empty() or not sprites[0].material: return
-#
-	#for sprite in sprites:
-		#if sprite.material:
-			#sprite.material.set_shader_parameter("is_valid_target", false)
-			#sprite.material.set_shader_parameter("is_invalid_target", false)
-#
-#
-### 立即清除条件地块效果（无动画，直接设置）
-#func _clear_conditional_effects_immediate(stack: Area2D) -> void:
-	#if not is_instance_valid(stack): return
-#
-	#var sprites = stack.get_meta("sprites") as Array
-	#if sprites.is_empty() or not sprites[0].material: return
-#
-	#for sprite in sprites:
-		#if sprite.material:
-			#sprite.material.set_shader_parameter("is_valid_target", false)
-			#sprite.material.set_shader_parameter("is_invalid_target", false)
-#
