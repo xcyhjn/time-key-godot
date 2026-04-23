@@ -19,6 +19,13 @@ var current_deck_count: int = 0
 var current_discard_count: int = 0
 # ★ 新增修复：抽牌与洗牌的并发锁，防止多重点击打断 await 逻辑
 var is_processing_deck: bool = false
+
+enum BattleFlowState {
+	COMBAT,
+	SETTLEMENT
+}
+
+var current_battle_state: BattleFlowState = BattleFlowState.COMBAT
 # ==========================================
 # ★ 新增修复：补充缺失的全局状态变量
 # ==========================================
@@ -63,6 +70,8 @@ var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
 @onready var timeline_manager = $"../TimelineSystem/TimelineManager"
 @onready var dim = $"../DimMenu"
 @onready var win = $"../GameWinScreen"
+@onready var total_enemy_health_bar = $"../TotalEnemyHealthBar"
+@onready var combat_victory_banner = $"../../combat_victory_banner"
 
 # ================================
 # ★ 导出调整项：词条 UI 外观
@@ -132,6 +141,8 @@ func _ready() -> void:
 	setup_card_system()
 	if is_instance_valid(end_combat_button):
 		end_combat_button.pressed.connect(_on_end_combat_pressed)
+	
+	_hide_settlement_buttons()
 
 	## 将卡组管理器引用传给奖励界面，方便后续删牌/加牌操作
 	#if is_instance_valid(reward_manager) and is_instance_valid(manager_instance):
@@ -170,6 +181,8 @@ func _ready() -> void:
 	# 3. 监听全局失败信号
 	if Signal_Bus:
 		Signal_Bus.defeat_triggered.connect(_on_defeat_triggered)
+		if not Signal_Bus.combat_victory_triggered.is_connected(_on_combat_victory_triggered):
+			Signal_Bus.combat_victory_triggered.connect(_on_combat_victory_triggered)
 	
 
 ## 游戏开始时生成初始敌人意图
@@ -445,6 +458,8 @@ func _on_start_turn_pressed():
 
 func _on_end_turn_pressed():
 	GameLogger.info("⏳ 玩家点击回合结束，开始时间轴结算...", "Project")
+	if current_battle_state != BattleFlowState.COMBAT:
+		return
 
 	# 禁用 UI，防止结算期间玩家乱点
 	disable_player_inputs()
@@ -454,6 +469,8 @@ func _on_end_turn_pressed():
 
 	# 2. ★ 核心改动：加上 await！等待时间轴的每一列特效和扣血逐步播放完毕
 	await timeline_manager.resolve_timeline()
+	if current_battle_state != BattleFlowState.COMBAT:
+		return
 
 	# 3. 触发建筑行为（建筑扩张等）
 	Signal_Bus.step_next.emit(current_era_value, 0)
@@ -465,6 +482,8 @@ func _on_end_turn_pressed():
 	start_new_turn()
 
 func start_new_turn():
+	if current_battle_state != BattleFlowState.COMBAT:
+		return
 	GameLogger.info("☀️ 新回合开始！", "Project")
 	# 1. 时代值 +1 等系统级结算
 	current_era_value += 1
@@ -968,25 +987,14 @@ func update_target_selection_hover(hovered_stack: Area2D, active_card: Control):
 		cursor_tooltip.show()
 		
 func _on_end_combat_pressed():
-	GameLogger.info("🏆 战斗结束！进入局外卡牌操作阶段！", "Project")
+	if current_battle_state != BattleFlowState.SETTLEMENT:
+		GameLogger.warning("尚未进入单局结算阶段，忽略结束战斗点击", "Project")
+		return
 
-	# 1. 隐藏局内所有战斗 UI (抽牌堆、弃牌堆、手牌)
-	if is_instance_valid(player_hand): player_hand.hide()
-	if is_instance_valid(deck_pile): deck_pile.hide()
-	if is_instance_valid(discard_pile): discard_pile.hide()
-
-	if is_instance_valid(deck_button): deck_button.hide()
-	if is_instance_valid(discard_button): discard_button.hide()
-
-	# 隐藏回合控制按钮
-	if is_instance_valid(start_turn_button): start_turn_button.hide()
-	if is_instance_valid(end_turn_button): end_turn_button.hide()
-	if is_instance_valid(timeline_ui): timeline_ui.hide()
-
-	# 这里不需要立刻弹出版面，而是等待玩家去点击地块
-	# 玩家点击敌方地块的具体逻辑，可以直接调用：
-	#这段是打开版面
-	get_tree().get_first_node_in_group("MainBoard").reward_manager.open_reward_screen()
+	GameLogger.info("单局结算已完成，发出 combat_ended，等待局外流程接管", "Project")
+	end_combat_button.disabled = true
+	if Signal_Bus and Signal_Bus.has_method("emit_combat_ended"):
+		Signal_Bus.emit_combat_ended()
 
 # 商店按钮回调
 func _on_shop_button_pressed():
@@ -1097,6 +1105,7 @@ func _on_craft_reward_button_pressed():
 # 当局外界面点击离开/下一关时调用这个函数
 func proceed_to_next_stage():
 	GameLogger.info("进入下一关，恢复局内 UI！", "Project")
+	current_battle_state = BattleFlowState.COMBAT
 
 	# 把刚才隐藏的按钮全部恢复显示
 	if is_instance_valid(deck_button): deck_button.show()
@@ -1105,6 +1114,13 @@ func proceed_to_next_stage():
 	if is_instance_valid(end_turn_button): end_turn_button.show()
 	if is_instance_valid(timeline_ui): timeline_ui.show()
 	if is_instance_valid(player_hand): player_hand.show()
+	if is_instance_valid(hex_map) and hex_map.has_method("set_tiles_interactive"):
+		hex_map.set_tiles_interactive(true)
+	if is_instance_valid(hex_map) and hex_map.has_method("set_visuals_locked"):
+		hex_map.set_visuals_locked(false)
+	_hide_settlement_buttons()
+	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
+	enable_player_inputs()
 
 	# 初始化新回合（比如自动抽5张牌）
 	# attempt_draw_cards(5)
@@ -1236,6 +1252,7 @@ func hide_ui_for_external_scene():
 	if is_instance_valid(acquire_reward_button): acquire_reward_button.hide()
 	if is_instance_valid(remove_reward_button): remove_reward_button.hide()
 	if is_instance_valid(craft_reward_button): craft_reward_button.hide()
+	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.hide()
 	
 	# 8. 确保hexmap和时间币显示
 	if is_instance_valid(hex_map): 
@@ -1284,6 +1301,13 @@ func restore_ui_after_external_scene():
 	else:
 		GameLogger.warning("合成按钮引用无效", "Project")
 	
+	if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(end_combat_button):
+		end_combat_button.show()
+		end_combat_button.disabled = false
+	
+	if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(total_enemy_health_bar):
+		total_enemy_health_bar.show()
+	
 	GameLogger.info("✅ 局外按钮已恢复 (恢复数量: %d/4)" % buttons_restored, "Project")
 
 ## 完全恢复所有UI（用于返回游戏主界面）
@@ -1304,10 +1328,11 @@ func restore_all_ui():
 	if is_instance_valid(timeline_ui): timeline_ui.show()
 	
 	# 四个局外按钮也显示
-	if is_instance_valid(shop_button): shop_button.show()
-	if is_instance_valid(acquire_reward_button): acquire_reward_button.show()
-	if is_instance_valid(remove_reward_button): remove_reward_button.show()
-	if is_instance_valid(craft_reward_button): craft_reward_button.show()
+	if current_battle_state == BattleFlowState.SETTLEMENT:
+		_show_settlement_buttons()
+	else:
+		_hide_settlement_buttons()
+	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
 	
 	GameLogger.info("✅ 所有UI已恢复", "Project")
 
@@ -1414,3 +1439,66 @@ func _on_lose_button_pressed():
 	
 func _on_win_button_button_down() -> void:
 	win._on_victory_triggered()
+
+
+func _hide_settlement_buttons() -> void:
+	if is_instance_valid(shop_button): shop_button.hide()
+	if is_instance_valid(acquire_reward_button): acquire_reward_button.hide()
+	if is_instance_valid(remove_reward_button): remove_reward_button.hide()
+	if is_instance_valid(craft_reward_button): craft_reward_button.hide()
+	if is_instance_valid(end_combat_button):
+		end_combat_button.hide()
+		end_combat_button.disabled = false
+
+
+func _show_settlement_buttons() -> void:
+	if is_instance_valid(shop_button): shop_button.show()
+	if is_instance_valid(acquire_reward_button): acquire_reward_button.show()
+	if is_instance_valid(remove_reward_button): remove_reward_button.show()
+	if is_instance_valid(craft_reward_button): craft_reward_button.show()
+	if is_instance_valid(end_combat_button):
+		end_combat_button.show()
+		end_combat_button.disabled = false
+
+
+func _hide_combat_phase_ui_for_settlement() -> void:
+	if is_instance_valid(player_hand): player_hand.hide()
+	if is_instance_valid(deck_pile): deck_pile.hide()
+	if is_instance_valid(discard_pile): discard_pile.hide()
+	if is_instance_valid(deck_button): deck_button.hide()
+	if is_instance_valid(discard_button): discard_button.hide()
+	if is_instance_valid(start_turn_button): start_turn_button.hide()
+	if is_instance_valid(end_turn_button): end_turn_button.hide()
+	if is_instance_valid(timeline_ui):
+		if timeline_ui.has_method("clear_grid_preview"):
+			timeline_ui.clear_grid_preview()
+		timeline_ui.hide()
+	if is_instance_valid(cursor_tooltip): cursor_tooltip.hide()
+	if is_instance_valid(cursor_tooltip_panel): cursor_tooltip_panel.hide()
+
+
+func _on_combat_victory_triggered() -> void:
+	if current_battle_state != BattleFlowState.COMBAT:
+		return
+
+	current_battle_state = BattleFlowState.SETTLEMENT
+	GameLogger.info("🏆 单局内胜利触发，进入局内结算阶段", "Project")
+
+	disable_player_inputs()
+	_hide_combat_phase_ui_for_settlement()
+
+	if is_instance_valid(timeline_manager) and timeline_manager.has_method("clear_grid"):
+		timeline_manager.clear_grid()
+
+	if is_instance_valid(hex_map):
+		if hex_map.has_method("set_tiles_interactive"):
+			hex_map.set_tiles_interactive(false)
+		if hex_map.has_method("set_visuals_locked"):
+			hex_map.set_visuals_locked(true)
+		if hex_map.has_method("update_all_stack_conditional_effects"):
+			hex_map.update_all_stack_conditional_effects()
+
+	if is_instance_valid(combat_victory_banner) and combat_victory_banner.has_method("play_banner"):
+		await combat_victory_banner.play_banner("战斗胜利")
+
+	_show_settlement_buttons()

@@ -34,7 +34,7 @@ func execute(tree: SceneTree) -> void:
 		if is_instance_valid(entity) and entity.has_method("take_damage"):
 			if entity.get("HP") != null and entity.HP > 0:
 				entity.take_damage(amount)
-				if Engine.has_singleton("SignalBus"):
+				if Signal_Bus and Signal_Bus.has_method("emit_damage_dealt"):
 					Signal_Bus.emit_damage_dealt(entity, amount)
 				
 				# 每个受伤的目标身上并行播放特效

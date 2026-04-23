@@ -253,17 +253,28 @@ func get_timeline_shape_size() -> Vector2:
 	return timeline_shape_size
 
 
-## 重写：受伤逻辑（更新 damage_rate 和 damage 状态）
-func take_damage(amount: int) -> void:
-	# 这里可以播放通用的受伤动画，比如 $AnimationPlayer.play("hurt")
-	HP = 0 if HP - amount < 0 else HP - amount
+func set_health(new_hp: float) -> void:
+	HP = clampf(new_hp, 0.0, Max_Blood)
 	State_Update()
 	Blood_change.emit(HP)
 	
 	# 更新 damage_rate 基于当前生命值
 	if Max_Blood > 0:
 		damage_rate = 1.0 - (float(HP) / float(Max_Blood))
-		GameLogger.debug("地形受伤: amount=%d, current_hp=%d, damage_rate=%.2f" % [amount, HP, damage_rate], "landform")
+		GameLogger.debug("地形血量更新: current_hp=%d, damage_rate=%.2f" % [HP, damage_rate], "landform")
+
+
+func heal(amount: float) -> void:
+	if amount <= 0:
+		return
+	set_health(HP + amount)
+
+
+## 重写：受伤逻辑（更新 damage_rate 和 damage 状态）
+func take_damage(amount: int) -> void:
+	# 这里可以播放通用的受伤动画，比如 $AnimationPlayer.play("hurt")
+	set_health(HP - amount)
+	GameLogger.debug("地形受伤: amount=%d, current_hp=%d, damage_rate=%.2f" % [amount, HP, damage_rate], "landform")
 	
 
 

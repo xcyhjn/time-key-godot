@@ -27,6 +27,8 @@
 [ext_resource type="PackedScene" uid="uid://1ahu7s8t2p6n" path="res://scene/game_win/game_win_screen.tscn" id="23_kuo1e"]
 [ext_resource type="Shader" uid="uid://b81yjopqdvi60" path="res://shaders/hourglass_shake.gdshader" id="24_rejwe"]
 [ext_resource type="Texture2D" uid="uid://cxxrld3kjarqv" path="res://image/hourglass.png" id="25_7x3b2"]
+[ext_resource type="Script" uid="uid://cre0cpi03gwt5" path="res://scene/in_scene/enermy/total_enemy_health_bar.gd" id="26_yy4gm"]
+[ext_resource type="PackedScene" uid="uid://bh6q6oqow5tay" path="res://scene/in_scene/victory/combat_victory_banner.tscn" id="28_8xrm8"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_djuk3"]
 shader = ExtResource("4_tpwa4")
@@ -204,10 +206,10 @@ texture_normal = ExtResource("10_c78qr")
 
 [node name="EndCombatButton" type="TextureButton" parent="ui" unique_id=1009921236]
 visible = false
-offset_left = 1049.0
-offset_top = 185.0
-offset_right = 1124.0
-offset_bottom = 249.0
+offset_left = 1477.0
+offset_top = 547.0
+offset_right = 1552.0
+offset_bottom = 611.0
 scale = Vector2(3, 3)
 texture_normal = ExtResource("11_oyewm")
 
@@ -295,10 +297,10 @@ offset_bottom = 76.0
 text = "商店"
 
 [node name="HeightViewToggleButton" type="Button" parent="ui" unique_id=1242454706]
-offset_left = 1600.0
-offset_top = 288.0
-offset_right = 1713.0
-offset_bottom = 340.0
+offset_left = 1447.0
+offset_top = 101.0
+offset_right = 1560.0
+offset_bottom = 153.0
 text = "视角切换"
 
 [node name="WinButton" type="Button" parent="ui" unique_id=1004531811]
@@ -343,6 +345,11 @@ mode2 = 0
 in_scene = NodePath("../Main")
 hex_map = NodePath("../../map/HexMap")
 
+[node name="TotalEnemyHealthBar" type="Node2D" parent="ui" unique_id=637956336]
+script = ExtResource("26_yy4gm")
+margin_top = 240.0
+margin_right = 56.0
+
 [node name="TimecoinView" type="Node" parent="." unique_id=512071538]
 
 [node name="TimecoinCanvasLayer" type="CanvasLayer" parent="TimecoinView" unique_id=1912998284]
@@ -381,5 +388,8 @@ layout_mode = 2
 texture = ExtResource("25_7x3b2")
 expand_mode = 3
 stretch_mode = 4
+
+[node name="combat_victory_banner" parent="." unique_id=1810368546 instance=ExtResource("28_8xrm8")]
+visible = false
 
 [connection signal="button_down" from="ui/WinButton" to="ui/Main" method="_on_win_button_button_down"]

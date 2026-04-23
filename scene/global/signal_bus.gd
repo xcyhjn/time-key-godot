@@ -8,6 +8,7 @@ class_name SignalBus
 signal turn_started(era_value: int)
 signal turn_ended()
 signal combat_ended()
+signal combat_victory_triggered()
 signal new_turn_starting()
 signal step_next(step: int, behavior: int)  # 新增：建筑行为触发信号
 
@@ -109,6 +110,11 @@ func emit_turn_ended() -> void:
 func emit_combat_ended() -> void:
 	log_signal("combat_ended")
 	combat_ended.emit()
+
+
+func emit_combat_victory_triggered() -> void:
+	log_signal("combat_victory_triggered")
+	combat_victory_triggered.emit()
 
 
 func emit_card_drawn(card: Control, count: int) -> void:

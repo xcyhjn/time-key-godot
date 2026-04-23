@@ -4,6 +4,7 @@ extends Node2D
 class_name battle
 #血条信号测试用
 signal CreateBar(landform_in: landform, situation: int, x: float, y: float)
+signal enemy_roster_changed
 @export_group("Assets")
 @export var hex_top_tex: Texture2D
 @export var hex_side_tex: Texture2D
@@ -242,6 +243,7 @@ func build_map_pipeline():
 
 	_assign_terrains_and_enemies()
 	_render_map()
+	enemy_roster_changed.emit()
 
 
 func _generate_map_data():
@@ -801,10 +803,10 @@ func refresh_tile_visual(coord: Vector2i) -> void:
 
 
 func get_card_manager() -> Node:
-	# 直接查找CardManager节点（HexMap在map下，CardManager在project下）
-	var card_manager = get_node_or_null("../../CardManager")  # 从HexMap向上两级到project，查找CardManager子节点
-	if card_manager:
-		return card_manager
+	# CardManager 由 ui/Main(in_scene.gd) 在运行时创建，统一从 MainBoard 获取。
+	var main_board = get_tree().get_first_node_in_group("MainBoard")
+	if main_board and main_board.get("manager_instance"):
+		return main_board.manager_instance
 	
 	# 备用方案：通过元数据查找
 	var tree_root = get_tree().root
@@ -884,6 +886,7 @@ func _update_highlight():
 	# ★ 需求：未选中卡牌前，绝不触发高亮和Shader
 	if not is_instance_valid(active_card):
 		_clear_all_aoe_highlights()
+		_clear_occlusion_effects()
 		active_stack = null
 		# 安全隐藏 UI
 		if main_board and is_instance_valid(main_board.get("cursor_tooltip")):
@@ -995,20 +998,25 @@ func update_all_stack_conditional_effects() -> void:
 	## 原有方法是为了兼容旧版 custom_card.gd 的调用。
 	## 既然现在全面使用了状态机，我们只需要在这里强制清空所有高亮即可，防止残留。
 	_clear_all_aoe_highlights()
+	_clear_occlusion_effects()
 	
 # ==========================================
 # ★ 核心：动态湮灭遮挡物
 # ==========================================
+func _clear_occlusion_effects() -> void:
+	for stack in stack_nodes.values():
+		if is_instance_valid(stack):
+			_tween_shader_param(stack, "dissolve_blend", 0.0, 0.12)
+	currently_occluding_stacks.clear()
+
+
 func _update_occlusion(target_stack: Area2D):
 	# ★ 核心修复 1：在平铺视角下，彻底禁用防遮挡机制！
 	if current_view_state == MapViewState.VIEW_FLAT: 
 		return
 
 	# 1. 恢复之前被湮灭的柱子 (倒放)
-	for stack in currently_occluding_stacks:
-		if is_instance_valid(stack):
-			_tween_shader_param(stack, "dissolve_blend", 0.0, 0.15)
-	currently_occluding_stacks.clear()
+	_clear_occlusion_effects()
 
 	if not is_instance_valid(target_stack): return
 
@@ -1094,6 +1102,9 @@ func add_landform_visual_at(coord: Vector2i) -> void:
 		if not sprites.has(landform_sprite):
 			sprites.append(landform_sprite)
 			stack_container.set_meta("sprites", sprites)
+	
+	if landform_inst.Attitude == landform_inst.Attitude_Pool.Enemy:
+		enemy_roster_changed.emit()
 	
 	GameLogger.debug("更新地貌视觉: %s at %s" % [landform_inst.name, coord], "HexMap")
 
@@ -1353,13 +1364,14 @@ func set_visuals_locked(locked: bool) -> void:
 	GameLogger.debug("地块视觉状态锁已设置为: " + str(locked), "HexMap")
 	
 	if locked:
-		# 当卡牌被拖走时，立即清空所有高亮
-		_clear_all_aoe_highlights()
+		# 进入时间占位放置阶段时，保留高亮，但必须释放防遮挡消融，避免地块“消失”。
+		_clear_occlusion_effects()
 		var main_board = get_tree().get_first_node_in_group("MainBoard")
 		if main_board and is_instance_valid(main_board.get("cursor_tooltip")):
 			main_board.cursor_tooltip.hide()
 	else:
-		# ★ 核心修复：解锁时主动强制刷新一次！防止鼠标不动导致 Shader 幽灵卡死！
+		# 解锁时同样主动释放消融，并强制刷新一次，防止鼠标不动导致 Shader 幽灵卡死。
+		_clear_occlusion_effects()
 		hovered_stacks.clear()
 		_update_highlight()
 # ==========================================
@@ -1634,6 +1646,7 @@ func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
 	if is_instance_valid(occupant):
 		occupant.queue_free()
 	
+	enemy_roster_changed.emit()
 	GameLogger.info("地块已从地图彻底抹除: " + str(coord), "HexMap")
 
 # ==========================================

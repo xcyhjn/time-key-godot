@@ -73,4 +73,4 @@ func build_will():
 	pass
 	
 func build_done():
-	HP = HP + Max_Blood / 2 if HP < 1 / 2 * Max_Blood else Max_Blood
+	heal(Max_Blood / 2.0)
