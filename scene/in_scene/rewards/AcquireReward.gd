@@ -154,8 +154,9 @@ func _generate_candidate_cards():
 	var selected_cards = era_cards.slice(0, min(card_selection_count, era_cards.size()))
 	
 	# 创建临时幽灵牌堆 (完全隐形)
-	var temp_pile = preload("res://addons/card-framework/pile.tscn").instantiate()
-	add_child(temp_pile)
+	var temp_pile = _create_temp_pile()
+	if temp_pile == null:
+		return
 	temp_pile.visible = false
 	
 	# 为每张卡创建 DraftCard 预览
@@ -209,27 +210,16 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 		return
 	
 	# 1. 提取卡牌描述文本
-	if "raw_description" in real_card and real_card.raw_description != "":
-		draft_card.raw_description = real_card.raw_description
-	elif "card_info" in real_card and typeof(real_card.card_info) == TYPE_DICTIONARY:
-		draft_card.raw_description = real_card.card_info.get("效果", "")
-	
-	# 尝试调用卡牌的解析方法
-	if real_card.has_method("get_parsed_description"):
-		draft_card.raw_description = real_card.get_parsed_description()
+	draft_card.raw_description = await _extract_card_description(real_card)
 	
 	# 2. 提取关键词词条
 	if "active_keywords" in real_card:
 		draft_card.active_keywords = real_card.active_keywords.duplicate()
 	
 	# 3. 偷取真牌贴图
-	if real_card.has_node("FrontFace/TextureRect"):
-		draft_card.texture = real_card.get_node("FrontFace/TextureRect").texture
-	elif "front_face_texture" in real_card and real_card.front_face_texture != null:
-		if real_card.front_face_texture is TextureRect:
-			draft_card.texture = real_card.front_face_texture.texture
-		elif real_card.front_face_texture is Texture2D:
-			draft_card.texture = real_card.front_face_texture
+	var front_texture = await _extract_front_texture(real_card, card_id)
+	if front_texture != null:
+		draft_card.texture = front_texture
 	
 	# 4. 从牌堆移除临时卡牌
 	temp_pile.remove_card(real_card)
@@ -371,6 +361,73 @@ func _get_current_era() -> int:
 	# 默认值
 	return 1
 
+
+func _create_temp_pile() -> Pile:
+	if deck_manager == null:
+		push_error("AcquireReward: 无法创建临时牌堆，deck_manager 为空")
+		return null
+	var temp_pile = preload("res://addons/card-framework/pile.tscn").instantiate() as Pile
+	deck_manager.add_child(temp_pile)
+	return temp_pile
+
+
+func _extract_front_texture(real_card: Node, card_id: String) -> Texture2D:
+	if real_card.has_node("FrontFace/TextureRect"):
+		var front_rect = real_card.get_node("FrontFace/TextureRect")
+		if front_rect is TextureRect and front_rect.texture != null:
+			return front_rect.texture
+
+	if "front_face_texture" in real_card and real_card.front_face_texture != null:
+		if real_card.front_face_texture is TextureRect and real_card.front_face_texture.texture != null:
+			return real_card.front_face_texture.texture
+		if real_card.front_face_texture is Texture2D:
+			return real_card.front_face_texture
+
+	await get_tree().process_frame
+
+	if real_card.has_node("FrontFace/TextureRect"):
+		var delayed_front_rect = real_card.get_node("FrontFace/TextureRect")
+		if delayed_front_rect is TextureRect and delayed_front_rect.texture != null:
+			return delayed_front_rect.texture
+
+	if deck_manager and deck_manager.card_factory:
+		var preloaded_cards = deck_manager.card_factory.get("preloaded_cards")
+		if typeof(preloaded_cards) == TYPE_DICTIONARY and preloaded_cards.has(card_id):
+			var cached = preloaded_cards[card_id]
+			if typeof(cached) == TYPE_DICTIONARY and cached.has("texture") and cached["texture"] != null:
+				return cached["texture"]
+
+		var card_info = real_card.get("card_info")
+		if typeof(card_info) == TYPE_DICTIONARY and card_info.has("front_image"):
+			var asset_dir = deck_manager.card_factory.get("card_asset_dir")
+			if typeof(asset_dir) == TYPE_STRING and asset_dir != "":
+				var texture_path = asset_dir + "/" + str(card_info["front_image"])
+				var fallback_texture = load(texture_path) as Texture2D
+				if fallback_texture != null:
+					return fallback_texture
+
+	return null
+
+
+func _extract_card_description(real_card: Node) -> String:
+	if real_card.has_method("setup_card_data"):
+		real_card.setup_card_data()
+		await get_tree().process_frame
+
+	if real_card.has_method("get_parsed_description"):
+		var parsed = real_card.get_parsed_description()
+		if parsed != "":
+			return parsed
+
+	if "raw_description" in real_card and real_card.raw_description != "":
+		return real_card.raw_description
+
+	var card_info = real_card.get("card_info")
+	if typeof(card_info) == TYPE_DICTIONARY and card_info.has("效果"):
+		return str(card_info.get("效果", ""))
+
+	return ""
+
 ## 尝试自动查找 CardManager 节点
 func _try_find_card_manager():
 	# 方案1: 通过元数据查找 (CardManager 在 _ready() 中将自己注册到场景根)
@@ -445,7 +502,8 @@ func show_tooltip(card: Control):
 	if description_text == null:
 		description_text = ""
 	
-	_tooltip_label.text = description_text
+	_tooltip_label.clear()
+	_tooltip_label.append_text(description_text if description_text != "" else "无效果文本")
 	
 	# 重置面板尺寸
 	_tooltip_panel.size = Vector2.ZERO

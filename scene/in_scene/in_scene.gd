@@ -1437,6 +1437,11 @@ func _on_lose_button_pressed():
 	GameLogger.info("🔧 玩家点击失败调试按钮", "Project")
 	Signal_Bus.emit_defeat_triggered()
 	
+func _on_combat_victory_debug_button_down() -> void:
+	GameLogger.info("🔧 玩家点击单局内胜利调试按钮", "Project")
+	if Signal_Bus and Signal_Bus.has_method("emit_combat_victory_triggered"):
+		Signal_Bus.emit_combat_victory_triggered()
+
 func _on_win_button_button_down() -> void:
 	win._on_victory_triggered()
 

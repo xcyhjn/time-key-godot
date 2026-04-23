@@ -312,6 +312,15 @@ theme_override_fonts/font = ExtResource("5_6migj")
 theme_override_font_sizes/font_size = 32
 text = "胜利结算"
 
+[node name="CombatVictoryDebugButton" type="Button" parent="ui" unique_id=1762035141]
+offset_left = 84.0
+offset_top = 515.0
+offset_right = 260.0
+offset_bottom = 566.0
+theme_override_fonts/font = ExtResource("5_6migj")
+theme_override_font_sizes/font_size = 28
+text = "单局胜利"
+
 [node name="LoseButton" type="Button" parent="ui" unique_id=2120096589]
 offset_left = 103.0
 offset_top = 690.0
@@ -393,3 +402,4 @@ stretch_mode = 4
 visible = false
 
 [connection signal="button_down" from="ui/WinButton" to="ui/Main" method="_on_win_button_button_down"]
+[connection signal="button_down" from="ui/CombatVictoryDebugButton" to="ui/Main" method="_on_combat_victory_debug_button_down"]

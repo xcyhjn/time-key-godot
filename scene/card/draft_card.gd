@@ -7,6 +7,7 @@ extends TextureRect
 @export var glow_color: Color = Color(1.0, 0.9, 0.2, 1.0)  # 经典的黄光
 @export var glow_size: int = 20  # 发光扩散范围
 @export var corner_radius: int = 6  # 如果你的卡牌有圆角，调这个让发光也变圆
+@export var dim_overlay_color: Color = Color(0.0, 0.0, 0.0, 0.55)
 
 var raw_description: String = ""
 var active_keywords: Array = []
@@ -15,6 +16,9 @@ var card_id: String = ""
 var original_scale: Vector2 = Vector2.ONE
 var is_selected: bool = false
 var glow_style: StyleBoxFlat  # 记录发光材质
+var dim_overlay: ColorRect
+var hover_effect_enabled: bool = true
+var tooltip_enabled: bool = true
 
 # 自定义尺寸设置（用于外部管理器控制）
 var custom_set_size: Vector2 = Vector2.ZERO
@@ -59,6 +63,13 @@ func _ready():
 	add_child(glow_panel)
 	# ==========================================
 
+	dim_overlay = ColorRect.new()
+	dim_overlay.name = "DimOverlay"
+	dim_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dim_overlay.color = Color(dim_overlay_color.r, dim_overlay_color.g, dim_overlay_color.b, 0.0)
+	add_child(dim_overlay)
+
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	gui_input.connect(_on_gui_input)
@@ -69,17 +80,18 @@ func get_parsed_description() -> String:
 
 
 func _on_mouse_entered():
-	if is_selected: return
+	if hover_effect_enabled and not is_selected:
+		z_index = 10
+		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(self, "scale", original_scale * hover_scale, 0.1)
 
-	z_index = 10
-	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(self, "scale", original_scale * hover_scale, 0.1)
-
-	# 点亮发光！
-	tw.tween_property(glow_style, "shadow_color:a", glow_color.a, 0.1)
-	tw.tween_property(glow_style, "border_color:a", glow_color.a, 0.1)
+		# 点亮发光！
+		tw.tween_property(glow_style, "shadow_color:a", glow_color.a, 0.1)
+		tw.tween_property(glow_style, "border_color:a", glow_color.a, 0.1)
 
 	# 查找tooltip提供者：优先向上遍历父节点寻找show_tooltip，如果找不到，再作为兜底去寻找MainBoard组
+	if not tooltip_enabled:
+		return
 	var tooltip_provider = null
 	# 优先查找父节点链
 	var current_node = self
@@ -99,17 +111,18 @@ func _on_mouse_entered():
 
 
 func _on_mouse_exited():
-	if is_selected: return
+	if hover_effect_enabled and not is_selected:
+		z_index = 0
+		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(self, "scale", original_scale, 0.1)
 
-	z_index = 0
-	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(self, "scale", original_scale, 0.1)
-
-	# 熄灭发光！
-	tw.tween_property(glow_style, "shadow_color:a", 0.0, 0.1)
-	tw.tween_property(glow_style, "border_color:a", 0.0, 0.1)
+		# 熄灭发光！
+		tw.tween_property(glow_style, "shadow_color:a", 0.0, 0.1)
+		tw.tween_property(glow_style, "border_color:a", 0.0, 0.1)
 
 	# 查找tooltip提供者：优先向上遍历父节点寻找hide_tooltip，如果找不到，再作为兜底去寻找MainBoard组
+	if not tooltip_enabled:
+		return
 	var tooltip_provider = null
 	# 优先查找父节点链
 	var current_node = self
@@ -143,3 +156,36 @@ func set_selected(selected: bool):
 		tw.tween_property(glow_style, "border_color:a", glow_color.a, 0.1)
 	else:
 		_on_mouse_exited()
+
+
+func set_dimmed(dimmed: bool, alpha: float = dim_overlay_color.a) -> void:
+	if not is_instance_valid(dim_overlay):
+		return
+	dim_overlay.color = Color(dim_overlay_color.r, dim_overlay_color.g, dim_overlay_color.b, alpha if dimmed else 0.0)
+
+
+func set_hover_effect_enabled(enabled: bool) -> void:
+	hover_effect_enabled = enabled
+	if not enabled and not is_selected:
+		scale = original_scale
+		z_index = 0
+		var shadow_color = glow_style.shadow_color
+		shadow_color.a = 0.0
+		glow_style.shadow_color = shadow_color
+		var border_color = glow_style.border_color
+		border_color.a = 0.0
+		glow_style.border_color = border_color
+
+
+func set_tooltip_enabled(enabled: bool) -> void:
+	tooltip_enabled = enabled
+	if not enabled:
+		var tooltip_provider = null
+		var current_node = self
+		while current_node:
+			if current_node.has_method("hide_tooltip"):
+				tooltip_provider = current_node
+				break
+			current_node = current_node.get_parent()
+		if tooltip_provider:
+			tooltip_provider.hide_tooltip(self)

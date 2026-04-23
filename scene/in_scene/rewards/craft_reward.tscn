@@ -3,18 +3,20 @@
 [ext_resource type="Script" uid="uid://c2kaxsrkwq2n8" path="res://scene/in_scene/rewards/CraftReward.gd" id="1_fjv8y"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_e5usn"]
 
-[node name="CraftReward" type="CanvasLayer"]
+[node name="CraftReward" type="CanvasLayer" unique_id=1945781406]
 script = ExtResource("1_fjv8y")
+metadata/_edit_vertical_guides_ = [402.0]
 
-[node name="BackgroundMask" type="ColorRect" parent="."]
+[node name="BackgroundMask" type="ColorRect" parent="." unique_id=899903680]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.4509804)
+metadata/_edit_lock_ = true
 
-[node name="TitleLabel" type="Label" parent="."]
+[node name="TitleLabel" type="Label" parent="." unique_id=2001394329]
 anchors_preset = -1
 offset_left = 759.0
 offset_top = 94.0
@@ -24,7 +26,7 @@ theme_override_fonts/font = ExtResource("2_e5usn")
 theme_override_font_sizes/font_size = 60
 text = "合成卡牌"
 
-[node name="CraftingBoard" type="Control" parent="."]
+[node name="CraftingBoard" type="Control" parent="." unique_id=1263047477]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 279.0
@@ -32,40 +34,168 @@ offset_top = 198.0
 offset_right = 1489.0
 offset_bottom = 856.0
 
-[node name="Slot1" type="Control" parent="CraftingBoard"]
-anchors_preset = 0
-offset_left = 107.0
-offset_top = 6.0
-offset_right = 325.0
+[node name="Slot1" type="Button" parent="CraftingBoard" unique_id=1509616699]
+layout_mode = 0
+offset_left = 150.0
+offset_top = -17.0
+offset_right = 402.0
 offset_bottom = 306.0
+text = "选择主卡"
 
-[node name="Slot2" type="Control" parent="CraftingBoard"]
-anchors_preset = 0
-offset_left = 75.0
-offset_top = 276.0
-offset_right = 278.0
-offset_bottom = 548.0
+[node name="PlaceholderLabel" type="Label" parent="CraftingBoard/Slot1" unique_id=1694975399]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_e5usn")
+theme_override_font_sizes/font_size = 28
+text = "槽位 1"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="ResultSlot" type="Control" parent="CraftingBoard"]
-anchors_preset = 0
+[node name="CardAnchor" type="Control" parent="CraftingBoard/Slot1" unique_id=1601990910]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Slot2" type="Button" parent="CraftingBoard" unique_id=758599733]
+layout_mode = 0
+offset_left = 150.0
+offset_top = 380.0
+offset_right = 430.0
+offset_bottom = 747.0
+text = "选择副卡"
+
+[node name="PlaceholderLabel" type="Label" parent="CraftingBoard/Slot2" unique_id=677265741]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_e5usn")
+theme_override_font_sizes/font_size = 28
+text = "槽位 2"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CardAnchor" type="Control" parent="CraftingBoard/Slot2" unique_id=1239871993]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ResultSlot" type="Button" parent="CraftingBoard" unique_id=600063717]
+layout_mode = 0
 offset_left = 913.0
 offset_top = 182.0
 offset_right = 1135.0
 offset_bottom = 461.0
+text = "领取合成结果"
 
-[node name="ConnectionLines" type="Line2D" parent="CraftingBoard"]
+[node name="PlaceholderLabel" type="Label" parent="CraftingBoard/ResultSlot" unique_id=1143366683]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_e5usn")
+theme_override_font_sizes/font_size = 28
+text = "结果槽"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="DeckScrollContainer" type="ScrollContainer" parent="."]
+[node name="CardAnchor" type="Control" parent="CraftingBoard/ResultSlot" unique_id=1873674402]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ConnectionLines" type="Line2D" parent="CraftingBoard" unique_id=31637239]
+
+[node name="SelectionMask" type="ColorRect" parent="." unique_id=792244216]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.38)
+
+[node name="SelectionTitleLabel" type="Label" parent="." unique_id=1360435762]
+visible = false
+offset_left = 235.0
+offset_top = 170.0
+offset_right = 1540.0
+offset_bottom = 214.0
+theme_override_fonts/font = ExtResource("2_e5usn")
+theme_override_font_sizes/font_size = 28
+text = "请选择卡牌"
+horizontal_alignment = 1
+
+[node name="DeckScrollContainer" type="ScrollContainer" parent="." unique_id=1473800608]
+visible = false
 offset_left = 235.0
 offset_top = 216.0
 offset_right = 1540.0
 offset_bottom = 839.0
 metadata/_edit_lock_ = true
 
-[node name="DeckGrid" type="GridContainer" parent="DeckScrollContainer"]
+[node name="DeckGrid" type="GridContainer" parent="DeckScrollContainer" unique_id=1017745882]
 layout_mode = 2
 
-[node name="BtnBack" type="Button" parent="."]
+[node name="ResultDescriptionPanel" type="PanelContainer" parent="." unique_id=211062818]
+visible = false
+offset_left = 1172.0
+offset_top = 222.0
+offset_right = 1650.0
+offset_bottom = 764.0
+
+[node name="ResultDescriptionMargin" type="MarginContainer" parent="ResultDescriptionPanel" unique_id=323514635]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="ResultDescriptionLabel" type="RichTextLabel" parent="ResultDescriptionPanel/ResultDescriptionMargin" unique_id=725444293]
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
+theme_override_fonts/normal_font = ExtResource("2_e5usn")
+theme_override_fonts/bold_font = ExtResource("2_e5usn")
+theme_override_font_sizes/normal_font_size = 20
+theme_override_font_sizes/bold_font_size = 20
+
+[node name="BtnBack" type="Button" parent="." unique_id=179673410]
 offset_left = 94.0
 offset_top = 898.0
 offset_right = 300.0
@@ -74,7 +204,8 @@ theme_override_fonts/font = ExtResource("2_e5usn")
 theme_override_font_sizes/font_size = 32
 text = "返回"
 
-[node name="BtnConfirm" type="Button" parent="."]
+[node name="BtnConfirm" type="Button" parent="." unique_id=846519495]
+visible = false
 offset_left = 1469.0
 offset_top = 910.0
 offset_right = 1657.0
@@ -82,3 +213,18 @@ offset_bottom = 998.0
 theme_override_fonts/font = ExtResource("2_e5usn")
 theme_override_font_sizes/font_size = 32
 text = "确认"
+
+[node name="ExitWarningDialog" type="ConfirmationDialog" parent="." unique_id=490553670]
+title = "未完成合成"
+ok_button_text = "是"
+cancel_button_text = "否"
+
+[node name="WarningLabel" type="Label" parent="ExitWarningDialog" unique_id=1186366996]
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 476.0
+offset_bottom = 96.0
+theme_override_fonts/font = ExtResource("2_e5usn")
+theme_override_font_sizes/font_size = 20
+text = "当前合成未完成，是否退出并放弃本次合成？"
+autowrap_mode = 3
