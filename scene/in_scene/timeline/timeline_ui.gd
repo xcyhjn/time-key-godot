@@ -1,5 +1,7 @@
 extends Control
 
+const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
+
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
 @export var spacing: float = 2.0  # 格子间距，应与DragShapeController的spacing一致
@@ -10,6 +12,24 @@ extends Control
 @export var margin_top_preset: float = 0.0      # 紧贴屏幕最上沿的距离 (设为0即死死贴住)
 @export var expanded_scale: Vector2 = Vector2(1.5, 1.5)
 @export var anim_duration: float = 0.3
+
+@export_group("敌人意图表现")
+## 时间轴敌人意图格子使用的独立 pulse shader。若不手动指定，运行时自动回退到默认 shader。
+@export var enemy_intent_timeline_shader: Shader
+## 当前敌人意图组 hover 时的整体缩放值。应当只做轻微放大，不要产生明显位移感。
+@export var enemy_intent_preview_scale: Vector2 = Vector2(1.08, 1.08)
+## 敌人意图失效时，暗淡消失前缩小到的比例。
+@export var enemy_intent_removal_scale: Vector2 = Vector2(0.92, 0.92)
+## 敌人意图失效时，暗淡消失动画时长。
+@export var enemy_intent_removal_duration: float = 0.28
+## 当前展示中的敌人意图容器的层级，避免被普通方块覆盖。
+@export var enemy_intent_preview_z_index: int = 50
+## 时间轴敌人意图脉冲 shader 的速度。
+@export var enemy_intent_pulse_speed: float = 3.0
+## 时间轴敌人意图脉冲 shader 的最小透明度。
+@export var enemy_intent_pulse_min_alpha: float = 0.15
+## 时间轴敌人意图脉冲 shader 的最大透明度。
+@export var enemy_intent_pulse_max_alpha: float = 0.75
 
 @export_group("卡牌遮罩设置")
 @export var mask_color: Color = Color(0.75, 0.75, 0.75, 0.6)  # 浅灰色半透明遮罩
@@ -24,6 +44,9 @@ var is_expanded: bool = false
 var hovered_action: TimelineAction = null
 var grid_cells: Dictionary = { }  # 存储网格单元引用，键：Vector2i，值：ColorRect
 var allow_click_to_expand: bool = false  # 是否允许通过点击缩放时间轴（常态下禁用，仅卡牌选中时启用）
+var action_containers: Dictionary = {}
+var current_enemy_intent_preview_action: TimelineAction = null
+var enemy_intent_preview_tween: Tween = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -97,6 +120,9 @@ func _apply_anchor_layout() -> void:
 
 
 func _ready():
+	if enemy_intent_timeline_shader == null:
+		enemy_intent_timeline_shader = ENEMY_INTENT_TIMELINE_SHADER
+
 	# 应用响应式锚点布局
 	_apply_anchor_layout()
 
@@ -108,6 +134,11 @@ func _ready():
 	GameLogger.debug("遮罩创建完成，background_mask: " + str(background_mask), "TimelineUI")
 
 	_init_background_grid()
+	# 关键修复：
+	# - 敌人/玩家的时间轴 action 方块必须位于 GridBackground 之上，
+	#   否则鼠标 hover 会先命中底层网格单元，导致 action 方块无法正确回调。
+	# - 这里显式把 ShapeLayer 提到最上层。
+	move_child(shape_layer, get_child_count() - 1)
 	
 	# 自动查找TimelineManager（如果未手动设置）
 	if not timeline_manager:
@@ -197,6 +228,34 @@ func _on_action_placed(action: TimelineAction):
 
 	# 将这个容器与具体的 Action 绑定，方便悬浮检测
 	shape_container.set_meta("action_ref", action)
+	shape_container.set_meta("action_id", action.get_instance_id())
+	action_containers[action.get_instance_id()] = shape_container
+
+	var min_x = 0
+	var max_x = 0
+	var min_y = 0
+	var max_y = 0
+	if not action.shape_coords.is_empty():
+		min_x = action.shape_coords[0].x
+		max_x = action.shape_coords[0].x
+		min_y = action.shape_coords[0].y
+		max_y = action.shape_coords[0].y
+		for offset in action.shape_coords:
+			min_x = min(min_x, offset.x)
+			max_x = max(max_x, offset.x)
+			min_y = min(min_y, offset.y)
+			max_y = max(max_y, offset.y)
+
+	var cell_span_x = slot_size + spacing
+	var cell_span_y = slot_size + spacing
+	var width = (max_x - min_x + 1) * slot_size + max(0, max_x - min_x) * spacing
+	var height = (max_y - min_y + 1) * slot_size + max(0, max_y - min_y) * spacing
+	shape_container.size = Vector2(width, height)
+	shape_container.pivot_offset = shape_container.size * 0.5
+	shape_container.position = Vector2(
+		(action.origin_grid_pos.x + min_x) * cell_span_x,
+		(action.origin_grid_pos.y + min_y) * cell_span_y
+	)
 
 	# 为所有方块设置统一的黑框样式
 	var style = StyleBoxFlat.new()
@@ -210,15 +269,30 @@ func _on_action_placed(action: TimelineAction):
 		block.add_theme_stylebox_override("panel", style)
 		block.custom_minimum_size = Vector2(slot_size, slot_size)
 
-		# 计算绝对像素位置
-		var pos_x = target_grid_pos.x * (slot_size + spacing)
-		var pos_y = target_grid_pos.y * (slot_size + spacing)
+		# 计算相对于 shape_container 左上角的局部像素位置
+		var pos_x = (target_grid_pos.x - (action.origin_grid_pos.x + min_x)) * cell_span_x
+		var pos_y = (target_grid_pos.y - (action.origin_grid_pos.y + min_y)) * cell_span_y
 		block.position = Vector2(pos_x, pos_y)
 
 		# ★ 给每个小块加上鼠标检测区
 		block.mouse_filter = Control.MOUSE_FILTER_PASS
 		block.mouse_entered.connect(_on_block_hovered.bind(action))
 		block.mouse_exited.connect(_on_block_exited)
+
+		var overlay = ColorRect.new()
+		overlay.name = "EnemyIntentOverlay"
+		overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		overlay.visible = false
+		overlay.color = Color.WHITE
+		if action.type == TimelineAction.Type.ENEMY:
+			var overlay_material = ShaderMaterial.new()
+			overlay_material.shader = enemy_intent_timeline_shader
+			overlay_material.set_shader_parameter("pulse_speed", enemy_intent_pulse_speed)
+			overlay_material.set_shader_parameter("min_alpha", enemy_intent_pulse_min_alpha)
+			overlay_material.set_shader_parameter("max_alpha", enemy_intent_pulse_max_alpha)
+			overlay.material = overlay_material
+		block.add_child(overlay)
 
 		shape_container.add_child(block)
 
@@ -227,6 +301,8 @@ func _on_action_placed(action: TimelineAction):
 
 
 func _on_timeline_cleared():
+	clear_enemy_intent_preview()
+	action_containers.clear()
 	for child in shape_layer.get_children():
 		child.queue_free()
 
@@ -309,6 +385,96 @@ func _on_block_exited():
 			GameLogger.warning("无法发送清除高亮信号", "TimelineUI")
 		
 		hovered_action = null
+
+
+## 敌人意图时间轴预览入口
+## 作用:
+## - 当地图或时间轴 hover 到某个敌人意图时，让这一整组占位格：
+##   1. 一起轻微放大
+##   2. 一起显示独立 pulse shader
+## - 其他敌人意图保持不动。
+func show_enemy_intent_preview(action: TimelineAction, is_valid: bool, pulse_color: Color) -> void:
+	if not is_instance_valid(action):
+		return
+
+	var action_id = action.get_instance_id()
+	if not action_containers.has(action_id):
+		return
+
+	if current_enemy_intent_preview_action == action:
+		return
+
+	clear_enemy_intent_preview()
+	current_enemy_intent_preview_action = action
+
+	var container = action_containers[action_id]
+	if not is_instance_valid(container):
+		return
+
+	container.pivot_offset = container.size * 0.5
+	container.modulate = Color.WHITE
+	container.scale = enemy_intent_preview_scale
+	container.z_index = enemy_intent_preview_z_index
+	_set_enemy_intent_overlay_visible(container, true, pulse_color)
+
+
+## 清除当前时间轴上正在展示的敌人意图预览。
+func clear_enemy_intent_preview() -> void:
+	if enemy_intent_preview_tween != null and enemy_intent_preview_tween.is_valid():
+		enemy_intent_preview_tween.kill()
+		enemy_intent_preview_tween = null
+
+	if current_enemy_intent_preview_action == null:
+		return
+
+	var action_id = current_enemy_intent_preview_action.get_instance_id()
+	if action_containers.has(action_id):
+		var container = action_containers[action_id]
+		if is_instance_valid(container):
+			container.modulate = Color.WHITE
+			container.scale = Vector2.ONE
+			container.z_index = 0
+			_set_enemy_intent_overlay_visible(container, false, current_enemy_intent_preview_action.color)
+
+	current_enemy_intent_preview_action = null
+
+
+## 当敌人意图在回合中途失效时，播放“暗淡 -> 消失”动画并移除容器。
+func animate_enemy_intent_removal(action: TimelineAction) -> void:
+	if not is_instance_valid(action):
+		return
+
+	var action_id = action.get_instance_id()
+	if not action_containers.has(action_id):
+		return
+
+	var container = action_containers[action_id]
+	if not is_instance_valid(container):
+		action_containers.erase(action_id)
+		return
+
+	if current_enemy_intent_preview_action == action:
+		clear_enemy_intent_preview()
+
+	var tw = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tw.tween_property(container, "modulate", Color(0.35, 0.35, 0.35, 0.0), enemy_intent_removal_duration)
+	tw.parallel().tween_property(container, "scale", enemy_intent_removal_scale, enemy_intent_removal_duration)
+	tw.tween_callback(func():
+		if is_instance_valid(container):
+			container.queue_free()
+		action_containers.erase(action_id)
+	)
+
+
+## 对同一个敌人意图容器中的所有格子 overlay 统一设置显示状态与脉冲颜色。
+func _set_enemy_intent_overlay_visible(container: Control, visible: bool, color: Color) -> void:
+	for block in container.get_children():
+		if block is Panel:
+			var overlay = block.get_node_or_null("EnemyIntentOverlay")
+			if overlay and overlay is ColorRect:
+				overlay.visible = visible
+				if visible and overlay.material:
+					overlay.material.set_shader_parameter("pulse_color", color)
 
 
 # ==========================================
@@ -532,6 +698,9 @@ func clear_ui() -> void:
 ## 常态下禁用，仅当卡牌选中准备放置时启用
 func set_allow_click_to_expand(allow: bool) -> void:
 	allow_click_to_expand = allow
-	# 允许点击时为 PASS，不允许时为 IGNORE (彻底穿透)
-	mouse_filter = Control.MOUSE_FILTER_PASS if allow else Control.MOUSE_FILTER_IGNORE
-	GameLogger.debug("设置时间轴点击缩放权限: allow=" + str(allow) + " filter=" + str(mouse_filter), "TimelineUI")
+	# 关键修复：
+	# - 这里不再通过把 TimelineUI 整体设为 IGNORE 来禁用点击缩放。
+	# - 因为那样会让时间轴上的敌人意图方块也收不到 hover，导致无法联动回地图。
+	# - 现在统一保持 PASS，由 _gui_input 自己判断 allow_click_to_expand 决定是否处理点击。
+	mouse_filter = Control.MOUSE_FILTER_PASS
+	GameLogger.debug("设置时间轴点击缩放权限: allow=" + str(allow) + " filter保持为 PASS 以保留敌人意图 hover", "TimelineUI")

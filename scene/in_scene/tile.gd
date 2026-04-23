@@ -124,6 +124,29 @@ func get_possible_coords(coord : Vector2i, tile_info : Dictionary) -> bool:
 	if !tile_info[coord].has("landform")  or tile_info[coord]["landform"] != null:
 		return false
 	return true
+
+
+## 运行期生成/扩张用的简化判定
+## 说明:
+## - 这个判定不再复用“初始地图生成”阶段的高度/地形/密度规则。
+## - 它只关心当前格子是否存在、是否尚未被占据。
+## - 用于村庄扩张、祭坛召唤等“回合中途新增地块实体”的逻辑，
+##   防止初始生成限制（例如 max_landform_ratio、require_height 等）错误地影响运行期扩张行为。
+func can_spawn_runtime_at(coord: Vector2i, tile_info: Dictionary) -> bool:
+	var c = Vector2i(coord)
+	if not tile_info.has(c):
+		return false
+
+	var tile_data = tile_info[c]
+	if tile_data == null:
+		return false
+
+	if tile_data.has("landform") and tile_data["landform"] != null:
+		return false
+	if tile_data.has("landform_in") and tile_data["landform_in"] != null:
+		return false
+
+	return true
 	
 func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_step_h: float, tile_scale : float) -> void:
 	var tex: Texture2D = null
@@ -178,6 +201,63 @@ func Behavior(Step, info_in, Other, beha):
 	# 默认行为：什么也不做
 	# 子类可以重写此方法以实现特定行为
 	pass
+
+
+# ==========================================
+# ★ 敌人意图接口默认实现
+# ==========================================
+# 说明:
+# - 这些函数为未来的敌方/中立/友方单位提供统一接口。
+# - 默认实现全部是“安全降级”版本，目的不是产生意图，而是保证未实现完整意图逻辑的单位不会报错。
+# - 真正需要展示与生成时间轴意图的单位（如 village、祭坛等）应在子类中重写这些函数。
+
+## 当前单位是否启用“敌人意图展示系统”
+## 默认返回 false，意味着：
+## - 不会生成时间轴意图
+## - 地图 hover 时也不会触发新意图系统
+func is_intent_preview_enabled() -> bool:
+	return false
+
+
+## 返回详细意图描述文本
+## 默认返回一个通用字符串，仅作为兜底。
+func get_intent_description() -> String:
+	return "暂未配置意图"
+
+
+## 返回地图效果范围，完全复用卡牌 effect_range 格式
+## 默认只返回中心点
+func get_intent_effect_range() -> Variant:
+	return ["0,0"]
+
+
+## 返回当前意图的目标中心格
+## 默认无目标
+func get_intent_target_center_coord(_hex_map: battle) -> Variant:
+	return null
+
+
+## 判断当前是否可以生成有效意图
+## 默认返回 false，表示没有可用目标
+func can_generate_intent(_hex_map: battle) -> bool:
+	return false
+
+
+## 返回当前意图无效原因
+func get_intent_invalid_reason(_hex_map: battle) -> String:
+	return "无可用目标"
+
+
+## 返回目标阵营标签
+## 当前默认使用 enemy，未来可扩展为 neutral / ally
+func get_intent_target_affiliation() -> String:
+	return "enemy"
+
+
+## 当前意图是否覆盖自身
+## 默认 false
+func does_intent_include_self(_hex_map: battle) -> bool:
+	return false
 
 func set_battle(battle_in : battle):
 	owner_battle = battle_in
@@ -304,6 +384,11 @@ func die() -> void:
 	# 地貌变成“废墟”后，它依然是一个占据格子的实体，只是贴图变了。
 	# 如果直接 free() 销毁内存，HexMap 去查这个格子时就会导致 Null 空指针崩溃！
 	# free()
+
+	# Broken 虽然不 queue_free，但它的战斗行为/敌人意图应当视作已失效。
+	# 这里主动通知 HexMap 触发一次地形拓扑/意图重判。
+	if is_instance_valid(owner_battle) and owner_battle.has_signal("tile_topology_changed"):
+		owner_battle.tile_topology_changed.emit()
 
 # ==========================================
 # ★ 敌人意图接口

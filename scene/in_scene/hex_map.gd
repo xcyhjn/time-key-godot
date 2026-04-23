@@ -2,14 +2,38 @@
 # 功能: 地块生成与战斗地图管理
 extends Node2D
 class_name battle
+
+const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
+const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
 signal CreateBar(landform_in: landform, situation: int, x: float, y: float)
 signal enemy_roster_changed
+signal tile_topology_changed
 @export_group("Assets")
 @export var hex_top_tex: Texture2D
 @export var hex_side_tex: Texture2D
 @export var block_material: ShaderMaterial
 @export var label_bg_tex: Texture2D
+
+@export_group("敌人意图地图表现")
+## 地图意图 overlay 统一使用的框体贴图。推荐使用透明背景的六边形描边。
+@export var enemy_intent_frame_tex: Texture2D
+## 目标波纹 overlay 使用的独立 shader。若不手动指定，运行时自动回退到默认 shader。
+@export var enemy_intent_target_shader: Shader
+## 地图意图 overlay 的整体缩放倍率，1.0 为紧贴 hitbox，略大于 1 可以让边框更清晰。
+@export var enemy_intent_overlay_scale: float = 1.18
+## 地图意图 overlay 的层级，确保高于普通地块贴图与建筑贴图。
+@export var enemy_intent_overlay_z_index: int = 200
+## 施法者高亮描边粗细。逻辑来源于原 hex shader 的 highlight_width。
+@export var enemy_intent_source_highlight_width: float = 4.0
+## 目标波纹的运动速度。
+@export var enemy_intent_target_ripple_speed: float = 3.2
+## 目标波纹的密度（越高波纹越密）。
+@export var enemy_intent_target_ripple_density: float = 20.0
+## 目标波纹最小透明度。
+@export var enemy_intent_target_min_alpha: float = 0.2
+## 目标波纹最大透明度。
+@export var enemy_intent_target_max_alpha: float = 0.95
 
 @export_group("Grid Generation Settings")
 @export var map_generation_mode: int = 0  # 0=扇形战斗地图, 1=圆形随机地图
@@ -161,6 +185,9 @@ var hovered_stacks: Array[Area2D] = []
 var active_stack: Area2D = null
 var selected_stack: Area2D = null  # 记录当前被点击选中的地块
 var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明湮灭状态的地块
+var current_enemy_intent_source_stack: Area2D = null
+var current_enemy_intent_target_stacks: Array[Area2D] = []
+var current_enemy_intent_source_restore_state: Dictionary = {}
 
 ## 应用外部事件（整合自 node_2d.gd）
 func apply_external_event(payload: String) -> void:
@@ -180,6 +207,10 @@ func handle_event_logic():
 
 func _ready():
 	y_sort_enabled = true
+	if enemy_intent_frame_tex == null:
+		enemy_intent_frame_tex = ENEMY_INTENT_FRAME_TEXTURE
+	if enemy_intent_target_shader == null:
+		enemy_intent_target_shader = ENEMY_INTENT_TARGET_SHADER
 	# 连接到建筑行为信号
 	Signal_Bus.step_next.connect(_on_step_next)
 	
@@ -209,7 +240,7 @@ func _ready():
 	
 	enemy_pool = [
 		preload("res://scene/in_scene/enermy/village.gd"),
-		preload("res://scene/in_scene/enermy/blockhouse.gd")
+		#preload("res://scene/in_scene/enermy/blockhouse.gd")
 	]
 	var screen_size = get_viewport_rect().size
 	map_root.position = Vector2(screen_size.x * 0.5, screen_size.y * 0.3)
@@ -874,6 +905,10 @@ func _on_stack_hover(stack: Area2D, is_entered: bool):
 		hovered_stacks.erase(stack)
 		
 	_update_highlight()
+	
+	var intent_controller = get_node_or_null("../../ui/TimelineSystem/EnemyIntentManager")
+	if intent_controller and intent_controller.has_method("handle_map_stack_hover"):
+		intent_controller.handle_map_stack_hover(stack, is_entered)
 func _update_highlight():
 	hovered_stacks = hovered_stacks.filter(func(s): return is_instance_valid(s))
 	
@@ -999,6 +1034,7 @@ func update_all_stack_conditional_effects() -> void:
 	## 既然现在全面使用了状态机，我们只需要在这里强制清空所有高亮即可，防止残留。
 	_clear_all_aoe_highlights()
 	_clear_occlusion_effects()
+	clear_enemy_intent_preview(false)
 	
 # ==========================================
 # ★ 核心：动态湮灭遮挡物
@@ -1008,6 +1044,194 @@ func _clear_occlusion_effects() -> void:
 		if is_instance_valid(stack):
 			_tween_shader_param(stack, "dissolve_blend", 0.0, 0.12)
 	currently_occluding_stacks.clear()
+
+
+## 敌人意图地图预览入口
+## 作用:
+## - 根据 EnemyIntentData 在地图上同时显示：
+##   1. 施法者本体高亮
+##   2. 目标格波纹高亮
+## - 这里不做 tooltip，tooltip 由 EnemyIntentPresentationController 统一处理。
+func show_enemy_intent_preview(intent_data: EnemyIntentData, source_color: Color, target_color: Color) -> void:
+	clear_enemy_intent_preview(false)
+
+	if intent_data == null:
+		return
+
+	if stack_nodes.has(intent_data.source_coord):
+		var source_stack = stack_nodes[intent_data.source_coord]
+		if is_instance_valid(source_stack):
+			current_enemy_intent_source_stack = source_stack
+			_show_source_intent_highlight(source_stack, source_color)
+
+	var seen_targets: Dictionary = {}
+	for coord in intent_data.target_coords:
+		if seen_targets.has(coord):
+			continue
+		seen_targets[coord] = true
+		if not stack_nodes.has(coord):
+			continue
+		var target_stack = stack_nodes[coord]
+		if not is_instance_valid(target_stack):
+			continue
+		current_enemy_intent_target_stacks.append(target_stack)
+		_show_target_intent_overlay(target_stack, target_color)
+
+
+## 清除当前地图上的敌人意图预览
+## @param restore_card_hover
+## - true: 清完之后重新刷新卡牌选中高亮
+## - false: 只清理敌人意图，不打断当前其他流程
+func clear_enemy_intent_preview(restore_card_hover: bool = true) -> void:
+	if is_instance_valid(current_enemy_intent_source_stack):
+		_restore_source_intent_highlight(current_enemy_intent_source_stack)
+
+	for stack in current_enemy_intent_target_stacks:
+		if is_instance_valid(stack):
+			_hide_intent_overlay(stack, "EnemyIntentTargetOverlay")
+
+	current_enemy_intent_source_stack = null
+	current_enemy_intent_target_stacks.clear()
+
+	if restore_card_hover:
+		_update_highlight()
+
+
+## 显示“施法者”专用高亮 overlay
+## 施法者意图高亮（直接复用地块原本的高亮 shader 逻辑）
+## 说明:
+## - 按你的要求，这里不再额外挂一张外框贴图。
+## - 而是直接修改当前地块 stack 中已有 sprite 的 instance shader 参数，
+##   使用和原地块高亮同一套思路：
+##   - highlight_color
+##   - highlight_blend
+##   - is_selected_blend
+func _show_source_intent_highlight(stack: Area2D, color: Color) -> void:
+	if not is_instance_valid(stack):
+		return
+
+	var sprites = stack.get_meta("sprites") as Array
+	if sprites == null or sprites.is_empty():
+		return
+
+	current_enemy_intent_source_restore_state.clear()
+	current_enemy_intent_source_restore_state["stack"] = stack
+	current_enemy_intent_source_restore_state["values"] = []
+
+	for sprite in sprites:
+		if not is_instance_valid(sprite) or not sprite.material:
+			continue
+		current_enemy_intent_source_restore_state["values"].append({
+			"sprite": sprite,
+			"highlight_color": sprite.get_instance_shader_parameter("highlight_color"),
+			"highlight_blend": sprite.get_instance_shader_parameter("highlight_blend"),
+			"is_selected_blend": sprite.get_instance_shader_parameter("is_selected_blend")
+		})
+		sprite.set_instance_shader_parameter("highlight_color", color)
+		sprite.set_instance_shader_parameter("highlight_blend", 1.0)
+		sprite.set_instance_shader_parameter("is_selected_blend", 1.0)
+
+
+## 显示“目标地块”专用波纹 overlay
+func _show_target_intent_overlay(stack: Area2D, color: Color) -> void:
+	var overlay = _ensure_intent_overlay(stack, "EnemyIntentTargetOverlay", enemy_intent_target_shader)
+	if overlay == null:
+		return
+	_update_intent_overlay_transform(stack, overlay)
+	overlay.visible = true
+	if overlay.material:
+		overlay.material.set_shader_parameter("ripple_color", color)
+
+
+## 隐藏指定类型的敌人意图 overlay
+func _hide_intent_overlay(stack: Area2D, overlay_name: String) -> void:
+	if not is_instance_valid(stack):
+		return
+	var overlay = stack.get_node_or_null(overlay_name)
+	if overlay and overlay is Sprite2D:
+		overlay.visible = false
+
+
+func _restore_source_intent_highlight(stack: Area2D) -> void:
+	if not is_instance_valid(stack):
+		return
+	if current_enemy_intent_source_restore_state.is_empty():
+		return
+	if current_enemy_intent_source_restore_state.get("stack") != stack:
+		return
+
+	var restore_values = current_enemy_intent_source_restore_state.get("values", [])
+	for item in restore_values:
+		var sprite = item["sprite"]
+		if not is_instance_valid(sprite) or not sprite.material:
+			continue
+		sprite.set_instance_shader_parameter("highlight_color", item["highlight_color"])
+		sprite.set_instance_shader_parameter("highlight_blend", item["highlight_blend"])
+		sprite.set_instance_shader_parameter("is_selected_blend", item["is_selected_blend"])
+
+	current_enemy_intent_source_restore_state.clear()
+
+
+## 确保某个地块拥有指定名称的敌人意图 overlay。
+## 如果不存在则动态创建，并挂载独立 shader material。
+func _ensure_intent_overlay(stack: Area2D, overlay_name: String, shader: Shader) -> Sprite2D:
+	if not is_instance_valid(stack):
+		return null
+
+	var overlay = stack.get_node_or_null(overlay_name) as Sprite2D
+	if overlay == null:
+		overlay = Sprite2D.new()
+		overlay.name = overlay_name
+		overlay.texture = enemy_intent_frame_tex
+		overlay.centered = true
+		overlay.z_index = enemy_intent_overlay_z_index
+		overlay.visible = false
+
+		var material = ShaderMaterial.new()
+		material.shader = shader
+		overlay.material = material
+		stack.add_child(overlay)
+
+	_update_intent_overlay_transform(stack, overlay)
+	_configure_intent_overlay_material(overlay_name, overlay.material)
+	return overlay
+
+
+## 根据当前地块 hitbox 和视角状态，更新 overlay 的位置和缩放。
+## 说明:
+## - overlay 总是贴着当前地块顶部碰撞区域，而不是直接贴着最底层 sprite。
+func _update_intent_overlay_transform(stack: Area2D, overlay: Sprite2D) -> void:
+	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
+	if is_instance_valid(collision):
+		overlay.position = collision.position
+	else:
+		overlay.position = Vector2(hitbox_offset_x, hitbox_offset_y)
+
+	var tex_size = enemy_intent_frame_tex.get_size() if enemy_intent_frame_tex != null else Vector2.ONE
+	if tex_size.x > 0 and tex_size.y > 0:
+		overlay.scale = Vector2(
+			(hitbox_width / tex_size.x) * enemy_intent_overlay_scale,
+			(hitbox_base_height / tex_size.y) * enemy_intent_overlay_scale
+		)
+
+
+## 将导出的敌人意图地图表现参数写入对应的 shader material。
+## 说明:
+## - SourceOverlay 和 TargetOverlay 使用不同 shader，因此参数不同。
+func _configure_intent_overlay_material(overlay_name: String, material: Material) -> void:
+	if not (material is ShaderMaterial):
+		return
+
+	var shader_material = material as ShaderMaterial
+	if overlay_name == "EnemyIntentSourceOverlay":
+		shader_material.set_shader_parameter("highlight_blend", 1.0)
+		shader_material.set_shader_parameter("is_selected_blend", 1.0)
+		shader_material.set_shader_parameter("highlight_width", enemy_intent_source_highlight_width)
+	elif overlay_name == "EnemyIntentTargetOverlay":
+		shader_material.set_shader_parameter("ripple_speed", enemy_intent_target_ripple_speed)
+		shader_material.set_shader_parameter("ripple_density", enemy_intent_target_ripple_density)
+		shader_material.set_shader_parameter("min_alpha", enemy_intent_target_min_alpha)
+		shader_material.set_shader_parameter("max_alpha", enemy_intent_target_max_alpha)
 
 
 func _update_occlusion(target_stack: Area2D):
@@ -1169,6 +1393,7 @@ func _unhandled_input(event):
 func toggle_height_view() -> void:
 	if is_view_transitioning: return
 	is_view_transitioning = true
+	clear_enemy_intent_preview(false)
 	
 	if current_view_state == MapViewState.VIEW_3D:
 		current_view_state = MapViewState.VIEW_FLAT
@@ -1249,6 +1474,9 @@ func _create_height_indicator(stack: Area2D, original_height: int) -> void:
 		var label = Label.new()
 		label.name = "HeightIndicatorLabel"
 		label.text = str(original_height)
+		# 平铺视角数字仅用于显示，绝不能拦截地块的鼠标输入。
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.focus_mode = Control.FOCUS_NONE
 		
 		if height_label_font:
 			label.add_theme_font_override("font", height_label_font)
@@ -1366,6 +1594,7 @@ func set_visuals_locked(locked: bool) -> void:
 	if locked:
 		# 进入时间占位放置阶段时，保留高亮，但必须释放防遮挡消融，避免地块“消失”。
 		_clear_occlusion_effects()
+		clear_enemy_intent_preview(false)
 		var main_board = get_tree().get_first_node_in_group("MainBoard")
 		if main_board and is_instance_valid(main_board.get("cursor_tooltip")):
 			main_board.cursor_tooltip.hide()
@@ -1606,6 +1835,7 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	
 	await tw.finished
 	if is_instance_valid(stack): stack.set_meta("is_animating", false)
+	tile_topology_changed.emit()
 	
 ## 安全获取地块上的占位实体（地貌或敌人）
 func get_entity_at_hex(coord: Vector2i) -> Node:
@@ -1647,6 +1877,7 @@ func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
 		occupant.queue_free()
 	
 	enemy_roster_changed.emit()
+	tile_topology_changed.emit()
 	GameLogger.info("地块已从地图彻底抹除: " + str(coord), "HexMap")
 
 # ==========================================

@@ -214,6 +214,11 @@ func _generate_initial_enemy_intents() -> void:
 
 
 func _on_timeline_action_hovered(action: TimelineAction, is_hovering: bool):
+	# 敌方意图 hover 现在由 EnemyIntentPresentationController 直接监听 TimelineManager 信号处理。
+	# 这里对 ENEMY 类型直接返回，避免旧逻辑与新系统重复触发。
+	if action and action.type == TimelineAction.Type.ENEMY:
+		return
+
 	if is_hovering:
 		# ★ 修复：读取你 JSON 里设定的 "效果" 字段
 		var effect_text = action.action_data.get("效果", "发动未知技能！")

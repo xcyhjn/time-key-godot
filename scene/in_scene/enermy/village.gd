@@ -39,11 +39,11 @@ func get_possible_neighbor_coords(tile_info, rng: RandomNumberGenerator):
 			continue
 		var tile_data = tile_info[coord_key]
 		
-		# ★ 修复：调用新版签名，只传 坐标 和 整个地图数据(tile_info)
-		# 注意：get_possible_coords 返回 true 代表可以放置。如果要找空地，应该取反 (not)。
-		# 如果你之前写了自定义的 check_can_expand(tile_data)，也可以直接用那个。
-		if not get_possible_coords(coord_key, tile_info):
-			continue  # 无法放置或已被占用，跳过
+		# ★ 关键修复：
+		# 村庄扩张属于“运行期新增地貌”，不应该再复用初始地图生成时的高度/地形/密度限制。
+		# 这里改为只检查运行期是否可占据该格。
+		if not can_spawn_runtime_at(coord_key, tile_info):
+			continue
 		
 		result.append(coord)
 	return result
@@ -172,27 +172,85 @@ func Behavior(Step, info_in, Other, beha):
 		willing_pool.keys()[willing].call(info_in, rng)
 		will = true
 		print(willing_pool.keys()[willing])
-	
 
-	
-## 重写意图行动方法，为村庄添加"扩张1"文本描述
+
+## ==========================================
+## ★ 敌人意图接口（供 EnemyIntentResolver 调用）
+## ==========================================
+
+## 村庄显式启用意图展示与时间轴意图生成
+func is_intent_preview_enabled() -> bool:
+	return State_Main != Main_State_Pool.Broken
+
+
+## 返回详细意图文本，供 tooltip 显示
+func get_intent_description() -> String:
+	return "扩张1：向相邻空地扩建1格"
+
+
+## 返回地图效果范围，完全复用卡牌 effect_range 的格式
+## 村庄扩张只作用于目标中心本身，因此返回单点
+func get_intent_effect_range() -> Variant:
+	return ["0,0"]
+
+
+## 返回当前展示用的目标中心格
+func get_intent_target_center_coord(hex_map: battle) -> Variant:
+	if not is_instance_valid(hex_map):
+		return null
+
+	var possible_targets = get_possible_neighbor_coords(hex_map.map_data, RandomNumberGenerator.new())
+	if possible_targets.is_empty():
+		return null
+
+	return possible_targets[0]
+
+
+## 判定当前回合能否生成有效意图
+func can_generate_intent(hex_map: battle) -> bool:
+	if State_Main == Main_State_Pool.Broken:
+		return false
+	return get_intent_target_center_coord(hex_map) != null
+
+
+## 返回当前意图无效原因
+func get_intent_invalid_reason(hex_map: battle) -> String:
+	if State_Main == Main_State_Pool.Broken:
+		return "建筑已损毁"
+	if can_generate_intent(hex_map):
+		return ""
+	return "无可用目标"
+
+
+## 目标阵营标签，后续可扩展 neutral / ally
+func get_intent_target_affiliation() -> String:
+	return "enemy"
+
+
+## 村庄扩张不覆盖自身
+func does_intent_include_self(_hex_map: battle) -> bool:
+	return false
+
+
+## 重写意图行动方法，为村庄添加详细意图描述和 effect_range
 func get_intent_action(target_tile: Node = null) -> TimelineAction:
-	# 创建时间轴行动 - 使用正确的构造函数参数
 	var action_data = {
-		"效果": "扩张1",  # 村庄特有的行为描述
+		"效果": get_intent_description(),
 		"类型": landform_name,
 		"位置": location,
-		"目标": target_tile.position if target_tile else Vector2.ZERO
+		"目标": target_tile.position if target_tile else Vector2.ZERO,
+		"effect_range": get_intent_effect_range(),
+		"invalid_reason": get_intent_invalid_reason(owner_battle)
 	}
-	
+
 	var action = TimelineAction.new(
-		TimelineAction.Type.ENEMY,  # p_type
-		self,                       # p_source
-		target_tile,                # p_target
-		get_intent_shape(),         # p_coords
-		Color(0.8, 0.2, 0.2, 0.8), # p_color
-		action_data                 # p_data
+		TimelineAction.Type.ENEMY,
+		self,
+		target_tile,
+		get_intent_shape(),
+		Color(0.8, 0.2, 0.2, 0.8),
+		action_data
 	)
-	
-	GameLogger.debug("创建村庄意图行动: %s, 效果: 扩张1" % landform_name, "village")
+
+	GameLogger.debug("创建村庄意图行动: %s, 效果: %s" % [landform_name, action_data["效果"]], "village")
 	return action

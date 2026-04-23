@@ -284,6 +284,7 @@ func find_random_available_spot(shape_coords: Array[Vector2i]) -> Vector2i:
 # ==========================================
 func generate_enemy_intents(enemies_on_board: Array):
 	var current_intent_count = 0
+	var hex_map = get_tree().current_scene.get_node_or_null("map/HexMap") if get_tree().current_scene else null
 
 	# 为了防止每次生成的顺序固定，我们先把敌人列表打乱
 	enemies_on_board.shuffle()
@@ -298,6 +299,16 @@ func generate_enemy_intents(enemies_on_board: Array):
 
 		# 2. 检查这个敌人有没有编写意图接口 (比如刚才写的 GrassEnemy)
 		if enemy.has_method("get_intent_shape") and enemy.has_method("get_intent_action"):
+			# 只有显式启用“敌人意图展示系统”的单位，才参与新意图链路。
+			# 这样别的敌人实体即使还没填接口，也只会安全跳过。
+			if enemy.has_method("is_intent_preview_enabled") and not enemy.is_intent_preview_enabled():
+				continue
+			# 如果当前回合没有合法目标，则时间轴阶段直接跳过它。
+			# 但地图 hover 侧依然可以由展示控制器显示“无可用目标”的灰态提示。
+			if is_instance_valid(hex_map) and enemy.has_method("can_generate_intent") and not enemy.can_generate_intent(hex_map):
+				GameLogger.debug("敌人当前无合法目标，跳过时间轴意图生成: %s" % enemy.name, "TimelineManager")
+				continue
+
 			GameLogger.info("生成敌人意图: 敌人=%s, 类型=%s" % [enemy.name, enemy.get_class()], "TimelineManager")
 			var shape = enemy.get_intent_shape()
 			GameLogger.info("敌人形状: " + str(shape), "TimelineManager")
@@ -306,11 +317,12 @@ func generate_enemy_intents(enemies_on_board: Array):
 			var spot = find_random_available_spot(shape)
 
 			if spot != Vector2i(-1, -1):
-				# ====================================
-				# TODO: 索敌逻辑 (目前暂用随机地块替代)
-				# 你以后可以写一个方法去拿真正的玩家基地节点
-				# ====================================
 				var target_tile = null
+				# 将地图上的“目标中心格”真正映射成 stack，确保时间轴意图与地图侧目标一致。
+				if is_instance_valid(hex_map) and enemy.has_method("get_intent_target_center_coord"):
+					var target_coord = enemy.get_intent_target_center_coord(hex_map)
+					if target_coord != null and hex_map.stack_nodes.has(target_coord):
+						target_tile = hex_map.stack_nodes[target_coord]
 
 				# 呼叫敌人自身，生成完整的 TimelineAction 数据
 				var action = enemy.get_intent_action(target_tile)
@@ -322,6 +334,58 @@ func generate_enemy_intents(enemies_on_board: Array):
 			else:
 				#GameLogger.warning("⚠️ 找不到能放下形状 %s 的空位了！" % shape, "TimelineManager")
 				pass
+
+
+## 重判当前时间轴中的敌人意图是否合法
+## 触发时机:
+## - 地块升降
+## - 地块销毁
+## - 敌人名单变化
+##
+## 作用:
+## - 若某个敌人意图从“原本有效”变成“当前无效”，则让时间轴对应方块暗淡后移除
+## - 这样可以满足你提出的“回合中途被打消意图”的需求
+func revalidate_enemy_intents(hex_map: battle, timeline_ui: Control = null) -> void:
+	if not is_instance_valid(hex_map):
+		return
+
+	var processed: Dictionary = {}
+	var invalid_actions: Array[TimelineAction] = []
+
+	for action in grid.values():
+		if action == null or action.type != TimelineAction.Type.ENEMY:
+			continue
+
+		var action_id = action.get_instance_id()
+		if processed.has(action_id):
+			continue
+		processed[action_id] = true
+
+		var source = action.source_node
+		if not is_instance_valid(source):
+			invalid_actions.append(action)
+			continue
+
+		if source.has_method("is_intent_preview_enabled") and not source.is_intent_preview_enabled():
+			invalid_actions.append(action)
+			continue
+
+		if source.has_method("can_generate_intent") and not source.can_generate_intent(hex_map):
+			invalid_actions.append(action)
+
+	if invalid_actions.is_empty():
+		return
+
+	for action in invalid_actions:
+		if timeline_ui and timeline_ui.has_method("animate_enemy_intent_removal"):
+			timeline_ui.animate_enemy_intent_removal(action)
+
+		for coord in action.get_absolute_coords():
+			grid.erase(coord)
+
+		if hovered_action == action:
+			action_hovered_changed.emit(action, false)
+			hovered_action = null
 
 
 func _on_block_hovered(action: TimelineAction):

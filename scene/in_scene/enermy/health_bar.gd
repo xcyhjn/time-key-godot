@@ -6,6 +6,15 @@ var HealthBar : Array[PackedScene] = [
 	preload("res://scene/in_scene/enermy/health_bar_enemy.tscn")
 ]
 
+@export_group("单体血条位置")
+## 单体血条相对建筑锚点的世界偏移。
+## 负 Y 会将血条整体上抬，减少对地块碰撞热区的遮挡。
+@export var health_bar_world_offset: Vector2 = Vector2(0.0, -56.0)
+## 单体血条缩放倍率。若觉得数字或血条过大挡住地块，可适当调小。
+@export var health_bar_scale: Vector2 = Vector2(2.2, 2.2)
+## 为每个血条 root 预留的小尺寸范围，避免使用全屏根控件导致 hover 热区异常。
+@export var health_bar_root_size: Vector2 = Vector2(240.0, 48.0)
+
 func _ready() -> void:
 	# 确保父节点 (HexMap) 存在此信号并连接
 	var parent = get_parent()
@@ -41,13 +50,21 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 		# ★ 新增：关闭血条及其所有子节点的鼠标拦截
 		_set_mouse_ignore_recursive(HealthBuffer)
 		HealthBuffer.z_index = 999
+		if HealthBuffer is Control:
+			HealthBuffer.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			HealthBuffer.anchor_right = 0.0
+			HealthBuffer.anchor_bottom = 0.0
+			HealthBuffer.size = health_bar_root_size
+			HealthBuffer.custom_minimum_size = health_bar_root_size
+			HealthBuffer.focus_mode = Control.FOCUS_NONE
+			HealthBuffer.set_as_top_level(true)
 		
 		# 为血条节点设置唯一名称，方便 HexMap 查找
 		HealthBuffer.name = "HealthBar_" + str(landform_in.get_instance_id())
 		
 		# 这里的 x, y 是 tile.gd 传过来的 global_position
-		HealthBuffer.global_position = Vector2(x, y)
-		HealthBuffer.scale = Vector2(2.5, 2.5)
+		HealthBuffer.global_position = Vector2(x, y) + health_bar_world_offset
+		HealthBuffer.scale = health_bar_scale
 		
 		# 传递初始化数据
 		HealthBuffer.Show_name = landform_in.landform_name
@@ -71,5 +88,6 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 func _set_mouse_ignore_recursive(node: Node):
 	if node is Control:
 		node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		node.focus_mode = Control.FOCUS_NONE
 	for child in node.get_children():
 		_set_mouse_ignore_recursive(child)

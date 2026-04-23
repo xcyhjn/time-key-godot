@@ -167,10 +167,13 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 		timeline_ui.is_expanded = false
 		timeline_ui.toggle_expand()
 
-	# 禁用时间轴UI和地块容器的鼠标交互，防止点击被拦截
+	# 关键修复：
+	# - 不再整体禁用 TimelineUI 的鼠标交互。
+	# - 否则时间轴上的敌人意图方格将完全收不到 hover，无法在拖拽阶段联动回地图。
+	# - 真正需要禁用的是普通网格单元格点击，因此仍然保留 _disable_grid_cells_mouse_filter()。
 	if timeline_ui and timeline_ui is Control:
-		timeline_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	GameLogger.debug("已禁用时间轴UI鼠标交互", "DragShapeController")
+		timeline_ui.mouse_filter = Control.MOUSE_FILTER_PASS
+	GameLogger.debug("保留时间轴UI鼠标悬浮能力，仅禁用普通网格单元格交互", "DragShapeController")
 	
 	var hex_map = _get_hex_map()
 	if hex_map and hex_map.has_method("set_tiles_interactive"):

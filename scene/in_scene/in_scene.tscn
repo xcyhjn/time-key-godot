@@ -15,7 +15,7 @@
 [ext_resource type="Script" uid="uid://b57d8s2xwou05" path="res://scene/in_scene/timeline/TimelineManager.gd" id="13_4x367"]
 [ext_resource type="Script" uid="uid://cgstk6buif658" path="res://scene/in_scene/DragShapeController.gd" id="14_j0ayu"]
 [ext_resource type="Shader" uid="uid://dr2hh00drgq38" path="res://shaders/shape_drag_state.gdshader.gdshader" id="15_wk3vv"]
-[ext_resource type="Script" uid="uid://cpufturn45tyx" path="res://scene/in_scene/enermy/enemy_intent_manager.gd" id="16_vl7dm"]
+[ext_resource type="Script" uid="uid://bsu4rikfw5iho" path="res://scene/in_scene/enermy/enemy_intent_presentation_controller.gd" id="16_vl7dm"]
 [ext_resource type="Script" uid="uid://o24takqau3p" path="res://scene/in_scene/timeline/timeline_visualizer.gd" id="17_utgoe"]
 [ext_resource type="Script" uid="uid://dxge25pjqhhag" path="res://scene/in_scene/in_scene.gd" id="18_0vlha"]
 [ext_resource type="Shader" uid="uid://d3sbyeeqsa34" path="res://shaders/pulse_highlight.gdshader.gdshader" id="19_b3wb3"]
