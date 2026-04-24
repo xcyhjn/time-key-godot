@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="TooltipConfig" format=3 uid="uid://da12v4vjnity7"]
+
+[ext_resource type="Script" uid="uid://be7g8lnxb0hoi" path="res://scene/shared/tooltip/tooltip_config.gd" id="1_o3kis"]
+
+[resource]
+script = ExtResource("1_o3kis")

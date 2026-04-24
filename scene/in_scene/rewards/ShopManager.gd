@@ -64,44 +64,16 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 @export var weight_next_era: float = 0.09       # 下一个时代: 9%
 @export var weight_next_next_era: float = 0.01  # 下两个时代: 1%
 
-@export_group("Tooltip系统配置 (从project.gd移植)")
-@export var tooltip_width: int = 220  # 词条框宽度
-@export var tooltip_spacing: int = 8  # 多个框之间的上下间距
-@export var tooltip_bottom_margin: int = 2  # 距离屏幕底部的安全距离
-@export var tooltip_border_width: int = 2  # 边框粗细
-@export var tooltip_border_color: Color = Color(0.8, 0.6, 0.2, 1.0)
-@export var tooltip_bg_color: Color = Color(0.12, 0.12, 0.12, 0.95)
-@export var tooltip_title_size: int = 18
-@export var tooltip_desc_size: int = 14
-@export var tooltip_desc_color: Color = Color(0.9, 0.9, 0.9, 1.0)
-@export var tooltip_effect_font_size: int = 16  # 卡牌效果文本字体大小
-@export var tooltip_effect_font_color: Color = Color(0.95, 0.95, 0.95, 1.0)  # 卡牌效果文本颜色
-@export var tooltip_effect_font: Font  # 卡牌效果文本字体（可选）
-
-@export_group("Tooltip布局配置")
-@export var tooltip_offset_x: int = 15  # 效果框与卡牌的 X 轴间距
-@export var tooltip_offset_y: int = 0  # 效果框与卡牌顶部的 Y 轴偏移 (0 代表完美齐平)
-@export var tooltip_gap_x: int = 15  # 效果框与右侧词条列、列与列之间的横向间距
-@export var effect_panel_width: int = 240  # 主效果框的宽度
-@export var max_keywords_per_column: int = 3  # 单列最多显示的词条数
+@export_group("Tooltip资源配置")
+@export var tooltip_config: TooltipConfig = preload("res://scene/shared/tooltip/reward_card_tooltip_config.tres")
 
 @export_group("卡牌排版配置")
 @export var card_display_size: Vector2 = Vector2(125, 175)  # 动态控制生成的卡牌大小
 @export var card_spacing_x: int = 20  # 卡牌水平间距
 @export var card_spacing_y: int = 20  # 卡牌垂直间距
 
-## ==========================================
-## ★ Tooltip系统变量
-## ==========================================
-
-# Tooltip UI组件
-var effect_tooltip_panel: PanelContainer
-var effect_label: RichTextLabel
-var keywords_tooltip_hbox: HBoxContainer
-var current_hovered_card: Control = null
-var tooltip_vbox: VBoxContainer  # 改为纵向容器
-var current_tooltip_card: Control = null
-var tooltip_ui_initialized = false
+## 商店页面只保留 Tooltip 触发职责，UI 构建与定位交给共享 presenter。
+var tooltip_presenter: CardTooltipPresenter = null
 
 ## ==========================================
 ## ★ 核心生命周期方法
@@ -142,6 +114,8 @@ func _ready():
 	
 	# ⚠️ 注意：不要在这里调用 _generate_shop_items()
 	# 除非你希望游戏一启动商店就在后台偷偷生成好了
+
+	_setup_tooltip_presenter()
 	
 	_update_price_display()
 	_initialized = true
@@ -601,9 +575,9 @@ func _get_cards_by_era(era: int) -> Array[String]:
 
 ## 查找 global_clock 单例
 func _find_global_clock() -> Node:
-	# 方案1: 从自动加载单例中查找
-	if Engine.has_singleton("GlobalClock"):
-		return Engine.get_singleton("GlobalClock")
+	# 方案1: 直接从 /root 读取 autoload。
+	if has_node("/root/GlobalClock"):
+		return get_node("/root/GlobalClock")
 	
 	# 方案2: 从场景根节点递归查找
 	var scene_root = get_tree().root
@@ -611,14 +585,17 @@ func _find_global_clock() -> Node:
 	if found:
 		return found
 	
-	# 方案3: 尝试通过节点名查找
+	# 方案3: 兼容不同命名风格
+	var by_name = scene_root.find_child("GlobalClock", true, false)
+	if by_name:
+		return by_name
 	return scene_root.find_child("global_clock", true, false)
 
 ## 查找 global_timecoin 单例
 func _find_global_timecoin() -> Node:
-	# 方案1: 从自动加载单例中查找
-	if Engine.has_singleton("GlobalTimecoin"):
-		return Engine.get_singleton("GlobalTimecoin")
+	# 方案1: 直接从 /root 读取 autoload。
+	if has_node("/root/GlobalTimecoin"):
+		return get_node("/root/GlobalTimecoin")
 	
 	# 方案2: 从场景根节点递归查找
 	var scene_root = get_tree().root
@@ -626,7 +603,10 @@ func _find_global_timecoin() -> Node:
 	if found:
 		return found
 	
-	# 方案3: 尝试通过节点名查找
+	# 方案3: 兼容不同命名风格
+	var by_name = scene_root.find_child("GlobalTimecoin", true, false)
+	if by_name:
+		return by_name
 	return scene_root.find_child("global_timecoin", true, false)
 
 ## 递归查找包含指定脚本的节点 (模仿 TimelineManager)
@@ -793,119 +773,22 @@ func _extract_card_description(real_card: Node) -> String:
 
 	return ""
 
-## ==========================================
-## ★ Tooltip系统 (从project.gd移植，简化版)
-## ==========================================
-
-func _setup_tooltip_ui():
-	# 创建tooltip画布层
-	var tooltip_canvas = CanvasLayer.new()
-	tooltip_canvas.layer = 2000  # 最高层级
-	add_child(tooltip_canvas)
-	
-	# 效果面板
-	effect_tooltip_panel = PanelContainer.new()
-	effect_tooltip_panel.z_index = 1000
-	effect_tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	effect_tooltip_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	effect_tooltip_panel.hide()
-	tooltip_canvas.add_child(effect_tooltip_panel)
-	
-	# 样式设置
-	var style = StyleBoxFlat.new()
-	style.bg_color = tooltip_bg_color
-	style.border_width_left = tooltip_border_width
-	style.border_width_top = tooltip_border_width
-	style.border_width_right = tooltip_border_width
-	style.border_width_bottom = tooltip_border_width
-	style.border_color = tooltip_border_color
-	style.set_corner_radius_all(6)
-	effect_tooltip_panel.add_theme_stylebox_override("panel", style)
-	
-	# 边距容器
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 15)
-	margin.add_theme_constant_override("margin_right", 15)
-	margin.add_theme_constant_override("margin_top", 15)
-	margin.add_theme_constant_override("margin_bottom", 15)
-	effect_tooltip_panel.add_child(margin)
-	
-	# 效果文本标签
-	effect_label = RichTextLabel.new()
-	effect_label.bbcode_enabled = true
-	effect_label.fit_content = true
-	effect_label.custom_minimum_size = Vector2(effect_panel_width, 0)
-	effect_label.add_theme_font_size_override("normal_font_size", tooltip_effect_font_size)
-	effect_label.add_theme_color_override("default_color", tooltip_effect_font_color)
-	if tooltip_effect_font != null:
-		effect_label.add_theme_font_override("normal_font", tooltip_effect_font)
-	margin.add_child(effect_label)
-	
-	# 关键词容器 (简化版，不显示关键词)
-	keywords_tooltip_hbox = HBoxContainer.new()
-	keywords_tooltip_hbox.z_index = 1000
-	keywords_tooltip_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	keywords_tooltip_hbox.add_theme_constant_override("separation", tooltip_gap_x)
-	keywords_tooltip_hbox.hide()
-	tooltip_canvas.add_child(keywords_tooltip_hbox)
-	
-	tooltip_ui_initialized = true
-	print("✅ ShopManager: Tooltip UI已初始化")
+## 初始化共享 Tooltip presenter。
+## 商店场景不展示关键词列，因此第三个参数固定为 false。
+func _setup_tooltip_presenter() -> void:
+	if tooltip_presenter != null:
+		return
+	tooltip_presenter = CardTooltipPresenter.new(self, tooltip_config, false)
 
 # 显示tooltip (简化版，只显示效果文本)
 func show_tooltip(card: Control):
-	# 确保Tooltip UI已初始化
-	if effect_tooltip_panel == null:
-		_setup_tooltip_ui()
-	
-	current_hovered_card = card
-	
-	# 获取描述文本
-	var description_text = ""
-	if card.has_method("get_parsed_description"):
-		description_text = card.get_parsed_description()
-	elif card.has("raw_description"):
-		description_text = card.raw_description
-	
-	if description_text == null:
-		description_text = ""
-	
-	effect_label.clear()
-	effect_label.append_text(description_text if description_text != "" else "无效果文本")
-	
-	# 重置面板尺寸
-	effect_tooltip_panel.size = Vector2.ZERO
-	effect_tooltip_panel.modulate = Color(1, 1, 1, 0)
-	effect_tooltip_panel.show()
-	
-	# 等待一帧计算尺寸
-	await get_tree().process_frame
-	if current_hovered_card != card:
-		return
-	
-	# 计算位置
-	var screen_size = get_viewport().get_visible_rect().size
-	var actual_card_width = card.size.x * card.scale.x
-	
-	var eff_w = effect_tooltip_panel.size.x
-	var eff_h = effect_tooltip_panel.size.y
-	var eff_x = card.global_position.x + actual_card_width + tooltip_offset_x
-	var eff_y = card.global_position.y + tooltip_offset_y
-	
-	# 边界检查
-	if eff_x + eff_w > screen_size.x:
-		eff_x = card.global_position.x - eff_w - tooltip_offset_x
-	
-	if eff_y + eff_h > screen_size.y - tooltip_bottom_margin:
-		eff_y = screen_size.y - eff_h - tooltip_bottom_margin
-	
-	effect_tooltip_panel.global_position = Vector2(eff_x, eff_y)
-	effect_tooltip_panel.modulate = Color(1, 1, 1, 1)
+	_setup_tooltip_presenter()
+	tooltip_presenter.show_card_tooltip(card, {
+		"show_keywords": false,
+		"fallback_text": "无效果文本",
+	})
 
 # 隐藏tooltip
 func hide_tooltip(card: Control = null):
-	current_hovered_card = null
-	if is_instance_valid(effect_tooltip_panel):
-		effect_tooltip_panel.hide()
-	if is_instance_valid(keywords_tooltip_hbox):
-		keywords_tooltip_hbox.hide()
+	if tooltip_presenter != null:
+		tooltip_presenter.hide_tooltip()

@@ -58,9 +58,8 @@ var current_deck_cards: Array = []
 var current_deck_entries: Array = []
 var can_close_selection_without_choice: bool = false
 
-var _tooltip_panel: PanelContainer = null
-var _tooltip_label: RichTextLabel = null
-var _current_tooltip_card: Control = null
+## 合成页面内部也复用统一的卡牌 Hover Tooltip。
+var tooltip_presenter: CardTooltipPresenter = null
 
 @export_group("场景配置")
 @export var deck_grid_columns: int = 4
@@ -83,6 +82,9 @@ var _current_tooltip_card: Control = null
 @export var result_tooltip_offset_y: int = 0
 @export var result_tooltip_max_width: int = 260
 
+@export_group("Tooltip资源配置")
+@export var tooltip_config: TooltipConfig = preload("res://scene/shared/tooltip/reward_card_tooltip_config.tres")
+
 
 func _ready() -> void:
 	slot1.pressed.connect(_on_slot_pressed.bind(SLOT_1))
@@ -104,6 +106,7 @@ func _ready() -> void:
 	connection_lines.points = PackedVector2Array()
 	_apply_preview_padding()
 	_setup_result_description_panel()
+	_setup_tooltip_presenter()
 
 	_reset_crafting_state()
 	_set_board_mode()
@@ -846,87 +849,22 @@ func _try_find_card_manager() -> void:
 		deck_manager = card_manager_node
 
 
-func show_tooltip(card: Control) -> void:
-	if _tooltip_panel == null:
-		_create_tooltip_panel()
-
-	_current_tooltip_card = card
-
-	var description_text = ""
-	if card.has_method("get_parsed_description"):
-		description_text = card.get_parsed_description()
-	elif card.has("raw_description"):
-		description_text = card.raw_description
-
-	if description_text == null:
-		description_text = ""
-
-	_tooltip_label.clear()
-	_tooltip_label.append_text(description_text if description_text != "" else "无效果文本")
-	_tooltip_panel.size = Vector2.ZERO
-	_tooltip_panel.modulate = Color(1, 1, 1, 0)
-	_tooltip_panel.show()
-
-	await get_tree().process_frame
-	if _current_tooltip_card != card:
+## 初始化共享 Tooltip presenter。
+## 合成界面的 Hover 卡牌目前只显示主效果框，不显示关键词列。
+func _setup_tooltip_presenter() -> void:
+	if tooltip_presenter != null:
 		return
+	tooltip_presenter = CardTooltipPresenter.new(self, tooltip_config, false)
 
-	var screen_size = get_viewport().get_visible_rect().size
-	var actual_card_width = card.size.x * card.scale.x
-	var panel_w = _tooltip_panel.size.x
-	var panel_h = _tooltip_panel.size.y
-	var panel_x = card.global_position.x + actual_card_width + 15
-	var panel_y = card.global_position.y
 
-	if panel_x + panel_w > screen_size.x:
-		panel_x = card.global_position.x - panel_w - 15
-
-	if panel_y + panel_h > screen_size.y - 2:
-		panel_y = screen_size.y - panel_h - 2
-
-	_tooltip_panel.global_position = Vector2(panel_x, panel_y)
-	_tooltip_panel.modulate = Color(1, 1, 1, 1)
+func show_tooltip(card: Control) -> void:
+	_setup_tooltip_presenter()
+	tooltip_presenter.show_card_tooltip(card, {
+		"show_keywords": false,
+		"fallback_text": "无效果文本",
+	})
 
 
 func hide_tooltip(_card: Control = null) -> void:
-	_current_tooltip_card = null
-	if _tooltip_panel != null and is_instance_valid(_tooltip_panel):
-		_tooltip_panel.hide()
-
-
-func _create_tooltip_panel() -> void:
-	var tooltip_canvas = CanvasLayer.new()
-	tooltip_canvas.layer = 2000
-	add_child(tooltip_canvas)
-
-	_tooltip_panel = PanelContainer.new()
-	_tooltip_panel.z_index = 1000
-	_tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tooltip_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	_tooltip_panel.hide()
-	tooltip_canvas.add_child(_tooltip_panel)
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.12, 0.95)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.8, 0.6, 0.2, 1.0)
-	style.set_corner_radius_all(6)
-	_tooltip_panel.add_theme_stylebox_override("panel", style)
-
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 15)
-	margin.add_theme_constant_override("margin_right", 15)
-	margin.add_theme_constant_override("margin_top", 15)
-	margin.add_theme_constant_override("margin_bottom", 15)
-	_tooltip_panel.add_child(margin)
-
-	_tooltip_label = RichTextLabel.new()
-	_tooltip_label.bbcode_enabled = true
-	_tooltip_label.fit_content = true
-	_tooltip_label.custom_minimum_size = Vector2(240, 0)
-	_tooltip_label.add_theme_font_size_override("normal_font_size", 16)
-	_tooltip_label.add_theme_color_override("default_color", Color(0.95, 0.95, 0.95, 1.0))
-	margin.add_child(_tooltip_label)
+	if tooltip_presenter != null:
+		tooltip_presenter.hide_tooltip()

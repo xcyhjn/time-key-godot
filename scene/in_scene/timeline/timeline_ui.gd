@@ -125,6 +125,7 @@ func _ready():
 
 	# 应用响应式锚点布局
 	_apply_anchor_layout()
+	shape_layer.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	# 设置时间轴层级，确保在卡牌之下但在其他UI之上
 	z_index = 100

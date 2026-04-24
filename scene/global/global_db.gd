@@ -4,7 +4,8 @@
 extends Node
 
 # ★ 新增：玩家当前的逻辑牌组（存储卡牌的 ID 字符串）
-var player_deck: Array[String] = ["1", "1","1","1","1","1","1","2","2","2","3","3","3","3",]
+const STARTER_DECK: Array[String] = ["1", "1", "1", "1", "1", "1", "1", "2", "2", "2", "3", "3", "3", "3"]
+var player_deck: Array[String] = STARTER_DECK.duplicate()
 ## 关键词库：包含颜色和详细解释
 const KEYWORDS: Dictionary = {
 	"消耗": {
@@ -43,3 +44,10 @@ const ICONS: Dictionary = {
 	"[ATK]": "res://图片/fc155.png",
 	"[能量]": "res://图片/fc172.png"
 }
+
+
+## 把当前玩家牌组重置为开局默认牌组。
+## 新开局时应调用这个接口，而不是在外部硬编码一份初始数组，
+## 这样后续如果你调整 starter deck，只改这里一处就够了。
+func reset_player_deck() -> void:
+	player_deck = STARTER_DECK.duplicate()

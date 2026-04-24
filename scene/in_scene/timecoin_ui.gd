@@ -105,8 +105,13 @@ func _ready() -> void:
 	# 连接全局时间币信号
 	_connect_global_signals()
 	
-	# 初始化显示
-	_update_display(0)
+	# 初始化显示：
+	# 这里绝不能直接写死成 0，否则会把 _connect_global_signals()
+	# 中已经同步到的真实全局数值重新覆盖掉。
+	# 因此改为显式从 GlobalTimecoin 读取一次当前值。
+	_refresh_display_from_global()
+	# 再延迟一帧补一次兜底刷新，防止极端情况下 Autoload 与 UI 初始化时序交错。
+	call_deferred("_refresh_display_from_global")
 	
 	print("[TimecoinUI] UI 已初始化，原始位置: %s, 原始缩放: %s" % [original_position, original_scale])
 
@@ -139,6 +144,16 @@ func _connect_global_signals() -> void:
 			_update_display(initial_amount)
 	else:
 		push_error("[TimecoinUI] 无法找到 GlobalTimecoin 单例，请确保已添加到项目设置的 Autoload 中")
+
+
+## 主动从 GlobalTimecoin 拉取一次当前值并刷新标签。
+## 这个函数的意义是把“初始显示”与“信号更新”拆开：
+## - 信号负责后续增减变化
+## - 这里负责场景刚打开时立刻显示真实库存
+func _refresh_display_from_global() -> void:
+	var timecoin_singleton = _get_timecoin_singleton()
+	if timecoin_singleton and timecoin_singleton.has_method("get_timecoins"):
+		_update_display(timecoin_singleton.get_timecoins())
 
 
 # 尝试获取时间币单例的多种方式

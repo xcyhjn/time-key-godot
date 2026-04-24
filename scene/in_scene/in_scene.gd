@@ -74,47 +74,34 @@ var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
 @onready var combat_victory_banner = $"../../combat_victory_banner"
 
 # ================================
-# ★ 导出调整项：词条 UI 外观
+# ★ 导出调整项：Tooltip 资源
 # ================================
-@export_group("词条UI调整栏 (Tooltip)")
-@export var tooltip_width: int = 220  # 词条框宽度
-@export var tooltip_spacing: int = 8  # 多个框之间的上下间距
-@export var tooltip_bottom_margin: int = 2  # 距离屏幕底部的安全距离
-@export var tooltip_border_width: int = 2  # 边框粗细
-@export var tooltip_border_color: Color = Color(0.8, 0.6, 0.2, 1.0)
-@export var tooltip_bg_color: Color = Color(0.12, 0.12, 0.12, 0.95)
-@export var tooltip_title_size: int = 18
-@export var tooltip_desc_size: int = 14
-@export var tooltip_desc_color: Color = Color(0.9, 0.9, 0.9, 1.0)
-@export var tooltip_effect_font_size: int = 16  # 卡牌效果文本字体大小
-@export var tooltip_effect_font_color: Color = Color(0.95, 0.95, 0.95, 1.0)  # 卡牌效果文本颜色
-@export var tooltip_effect_font: Font  # 卡牌效果文本字体（可选）
+@export_group("Tooltip资源配置")
+@export var tooltip_config: TooltipConfig = preload("res://scene/shared/tooltip/battle_card_tooltip_config.tres")
 
-# ================================
-# ★ 导出调整项：悬浮 UI 排版与分列机制
-# ================================
-@export_group("悬浮信息枢纽 (Tooltip Layout)")
-@export var tooltip_offset_x: int = 15  # 效果框与卡牌的 X 轴间距
-@export var tooltip_offset_y: int = 0  # 效果框与卡牌顶部的 Y 轴偏移 (0 代表完美齐平)
-@export var tooltip_gap_x: int = 15  # 效果框与右侧词条列、列与列之间的横向间距
-@export var effect_panel_width: int = 240  # 主效果框的宽度
-@export var max_keywords_per_column: int = 3  # 单列最多显示的词条数
+## 主战斗场景使用完整版卡牌 Tooltip：
+## - 主效果框
+## - 关键词多列解释
+## - 左右翻转与异步防幽灵
+## 这些运行时细节统一交给共享 presenter。
+var card_tooltip_presenter: CardTooltipPresenter = null
 
-# ★ 拆分为两个完全独立的顶级容器
-var effect_tooltip_panel: PanelContainer
-var effect_label: RichTextLabel
-var keywords_tooltip_hbox: HBoxContainer
-var current_hovered_card: Control = null
-# ★ 新版：多重堆叠词条 UI 容器(增加卡牌文本版本)
-var tooltip_vbox: VBoxContainer  # 改为纵向容器
-# ★ 新增：用于记录当前正在显示词条的卡牌，防止异步显示“幽灵词条”
-var current_tooltip_card: Control = null
-var tooltip_ui_initialized = false
+@export_group("Scene Transition")
+## 单局结算结束后返回的局外场景路径。
+## 单独导出成可调字段，方便你未来切换为别的世界地图场景而不改代码。
+@export_file("*.tscn") var out_scene_path: String = "res://scene/out_scene/Out_Scene.tscn"
+
+## 记录进入局内时携带的外部数据。
+## 目前主要用于保留 battle_normal / battle_elite / boss_stage 这类来源标签，
+## 让回到局外时仍然能带回基础上下文。
+var incoming_external_payload: Variant = null
+var incoming_battle_tag: String = ""
+var incoming_map_seed: String = ""
 
 
 func _ready() -> void:
 	# 初始化游戏状态
-	current_era_value = 1
+	_pull_era_from_global()
 	
 	add_to_group("MainBoard")  # 注册进群组，让卡牌能够呼叫此脚本
 
@@ -184,6 +171,63 @@ func _ready() -> void:
 		if not Signal_Bus.combat_victory_triggered.is_connected(_on_combat_victory_triggered):
 			Signal_Bus.combat_victory_triggered.connect(_on_combat_victory_triggered)
 	
+
+## 从全局单例拉取当前时代值。
+## 优先级：
+## 1. GlobalClock.get_current_era()
+## 2. GlobalClock.era 字段
+## 3. Global.era 字段
+## 4. 默认值 1
+##
+## 这样无论时代值是由局外还是局内先写入，都能保持统一来源。
+func _pull_era_from_global() -> void:
+	if GlobalClock:
+		if GlobalClock.has_method("get_current_era"):
+			current_era_value = int(GlobalClock.get_current_era())
+		elif _object_has_property(GlobalClock, &"era"):
+			current_era_value = int(GlobalClock.get("era"))
+	elif Global and _object_has_property(Global, &"era"):
+		current_era_value = int(Global.get("era"))
+	else:
+		current_era_value = 1
+
+	current_era_value = max(current_era_value, 1)
+	_push_era_to_global()
+
+
+## 把局内当前时代值回写到全局单例。
+## 这是“局内战斗进度”与“局外全局进度”之间的同步桥。
+func _push_era_to_global() -> void:
+	current_era_value = max(current_era_value, 1)
+
+	if GlobalClock:
+		if GlobalClock.has_method("set_current_era"):
+			GlobalClock.set_current_era(current_era_value)
+		elif _object_has_property(GlobalClock, &"era"):
+			GlobalClock.set("era", current_era_value)
+
+	if Global and _object_has_property(Global, &"era"):
+		Global.set("era", current_era_value)
+
+	if MapState and MapState.has_method("set_saved_era_progress"):
+		var phase_value := 1
+		if GlobalClock and GlobalClock.has_method("get_current_phase"):
+			phase_value = int(GlobalClock.get_current_phase())
+		elif GlobalClock and _object_has_property(GlobalClock, &"phase"):
+			phase_value = int(GlobalClock.get("phase"))
+		MapState.set_saved_era_progress(current_era_value, phase_value)
+
+
+## 安全判断对象是否声明了某个属性。
+## 这里不用 `"prop" in obj`，是为了减少不同对象类型下的歧义。
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
+
 
 ## 游戏开始时生成初始敌人意图
 ## 确保在第一次生成敌人时也在时间轴上部署意图
@@ -492,6 +536,7 @@ func start_new_turn():
 	GameLogger.info("☀️ 新回合开始！", "Project")
 	# 1. 时代值 +1 等系统级结算
 	current_era_value += 1
+	_push_era_to_global()
 
 	# 2. 玩家抽牌
 	# ★ 新增修复：调用已存在的 attempt_draw_cards，取代之前错误的 draw_cards 函数名
@@ -688,117 +733,21 @@ func trigger_1_effect():
 	GameLogger.debug("draw 2", "Project")
 
 
-# --- 纯代码构建词条 UI（完全分离版） ---
+# --- 共享 Tooltip 模块入口 ---
+func _setup_card_tooltip_presenter() -> void:
+	if card_tooltip_presenter != null:
+		return
+	card_tooltip_presenter = CardTooltipPresenter.new(self, tooltip_config, true)
+
+
+## 保留旧接口名，避免其它脚本调用链重写。
+## 现在它只负责初始化 presenter，而不再在本文件里手工拼 UI。
 func setup_tooltip_ui():
-	# ==========================================
-	# 1. 创建唯一且层级最高的画布 (CanvasLayer)
-	# ==========================================
-	var tooltip_canvas = CanvasLayer.new()
-	tooltip_canvas.layer = 2000  # 霸凌一切 UI 的究极层级，保证绝不被遮挡
-	add_child(tooltip_canvas)
-
-	# ==========================================
-	# 2. 独立的左侧：核心效果文本框
-	# ==========================================
-	effect_tooltip_panel = PanelContainer.new()
-	effect_tooltip_panel.z_index = 1000
-	effect_tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	effect_tooltip_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	effect_tooltip_panel.hide()
-
-	# ★ 核心修复：只加给 tooltip_canvas，坚决不要再写 add_child(effect_tooltip_panel)
-	tooltip_canvas.add_child(effect_tooltip_panel)
-
-	# 样式设置
-	var style = StyleBoxFlat.new()
-	style.bg_color = tooltip_bg_color
-	style.border_width_left = tooltip_border_width
-	style.border_width_top = tooltip_border_width
-	style.border_width_right = tooltip_border_width
-	style.border_width_bottom = tooltip_border_width
-	style.border_color = tooltip_border_color
-	style.set_corner_radius_all(6)
-	effect_tooltip_panel.add_theme_stylebox_override("panel", style)
-
-	# 边距与文本节点
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 15)
-	margin.add_theme_constant_override("margin_right", 15)
-	margin.add_theme_constant_override("margin_top", 15)
-	margin.add_theme_constant_override("margin_bottom", 15)
-	effect_tooltip_panel.add_child(margin)
-
-	effect_label = RichTextLabel.new()
-	effect_label.bbcode_enabled = true
-	effect_label.fit_content = true
-	effect_label.custom_minimum_size = Vector2(effect_panel_width, 0)
-	# 应用效果文本字体设置
-	effect_label.add_theme_font_size_override("normal_font_size", tooltip_effect_font_size)
-	effect_label.add_theme_color_override("default_color", tooltip_effect_font_color)
-	# 如果提供了自定义字体，应用它
-	if tooltip_effect_font != null:
-		effect_label.add_theme_font_override("normal_font", tooltip_effect_font)
-	margin.add_child(effect_label)
-
-	# ==========================================
-	# 3. 独立的右侧：词条解释的“多列”横向容器
-	# ==========================================
-	keywords_tooltip_hbox = HBoxContainer.new()
-	keywords_tooltip_hbox.z_index = 1000
-	keywords_tooltip_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	keywords_tooltip_hbox.add_theme_constant_override("separation", tooltip_gap_x)
-	keywords_tooltip_hbox.hide()
-
-	# ★ 核心修复：同样只加给 tooltip_canvas，把多余的 add_child 全部删掉！
-	tooltip_canvas.add_child(keywords_tooltip_hbox)
-
-	tooltip_ui_initialized = true
-
-# 动态生成单个带金边的小面板
-func _create_keyword_panel(title_text: String, desc_text: String, title_color: String) -> PanelContainer:
-	var panel = PanelContainer.new()
-	var style = StyleBoxFlat.new()
-	# ★ 应用导出的边框与颜色设置
-	style.bg_color = tooltip_bg_color
-	style.border_width_left = tooltip_border_width
-	style.border_width_top = tooltip_border_width
-	style.border_width_right = tooltip_border_width
-	style.border_width_bottom = tooltip_border_width
-	style.border_color = tooltip_border_color
-	style.set_corner_radius_all(6)
-	panel.add_theme_stylebox_override("panel", style)
-
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
-	panel.add_child(margin)
-
-	var vbox = VBoxContainer.new()
-	margin.add_child(vbox)
-
-	var title = Label.new()
-	title.text = title_text
-	title.add_theme_color_override("font_color", Color(title_color))
-	# ★ 应用导出的标题文字大小
-	title.add_theme_font_size_override("font_size", tooltip_title_size)
-	vbox.add_child(title)
-
-	var desc = RichTextLabel.new()
-	desc.bbcode_enabled = true
-	desc.fit_content = true
-	desc.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
-	desc.custom_minimum_size = Vector2(tooltip_width, 0)
-	desc.add_theme_font_size_override("normal_font_size", tooltip_desc_size)
-	desc.add_theme_color_override("default_color", tooltip_desc_color)
-	desc.text = desc_text
-	vbox.add_child(desc)
-
-	return panel
+	_setup_card_tooltip_presenter()
+	card_tooltip_presenter.ensure_ui_created()
 
 
-# 显示多重词条与效果 (分离式排版算法)
+# 显示多重词条与效果
 func show_tooltip(card: Control):
 	# 优先从树根查找 card_manager 元数据，兼容场景切换
 	var cm = null
@@ -817,129 +766,11 @@ func show_tooltip(card: Control):
 	if selected_card != null and selected_card != card:
 		return
 
-	# 确保 Tooltip UI 已初始化
-	if effect_tooltip_panel == null:
-		setup_tooltip_ui()
-	
-	current_hovered_card = card
-
-	# 确保 effect_label 已初始化
-	if effect_label == null:
-		push_error("effect_label 未初始化，无法显示 Tooltip")
-		return
-
-	# 1. 注入主效果文本
-	var description_text = ""
-	if card.has_method("get_parsed_description"):
-		description_text = card.get_parsed_description()
-	else:
-		description_text = card.get("raw_description")
-	
-	# 确保文本不是 null
-	if description_text == null:
-		description_text = ""
-	
-	effect_label.text = description_text
-
-	# 2. 清空并生成词条列
-	if keywords_tooltip_hbox != null:
-		for child in keywords_tooltip_hbox.get_children():
-			keywords_tooltip_hbox.remove_child(child)
-			child.queue_free()
-	else:
-		push_warning("keywords_tooltip_hbox 未初始化，跳过关键词显示")
-
-	var keywords = card.get("active_keywords")
-	# 确保 keywords 是一个数组，而不是 null
-	if keywords == null:
-		keywords = []
-	
-	# 只在 keywords_tooltip_hbox 有效时生成关键词面板
-	if keywords_tooltip_hbox != null:
-		var current_vbox: VBoxContainer = null
-		for i in range(keywords.size()):
-			var kw = keywords[i]
-			if GlobalDB.KEYWORDS.has(kw):
-				if i % max_keywords_per_column == 0:
-					current_vbox = VBoxContainer.new()
-					current_vbox.add_theme_constant_override("separation", tooltip_spacing)
-					keywords_tooltip_hbox.add_child(current_vbox)
-
-				var kw_data = GlobalDB.KEYWORDS[kw]
-				var panel = _create_keyword_panel(kw, kw_data["desc"], kw_data["color"])
-				current_vbox.add_child(panel)
-
-	# ★ 强制重置两个独立框的尺寸，防幽灵撑大
-	if effect_tooltip_panel != null:
-		effect_tooltip_panel.size = Vector2.ZERO
-	if keywords_tooltip_hbox != null:
-		keywords_tooltip_hbox.size = Vector2.ZERO
-
-	# 显现并测算
-	if effect_tooltip_panel != null:
-		effect_tooltip_panel.modulate = Color(1, 1, 1, 0)
-		effect_tooltip_panel.show()
-
-	var has_keywords = keywords.size() > 0
-	if has_keywords and keywords_tooltip_hbox != null:
-		keywords_tooltip_hbox.modulate = Color(1, 1, 1, 0)
-		keywords_tooltip_hbox.show()
-
-	await get_tree().process_frame
-	if current_hovered_card != card: return
-
-	var screen_size = get_viewport_rect().size
-	var actual_card_width = card.size.x * card.scale.x
-	var is_effect_placed_on_left = false
-
-	# ==========================================
-	# 独立计算 1：先摆放【主效果框】
-	# ==========================================
-	var eff_w = effect_tooltip_panel.size.x
-	var eff_h = effect_tooltip_panel.size.y
-
-	var eff_x = card.global_position.x + actual_card_width + tooltip_offset_x
-	var eff_y = card.global_position.y + tooltip_offset_y
-
-	# 如果主效果框在右侧出界，翻转到左边
-	if eff_x + eff_w > screen_size.x:
-		eff_x = card.global_position.x - eff_w - tooltip_offset_x
-		is_effect_placed_on_left = true
-
-	if eff_y + eff_h > screen_size.y - tooltip_bottom_margin:
-		eff_y = screen_size.y - eff_h - tooltip_bottom_margin
-
-	effect_tooltip_panel.global_position = Vector2(eff_x, eff_y)
-	effect_tooltip_panel.modulate = Color(1, 1, 1, 1)
-
-	# ==========================================
-	# 独立计算 2：接着摆放【注释框】
-	# ==========================================
-	if has_keywords:
-		var kw_w = keywords_tooltip_hbox.size.x
-		var kw_h = keywords_tooltip_hbox.size.y
-
-		var kw_x = 0.0
-		var kw_y = eff_y  # 高度始终跟随效果框
-
-		if not is_effect_placed_on_left:
-			# 正常情况：注释框接在效果框右边
-			kw_x = eff_x + eff_w + tooltip_gap_x
-			# 如果注释框挤爆了屏幕右侧 -> 把它单独丢到卡牌的左侧！
-			if kw_x + kw_w > screen_size.x:
-				kw_x = card.global_position.x - kw_w - tooltip_offset_x
-		else:
-			# 翻转情况：效果框在左侧，注释框接在效果框左边
-			kw_x = eff_x - kw_w - tooltip_gap_x
-			# 如果注释框挤爆了屏幕左侧 -> 把它单独丢到卡牌的右侧！
-			if kw_x < 0:
-				kw_x = card.global_position.x + actual_card_width + tooltip_offset_x
-
-		if kw_y + kw_h > screen_size.y - tooltip_bottom_margin:
-			kw_y = screen_size.y - kw_h - tooltip_bottom_margin
-
-		keywords_tooltip_hbox.global_position = Vector2(kw_x, kw_y)
-		keywords_tooltip_hbox.modulate = Color(1, 1, 1, 1)
+	_setup_card_tooltip_presenter()
+	card_tooltip_presenter.show_card_tooltip(card, {
+		"show_keywords": true,
+		"fallback_text": "",
+	})
 
 
 func hide_tooltip(card: Control = null):
@@ -958,9 +789,8 @@ func hide_tooltip(card: Control = null):
 	if cm and cm.get("current_selected_card") != null:
 		return
 
-	current_hovered_card = null
-	if is_instance_valid(effect_tooltip_panel): effect_tooltip_panel.hide()
-	if is_instance_valid(keywords_tooltip_hbox): keywords_tooltip_hbox.hide()
+	if card_tooltip_presenter != null:
+		card_tooltip_presenter.hide_tooltip()
 
 
 # ==========================================
@@ -1012,10 +842,93 @@ func _on_end_combat_pressed():
 		GameLogger.warning("尚未进入单局结算阶段，忽略结束战斗点击", "Project")
 		return
 
-	GameLogger.info("单局结算已完成，发出 combat_ended，等待局外流程接管", "Project")
+	GameLogger.info("单局结算已完成，准备返回局外移动场景", "Project")
 	end_combat_button.disabled = true
 	if Signal_Bus and Signal_Bus.has_method("emit_combat_ended"):
 		Signal_Bus.emit_combat_ended()
+
+	await _return_to_out_scene()
+
+
+## 返回局外地图的统一入口。
+## 这里做四件事：
+## 1. 把局内维护的时代值同步回全局单例
+## 2. 组装一份战斗返回 payload，供局外场景未来消费
+## 3. 调用 DimMenu 做黑幕过渡
+## 4. 以“实例化并切 current_scene”的方式回到 OutScene
+func _return_to_out_scene() -> void:
+	_push_era_to_global()
+
+	var return_payload := _build_combat_return_payload()
+	if MapState and MapState.has_method("set_pending_room_resolution"):
+		MapState.set_pending_room_resolution(return_payload)
+
+	disable_player_inputs()
+	hide_ui_for_external_scene()
+
+	if is_instance_valid(dim):
+		await dim.use(0, 0)
+
+	_switch_scene_with_data(out_scene_path, return_payload)
+
+
+## 组装“局内 -> 局外”的战斗返回数据。
+## 当前先把最关键的全局进度数据带上：
+## - 时代
+## - 时间币
+## - 当前牌组快照
+## - 来源房间上下文
+##
+## 这样以后你要在局外做：
+## - 清空当前战斗节点
+## - 标记房间已完成
+## - 发放奖励
+## - 写入路线记录
+## 都有足够的上下文字段可用。
+func _build_combat_return_payload() -> Dictionary:
+	var room_context: Dictionary = {}
+	if MapState and MapState.has_method("get_active_room_context"):
+		room_context = MapState.get_active_room_context()
+
+	return {
+		"transition_type": "return_from_combat",
+		"combat_result": "completed",
+		"battle_state": "settlement",
+		"battle_tag": incoming_battle_tag,
+		"map_seed": incoming_map_seed,
+		"era": current_era_value,
+		"timecoins": GlobalTimecoin.get_timecoins() if GlobalTimecoin and GlobalTimecoin.has_method("get_timecoins") else 0,
+		"deck_snapshot": GlobalDB.player_deck.duplicate() if GlobalDB else [],
+		"deck_size": GlobalDB.player_deck.size() if GlobalDB else 0,
+		"room_context": room_context,
+		"clear_active_room_context": true,
+	}
+
+
+## 通用场景切换函数。
+## 注意：
+## - 当前脚本挂在 ui/Main，而不是整张 in_scene 的根节点上
+## - 因此不能简单地 queue_free(self)，而要释放 old_scene 根节点
+func _switch_scene_with_data(path: String, payload: Variant = null) -> void:
+	if path == "" or not FileAccess.file_exists(path):
+		push_error("返回局外失败：场景路径无效 -> %s" % path)
+		return
+
+	var packed_scene := load(path)
+	if packed_scene == null:
+		push_error("返回局外失败：无法加载场景 -> %s" % path)
+		return
+
+	var next_scene = packed_scene.instantiate()
+	if payload != null and next_scene.has_method("apply_external_event"):
+		next_scene.apply_external_event(payload)
+
+	var old_scene := get_tree().current_scene
+	get_tree().root.add_child(next_scene)
+	get_tree().current_scene = next_scene
+
+	if is_instance_valid(old_scene):
+		old_scene.queue_free()
 
 # 商店按钮回调
 func _on_shop_button_pressed():
@@ -1150,10 +1063,32 @@ func proceed_to_next_stage():
 # 接收来自关卡选择场景的数据
 func apply_external_event(payload: String) -> void:
 	print("[Project] 接收到外部事件数据: ", payload)
-	# TODO: 解析 payload 并设置游戏参数
-	# 格式示例: "battle_normal" 或 "battle_normal|enhance,combine"
-	# 可以解析为关卡类型和额外功能
-	# 暂时只记录，后续实现具体逻辑
+	incoming_external_payload = payload
+	incoming_battle_tag = ""
+	incoming_map_seed = ""
+
+	# 兼容当前局外场景传递格式：
+	# "battle_normal <map_seed>"
+	# "battle_elite <map_seed>"
+	# "boss_stage <map_seed>"
+	if payload == null:
+		return
+
+	var payload_text := str(payload).strip_edges()
+	if payload_text == "":
+		return
+
+	var first_space_index := payload_text.find(" ")
+	if first_space_index == -1:
+		incoming_battle_tag = payload_text
+	else:
+		incoming_battle_tag = payload_text.substr(0, first_space_index)
+		incoming_map_seed = payload_text.substr(first_space_index + 1).strip_edges()
+
+	GameLogger.info("局内战斗入口已记录：battle_tag=%s, map_seed=%s" % [
+		incoming_battle_tag,
+		incoming_map_seed if incoming_map_seed != "" else "无"
+	], "Project")
 
 ## 增强光标提示框，模仿卡牌文本框的样式
 func _enhance_cursor_tooltip() -> void:
@@ -1181,15 +1116,15 @@ func _enhance_cursor_tooltip() -> void:
 	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	panel.visible = original_visible
 	
-	# 应用样式（使用与卡牌tooltip相同的样式变量）
+	# 应用样式（复用 TooltipConfig，确保光标提示和卡牌提示保持同一套外框语言）
 	var style = StyleBoxFlat.new()
-	style.bg_color = tooltip_bg_color
-	style.border_width_left = tooltip_border_width
-	style.border_width_top = tooltip_border_width
-	style.border_width_right = tooltip_border_width
-	style.border_width_bottom = tooltip_border_width
-	style.border_color = tooltip_border_color
-	style.set_corner_radius_all(6)
+	style.bg_color = tooltip_config.tooltip_bg_color
+	style.border_width_left = tooltip_config.tooltip_border_width
+	style.border_width_top = tooltip_config.tooltip_border_width
+	style.border_width_right = tooltip_config.tooltip_border_width
+	style.border_width_bottom = tooltip_config.tooltip_border_width
+	style.border_color = tooltip_config.tooltip_border_color
+	style.set_corner_radius_all(tooltip_config.tooltip_corner_radius)
 	panel.add_theme_stylebox_override("panel", style)
 	
 	# 创建MarginContainer用于内边距

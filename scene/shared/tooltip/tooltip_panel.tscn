@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://dodqasiny5rrt"]
+
+[node name="TooltipPanel" type="PanelContainer" unique_id=2030590642]
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=940539236]
+layout_mode = 2
+
+[node name="ContentLabel" type="RichTextLabel" parent="Margin" unique_id=2035878227]
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false

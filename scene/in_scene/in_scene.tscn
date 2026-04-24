@@ -205,7 +205,6 @@ scale = Vector2(10, 10)
 texture_normal = ExtResource("10_c78qr")
 
 [node name="EndCombatButton" type="TextureButton" parent="ui" unique_id=1009921236]
-visible = false
 offset_left = 1477.0
 offset_top = 547.0
 offset_right = 1552.0
@@ -339,10 +338,6 @@ mouse_filter = 2
 script = ExtResource("18_0vlha")
 pulse_shader = ExtResource("19_b3wb3")
 hand_y_offset = 100.0
-tooltip_bottom_margin = 20
-tooltip_effect_font = ExtResource("5_6migj")
-tooltip_offset_y = 40
-max_keywords_per_column = 5
 
 [node name="DimMenu" parent="ui" unique_id=1999609201 instance=ExtResource("20_lifwa")]
 visible = false

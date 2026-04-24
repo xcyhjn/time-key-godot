@@ -180,7 +180,11 @@ func Behavior(Step, info_in, Other, beha):
 
 ## 村庄显式启用意图展示与时间轴意图生成
 func is_intent_preview_enabled() -> bool:
-	return State_Main != Main_State_Pool.Broken
+	# 说明：
+	# - 即使村庄已经 Broken，我们依然允许它参与“地图侧灰态意图展示”，
+	#   这样 hover 到废墟时仍可看到“建筑已损毁 / 无可用目标”的说明。
+	# - 真正决定是否能进入时间轴生成的是 can_generate_intent()。
+	return true
 
 
 ## 返回详细意图文本，供 tooltip 显示
@@ -196,6 +200,8 @@ func get_intent_effect_range() -> Variant:
 
 ## 返回当前展示用的目标中心格
 func get_intent_target_center_coord(hex_map: battle) -> Variant:
+	if State_Main == Main_State_Pool.Broken:
+		return null
 	if not is_instance_valid(hex_map):
 		return null
 
@@ -234,11 +240,29 @@ func does_intent_include_self(_hex_map: battle) -> bool:
 
 ## 重写意图行动方法，为村庄添加详细意图描述和 effect_range
 func get_intent_action(target_tile: Node = null) -> TimelineAction:
+	# 字段说明：
+	# - "位置": 意图发出者自身所在的六边形坐标，也就是这个建筑“站在哪里”。
+	#   这里用的是 village 自己的 location（逻辑坐标，Vector2i）。
+	#   它用于标识施法者/发出者本体。
+	#   为什么一定要标识施法者：
+	#   1. 地图 hover 时，需要知道“到底是谁在发动这个意图”，这样才能高亮建筑本体。
+	#   2. tooltip 永远生成在发出者右侧，所以必须知道发出者是谁、它站在哪一格。
+	#   3. 时间轴上的意图方块和地图上的建筑是绑定的，需要靠这个“发出者身份”把二者关联起来。
+	#   4. 如果建筑死亡 / Broken / 地形变化导致它失效，也要靠这个发出者身份去重判并清除意图。
+	#   5. 当多个建筑可能瞄准同一个目标格时，只有记录发出者，系统才能分清“是谁在对这个目标生效”。
+	#
+	# - "目标": 这次意图实际瞄准或作用的中心地块位置。
+	#   这里取的是 target_tile.position（场景里的像素坐标，Vector2）。
+	#   它用于标识这次行为“打到哪里/扩到哪里”。
+	#
+	# 对村庄来说：
+	# - "位置" = 村庄自己当前站的格子
+	# - "目标" = 村庄准备扩张过去的那一格
 	var action_data = {
 		"效果": get_intent_description(),
 		"类型": landform_name,
-		"位置": location,
-		"目标": target_tile.position if target_tile else Vector2.ZERO,
+		"位置": location, # 发出者自身的位置（逻辑六边形坐标）
+		"目标": target_tile.position if target_tile else Vector2.ZERO, # 本次意图瞄准的目标中心（场景像素坐标）
 		"effect_range": get_intent_effect_range(),
 		"invalid_reason": get_intent_invalid_reason(owner_battle)
 	}

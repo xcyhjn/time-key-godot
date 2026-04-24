@@ -25,6 +25,8 @@ extends Control
 @onready var point = $UI/CartoonUI/Clock/Point
 @onready var mask = $UI/CartoonUI/ColorBG
 @onready var char_pic = $UI/CartoonUI/MenuUI/Control/character
+@onready var era_label: Label = $UI/CartoonUI/MenuUI/Control/era
+@onready var process_label: Label = $UI/CartoonUI/MenuUI/Control/process
 
 var received_text: String = "" 
 var tile_data = {}
@@ -37,6 +39,9 @@ var _current_decision = ""
 var _cached_map_center: Vector2 = Vector2.ZERO
 var _map_center_dirty: bool = true
 var chosen_char_index: int = -1
+## 从其它场景切回来时注入的外部事件。
+## 这里不直接在 apply_external_event() 里处理，是为了确保 OutScene 的节点树先 ready 完成。
+var pending_external_event: Variant = null
 
 # ==========================================
 # 2. 初始化逻辑
@@ -57,6 +62,8 @@ func _ready():
 		MapState.ui_settled = true
 	
 	_update_visual_states()
+	_refresh_global_progress_labels()
+	_consume_pending_room_resolution()
 	
 func _init_new_map():
 	if received_text == "":
@@ -133,6 +140,67 @@ func _load_from_global():
 	# 恢复玩家位置（像素）
 	player_sprite.position = Vector2(player_hex.x * step_x, player_hex.y * step_y + player_hex.x * stagger_y)
 	camera.position = player_sprite.position
+
+
+## 接收来自其它场景的外部事件。
+## 当前主要用于“局内结算结束 -> 返回局外”时携带战斗返回信息。
+func apply_external_event(payload: Variant) -> void:
+	pending_external_event = payload
+
+
+## 刷新局外主 UI 上的时代/阶段文字。
+## 这样时代值是否跨场景保留，会在局外立刻可见。
+func _refresh_global_progress_labels() -> void:
+	if is_instance_valid(era_label):
+		var era_value := GlobalClock.get_current_era() if GlobalClock and GlobalClock.has_method("get_current_era") else 1
+		era_label.text = "第%d时代" % era_value
+
+	if is_instance_valid(process_label):
+		var phase_value := GlobalClock.get_current_phase() if GlobalClock and GlobalClock.has_method("get_current_phase") else 1
+		process_label.text = "%d / 8" % phase_value
+
+
+## 统一消费“从局内返回局外”的房间结算结果。
+## 数据来源有两种：
+## 1. 显式 apply_external_event(payload)
+## 2. 兜底使用 MapState.pending_room_resolution
+##
+## 这样即使未来切场方式从“手动实例化”改回“change_scene_to_file”，
+## 这层接口依然成立，不会把结算结果绑死在某一种转场实现上。
+func _consume_pending_room_resolution() -> void:
+	var resolution_payload: Dictionary = {}
+
+	if pending_external_event is Dictionary:
+		resolution_payload = pending_external_event.duplicate(true)
+		if MapState.has_method("clear_pending_room_resolution"):
+			MapState.clear_pending_room_resolution()
+	elif MapState.has_method("peek_pending_room_resolution"):
+		resolution_payload = MapState.peek_pending_room_resolution()
+		if not resolution_payload.is_empty() and MapState.has_method("consume_pending_room_resolution"):
+			resolution_payload = MapState.consume_pending_room_resolution()
+
+	if resolution_payload.is_empty():
+		return
+
+	_handle_room_resolution_payload(resolution_payload)
+	pending_external_event = null
+
+
+## 处理从局内返回的房间结算数据。
+## 当前先做两件事：
+## 1. 记录日志，方便你调试转场链是否打通
+## 2. 预留“房间结算落地”的接口位置，后续你可以在这里标记房间已完成、发奖励、改节点类型
+func _handle_room_resolution_payload(payload: Dictionary) -> void:
+	print("[OutScene] 接收到房间结算结果: ", payload)
+
+	# 预留挂点：
+	# - 未来可在这里基于 payload["room_context"] 定位局外地图节点
+	# - 决定是否把房间改为已完成/已清空/已领取奖励状态
+	# - 根据 payload 中的战斗结果分流不同的局外处理
+	if payload.get("clear_active_room_context", true) and MapState.has_method("clear_active_room_context"):
+		MapState.clear_active_room_context()
+
+	_refresh_global_progress_labels()
 	
 func _refresh_view():
 	view.clear()
@@ -367,6 +435,19 @@ func _enter_room_logic(target):
 			data_str = "event_stage"
 			target_scene = event_scene
 	data_str = data_str + " " + map_seed
+
+	# 在切到局内前，先把“当前进入的房间”上下文记到全局。
+	# 这样局内战斗结束后返回局外时，仍然知道自己是从哪个局外格子进入的。
+	if MapState.has_method("set_active_room_context"):
+		MapState.set_active_room_context({
+			"source_scene": "out_scene",
+			"room_hex": target,
+			"room_type": type,
+			"room_data": data_str,
+			"map_seed": map_seed,
+			"current_tier": current_tier,
+		})
+
 	await dim.use(0,0)
 	_switch_scene_with_data(target_scene, data_str)
 
@@ -384,9 +465,22 @@ func _switch_scene_with_data(path: String, data: String):
 	if path == "" or not FileAccess.file_exists(path): return
 	_save_to_global()
 	var next_scene = load(path).instantiate()
-	var target_node = next_scene.get_node_or_null("Main/Node2D")
-	if target_node and "received_text" in target_node:
-		target_node.received_text = data
+
+	# 优先走显式接口注入。
+	# 这样无论目标场景的脚本挂在根节点、ui/Main，还是未来换了新的结构，
+	# 只要实现 apply_external_event(payload) 就能稳定接收数据。
+	if next_scene.has_method("apply_external_event"):
+		next_scene.apply_external_event(data)
+	else:
+		var main_board = next_scene.get_node_or_null("ui/Main")
+		if main_board and main_board.has_method("apply_external_event"):
+			main_board.apply_external_event(data)
+		else:
+			# 兼容旧版节点路径写法。
+			var target_node = next_scene.get_node_or_null("Main/Node2D")
+			if target_node and "received_text" in target_node:
+				target_node.received_text = data
+
 	get_tree().root.add_child(next_scene)
 	get_tree().current_scene = next_scene
 	queue_free()

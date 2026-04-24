@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="TooltipConfig" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scene/shared/tooltip/tooltip_config.gd" id="1_f20q6"]
+[ext_resource type="FontFile" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_bxlym"]
+
+[resource]
+script = ExtResource("1_f20q6")
+tooltip_width = 220
+effect_panel_width = 240
+tooltip_spacing = 8
+tooltip_gap_x = 15
+tooltip_offset_x = 15
+tooltip_offset_y = 40
+tooltip_bottom_margin = 20
+max_keywords_per_column = 5
+tooltip_border_width = 2
+tooltip_border_color = Color(0.8, 0.6, 0.2, 1)
+tooltip_bg_color = Color(0.12, 0.12, 0.12, 0.95)
+tooltip_corner_radius = 6
+tooltip_effect_font_size = 16
+tooltip_effect_font_color = Color(0.95, 0.95, 0.95, 1)
+tooltip_effect_font = ExtResource("2_bxlym")
+tooltip_title_size = 18
+tooltip_desc_size = 14
+tooltip_desc_color = Color(0.9, 0.9, 0.9, 1)
+effect_margin_left = 15
+effect_margin_right = 15
+effect_margin_top = 15
+effect_margin_bottom = 15
+keyword_margin_left = 12
+keyword_margin_right = 12
+keyword_margin_top = 10
+keyword_margin_bottom = 10

@@ -49,6 +49,12 @@ var selected_draft_card: Control = null
 @export var card_spacing_x: int = 20  # 卡牌水平间距 (HBoxContainer使用)
 # 注意：AcquireReward 使用 HBoxContainer，垂直间距忽略
 
+@export_group("Tooltip资源配置")
+@export var tooltip_config: TooltipConfig = preload("res://scene/shared/tooltip/reward_card_tooltip_config.tres")
+
+## 获取卡牌奖励页也复用通用 Tooltip presenter。
+var tooltip_presenter: CardTooltipPresenter = null
+
 ## ==========================================
 ## ★ 核心生命周期方法
 ## ==========================================
@@ -75,6 +81,8 @@ func _ready():
 	# 应用卡牌间距配置
 	if card_container:
 		card_container.add_theme_constant_override("separation", card_spacing_x)
+
+	_setup_tooltip_presenter()
 
 ## 打开获取卡牌场景
 func open():
@@ -346,17 +354,23 @@ func _close_current_selection():
 
 ## 获取当前时代 (需要对接你的全局时代系统)
 func _get_current_era() -> int:
-	# 尝试查找 GlobalClock 单例
-	if Engine.has_singleton("GlobalClock"):
-		var global_clock = Engine.get_singleton("GlobalClock")
-		if global_clock and global_clock.has_method("get_current_era"):
-			return global_clock.get_current_era()
+	# 优先从 /root 读取 autoload。
+	if has_node("/root/GlobalClock"):
+		var global_clock = get_node("/root/GlobalClock")
+		if global_clock:
+			if global_clock.has_method("get_current_era"):
+				return global_clock.get_current_era()
+			elif "era" in global_clock:
+				return int(global_clock.era)
 	
 	# 备用方案: 从场景中查找
 	var root = Engine.get_main_loop().root
 	var clock = root.find_child("GlobalClock", true, false)
-	if clock and clock.has_method("get_current_era"):
-		return clock.get_current_era()
+	if clock:
+		if clock.has_method("get_current_era"):
+			return clock.get_current_era()
+		elif "era" in clock:
+			return int(clock.era)
 	
 	# 默认值
 	return 1
@@ -476,109 +490,21 @@ func set_deck_manager(manager):
 	deck_manager = manager
 	print("AcquireReward: deck_manager 已设置")
 
-## ==========================================
-## ★ Tooltip系统 (简化版)
-## ==========================================
-
-var _tooltip_panel: PanelContainer = null
-var _tooltip_label: RichTextLabel = null
-var _current_tooltip_card: Control = null
+## 初始化共享 Tooltip presenter。
+func _setup_tooltip_presenter() -> void:
+	if tooltip_presenter != null:
+		return
+	tooltip_presenter = CardTooltipPresenter.new(self, tooltip_config, false)
 
 # 显示tooltip
 func show_tooltip(card: Control):
-	# 确保tooltip面板已创建
-	if _tooltip_panel == null:
-		_create_tooltip_panel()
-	
-	_current_tooltip_card = card
-	
-	# 获取描述文本
-	var description_text = ""
-	if card.has_method("get_parsed_description"):
-		description_text = card.get_parsed_description()
-	elif card.has("raw_description"):
-		description_text = card.raw_description
-	
-	if description_text == null:
-		description_text = ""
-	
-	_tooltip_label.clear()
-	_tooltip_label.append_text(description_text if description_text != "" else "无效果文本")
-	
-	# 重置面板尺寸
-	_tooltip_panel.size = Vector2.ZERO
-	_tooltip_panel.modulate = Color(1, 1, 1, 0)
-	_tooltip_panel.show()
-	
-	# 等待一帧计算尺寸
-	await get_tree().process_frame
-	if _current_tooltip_card != card:
-		return
-	
-	# 计算位置
-	var screen_size = get_viewport().get_visible_rect().size
-	var actual_card_width = card.size.x * card.scale.x
-	
-	var panel_w = _tooltip_panel.size.x
-	var panel_h = _tooltip_panel.size.y
-	var panel_x = card.global_position.x + actual_card_width + 15  # tooltip_offset_x
-	var panel_y = card.global_position.y + 0  # tooltip_offset_y
-	
-	# 边界检查
-	if panel_x + panel_w > screen_size.x:
-		panel_x = card.global_position.x - panel_w - 15
-	
-	if panel_y + panel_h > screen_size.y - 2:  # tooltip_bottom_margin
-		panel_y = screen_size.y - panel_h - 2
-	
-	_tooltip_panel.global_position = Vector2(panel_x, panel_y)
-	_tooltip_panel.modulate = Color(1, 1, 1, 1)
+	_setup_tooltip_presenter()
+	tooltip_presenter.show_card_tooltip(card, {
+		"show_keywords": false,
+		"fallback_text": "无效果文本",
+	})
 
 # 隐藏tooltip
 func hide_tooltip(card: Control = null):
-	_current_tooltip_card = null
-	if _tooltip_panel != null and is_instance_valid(_tooltip_panel):
-		_tooltip_panel.hide()
-
-# 创建tooltip面板
-func _create_tooltip_panel():
-	# 创建tooltip画布层
-	var tooltip_canvas = CanvasLayer.new()
-	tooltip_canvas.layer = 2000  # 最高层级
-	add_child(tooltip_canvas)
-	
-	# 面板
-	_tooltip_panel = PanelContainer.new()
-	_tooltip_panel.z_index = 1000
-	_tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tooltip_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	_tooltip_panel.hide()
-	tooltip_canvas.add_child(_tooltip_panel)
-	
-	# 样式设置
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.12, 0.95)  # tooltip_bg_color
-	style.border_width_left = 2  # tooltip_border_width
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.8, 0.6, 0.2, 1.0)  # tooltip_border_color
-	style.set_corner_radius_all(6)
-	_tooltip_panel.add_theme_stylebox_override("panel", style)
-	
-	# 边距容器
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 15)
-	margin.add_theme_constant_override("margin_right", 15)
-	margin.add_theme_constant_override("margin_top", 15)
-	margin.add_theme_constant_override("margin_bottom", 15)
-	_tooltip_panel.add_child(margin)
-	
-	# 文本标签
-	_tooltip_label = RichTextLabel.new()
-	_tooltip_label.bbcode_enabled = true
-	_tooltip_label.fit_content = true
-	_tooltip_label.custom_minimum_size = Vector2(240, 0)  # effect_panel_width
-	_tooltip_label.add_theme_font_size_override("normal_font_size", 16)  # tooltip_effect_font_size
-	_tooltip_label.add_theme_color_override("default_color", Color(0.95, 0.95, 0.95, 1.0))  # tooltip_effect_font_color
-	margin.add_child(_tooltip_label)
+	if tooltip_presenter != null:
+		tooltip_presenter.hide_tooltip()

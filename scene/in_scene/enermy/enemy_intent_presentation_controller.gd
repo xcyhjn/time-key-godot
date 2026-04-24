@@ -1,6 +1,11 @@
 class_name EnemyIntentPresentationController
 extends Node
 
+const PHASE_IDLE := "idle"
+const PHASE_TARGET_SELECT := "target_select"
+const PHASE_TIMELINE_DRAG := "timeline_drag"
+const PHASE_BLOCKED := "blocked"
+
 # ==========================================
 # 脚本名称: enemy_intent_presentation_controller.gd
 # 功能概述:
@@ -283,13 +288,23 @@ func _find_stack_for_coord(coord: Vector2i) -> Area2D:
 
 
 func _is_map_hover_allowed() -> bool:
+	# 地图 hover 允许矩阵：
+	# - idle: 允许
+	# - target_select: 允许
+	# - timeline_drag: 禁止
+	# - blocked: 禁止
 	var phase = _get_phase()
-	return phase == "idle" or phase == "target_select"
+	return phase == PHASE_IDLE or phase == PHASE_TARGET_SELECT
 
 
 func _is_timeline_hover_allowed() -> bool:
+	# 时间轴 hover 允许矩阵：
+	# - idle: 允许
+	# - target_select: 禁止
+	# - timeline_drag: 允许
+	# - blocked: 禁止
 	var phase = _get_phase()
-	return phase == "idle" or phase == "timeline_drag"
+	return phase == PHASE_IDLE or phase == PHASE_TIMELINE_DRAG
 
 
 func _get_phase() -> String:
@@ -300,17 +315,17 @@ func _get_phase() -> String:
 	# 4. 最后才是 idle
 	if is_instance_valid(main_board) and main_board.get("current_battle_state") != null:
 		if main_board.current_battle_state != main_board.BattleFlowState.COMBAT:
-			return "blocked"
+			return PHASE_BLOCKED
 
 	if is_instance_valid(drag_shape_controller) and drag_shape_controller.get("is_dragging") == true:
-		return "timeline_drag"
+		return PHASE_TIMELINE_DRAG
 
 	if is_instance_valid(main_board) and main_board.get("manager_instance") != null:
 		var cm = main_board.manager_instance
 		if cm.get("current_selected_card") != null:
-			return "target_select"
+			return PHASE_TARGET_SELECT
 
-	return "idle"
+	return PHASE_IDLE
 
 
 func _process(_delta: float) -> void:

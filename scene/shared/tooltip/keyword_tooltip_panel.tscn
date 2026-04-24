@@ -1,0 +1,20 @@
+[gd_scene format=3]
+
+[node name="KeywordTooltipPanel" type="PanelContainer"]
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+
+[node name="ContentVBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Margin/ContentVBox"]
+layout_mode = 2
+
+[node name="DescriptionLabel" type="RichTextLabel" parent="Margin/ContentVBox"]
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 3

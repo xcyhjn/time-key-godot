@@ -70,6 +70,7 @@ func add_timecoins(amount: int) -> void:
 	
 	var previous_amount: int = current_timecoins
 	current_timecoins += amount
+	_sync_to_map_state()
 	
 	# 发出更新信号，delta为正数表示获取
 	timecoin_updated.emit(current_timecoins, amount)
@@ -98,6 +99,7 @@ func consume_timecoins(amount: int) -> bool:
 	
 	var previous_amount: int = current_timecoins
 	current_timecoins -= amount
+	_sync_to_map_state()
 	
 	# 发出更新信号，delta为负数表示消耗
 	timecoin_updated.emit(current_timecoins, -amount)
@@ -117,6 +119,7 @@ func set_timecoins(new_amount: int) -> void:
 	
 	var delta: int = new_amount - current_timecoins
 	current_timecoins = new_amount
+	_sync_to_map_state()
 	
 	if delta != 0:
 		timecoin_updated.emit(current_timecoins, delta)
@@ -152,6 +155,8 @@ func _log_warning(message: String) -> void:
 ## ==========================================
 
 func _ready() -> void:
+	_restore_from_map_state()
+	_sync_to_map_state()
 	_log_info("时间币全局数据中心已加载")
 	_log_info("当前空位转货币比例: %.2f" % empty_slot_ratio)
 	
@@ -170,3 +175,22 @@ func _ready() -> void:
 			_log_info("已连接 timecoin_insufficient 到 SignalBus")
 		else:
 			_log_warning("SignalBus 没有 emit_timecoin_insufficient 方法")
+
+
+## 把当前时间币同步到 MapState 里，作为切场保底快照。
+func _sync_to_map_state() -> void:
+	if MapState and MapState.has_method("set_saved_timecoins"):
+		MapState.set_saved_timecoins(current_timecoins)
+
+
+## 如果 GlobalTimecoin 因某些场景切换方式被重新初始化，
+## 就从 MapState 恢复上一份已知的时间币数量。
+func _restore_from_map_state() -> void:
+	if not MapState or not MapState.has_method("get_saved_timecoins"):
+		return
+
+	var saved_amount := MapState.get_saved_timecoins()
+	if saved_amount <= 0 and current_timecoins > 0:
+		return
+
+	current_timecoins = max(max(saved_amount, current_timecoins), 0)

@@ -50,10 +50,34 @@ func get_anim_speed() -> float:
 var era : int
 var phase : int
 
+
+## 统一提供给其它场景读取当前时代值的接口。
+## 之所以单独封装成方法，是为了让奖励页、局内场景和局外场景都不要直接依赖字段名。
+func get_current_era() -> int:
+	return max(era, 1)
+
+
+## 统一设置当前时代值。
+## 这里会做最基本的保护，防止时代被写成 0 或负数。
+func set_current_era(new_era: int) -> void:
+	era = max(new_era, 1)
+	_sync_progress_snapshot()
+
+
+## 提供当前阶段值读取接口，方便局外 UI 或后续调试面板展示。
+func get_current_phase() -> int:
+	return max(phase, 1)
+
+
+## 统一设置当前阶段值。
+func set_current_phase(new_phase: int) -> void:
+	phase = max(new_phase, 1)
+	_sync_progress_snapshot()
+
 func reset():
 	era = 1
 	phase = 1
-	pass
+	_sync_progress_snapshot()
 
 func time_detect():
 	if phase > 8:
@@ -65,8 +89,26 @@ func era_change():
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	reset()
+	_restore_progress_snapshot()
 	timeline_finished.connect(__advance)
+
+
+## 把当前时代/阶段写入 MapState，作为跨场景保底快照。
+func _sync_progress_snapshot() -> void:
+	if MapState and MapState.has_method("set_saved_era_progress"):
+		MapState.set_saved_era_progress(era, phase)
+
+
+## 如果 GlobalClock 被重新初始化，则尝试从 MapState 恢复进度。
+## 没有快照时才回退到默认 reset()。
+func _restore_progress_snapshot() -> void:
+	if MapState and MapState.has_method("get_saved_era") and MapState.has_method("get_saved_phase"):
+		era = MapState.get_saved_era()
+		phase = MapState.get_saved_phase()
+	else:
+		reset()
+
+	_sync_progress_snapshot()
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

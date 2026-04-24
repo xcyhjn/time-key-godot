@@ -26,6 +26,18 @@ signal tile_topology_changed
 @export var enemy_intent_overlay_z_index: int = 200
 ## 施法者高亮描边粗细。逻辑来源于原 hex shader 的 highlight_width。
 @export var enemy_intent_source_highlight_width: float = 4.0
+## 施法者普通有效意图时的高亮强度。
+@export var enemy_intent_source_valid_highlight_blend: float = 0.85
+## 施法者普通有效意图时的描边强度。
+@export var enemy_intent_source_valid_selected_blend: float = 0.95
+## 施法者覆盖自身时的高亮强度（通常更强、更明显）。
+@export var enemy_intent_source_self_highlight_blend: float = 1.0
+## 施法者覆盖自身时的描边强度。
+@export var enemy_intent_source_self_selected_blend: float = 1.0
+## 施法者意图无效时的高亮强度（灰态，应弱于正常意图）。
+@export var enemy_intent_source_invalid_highlight_blend: float = 0.55
+## 施法者意图无效时的描边强度。
+@export var enemy_intent_source_invalid_selected_blend: float = 0.7
 ## 目标波纹的运动速度。
 @export var enemy_intent_target_ripple_speed: float = 3.2
 ## 目标波纹的密度（越高波纹越密）。
@@ -1062,7 +1074,15 @@ func show_enemy_intent_preview(intent_data: EnemyIntentData, source_color: Color
 		var source_stack = stack_nodes[intent_data.source_coord]
 		if is_instance_valid(source_stack):
 			current_enemy_intent_source_stack = source_stack
-			_show_source_intent_highlight(source_stack, source_color)
+			var source_highlight_blend = enemy_intent_source_valid_highlight_blend
+			var source_selected_blend = enemy_intent_source_valid_selected_blend
+			if not intent_data.is_valid:
+				source_highlight_blend = enemy_intent_source_invalid_highlight_blend
+				source_selected_blend = enemy_intent_source_invalid_selected_blend
+			elif intent_data.includes_self:
+				source_highlight_blend = enemy_intent_source_self_highlight_blend
+				source_selected_blend = enemy_intent_source_self_selected_blend
+			_show_source_intent_highlight(source_stack, source_color, source_highlight_blend, source_selected_blend)
 
 	var seen_targets: Dictionary = {}
 	for coord in intent_data.target_coords:
@@ -1106,7 +1126,7 @@ func clear_enemy_intent_preview(restore_card_hover: bool = true) -> void:
 ##   - highlight_color
 ##   - highlight_blend
 ##   - is_selected_blend
-func _show_source_intent_highlight(stack: Area2D, color: Color) -> void:
+func _show_source_intent_highlight(stack: Area2D, color: Color, highlight_blend: float, selected_blend: float) -> void:
 	if not is_instance_valid(stack):
 		return
 
@@ -1128,8 +1148,8 @@ func _show_source_intent_highlight(stack: Area2D, color: Color) -> void:
 			"is_selected_blend": sprite.get_instance_shader_parameter("is_selected_blend")
 		})
 		sprite.set_instance_shader_parameter("highlight_color", color)
-		sprite.set_instance_shader_parameter("highlight_blend", 1.0)
-		sprite.set_instance_shader_parameter("is_selected_blend", 1.0)
+		sprite.set_instance_shader_parameter("highlight_blend", highlight_blend)
+		sprite.set_instance_shader_parameter("is_selected_blend", selected_blend)
 
 
 ## 显示“目标地块”专用波纹 overlay
