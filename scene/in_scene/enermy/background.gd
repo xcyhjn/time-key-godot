@@ -66,3 +66,6 @@ func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_s
 	owner_battle.emit_signal("CreateBar", self, Attitude, world_position.x, world_position.y)
 
 	parent.add_child(lf_sprite)
+
+func tex_picker():
+	return landform_tex[0] if owner_battle.map_data[location]["height"] > 6 else landform_tex[1]

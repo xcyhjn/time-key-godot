@@ -122,14 +122,17 @@ func _load_from_global():
 	player_hex = MapState.player_hex
 	current_tier = MapState.current_tier
 	has_cut = MapState.has_cut
+	chosen_char_index = MapState.chosen_char_index
 	
 	if has_cut:
-		if MapState.chosen_char_index != -1:
-			var tex = view.tex_player_icons[MapState.chosen_char_index]
+		if chosen_char_index != -1 and chosen_char_index < view.tex_player_icons.size():
+			var tex = view.tex_player_icons[chosen_char_index]
 			player_sprite.texture = tex
 			char_pic.texture = tex
 	else:
 		player_sprite.texture = view.tex_player_unknown
+
+	player_sprite.visible = true
 		
 	if MapState.ui_settled:
 		cartoon.snap_clock_to_ui(clock)

@@ -11,7 +11,7 @@ var property : int
 
 var owner_battle: battle
 enum Vice_State_Pool {
-	Flag1 = 1,
+	protected = 1,
 	Flag2 = 1 << 1,
 	Flag3 = 1 << 2
 }
@@ -64,11 +64,11 @@ enum Attitude_Pool {
 }
 var Attitude = Attitude_Pool.Middle
 
-var possible_behaviour : Array[Callable]
 
 var neighbors : Array[Vector2i]
 var step : int
 
+var sheild : int = 0
 
 @export_group("时间占位系统")
 @export var timeline_shape_key: String = "1"         # 原始输入的字符串（如 "011"）
@@ -89,8 +89,8 @@ func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[Stri
 	self.location = location_in
 	self.landform_rules = rules_in
 	self.Underlings = is_Underlings
-	self.neighbors = get_neighbor_coords(location_in)
 	self.owner_battle = battle_in
+	self.neighbors = get_neighbor_coords(location_in)
 	self.HP = Max_Blood
 
 
@@ -105,7 +105,7 @@ func get_neighbor_coords(center: Vector2i) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
 	for dir in HEX_DIRS:
 		var next = center + dir
-		if abs(next[1] + next[0]) <= 4 and abs(next[1]) <= 4 and abs(next[0]) <= 4:
+		if owner_battle.map_data.keys().has(next):
 			result.append(next)
 	return result
 
@@ -152,11 +152,11 @@ func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_s
 	var tex: Texture2D = null
 	if State_Main == Main_State_Pool.Broken:
 		if landform_damaged_tex != null and not landform_damaged_tex.is_empty():
-			tex = landform_damaged_tex[0]
+			tex = damaged_tex_picker()
 
 	if tex == null:
 		if landform_tex != null and not landform_tex.is_empty():
-			tex = landform_tex[0]
+			tex = tex_picker()
 
 	if tex == null:
 		return
@@ -284,11 +284,14 @@ func _parse_matrix_shape(matrix_str: String) -> void:
 	
 	# 智能分行：支持逗号、换行，或者单纯的 "011"
 	if trimmed.contains(","):
-		rows = Array(trimmed.split(",", false))
+		for row_text in trimmed.split(",", false):
+			rows.append(row_text)
 	elif trimmed.contains("\n"):
-		rows = Array(trimmed.split("\n", false))
+		for row_text in trimmed.split("\n", false):
+			rows.append(row_text)
 	elif trimmed.contains(" ") and (trimmed.contains("0") or trimmed.contains("1")):
-		rows = Array(trimmed.split(" ", false))
+		for row_text in trimmed.split(" ", false):
+			rows.append(row_text)
 	else:
 		rows.append(trimmed)
 	
@@ -352,6 +355,9 @@ func heal(amount: float) -> void:
 
 ## 重写：受伤逻辑（更新 damage_rate 和 damage 状态）
 func take_damage(amount: int) -> void:
+	if State_Vice & Vice_State_Pool.protected != 0:
+		State_Vice &= ~Vice_State_Pool.protected
+		return
 	# 这里可以播放通用的受伤动画，比如 $AnimationPlayer.play("hurt")
 	set_health(HP - amount)
 	GameLogger.debug("地形受伤: amount=%d, current_hp=%d, damage_rate=%.2f" % [amount, HP, damage_rate], "landform")
@@ -441,18 +447,18 @@ func tex_toggle():
 	if State_Main == Main_State_Pool.Normal or State_Main == Main_State_Pool.Captured:
 		# 检查数组是否为空，并且当前纹理是否不是我们要的那个（避免重复赋值）
 		if landform_tex.size() > 0:
-			if tex.texture != landform_tex[0]:
-				tex.texture = landform_tex[0]
+			if !landform_tex.has(tex.texture):
+				tex.texture = tex_picker()
 				
 	elif State_Main == Main_State_Pool.Broken:
 		# 修复点：对于损坏状态，应该使用 landform_damaged_tex 数组
 		if landform_damaged_tex.size() > 0:
-			if tex.texture != landform_damaged_tex[0]:
-				tex.texture = landform_damaged_tex[0]
+			if !landform_damaged_tex.has(tex.texture):
+				tex.texture = damaged_tex_picker()
 		else:
 			# 如果万一没有配置损坏贴图，作为兜底，可以使用原图
 			if landform_tex.size() > 0:
-				tex.texture = landform_tex[0]
+				tex.texture = tex_picker()
 				
 ## ★ 恢复的幂等性检验函数
 func parse_timeline_shape() -> void:
@@ -469,3 +475,9 @@ func parse_timeline_shape() -> void:
 	
 	# 记录下来，下次就不用再解析了
 	_last_parsed_shape_key = timeline_shape_key
+
+func tex_picker():
+	return landform_tex[0]
+
+func damaged_tex_picker():
+	return landform_damaged_tex[0]
