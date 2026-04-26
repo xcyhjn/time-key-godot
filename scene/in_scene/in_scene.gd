@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 # 预加载资源
 var hand_scene = load("res://addons/card-framework/hand.tscn")
@@ -159,7 +159,7 @@ func _ready() -> void:
 	
 	# 初始化时间轴UI引用
 	if timeline_ui:
-		GameLogger.info("TimelineUI已找到: " + timeline_ui.name, "project")
+		pass
 	
 	# 2. 连接失败按钮点击信号
 	if is_instance_valid(lose_button):
@@ -233,7 +233,6 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 ## 确保在第一次生成敌人时也在时间轴上部署意图
 func _generate_initial_enemy_intents() -> void:
 	if not is_instance_valid(timeline_manager):
-		GameLogger.warning("timeline_manager 无效，无法生成初始敌人意图", "Project")
 		return
 	
 	# 清除任何可能的残留占用
@@ -241,20 +240,17 @@ func _generate_initial_enemy_intents() -> void:
 		timeline_manager.clear_grid()
 	
 	var all_enemies = get_tree().get_nodes_in_group("Enemies")
-	GameLogger.debug("游戏初始化：找到 %d 个敌人，生成初始意图" % all_enemies.size(), "Project")
 	
 	if all_enemies.is_empty():
-		GameLogger.debug("游戏开始时没有敌人，跳过初始意图生成", "Project")
 		return
 	
 	if timeline_manager.has_method("generate_enemy_intents"):
 		timeline_manager.generate_enemy_intents(all_enemies)
-		GameLogger.info("✅ 游戏开始时已生成敌人意图", "Project")
 		# 调试：打印网格状态
 		if timeline_manager.has_method("debug_print_grid"):
 			timeline_manager.debug_print_grid()
 	else:
-		GameLogger.warning("timeline_manager 没有 generate_enemy_intents 方法", "Project")
+		pass
 
 
 func _on_timeline_action_hovered(action: TimelineAction, is_hovering: bool):
@@ -448,7 +444,6 @@ func update_counts_and_ui():
 		deck_count_label.text = str(current_deck_count)
 	if is_instance_valid(discard_count_label):
 		discard_count_label.text = str(current_discard_count)
-	GameLogger.info("UI 更新完毕 | 抽牌堆: %d | 弃牌堆: %d" % [current_deck_count, current_discard_count], "Project")
 
 
 # --- 新增：抽牌堆的输入处理 (左键抽牌，右键查看) ---
@@ -461,24 +456,21 @@ func _on_deck_button_gui_input(event: InputEvent):
 	if event is InputEventMouseButton and event.pressed:
 		# --- 左键点击：抽牌 ---
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			GameLogger.debug("左键点击抽牌堆：尝试抽牌...", "Project")
 			attempt_draw_cards(3)  # 这里填你想要的抽牌数量
 
 		# --- 右键点击：查看抽牌堆 ---
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			GameLogger.debug("右键点击抽牌堆：查看剩余卡牌", "Project")
 			if deck_pile._held_cards.size() > 0:
 				pile_viewer.open_pile_view(deck_pile, manager_instance)
 			else:
-				GameLogger.warning("抽牌堆是空的，没东西看！", "Project")
+				pass
 
 func _on_discard_button_pressed():
 	# 点击弃牌堆按钮 -> 查看弃牌堆
-	GameLogger.debug("查看弃牌堆", "Project")
 	if discard_pile._held_cards.size() > 0:
 		pile_viewer.open_pile_view(discard_pile, manager_instance)
 	else:
-		GameLogger.warning("弃牌堆是空的", "Project")
+		pass
 
 # ==========================================
 # ★ 回合流程控制区
@@ -486,7 +478,6 @@ func _on_discard_button_pressed():
 
 
 func _on_start_turn_pressed():
-	GameLogger.info("⚔️ 回合开始！", "Project")
 
 	# 1. 切换按钮状态（防止连按）
 	start_turn_button.disabled = true
@@ -506,7 +497,6 @@ func _on_start_turn_pressed():
 # 在 in_scene.gd 中，找到 _on_end_turn_pressed() 并替换：
 
 func _on_end_turn_pressed():
-	GameLogger.info("⏳ 玩家点击回合结束，开始时间轴结算...", "Project")
 	if current_battle_state != BattleFlowState.COMBAT:
 		return
 
@@ -533,7 +523,6 @@ func _on_end_turn_pressed():
 func start_new_turn():
 	if current_battle_state != BattleFlowState.COMBAT:
 		return
-	GameLogger.info("☀️ 新回合开始！", "Project")
 	# 1. 时代值 +1 等系统级结算
 	current_era_value += 1
 	_push_era_to_global()
@@ -571,10 +560,8 @@ func enable_player_inputs():
 
 func discard_all_hand_cards():
 	if player_hand._held_cards.is_empty():
-		GameLogger.debug("手牌已空，无需弃牌。", "Project")
 		return
 
-	GameLogger.info("正在弃掉所有手牌...", "Project")
 
 	# ★ 核心安全机制：必须 duplicate() 复制一份数组！
 	# 因为 move_cards 会在底层动态修改 player_hand._held_cards，
@@ -603,11 +590,9 @@ func discard_all_hand_cards():
 func attempt_draw_cards(count: int):
 	# ★ 拦截：如果锁正在开启，说明前一次抽牌/洗牌 await 还没结束，直接无视请求
 	if is_processing_deck:
-		GameLogger.warning("正在处理牌堆动画，忽略重复的抽牌请求", "Project")
 		return
 		
 	if player_hand._held_cards.size() >= 7:
-		GameLogger.warning("手牌已满，无法摸牌！", "Project")
 		return
 
 	# ★ 上锁
@@ -615,15 +600,12 @@ func attempt_draw_cards(count: int):
 	# ★ 禁用所有卡牌相关交互，防止抽牌途中玩家强行拖走刚抽一半的卡
 	disable_player_inputs()
 
-	GameLogger.info("开始摸牌，数量：%d" % count, "Project")
 	for i in range(count):
 		# --- 步骤 1: 检查牌堆是否为空，如果是则尝试洗牌 ---
 		if deck_pile._held_cards.size() == 0:
 			if discard_pile._held_cards.size() > 0:
-				GameLogger.info("抽牌中途牌堆耗尽，触发洗牌...", "Project")
 				await shuffle_card()  # 等待洗牌动画和逻辑完成
 			else:
-				GameLogger.warning("抽牌堆和弃牌堆都空了，无法继续抽牌！", "Project")
 				break  # 真的没牌了，只能停止
 
 		# --- 步骤 2: 再次检查牌堆 ---
@@ -675,7 +657,6 @@ func _input(event):
 				var discard_threshold = screen_size.y * drop_area
 				# 如果在上方区域松手
 				if mouse_pos.y < discard_threshold:
-					GameLogger.info("触发弃牌：%s" % card.card_info.get("name"), "Project")
 					# 移动到弃牌堆
 					# ================= ★ 新增修正 =================
 					# 强制打断悬停或拖拽的表现，将其重置为闲置
@@ -694,10 +675,8 @@ func _input(event):
 # 洗牌逻辑
 func shuffle_card():
 	if discard_pile._held_cards.is_empty():
-		GameLogger.warning("弃牌堆也是空的，无牌可洗！", "Project")
 		return
 
-	GameLogger.info("正在将弃牌堆洗入抽牌堆...", "Project")
 
 	# 1. 批量移动卡牌：从 discard_pile 移到 deck_pile
 	# 注意：move_cards 会自动处理节点父子关系的切换
@@ -715,7 +694,6 @@ func shuffle_card():
 	deck_pile.update_card_ui()
 
 	update_counts_and_ui()
-	GameLogger.info("洗牌完成！当前抽牌堆数量：%d" % deck_pile._held_cards.size(), "Project")
 
 
 # --- 辅助逻辑 ---
@@ -730,7 +708,7 @@ func _handle_discard_effects(card):
 
 
 func trigger_1_effect():
-	GameLogger.debug("draw 2", "Project")
+	pass
 
 
 # --- 共享 Tooltip 模块入口 ---
@@ -755,6 +733,7 @@ func show_tooltip(card: Control):
 	if tree_root and tree_root.has_meta("card_manager"):
 		cm = tree_root.get_meta("card_manager")
 	else:
+		pass
 		# 回退到当前场景（向后兼容）
 		var current_scene = get_tree().current_scene
 		if current_scene and current_scene.has_meta("card_manager"):
@@ -780,6 +759,7 @@ func hide_tooltip(card: Control = null):
 	if tree_root and tree_root.has_meta("card_manager"):
 		cm = tree_root.get_meta("card_manager")
 	else:
+		pass
 		# 回退到当前场景（向后兼容）
 		var current_scene = get_tree().current_scene
 		if current_scene and current_scene.has_meta("card_manager"):
@@ -827,11 +807,13 @@ func update_target_selection_hover(hovered_stack: Area2D, active_card: Control):
 
 	if is_valid_target(hovered_stack, active_card):
 		# ★ 核心修复：坚决不在这里修改 Shader！全权交由 HexMap 的状态机处理
-		var dmg = active_card.card_info.get("ATK", 0) if "card_info" in active_card else 0
+		var card_info = active_card.get("card_info")
+		var dmg = card_info.get("ATK", 0) if typeof(card_info) == TYPE_DICTIONARY else 0
 		cursor_tooltip.text = "-" + str(dmg)
 		cursor_tooltip.add_theme_color_override("font_color", Color.RED)
 		cursor_tooltip.show()
 	else:
+		pass
 		# ★ 核心修复：坚决不在这里修改 Shader！
 		cursor_tooltip.text = "无效果"
 		cursor_tooltip.add_theme_color_override("font_color", Color.GRAY)
@@ -839,10 +821,8 @@ func update_target_selection_hover(hovered_stack: Area2D, active_card: Control):
 		
 func _on_end_combat_pressed():
 	if current_battle_state != BattleFlowState.SETTLEMENT:
-		GameLogger.warning("尚未进入单局结算阶段，忽略结束战斗点击", "Project")
 		return
 
-	GameLogger.info("单局结算已完成，准备返回局外移动场景", "Project")
 	end_combat_button.disabled = true
 	if Signal_Bus and Signal_Bus.has_method("emit_combat_ended"):
 		Signal_Bus.emit_combat_ended()
@@ -932,7 +912,6 @@ func _switch_scene_with_data(path: String, payload: Variant = null) -> void:
 
 # 商店按钮回调
 func _on_shop_button_pressed():
-	GameLogger.info("🏪 玩家点击商店按钮，进入商店场景", "Project")
 	# 隐藏除hexmap和时间币外的所有UI
 	hide_ui_for_external_scene()
 	
@@ -958,11 +937,10 @@ func _on_shop_button_pressed():
 		# 连接退出信号（如果场景有退出按钮）
 		_connect_exit_signal_for_external_scene(shop_instance)
 	else:
-		GameLogger.error("无法加载商店场景", "Project")
+		pass
 
 # 获取卡牌奖励按钮回调
 func _on_acquire_reward_button_pressed():
-	GameLogger.info("🎁 玩家点击获取卡牌奖励按钮", "Project")
 	# 隐藏除hexmap和时间币外的所有UI
 	hide_ui_for_external_scene()
 	
@@ -983,11 +961,10 @@ func _on_acquire_reward_button_pressed():
 		# 连接退出信号（如果场景有退出按钮）
 		_connect_exit_signal_for_external_scene(acquire_instance)
 	else:
-		GameLogger.error("无法加载获取卡牌奖励场景", "Project")
+		pass
 
 # 删除卡牌奖励按钮回调
 func _on_remove_reward_button_pressed():
-	GameLogger.info("🗑️ 玩家点击删除卡牌奖励按钮", "Project")
 	# 隐藏除hexmap和时间币外的所有UI
 	hide_ui_for_external_scene()
 	
@@ -1008,11 +985,10 @@ func _on_remove_reward_button_pressed():
 		# 连接退出信号（如果场景有退出按钮）
 		_connect_exit_signal_for_external_scene(remove_instance)
 	else:
-		GameLogger.error("无法加载删除卡牌奖励场景", "Project")
+		pass
 
 # 合成卡牌奖励按钮回调
 func _on_craft_reward_button_pressed():
-	GameLogger.info("🔧 玩家点击合成卡牌奖励按钮", "Project")
 	# 隐藏除hexmap和时间币外的所有UI
 	hide_ui_for_external_scene()
 	
@@ -1033,12 +1009,11 @@ func _on_craft_reward_button_pressed():
 		# 连接退出信号（如果场景有退出按钮）
 		_connect_exit_signal_for_external_scene(craft_instance)
 	else:
-		GameLogger.error("无法加载合成卡牌奖励场景", "Project")
+		pass
 
 
 # 当局外界面点击离开/下一关时调用这个函数
 func proceed_to_next_stage():
-	GameLogger.info("进入下一关，恢复局内 UI！", "Project")
 	current_battle_state = BattleFlowState.COMBAT
 
 	# 把刚才隐藏的按钮全部恢复显示
@@ -1085,20 +1060,13 @@ func apply_external_event(payload: String) -> void:
 		incoming_battle_tag = payload_text.substr(0, first_space_index)
 		incoming_map_seed = payload_text.substr(first_space_index + 1).strip_edges()
 
-	GameLogger.info("局内战斗入口已记录：battle_tag=%s, map_seed=%s" % [
-		incoming_battle_tag,
-		incoming_map_seed if incoming_map_seed != "" else "无"
-	], "Project")
-
 ## 增强光标提示框，模仿卡牌文本框的样式
 func _enhance_cursor_tooltip() -> void:
 	if not is_instance_valid(cursor_tooltip):
-		GameLogger.warning("cursor_tooltip 无效，无法增强样式", "Project")
 		return
 	
 	# 检查是否已经增强过（通过检查父节点是否为PanelContainer）
 	if cursor_tooltip.get_parent() is PanelContainer:
-		GameLogger.debug("cursor_tooltip 已经增强过样式", "Project")
 		return
 	
 	# 保存原始标签的引用和属性
@@ -1155,7 +1123,6 @@ func _enhance_cursor_tooltip() -> void:
 	# 连接可见性变化信号，确保Panel与Label同步
 	original_label.visibility_changed.connect(_on_cursor_tooltip_visibility_changed)
 	
-	GameLogger.debug("cursor_tooltip 已增强为PanelContainer样式", "Project")
 
 ## 当cursor_tooltip可见性变化时，同步Panel的可见性
 func _on_cursor_tooltip_visibility_changed() -> void:
@@ -1176,7 +1143,6 @@ func set_cursor_tooltip_position(position: Vector2) -> void:
 
 ## 隐藏除hexmap和时间币外的所有UI，为局外场景做准备
 func hide_ui_for_external_scene():
-	GameLogger.info("🔄 隐藏UI，为局外场景做准备", "Project")
 	
 	# 记录需要隐藏的UI元素
 	# 注意：hex_map和timecoin_container会保持显示
@@ -1221,41 +1187,35 @@ func hide_ui_for_external_scene():
 		# 确保时间币UI在最上层
 		timecoin_container.z_index = 100
 	
-	GameLogger.info("✅ UI隐藏完成，hexmap和时间币保持显示", "Project")
 
 ## 退出局外场景后，恢复四个局外按钮
 func restore_ui_after_external_scene():
-	GameLogger.info("🔄 恢复四个局外按钮", "Project")
 	
 	# 只恢复四个局外按钮，其他UI保持隐藏状态
 	var buttons_restored = 0
 	if is_instance_valid(shop_button):
 		shop_button.show()
-		GameLogger.debug("商店按钮显示: visible=%s, disabled=%s" % [shop_button.visible, shop_button.disabled], "Project")
 		buttons_restored += 1
 	else:
-		GameLogger.warning("商店按钮引用无效", "Project")
+		pass
 	
 	if is_instance_valid(acquire_reward_button):
 		acquire_reward_button.show()
-		GameLogger.debug("获取按钮显示: visible=%s, disabled=%s" % [acquire_reward_button.visible, acquire_reward_button.disabled], "Project")
 		buttons_restored += 1
 	else:
-		GameLogger.warning("获取按钮引用无效", "Project")
+		pass
 	
 	if is_instance_valid(remove_reward_button):
 		remove_reward_button.show()
-		GameLogger.debug("删除按钮显示: visible=%s, disabled=%s" % [remove_reward_button.visible, remove_reward_button.disabled], "Project")
 		buttons_restored += 1
 	else:
-		GameLogger.warning("删除按钮引用无效", "Project")
+		pass
 	
 	if is_instance_valid(craft_reward_button):
 		craft_reward_button.show()
-		GameLogger.debug("合成按钮显示: visible=%s, disabled=%s" % [craft_reward_button.visible, craft_reward_button.disabled], "Project")
 		buttons_restored += 1
 	else:
-		GameLogger.warning("合成按钮引用无效", "Project")
+		pass
 	
 	if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(end_combat_button):
 		end_combat_button.show()
@@ -1264,11 +1224,9 @@ func restore_ui_after_external_scene():
 	if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(total_enemy_health_bar):
 		total_enemy_health_bar.show()
 	
-	GameLogger.info("✅ 局外按钮已恢复 (恢复数量: %d/4)" % buttons_restored, "Project")
 
 ## 完全恢复所有UI（用于返回游戏主界面）
 func restore_all_ui():
-	GameLogger.info("🔄 恢复所有UI", "Project")
 	
 	# 恢复所有之前隐藏的UI元素
 	if is_instance_valid(player_hand): player_hand.show()
@@ -1290,7 +1248,6 @@ func restore_all_ui():
 		_hide_settlement_buttons()
 	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
 	
-	GameLogger.info("✅ 所有UI已恢复", "Project")
 
 ## 连接外部场景的退出信号
 func _connect_exit_signal_for_external_scene(scene_instance: Node):
@@ -1302,7 +1259,6 @@ func _connect_exit_signal_for_external_scene(scene_instance: Node):
 			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
 		if btn_exit is Button:
 			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-			GameLogger.debug("已连接商店退出按钮", "Project")
 	
 	# 2. 检查 btn_back (奖励场景使用)
 	if scene_instance.has_node("btn_back"):
@@ -1311,7 +1267,6 @@ func _connect_exit_signal_for_external_scene(scene_instance: Node):
 			btn_back.pressed.disconnect(_on_external_scene_exit_pressed)
 		if btn_back is Button:
 			btn_back.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-			GameLogger.debug("已连接奖励场景返回按钮", "Project")
 	
 	# 3. 检查 BtnExit (带大写)
 	if scene_instance.has_node("BtnExit"):
@@ -1320,7 +1275,6 @@ func _connect_exit_signal_for_external_scene(scene_instance: Node):
 			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
 		if btn_exit is Button:
 			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-			GameLogger.debug("已连接大写退出按钮", "Project")
 	
 	# 4. 检查 BtnBack (带大写)
 	if scene_instance.has_node("BtnBack"):
@@ -1329,7 +1283,6 @@ func _connect_exit_signal_for_external_scene(scene_instance: Node):
 			btn_back.pressed.disconnect(_on_external_scene_exit_pressed)
 		if btn_back is Button:
 			btn_back.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-			GameLogger.debug("已连接大写返回按钮", "Project")
 	
 	# 5. 检查 Sidebar/BtnExit (商店侧边栏退出按钮)
 	if scene_instance.has_node("Sidebar/BtnExit"):
@@ -1338,7 +1291,6 @@ func _connect_exit_signal_for_external_scene(scene_instance: Node):
 			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
 		if btn_exit is Button:
 			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-			GameLogger.debug("已连接侧边栏退出按钮", "Project")
 	
 	# 6. 检查 Sidebar/btn_exit (小写版本)
 	if scene_instance.has_node("Sidebar/btn_exit"):
@@ -1347,16 +1299,13 @@ func _connect_exit_signal_for_external_scene(scene_instance: Node):
 			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
 		if btn_exit is Button:
 			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-			GameLogger.debug("已连接侧边栏小写退出按钮", "Project")
 
 ## 外部场景退出按钮回调
 func _on_external_scene_exit_pressed(scene_instance: Node):
-	GameLogger.info("🚪 退出局外场景，恢复UI", "Project")
 	
 	# 0. 先隐藏场景实例，防止覆盖按钮
 	if is_instance_valid(scene_instance):
 		scene_instance.hide()
-		GameLogger.debug("已隐藏场景实例", "Project")
 	
 	# 1. 恢复四个局外按钮
 	restore_ui_after_external_scene()
@@ -1364,14 +1313,12 @@ func _on_external_scene_exit_pressed(scene_instance: Node):
 	# 2. 移除场景实例
 	if is_instance_valid(scene_instance):
 		scene_instance.queue_free()
-		GameLogger.debug("已移除场景实例", "Project")
 	
 	# 3. 可选：如果需要完全恢复所有UI，可以调用 restore_all_ui()
 	# 但根据需求，只恢复四个局外按钮，其他UI保持隐藏
 
 # 信号响应：执行实际的动画转换逻辑
 func _on_defeat_triggered():
-	GameLogger.info("💀 收到失败信号，开始失败动画序列", "Project")
 	
 	# 隐藏所有战斗 UI
 	hide_ui_for_external_scene()
@@ -1390,11 +1337,9 @@ func _on_defeat_triggered():
 
 # 按钮点击：只负责发出全局信号
 func _on_lose_button_pressed():
-	GameLogger.info("🔧 玩家点击失败调试按钮", "Project")
 	Signal_Bus.emit_defeat_triggered()
 	
 func _on_combat_victory_debug_button_down() -> void:
-	GameLogger.info("🔧 玩家点击单局内胜利调试按钮", "Project")
 	if Signal_Bus and Signal_Bus.has_method("emit_combat_victory_triggered"):
 		Signal_Bus.emit_combat_victory_triggered()
 
@@ -1443,7 +1388,6 @@ func _on_combat_victory_triggered() -> void:
 		return
 
 	current_battle_state = BattleFlowState.SETTLEMENT
-	GameLogger.info("🏆 单局内胜利触发，进入局内结算阶段", "Project")
 
 	disable_player_inputs()
 	_hide_combat_phase_ui_for_settlement()

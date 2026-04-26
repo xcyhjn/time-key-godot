@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 # 敌人意图管理器
 # 负责敌人意图的生成、管理和可视化
@@ -40,14 +40,11 @@ signal enemy_target_changed(enemy: Node, target: Node)  # 敌人目标变化
 ## 开始生成敌人意图
 func generate_enemy_intents(enemies: Array) -> void:
 	if is_generating_intents:
-		GameLogger.warning("敌人意图生成正在进行中，跳过重复调用", "EnemyIntentManager")
 		return
 
 	if not timeline_manager:
-		GameLogger.error("未找到 TimelineManager 引用", "EnemyIntentManager")
 		return
 
-	GameLogger.info("开始生成敌人意图，敌人数量: %s" % enemies.size(), "EnemyIntentManager")
 
 	# 清空当前意图
 	clear_current_intents()
@@ -80,7 +77,6 @@ func _generate_next_intent() -> void:
 
 	# 检查敌人是否有意图接口
 	if not enemy.has_method("get_intent_shape") or not enemy.has_method("get_intent_action"):
-		GameLogger.warning("敌人 %s 没有意图接口，跳过" % enemy.name, "EnemyIntentManager")
 		_generate_next_intent()
 		return
 
@@ -91,7 +87,6 @@ func _generate_next_intent() -> void:
 	var spot = timeline_manager.find_random_available_spot(shape)
 
 	if spot == Vector2i(-1, -1):
-		GameLogger.warning("找不到能放下敌人 %s 形状的空位" % enemy.name, "EnemyIntentManager")
 		_generate_next_intent()
 		return
 
@@ -113,14 +108,12 @@ func _generate_next_intent() -> void:
 	var timer = get_tree().create_timer(intent_generation_delay)
 	timer.timeout.connect(_generate_next_intent)
 
-	GameLogger.info("生成敌人 %s 意图，位置: %s" % [enemy.name, spot], "EnemyIntentManager")
 
 
 ## 完成意图生成
 func _finish_intent_generation() -> void:
 	is_generating_intents = false
 
-	GameLogger.info("敌人意图生成完成，共生成 %s 个意图" % current_intents.size(), "EnemyIntentManager")
 
 	# 发射完成信号
 	intents_generated.emit(current_intents)
@@ -148,9 +141,9 @@ func _place_intents_to_timeline() -> void:
 	for intent in current_intents:
 		var success = timeline_manager.place_action(intent, intent.origin_grid_pos)
 		if success:
-			GameLogger.debug("成功放置敌人意图到时间轴: %s" % intent.origin_grid_pos, "EnemyIntentManager")
+			pass
 		else:
-			GameLogger.warning("放置敌人意图失败: %s" % intent.origin_grid_pos, "EnemyIntentManager")
+			pass
 
 # ==========================================
 # ★ 意图预览系统
@@ -160,7 +153,6 @@ func _place_intents_to_timeline() -> void:
 ## 创建意图预览
 func _create_intent_preview(intent: TimelineAction, grid_pos: Vector2i) -> void:
 	if not timeline_ui:
-		GameLogger.warning("未找到 TimelineUI 引用，无法创建意图预览", "EnemyIntentManager")
 		return
 
 	# 设置意图的原始位置
@@ -169,7 +161,6 @@ func _create_intent_preview(intent: TimelineAction, grid_pos: Vector2i) -> void:
 	# 这里可以创建自定义的预览效果
 	# 例如：半透明的红色方块，带有闪烁效果
 
-	GameLogger.debug("创建敌人意图预览: %s" % grid_pos, "EnemyIntentManager")
 	intent_preview_created.emit(intent)
 
 	# TODO: 实际创建可视化预览对象
@@ -178,7 +169,6 @@ func _create_intent_preview(intent: TimelineAction, grid_pos: Vector2i) -> void:
 
 ## 清除所有意图预览
 func _clear_intent_previews() -> void:
-	GameLogger.debug("清除所有敌人意图预览", "EnemyIntentManager")
 
 	# TODO: 实际清除可视化预览对象
 
@@ -196,7 +186,6 @@ func clear_current_intents() -> void:
 	_clear_intent_previews()
 	current_intents.clear()
 
-	GameLogger.info("清空所有敌人意图", "EnemyIntentManager")
 
 
 ## 查找敌人目标（简化版）
@@ -221,7 +210,6 @@ func is_generating() -> bool:
 ## 强制停止意图生成
 func stop_intent_generation() -> void:
 	if is_generating_intents:
-		GameLogger.info("强制停止敌人意图生成", "EnemyIntentManager")
 		is_generating_intents = false
 		pending_enemies.clear()
 		_clear_intent_previews()
@@ -232,16 +220,15 @@ func stop_intent_generation() -> void:
 
 
 func _ready() -> void:
-	GameLogger.debug("敌人意图管理器已就绪", "EnemyIntentManager")
 
 	# 尝试自动查找 TimelineManager
 	if not timeline_manager and get_parent():
 		timeline_manager = get_parent().find_child("TimelineManager")
 
 	if timeline_manager:
-		GameLogger.info("成功连接到 TimelineManager", "EnemyIntentManager")
+		pass
 	else:
-		GameLogger.warning("未找到 TimelineManager，部分功能可能受限", "EnemyIntentManager")
+		pass
 
 
 func _process(delta: float) -> void:
@@ -251,5 +238,4 @@ func _process(delta: float) -> void:
 
 		# 安全保护：如果生成过程卡住，超时强制完成
 		if intent_generation_timer > 10.0:  # 10秒超时
-			GameLogger.warning("敌人意图生成超时，强制完成", "EnemyIntentManager")
 			_finish_intent_generation()

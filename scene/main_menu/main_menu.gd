@@ -33,7 +33,7 @@ func _process(_delta: float) -> void:
 		var packed_scene = ResourceLoader.load_threaded_get(Scene_path)
 		var next_scene_instance = packed_scene.instantiate()
 		
-		if "received_text" in next_scene_instance:
+		if _object_has_property(next_scene_instance, &"received_text"):
 			next_scene_instance.received_text = pending_data
 		
 		get_tree().root.add_child(next_scene_instance)

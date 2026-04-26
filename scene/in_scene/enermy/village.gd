@@ -1,4 +1,4 @@
-class_name village
+﻿class_name village
 extends landform
 
 static var Library : Array[Vector2]
@@ -276,5 +276,4 @@ func get_intent_action(target_tile: Node = null) -> TimelineAction:
 		action_data
 	)
 
-	GameLogger.debug("创建村庄意图行动: %s, 效果: %s" % [landform_name, action_data["效果"]], "village")
 	return action

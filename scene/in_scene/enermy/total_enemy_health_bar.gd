@@ -1,4 +1,4 @@
-class_name TotalEnemyHealthBar
+﻿class_name TotalEnemyHealthBar
 extends Node2D
 
 const HEALTHBAR_TEXTURE: Texture2D = preload("res://image/UI_Healthbar.png")
@@ -193,7 +193,6 @@ func _on_enemy_blood_changed(new_hp: float, enemy: Node) -> void:
 
 	var delta = next_hp - old_hp
 	current_total_health = clampi(current_total_health + delta, 0, max_total_health)
-	GameLogger.debug("总血条收到 Blood_change: %s %d -> %d, 总血量=%d/%d" % [enemy.name, old_hp, next_hp, current_total_health, max_total_health], "TotalEnemyHealthBar")
 
 	_update_display()
 
@@ -218,7 +217,6 @@ func _on_damage_dealt(target: Node, _amount: int) -> void:
 	
 	tracked_enemies[target] = hp
 	current_total_health = clampi(current_total_health + (hp - old_hp), 0, max_total_health)
-	GameLogger.debug("总血条收到 damage_dealt 兜底同步: %s %d -> %d, 总血量=%d/%d" % [target.name, old_hp, hp, current_total_health, max_total_health], "TotalEnemyHealthBar")
 	_update_display()
 	_flash_damage_feedback()
 	_check_combat_victory()
@@ -261,6 +259,5 @@ func _check_combat_victory() -> void:
 	var ratio = float(current_total_health) / float(max_total_health)
 	if ratio <= low_health_ratio:
 		has_triggered_combat_victory = true
-		GameLogger.info("敌方总血量已跌破阈值，触发单局内胜利", "TotalEnemyHealthBar")
 		if Signal_Bus and Signal_Bus.has_method("emit_combat_victory_triggered"):
 			Signal_Bus.emit_combat_victory_triggered()

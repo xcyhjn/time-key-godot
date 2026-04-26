@@ -1,10 +1,19 @@
-# 原文件名: custom_card(卡牌模板).gd
+﻿# 原文件名: custom_card(卡牌模板).gd
 # 功能: 卡牌模板
 class_name CustomCard
 extends Card  # 直接继承插件自带的 Card 类，白嫖它所有底层功能！
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
+
+
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -97,19 +106,12 @@ func _save_original_state() -> void:
 	original_position = card_original_position
 	original_scale = card_original_scale
 
-	GameLogger.debug("卡牌原始状态已保存: parent=%s, pos=%s, scale=%s" % [
-		original_parent.name if original_parent else "null",
-		card_original_position,
-		card_original_scale
-	], "CustomCard")
-
 
 ## 进入拖拽状态
 func enter_dragging_state() -> void:
 	if card_current_state == CustomCardState.DRAGGING:
 		return
 
-	GameLogger.info("卡牌进入拖拽状态", "CustomCard")
 	card_current_state = CustomCardState.DRAGGING
 
 	# 保存当前状态（确保最新）
@@ -124,7 +126,6 @@ func return_to_hand() -> void:
 	if card_current_state == CustomCardState.RETURNING or card_current_state == CustomCardState.IDLE:
 		return
 
-	GameLogger.info("卡牌开始返回手牌", "CustomCard")
 	card_current_state = CustomCardState.RETURNING
 
 	# 清除拖拽视觉效果
@@ -133,15 +134,9 @@ func return_to_hand() -> void:
 		front_face_texture.material = original_material
 	set_card_transparency(1.0)
 
-	# 调试日志：缩放值
-	GameLogger.debug("返回手牌 - 原始缩放: %s, 当前缩放: %s, 原始位置: %s" % [
-		card_original_scale, scale, card_original_position
-	], "CustomCard")
-
 	# 重新父级化：将卡牌返回原始父节点（手牌容器）
 	var current_parent = get_parent()
 	if current_parent and is_instance_valid(original_parent) and current_parent != original_parent:
-		GameLogger.info("将卡牌重新父级化到原始父节点: %s" % original_parent.name, "CustomCard")
 
 		# 保存当前全局位置，以便动画平滑过渡
 		var current_global_pos = global_position
@@ -158,13 +153,6 @@ func return_to_hand() -> void:
 		scale = current_global_scale
 		z_index = current_z_index
 
-		# 调试信息：记录父节点类型
-		GameLogger.debug("原始父节点类型: %s, 是CanvasItem: %s, 有to_local方法: %s" % [
-			original_parent.get_class(),
-			original_parent is CanvasItem,
-			original_parent.has_method("to_local")
-		], "CustomCard")
-
 		# 启动返回动画 - 直接使用全局位置补间，避免坐标转换问题
 		var tw = create_tween().set_parallel(true)
 		tw.tween_property(self, "global_position", card_original_position, 0.3)
@@ -177,10 +165,8 @@ func return_to_hand() -> void:
 		# 通知手牌容器重新布局（如果支持）
 		if original_parent.has_method("add_card"):
 			original_parent.add_card(self)
-			GameLogger.info("已通知手牌容器重新布局", "CustomCard")
 	else:
 		# 如果已经在原始父节点中，直接执行动画
-		GameLogger.info("卡牌已在原始父节点中，直接执行返回动画", "CustomCard")
 		var tw = create_tween().set_parallel(true)
 		tw.tween_property(self, "global_position", card_original_position, 0.3)
 		tw.tween_property(self, "scale", card_original_scale, 0.3)
@@ -188,7 +174,6 @@ func return_to_hand() -> void:
 		await tw.finished
 
 	card_current_state = CustomCardState.IDLE
-	GameLogger.info("卡牌已返回手牌，状态重置为IDLE", "CustomCard")
 
 
 ## 更新拖拽位置（由DragShapeController调用）
@@ -383,7 +368,6 @@ func _normalize_and_parse_shape(shape_data: Variant) -> void:
 	# 【修复2】：绝对不要覆写原数据字典，保持原数据的纯洁性！
 	# card_info["shape"] = timeline_shape_coords # <--- 删掉这行，大功告成！
 	
-	GameLogger.debug("解析并归一化形状成功！唯一特征码: [%s], 尺寸: %s" % [timeline_shape_key, str(timeline_shape_size)], "CustomCard")
 # 2. ★ 核心：动态文本渲染器
 # ==========================================
 # ★ 修改：不再向 UI 渲染，而是返回解析好的 BBCode 字符串
@@ -391,7 +375,6 @@ func _normalize_and_parse_shape(shape_data: Variant) -> void:
 ## 加载时间占位图片
 func _load_timeline_shape_texture() -> void:
 	if timeline_shape_key.is_empty():
-		GameLogger.warning("timeline_shape_key为空，无法加载时间占位图片", "CustomCard")
 		return
 	
 	if timeline_shape_key in TIMELINE_SHAPE_TEXTURES:
@@ -399,32 +382,26 @@ func _load_timeline_shape_texture() -> void:
 		if time_block_sprite:
 			# 调试：记录节点类型
 			var node_class = time_block_sprite.get_class()
-			GameLogger.debug("TimeBlock节点类型: " + node_class + ", 路径: " + str(time_block_sprite.get_path()), "CustomCard")
 			
 			# 根据节点类型设置相应属性
 			if time_block_sprite is TextureRect:
 				time_block_sprite.texture = texture
-				GameLogger.debug("已加载时间占位图片到TextureRect: " + timeline_shape_key, "CustomCard")
 			elif time_block_sprite is ColorRect:
 				# ColorRect无法显示纹理，只能显示纯色
 				# 这里设置为半透明蓝色作为占位
 				time_block_sprite.color = Color(0.2, 0.4, 0.8, 0.7)
-				GameLogger.debug("TimeBlock是ColorRect，设置为半透明蓝色: " + timeline_shape_key, "CustomCard")
 			elif time_block_sprite is Sprite2D:
 				# Sprite2D支持纹理
 				time_block_sprite.texture = texture
-				GameLogger.debug("已加载时间占位图片到Sprite2D: " + timeline_shape_key, "CustomCard")
 			else:
 				# 如果是普通Control节点，尝试动态添加TextureRect子节点
-				GameLogger.debug("TimeBlock是" + node_class + "类型，尝试动态处理", "CustomCard")
 				
 				# 检查节点是否支持texture属性
-				if time_block_sprite.has_method("set_texture") or "texture" in time_block_sprite:
-					GameLogger.debug("节点支持texture属性，直接设置", "CustomCard")
+				if time_block_sprite.has_method("set_texture") or _object_has_property(time_block_sprite, &"texture"):
 					# 尝试安全设置texture属性
 					if time_block_sprite.set_texture is Callable:
 						time_block_sprite.set_texture(texture)
-					elif "texture" in time_block_sprite:
+					elif _object_has_property(time_block_sprite, &"texture"):
 						time_block_sprite.texture = texture
 				else:
 					# 检查是否已经有TextureRect子节点
@@ -444,17 +421,15 @@ func _load_timeline_shape_texture() -> void:
 						time_block_sprite.add_child(texture_child)
 					
 					texture_child.texture = texture
-					GameLogger.debug("已创建TextureRect子节点显示时间占位图片: " + timeline_shape_key, "CustomCard")
 		else:
-			GameLogger.warning("time_block_sprite节点不存在", "CustomCard")
+			pass
 	else:
-		GameLogger.warning("未找到时间占位图片: " + timeline_shape_key, "CustomCard")
+		pass
 
 
 ## 显示时间占位图片
 func show_timeline_shape() -> void:
 	if not time_block_sprite:
-		GameLogger.warning("time_block_sprite节点不存在，无法显示时间占位", "CustomCard")
 		return
 	
 	# 确保图片已加载
@@ -487,7 +462,6 @@ func show_timeline_shape() -> void:
 		time_block_sprite.scale = Vector2(scale_x, scale_y)
 	else:
 		# 其他Control节点，尝试设置大小和位置属性
-		GameLogger.debug("处理通用Control节点: " + str(time_block_sprite.get_class()), "CustomCard")
 		
 		# 尝试设置大小
 		if "size" in time_block_sprite:
@@ -525,14 +499,12 @@ func show_timeline_shape() -> void:
 			# 对于其他可能有material属性的节点类型
 			time_block_sprite.material = material.duplicate()
 	
-	GameLogger.debug("显示时间占位图片，位置: " + str(time_block_sprite.position) + ", 大小: " + str(Vector2(block_width, block_height)), "CustomCard")
 
 
 ## 隐藏时间占位图片
 func hide_timeline_shape() -> void:
 	if time_block_sprite:
 		time_block_sprite.visible = false
-		GameLogger.debug("隐藏时间占位图片", "CustomCard")
 
 
 ## 获取时间占位图片位置（供DragShapeController使用）
@@ -568,7 +540,6 @@ func set_card_transparency(alpha: float) -> void:
 	if has_method("set_modulate"):
 		var current_color = modulate
 		modulate = Color(current_color.r, current_color.g, current_color.b, alpha)
-		GameLogger.debug("设置卡牌透明度: " + str(alpha), "CustomCard")
 
 
 # ==========================================
@@ -577,7 +548,7 @@ func get_parsed_description() -> String:
 	active_keywords.clear()
 
 	# 1. 替换动态变量并变色 (如果有的话)
-	if "current_stats" in self:
+	if _object_has_property(self, &"current_stats"):
 		for stat_key in current_stats.keys():
 			var placeholder = "{" + stat_key + "}"
 			if placeholder in final_text:
@@ -772,15 +743,12 @@ func play_card(target_hex: Area2D):
 	var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
 
 	if drag_controller and drag_controller.has_method("start_dragging"):
-		GameLogger.info("🃏 卡牌打出！移交 DragShapeController 变形处理...", "CustomCard")
 		drag_controller.start_dragging(self, target_hex)
 	else:
-		GameLogger.warning("❌ 未找到 DragShapeController，直接生效！", "CustomCard")
 		apply_effect_immediate(target_hex)
 
 # (仅作兜底或无时间轴卡牌使用)
 func apply_effect_immediate(target_hex: Area2D):
-	GameLogger.info("对地块 %s 直接释放了效果！" % target_hex.position, "CustomCard")
 	# ... 直接结算的逻辑 ...
 	queue_free()
 	

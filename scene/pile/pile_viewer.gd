@@ -1,4 +1,4 @@
-# 原文件名: pile_viewer(生成局外收获卡牌).gd
+﻿# 原文件名: pile_viewer(生成局外收获卡牌).gd
 # 功能: 生成局外收获卡牌查看器
 extends CanvasLayer
 
@@ -58,7 +58,7 @@ func _create_visual_copy(real_card: Card):
 		front_texture = real_front_node.texture
 	else:
 		# 如果真卡没加载出来（极少情况），尝试从 factory 缓存拿，或者打印个警告
-		GameLogger.warning("无法从真卡 %s 上获取到纹理" % card_name, "PileViewer")
+		pass
 
 	# 2. 将图片“贴”到【副本卡】上
 	# 我们直接操作副本卡的 TextureRect 节点，这样最直接，不依赖 set_faces

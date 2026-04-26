@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 class_name SignalBus
 
@@ -79,7 +79,7 @@ signal valid_target_hovered(tile: Area2D, card: Control)
 
 func _ready() -> void:
 	if enable_signal_logging:
-		GameLogger.info("[SignalBus] 信号总线已初始化，日志记录已启用", "SignalBus")
+		pass
 
 
 func log_signal(signal_name: String, args: Array = []) -> void:
@@ -90,7 +90,6 @@ func log_signal(signal_name: String, args: Array = []) -> void:
 	if args.size() > 0:
 		arg_str = " -> " + str(args)
 
-	GameLogger.debug("[SignalBus] %s%s" % [signal_name, arg_str], "SignalBus")
 
 # ==========================================
 # 辅助函数：安全发送信号（带日志）

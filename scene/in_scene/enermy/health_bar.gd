@@ -1,4 +1,4 @@
-extends Node2D
+﻿extends Node2D
 class_name BarManager
 
 var HealthBar : Array[PackedScene] = [
@@ -42,7 +42,6 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 		
 		if not has_valid_texture:
 			# 纹理缺失，直接静默销毁，中断后续所有绑定，防止报错刷屏
-			# 如果有 GameLogger 可以打印一条 debug 日志，没有的话也可以直接 pass
 			# print("血条纹理缺失，取消生成：" + landform_in.landform_name)
 			HealthBuffer.queue_free()
 			return

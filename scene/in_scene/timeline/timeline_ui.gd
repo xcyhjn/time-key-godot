@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
 
@@ -84,13 +84,11 @@ func _find_timeline_manager() -> TimelineManager:
 		if node is TimelineManager:
 			return node as TimelineManager
 	
-	GameLogger.warning("未找到TimelineManager节点", "TimelineUI")
 	return null
 
 
 ## 应用调试用的offset设置
 func _apply_anchor_layout() -> void:
-	GameLogger.debug("应用响应式动态锚点布局", "TimelineUI")
 	
 	# 1. 强制使用 Godot 原生预设：顶部居中
 	set_anchors_preset(Control.PRESET_CENTER_TOP, true)
@@ -116,7 +114,6 @@ func _apply_anchor_layout() -> void:
 		grid_background.position = Vector2.ZERO
 		grid_background.size = size
 	
-	GameLogger.debug("布局应用完成: 真实尺寸(" + str(size.x) + "x" + str(size.y) + "), 缩放中心=" + str(pivot_offset), "TimelineUI")
 
 
 func _ready():
@@ -132,7 +129,6 @@ func _ready():
 
 	# 创建遮罩节点（如果不存在）
 	_create_background_mask()
-	GameLogger.debug("遮罩创建完成，background_mask: " + str(background_mask), "TimelineUI")
 
 	_init_background_grid()
 	# 关键修复：
@@ -145,9 +141,9 @@ func _ready():
 	if not timeline_manager:
 		timeline_manager = _find_timeline_manager()
 		if timeline_manager:
-			GameLogger.debug("找到TimelineManager: " + timeline_manager.name, "TimelineUI")
+			pass
 		else:
-			GameLogger.warning("未找到TimelineManager，高亮信号可能无法发送", "TimelineUI")
+			pass
 
 	# 连接TimelineManager信号以更新时间轴显示
 	if timeline_manager:
@@ -165,7 +161,6 @@ func _create_background_mask() -> void:
 		return
 
 	# 创建遮罩节点
-	GameLogger.debug("开始创建遮罩节点", "TimelineUI")
 	background_mask = ColorRect.new()
 	background_mask.name = "BackgroundMask"
 
@@ -183,7 +178,6 @@ func _create_background_mask() -> void:
 	add_child(background_mask)
 	move_child(background_mask, 0)
 
-	GameLogger.debug("时间轴遮罩已创建（使用全屏锚点），颜色: " + str(mask_color) + "，层级: " + str(mask_layer) + "，可见: " + str(background_mask.visible), "TimelineUI")
 
 
 func _init_background_grid():
@@ -318,7 +312,7 @@ func _gui_input(event):
 		if allow_click_to_expand:
 			toggle_expand()
 		else:
-			GameLogger.debug("时间轴点击缩放已禁用（allow_click_to_expand=false）", "TimelineUI")
+			pass
 
 
 func toggle_expand():
@@ -357,33 +351,31 @@ func toggle_expand():
 func _on_block_hovered(action: TimelineAction):
 	hovered_action = action
 	# ★ 修复：通过TimelineManager发射高亮信号
-	GameLogger.debug("悬浮在对象上！类型: " + str(action.type), "TimelineUI")
 	
 	# 通过TimelineManager通知主场景高亮
 	if timeline_manager and timeline_manager.has_signal("action_hovered_changed"):
 		timeline_manager.action_hovered_changed.emit(action, true)
 	else:
-		GameLogger.warning("无法发送高亮信号: timeline_manager无效或没有action_hovered_changed信号", "TimelineUI")
+		pass
 	
 	# 保留原有的类型判断（可选，实际高亮逻辑在主场景中实现）
 	if action.type == TimelineAction.Type.ENEMY:
 		# 敌人行动：红色高亮
-		GameLogger.debug("敌人意图高亮（红色）", "TimelineUI")
+		pass
 	elif action.type == TimelineAction.Type.PLAYER:
 		# 玩家卡牌：金色高亮
-		GameLogger.debug("玩家卡牌高亮（金色）", "TimelineUI")
+		pass
 
 
 func _on_block_exited():
 	if hovered_action != null:
 		# ★ 修复：通知主场景清除高亮
-		GameLogger.debug("离开悬浮对象，清除高亮", "TimelineUI")
 		
 		# 通过TimelineManager通知主场景清除高亮
 		if timeline_manager and timeline_manager.has_signal("action_hovered_changed"):
 			timeline_manager.action_hovered_changed.emit(hovered_action, false)
 		else:
-			GameLogger.warning("无法发送清除高亮信号", "TimelineUI")
+			pass
 		
 		hovered_action = null
 
@@ -487,7 +479,6 @@ func _on_grid_cell_gui_input(event: InputEvent, cell_index: int) -> void:
 		var grid_y = cell_index / grid_width
 		var grid_pos = Vector2i(grid_x, grid_y)
 
-		GameLogger.debug("点击时间轴网格单元: " + str(grid_pos), "TimelineUI")
 
 		# 发射信号，通知其他系统这个网格被点击了
 		# 可以用于快速放置卡牌或显示信息
@@ -515,7 +506,6 @@ func _on_grid_cell_mouse_entered(cell_index: int) -> void:
 		style.set_border_width_all(0)
 		cell.add_theme_stylebox_override("panel", style)
 
-	GameLogger.debug("鼠标进入时间轴网格单元: " + str(grid_pos), "TimelineUI")
 	emit_signal("grid_cell_hovered", grid_pos, true)
 
 
@@ -535,7 +525,6 @@ func _on_grid_cell_mouse_exited(cell_index: int) -> void:
 		style.set_border_width_all(0)
 		cell.add_theme_stylebox_override("panel", style)
 
-	GameLogger.debug("鼠标离开时间轴网格单元: " + str(grid_pos), "TimelineUI")
 	emit_signal("grid_cell_hovered", grid_pos, false)
 
 
@@ -664,7 +653,6 @@ func update_grid_preview(shape_coords: Array[Vector2i], origin_pos: Vector2i, is
 			# 部分格子越界，整体标记为红色
 			pass
 	
-	GameLogger.debug("更新网格预览: 形状=" + str(shape_coords) + ", 原点=" + str(origin_pos) + ", 有效=" + str(is_valid) + ", 全部在边界内=" + str(all_in_bounds) + ", 敌人重叠=" + str(overlaps_enemy_intent), "TimelineUI")
 
 
 ## 清除所有网格预览效果
@@ -693,7 +681,6 @@ func clear_ui() -> void:
 	# 重置悬停状态
 	hovered_action = null
 	
-	GameLogger.debug("时间轴UI已清空", "TimelineUI")
 
 ## 设置是否允许点击缩放时间轴
 ## 常态下禁用，仅当卡牌选中准备放置时启用
@@ -704,4 +691,3 @@ func set_allow_click_to_expand(allow: bool) -> void:
 	# - 因为那样会让时间轴上的敌人意图方块也收不到 hover，导致无法联动回地图。
 	# - 现在统一保持 PASS，由 _gui_input 自己判断 allow_click_to_expand 决定是否处理点击。
 	mouse_filter = Control.MOUSE_FILTER_PASS
-	GameLogger.debug("设置时间轴点击缩放权限: allow=" + str(allow) + " filter保持为 PASS 以保留敌人意图 hover", "TimelineUI")

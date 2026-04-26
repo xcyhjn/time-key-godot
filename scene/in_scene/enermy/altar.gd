@@ -1,4 +1,4 @@
-extends landform
+﻿extends landform
 
 var rivet_land : String
 
@@ -202,9 +202,4 @@ func get_intent_action(target_tile: Node = null) -> TimelineAction:
 		action_data
 	)
 
-	GameLogger.debug("创建祭坛意图行动: %s, 形状=%s, 范围=%s" % [
-		landform_name,
-		get_intent_shape(),
-		get_intent_effect_range()
-	], "altar")
 	return action

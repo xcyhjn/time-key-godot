@@ -1,4 +1,4 @@
-class_name DragShapeController
+﻿class_name DragShapeController
 extends Node2D
 # 原文件名: DragShapeController(时间轴拖拽控制).gd
 # 功能: 时间轴拖拽控制
@@ -61,6 +61,15 @@ var timeline_manager: Node  ## TimelineManager 实例
 var cursor_tooltip: RichTextLabel
 var discard_pile: Node  ## 弃牌区引用
 
+
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
+
 # ==========================================
 # 工具函数
 # ==========================================
@@ -85,7 +94,6 @@ func _find_player_hand() -> Node:
 	var main = _get_main_board()
 	if main and main.get("player_hand"):
 		return main.player_hand
-	GameLogger.warning("未找到玩家手牌 PlayerHand", "DragShapeController")
 	return null
 	
 ## 获取HexMap管理器
@@ -122,7 +130,6 @@ func _ready() -> void:
 
 	# 添加到DragShapeController组，方便其他脚本查找
 	add_to_group("DragShapeController")
-	GameLogger.debug("DragShapeController已添加到组，准备接收拖拽事件", "DragShapeController")
 
 	# 延迟查找弃牌区（确保DiscardPile已创建并注册）
 	call_deferred("_find_discard_pile")
@@ -144,15 +151,13 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	# ==========================================
 	# ★ 核心修复：优先读取卡牌已解析的标准坐标数组
 	# ==========================================
-	if "timeline_shape_coords" in card and not card.timeline_shape_coords.is_empty():
+	if _object_has_property(card, &"timeline_shape_coords") and card.timeline_shape_coords is Array and not card.timeline_shape_coords.is_empty():
 		# 直接同步卡牌内部已经由优化系统计算出的坐标
 		current_shape_coords = card.timeline_shape_coords.duplicate()
-		GameLogger.debug("从实体卡牌继承解析坐标: " + str(current_shape_coords), "DragShapeController")
 	else:
 		# 兜底逻辑：如果卡牌没解析，再尝试读 card_info
 		var raw_shape = card.card_info.get("shape", [Vector2i(0, 0)])
 		current_shape_coords = _convert_to_vector2i_array(raw_shape)
-		GameLogger.warning("卡牌未包含预解析坐标，执行临时转换", "DragShapeController")
 
 	# 发射拖拽开始信号
 	drag_started.emit(card, current_shape_coords)
@@ -160,7 +165,6 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	# ★ 允许时间轴点击缩放（卡牌选中时）
 	if timeline_ui and timeline_ui.has_method("set_allow_click_to_expand"):
 		timeline_ui.set_allow_click_to_expand(true)
-		GameLogger.debug("已启用时间轴点击缩放权限（卡牌选中中）", "DragShapeController")
 
 	# 唤起时间轴
 	if timeline_ui.has_method("toggle_expand"):
@@ -173,17 +177,15 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	# - 真正需要禁用的是普通网格单元格点击，因此仍然保留 _disable_grid_cells_mouse_filter()。
 	if timeline_ui and timeline_ui is Control:
 		timeline_ui.mouse_filter = Control.MOUSE_FILTER_PASS
-	GameLogger.debug("保留时间轴UI鼠标悬浮能力，仅禁用普通网格单元格交互", "DragShapeController")
 	
 	var hex_map = _get_hex_map()
 	if hex_map and hex_map.has_method("set_tiles_interactive"):
 		hex_map.set_tiles_interactive(false)
-		GameLogger.debug("已禁用地块交互", "DragShapeController")
 		# 锁定地块视觉状态，防止鼠标退出信号清除高亮和消融效果
 		if hex_map.has_method("set_visuals_locked"):
 			hex_map.set_visuals_locked(true)
 	else:
-		GameLogger.warning("未找到HexMap节点或缺少set_tiles_interactive方法", "DragShapeController")
+		pass
 
 	# 禁用网格单元格鼠标交互
 	_disable_grid_cells_mouse_filter()
@@ -211,9 +213,8 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 		
 		# 调试：记录卡牌重新父级化前信息
 		if original_parent:
-			GameLogger.debug("卡牌父节点: " + original_parent.get_class() + " @ " + str(original_parent.global_position), "DragShapeController")
+			pass
 		
-		GameLogger.debug("卡牌重新父级化前: 位置=" + str(original_card_global_pos) + ", 大小=" + str(original_card_size), "DragShapeController")
 		
 		# 重新父级化到场景根节点
 		scene_root.add_child(card)
@@ -226,9 +227,7 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 		var new_card_global_pos = card.global_position
 		var new_card_position = card.position
 		if new_card_global_pos != original_card_global_pos:
-			GameLogger.warning("重新父级化后卡牌全局位置发生变化: 原位置=" + str(original_card_global_pos) + 
-				", 新位置=" + str(new_card_global_pos), "DragShapeController")
-			GameLogger.warning("卡牌position属性: 新position=" + str(new_card_position), "DragShapeController")
+			pass
 		
 		# ★ 关键修复：重新计算卡牌中心（考虑set_as_top_level后的坐标变化）
 		# 重新获取卡牌当前的实际全局位置和大小
@@ -238,16 +237,13 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 		# ★ 关键修复：计算目标缩放因子并在计算中心时使用
 		# 这样drag_offset计算会考虑卡牌将要缩放的大小
 		var scale_factor = slot_size / 20.0
-		GameLogger.debug("卡牌缩放: 目标=" + str(scale_factor) + ", 当前=" + str(card.scale), "DragShapeController")
 		
 		# 使用目标缩放因子计算卡牌中心（而不是当前缩放）
 		var actual_card_center = actual_card_global_pos + actual_card_size * Vector2(scale_factor, scale_factor) / 2
-		GameLogger.debug("卡牌中心计算完成: " + str(actual_card_center), "DragShapeController")
 		
 		# ★ 修复拖拽偏移：废弃容易出错的全局坐标换算，直接使用用户定义的抓取偏移
 		# 默认值为 Vector2.ZERO，意味着鼠标会精确地按在卡牌的视觉中心点上
 		drag_offset = mouse_grab_offset
-		GameLogger.debug("拖拽偏移锁定为: " + str(drag_offset), "DragShapeController")
 
 		# 3. 应用拖拽着色器
 		if card.material and drag_shader:
@@ -261,7 +257,6 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 		var tw = create_tween()
 		tw.tween_property(card, "scale", Vector2(scale_factor, scale_factor), scale_animation_duration)
 
-	GameLogger.info("开始拖拽实体卡牌，已重新父级化到场景根节点", "DragShapeController")
 
 ## （已移除）创建拖拽克隆体 - 无副本架构不再需要此函数
 
@@ -291,21 +286,20 @@ func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 	var local_mouse = timeline_ui.grid_background.get_local_mouse_position()
 
 	# 计算网格坐标 - 从timeline_ui获取实际的格子大小和间距，确保与UI设置一致
-	var ui_slot_size = timeline_ui.slot_size if "slot_size" in timeline_ui else slot_size
-	var ui_spacing = timeline_ui.spacing if "spacing" in timeline_ui else spacing
+	var ui_slot_size = timeline_ui.slot_size if _object_has_property(timeline_ui, &"slot_size") else slot_size
+	var ui_spacing = timeline_ui.spacing if _object_has_property(timeline_ui, &"spacing") else spacing
 	var cell_size = ui_slot_size + ui_spacing
 	var grid_x = int(local_mouse.x / cell_size)
 	var grid_y = int(local_mouse.y / cell_size)
 	var hover_grid_pos = Vector2i(grid_x, grid_y)
 	
 	# ★ 边界检查：确保网格坐标在合理范围内（包括负坐标保护）
-	var grid_width = timeline_ui.grid_width if "grid_width" in timeline_ui else 12
-	var grid_height = timeline_ui.grid_height if "grid_height" in timeline_ui else 3
+	var grid_width = timeline_ui.grid_width if _object_has_property(timeline_ui, &"grid_width") else 12
+	var grid_height = timeline_ui.grid_height if _object_has_property(timeline_ui, &"grid_height") else 3
 	var is_in_grid_bounds = (grid_x >= 0 and grid_x < grid_width and grid_y >= 0 and grid_y < grid_height)
 	# ★ 额外保护：防止在网格左侧或上方悬浮时产生负数数组越界
 	if local_mouse.x < 0 or local_mouse.y < 0:
 		is_in_grid_bounds = false
-		GameLogger.debug("鼠标位于网格背景左侧或上方，标记为无效区域", "DragShapeController")
 	
 	# ★ 修复编译错误：声明未使用的变量（原网格吸附相关变量）
 	# 变量已移除，网格吸附功能已取消
@@ -314,25 +308,12 @@ func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 	# 计算卡牌中心的目标位置（鼠标位置减去偏移量，保持自由拖拽行为）
 	var target_center = mouse_pos - drag_offset
 	
-	# 时间轴悬停调试信息 - 详细版本
-	GameLogger.debug("时间轴悬停调试: \n" +
-		"  - 鼠标位置: " + str(mouse_pos) + "\n" +
-		"  - 网格背景本地鼠标位置: " + str(local_mouse) + " (已自动剔除缩放变换)\n" +
-		"  - 格子大小: " + str(cell_size) + " (ui_slot_size=" + str(ui_slot_size) + ", ui_spacing=" + str(ui_spacing) + ")" + "\n" +
-		"  - 网格坐标: " + str(hover_grid_pos) + "\n" +
-		"  - 网格边界检查: " + str(is_in_grid_bounds) + " (范围: X[0-" + str(grid_width-1) + "], Y[0-" + str(grid_height-1) + "])" + "\n" +
-		"  - 拖拽偏移: " + str(drag_offset) + "\n" +
-		"  - 目标中心: " + str(target_center) + "\n" +
-		"  - 当前卡牌位置: " + str(current_card.global_position) if is_instance_valid(current_card) else "无效",
-		"DragShapeController")
-	
 	# 将卡牌中心位置转换为左上角位置
 	var card_top_left = target_center
 	if current_card.has_method("get_size"):
 		var card_size = current_card.get_size()
 		var card_scale = current_card.scale
 		card_top_left -= card_size * card_scale / 2
-		GameLogger.debug("卡牌左上角计算: 大小=" + str(card_size) + ", 缩放=" + str(card_scale) + ", 左上角=" + str(card_top_left), "DragShapeController")
 
 	
 	current_card.global_position = card_top_left
@@ -343,7 +324,6 @@ func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 		is_valid = timeline_manager.is_placement_valid(current_shape_coords, hover_grid_pos)
 	else:
 		is_valid = false
-		GameLogger.debug("网格坐标超出边界或timeline_manager无效，标记为无效放置", "DragShapeController")
 	
 	if current_card.material:
 		current_card.material.set_shader_parameter("is_invalid", not is_valid)
@@ -435,7 +415,7 @@ func _update_timeline_grid_preview(grid_pos: Vector2i, is_valid: bool) -> void:
 		# 调用timeline_ui更新网格预览
 		timeline_ui.update_grid_preview(shape_coords, grid_pos, is_valid)
 	else:
-		GameLogger.debug("timeline_ui没有update_grid_preview方法", "DragShapeController")
+		pass
 
 
 ## 获取卡牌效果预览文本
@@ -549,7 +529,6 @@ func _end_dragging() -> void:
 		# ★ 禁用时间轴点击缩放（卡牌拖拽结束）
 		if timeline_ui.has_method("set_allow_click_to_expand"):
 			timeline_ui.set_allow_click_to_expand(false)
-			GameLogger.debug("已禁用时间轴点击缩放权限（卡牌拖拽结束）", "DragShapeController")
 
 	# 隐藏提示
 	if is_instance_valid(cursor_tooltip):
@@ -567,15 +546,13 @@ func _end_dragging() -> void:
 		# 调用卡牌的返回手牌方法
 		if card_to_restore.has_method("return_to_hand"):
 			card_to_restore.return_to_hand()
-			GameLogger.info("卡牌返回手牌动画已触发（通过return_to_hand）", "DragShapeController")
 		elif card_to_restore.has_method("force_deselect"):
 			# 备用方案：使用旧的force_deselect方法
 			card_to_restore.force_deselect()
-			GameLogger.info("卡牌返回手牌动画已触发（通过force_deselect）", "DragShapeController")
 		else:
-			GameLogger.warning("卡牌没有返回手牌的方法", "DragShapeController")
+			pass
 	else:
-		GameLogger.warning("当前卡牌无效", "DragShapeController")
+		pass
 
 	# 清空暂存数据
 	current_target_tile = null
@@ -589,7 +566,6 @@ func _restore_mouse_filters() -> void:
 	var hex_map = _get_hex_map()
 	if hex_map and hex_map.has_method("set_tiles_interactive"):
 		hex_map.set_tiles_interactive(true)
-		GameLogger.debug("已恢复地块交互", "DragShapeController")
 		# 解锁地块视觉状态，允许鼠标悬停事件恢复正常
 		if hex_map.has_method("set_visuals_locked"):
 			hex_map.set_visuals_locked(false)
@@ -597,7 +573,6 @@ func _restore_mouse_filters() -> void:
 	# 恢复时间轴UI鼠标交互
 	if timeline_ui and timeline_ui is Control:
 		timeline_ui.mouse_filter = Control.MOUSE_FILTER_PASS
-		GameLogger.debug("已恢复时间轴UI鼠标交互", "DragShapeController")
 
 	# 恢复网格单元格鼠标交互
 	_restore_grid_cells_mouse_filter()
@@ -608,7 +583,6 @@ func _cancel_selection() -> void:
 	if not is_dragging or is_placing:
 		return
 
-	GameLogger.info("右键取消卡牌选中", "DragShapeController")
 
 	# 清除所有预览效果
 	_clear_effect_preview()
@@ -626,7 +600,6 @@ func _cancel_selection() -> void:
 	# 停止拖拽并重置状态
 	_end_dragging()
 
-	GameLogger.info("卡牌选中已取消", "DragShapeController")
 
 
 ## 获取地块上的敌人
@@ -663,7 +636,6 @@ func _get_health_bar_manager() -> Node:
 func _handle_free_drag(mouse_pos: Vector2) -> void:
 	# 计算卡牌中心的目标位置（保持鼠标相对于卡牌中心的偏移）
 	var target_center = mouse_pos - drag_offset
-	GameLogger.debug("自由拖拽: 目标=" + str(target_center), "DragShapeController")
 	
 	# 将卡牌中心位置转换为左上角位置
 	var card_top_left = target_center
@@ -702,7 +674,6 @@ func _input(event: InputEvent) -> void:
 
 	# 左键点击确认放置
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		GameLogger.debug("_input: 收到左键点击事件，尝试放置", "DragShapeController")
 		try_place_shape()
 
 
@@ -738,7 +709,6 @@ func rotate_shape(direction: int) -> void:
 				var card_scale = current_card.scale
 				card_center += card_size * card_scale / 2
 			drag_offset = mouse_pos - card_center
-			GameLogger.debug("旋转后更新拖拽偏移，新偏移: " + str(drag_offset), "DragShapeController")
 	)
 
 # ==========================================
@@ -750,14 +720,11 @@ func rotate_shape(direction: int) -> void:
 ## 验证鼠标位置是否在时间轴内，计算网格坐标，检查放置有效性
 ## 有效时执行放置动画，无效时显示拒绝提示并返回手牌
 func try_place_shape() -> void:
-	GameLogger.debug("try_place_shape: 收到放置请求，is_dragging=" + str(is_dragging) + ", is_placing=" + str(is_placing), "DragShapeController")
 	
 	var mouse_pos = get_global_mouse_position()
 	var is_over_timeline = timeline_ui.get_global_rect().has_point(mouse_pos)
-	GameLogger.debug("try_place_shape: 鼠标位置=" + str(mouse_pos) + ", 是否在时间轴上=" + str(is_over_timeline), "DragShapeController")
 
 	if not is_over_timeline:
-		GameLogger.info("在时间轴外点击，取消拖拽并返回手牌", "DragShapeController")
 		_end_dragging()
 		return
 
@@ -767,7 +734,6 @@ func try_place_shape() -> void:
 	
 	# ★ 负数越界保护：防止在网格左侧或上方悬浮时产生无效坐标
 	if local_mouse.x < 0 or local_mouse.y < 0:
-		GameLogger.warning("鼠标位于网格背景左侧或上方，local_mouse=" + str(local_mouse) + "，坐标越界，触发拒绝动画", "DragShapeController")
 		_play_reject_animation()
 		return
 	
@@ -775,8 +741,6 @@ func try_place_shape() -> void:
 	var ui_slot_size = timeline_ui.slot_size if "slot_size" in timeline_ui else slot_size
 	var ui_spacing = timeline_ui.spacing if "spacing" in timeline_ui else spacing
 	var cell_size = ui_slot_size + ui_spacing
-	GameLogger.debug("网格计算参数: slot_size=" + str(ui_slot_size) + ", spacing=" + str(ui_spacing) + 
-		", cell_size=" + str(cell_size) + ", local_mouse=" + str(local_mouse), "DragShapeController")
 	
 	var grid_x = int(local_mouse.x / cell_size)
 	var grid_y = int(local_mouse.y / cell_size)
@@ -787,36 +751,26 @@ func try_place_shape() -> void:
 	var max_grid_y = 3   # TimelineManager.GRID_HEIGHT
 	
 	if grid_x < 0 or grid_x >= max_grid_x or grid_y < 0 or grid_y >= max_grid_y:
-		GameLogger.warning("网格坐标超出范围！origin_pos=" + str(origin_pos) + 
-			", 允许范围: X[0-" + str(max_grid_x-1) + "], Y[0-" + str(max_grid_y-1) + "]", "DragShapeController")
 		_play_reject_animation()
 		return
 	
-	GameLogger.debug("尝试放置，origin_pos: " + str(origin_pos) + 
-		", shape_coords: " + str(current_shape_coords) + 
-		", 网格范围检查通过", "DragShapeController")
-	
 	# 预计算所有目标位置并记录
 	if not current_shape_coords.is_empty():
-		GameLogger.debug("预计算所有目标位置:", "DragShapeController")
 		for offset in current_shape_coords:
 			var target_pos = origin_pos + offset
-			GameLogger.debug("  offset=%s -> target_pos=%s" % [offset, target_pos], "DragShapeController")
 	else:
-		GameLogger.warning("current_shape_coords 为空!", "DragShapeController")
+		pass
 
 	# 验证并放置
 	if timeline_manager and timeline_manager.is_placement_valid(current_shape_coords, origin_pos):
 		_place_action(origin_pos)
 	else:
-		GameLogger.warning("时间轴管理器验证失败！origin_pos=" + str(origin_pos), "DragShapeController")
 		_play_reject_animation()
 		# 放置失败后自动返回手牌（拒绝动画完成后会调用_end_dragging）
 
 
 ## 执行放置
 func _place_action(origin_pos: Vector2i) -> void:
-	GameLogger.info("放置成功！开始播放放置动画", "DragShapeController")
 
 	# 播放放置动画，动画完成后会调用_finish_placement
 	_play_placement_animation(origin_pos)
@@ -826,35 +780,29 @@ func _place_action(origin_pos: Vector2i) -> void:
 ## 支持多种输入格式：Vector2i、[x, y]数组、{x: value, y: value}字典
 func _convert_to_vector2i_array(raw_array: Array) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
-	GameLogger.debug("_convert_to_vector2i_array: 原始数组长度=" + str(raw_array.size()) + ", 内容=" + str(raw_array), "DragShapeController")
 
 	for i in range(raw_array.size()):
 		var item = raw_array[i]
 		if item is Vector2i:
-			GameLogger.debug("项目 " + str(i) + ": Vector2i类型, 值=" + str(item), "DragShapeController")
 			result.append(item)
 		elif item is Array and item.size() >= 2:
 			# 处理 [x, y] 格式的数组
 			var x = int(item[0])
 			var y = int(item[1])
 			var vec = Vector2i(x, y)
-			GameLogger.debug("项目 " + str(i) + ": 数组类型, [" + str(item[0]) + ", " + str(item[1]) + "] -> " + str(vec), "DragShapeController")
 			result.append(vec)
 		elif item is Dictionary and "x" in item and "y" in item:
 			# 处理 {x: value, y: value} 格式的字典
 			var x = int(item["x"])
 			var y = int(item["y"])
 			var vec = Vector2i(x, y)
-			GameLogger.debug("项目 " + str(i) + ": 字典类型, {x:" + str(item["x"]) + ", y:" + str(item["y"]) + "} -> " + str(vec), "DragShapeController")
 			result.append(vec)
 		else:
-			GameLogger.debug("项目 " + str(i) + ": 未知类型 " + str(typeof(item)) + ", 值=" + str(item), "DragShapeController")
+			pass
 
 	if result.is_empty():
-		GameLogger.debug("转换结果为空，添加默认Vector2i(0, 0)", "DragShapeController")
 		result.append(Vector2i(0, 0))
 
-	GameLogger.debug("转换完成，结果: " + str(result), "DragShapeController")
 	return result
 
 ## 停止拖拽（右键取消时调用）
@@ -907,7 +855,6 @@ func _hide_reject_tooltip() -> void:
 
 ## 播放拒绝动画
 func _play_reject_animation() -> void:
-	GameLogger.warning("放置失败，位置非法或重叠！", "DragShapeController")
 	if not is_instance_valid(current_card):
 		return
 
@@ -928,7 +875,6 @@ func _play_reject_animation() -> void:
 
 ## 播放放置动画
 func _play_placement_animation(grid_pos: Vector2i) -> void:
-	GameLogger.info("开始播放放置动画", "DragShapeController")
 	is_placing = true
 
 	# 禁用卡牌鼠标交互，防止与其他元素碰撞
@@ -942,28 +888,21 @@ func _play_placement_animation(grid_pos: Vector2i) -> void:
 	var hex_map = _get_hex_map()
 	if hex_map and hex_map is Control:
 		hex_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		GameLogger.debug("已禁用地块容器鼠标交互", "DragShapeController")
 
 	if timeline_ui and timeline_ui is Control:
 		timeline_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		GameLogger.debug("已禁用时间轴UI鼠标交互", "DragShapeController")
 
 	# ★ 修复缩放导致的卡牌放置动画飞偏：直接使用 grid_cells 字典获取精准位置
 	var grid_cell_center = Vector2.ZERO
-	if "grid_cells" in timeline_ui and timeline_ui.grid_cells.has(grid_pos):
+	if _object_has_property(timeline_ui, &"grid_cells") and timeline_ui.grid_cells.has(grid_pos):
 		var target_cell = timeline_ui.grid_cells[grid_pos]
 		# target_cell.global_position 是绝对精准的（已包含所有父级变换）
 		# size 乘以 timeline_ui 的实际 scale 获取真实视觉大小
 		var actual_cell_size = target_cell.size * timeline_ui.scale
 		grid_cell_center = target_cell.global_position + (actual_cell_size / 2.0) + float_offset
-		GameLogger.debug("使用 grid_cells 精确计算中心点: 目标格子=" + str(target_cell) + 
-			", 全局位置=" + str(target_cell.global_position) + 
-			", 实际大小=" + str(actual_cell_size) + 
-			", 时间轴缩放=" + str(timeline_ui.scale), "DragShapeController")
 	else:
 		# 兜底方案：使用鼠标位置（理论上不应该发生）
 		grid_cell_center = get_global_mouse_position()
-		GameLogger.warning("grid_cells 字典不存在或缺少目标格子，使用鼠标位置作为兜底: " + str(grid_cell_center), "DragShapeController")
 	
 	# 将卡牌中心位置转换为左上角位置（注意卡牌的目标 scale 是 0.9）
 	var card_top_left = grid_cell_center
@@ -971,15 +910,6 @@ func _play_placement_animation(grid_pos: Vector2i) -> void:
 		var card_size = current_card.get_size()
 		var target_card_scale = Vector2(0.9, 0.9)  # 卡牌动画目标缩放
 		card_top_left -= card_size * target_card_scale / 2
-		GameLogger.debug("放置动画卡牌位置计算: 网格单元中心=" + str(grid_cell_center) + 
-			", 卡牌大小=" + str(card_size) + 
-			", 目标缩放=" + str(target_card_scale) + 
-			", 左上角=" + str(card_top_left), "DragShapeController")
-	
-	GameLogger.debug("放置动画目标位置: " + str(card_top_left) + 
-		", grid_pos=" + str(grid_pos) + 
-		", 时间轴缩放=" + str(timeline_ui.scale) + 
-		", 是否使用精确计算=" + str("grid_cells" in timeline_ui and timeline_ui.grid_cells.has(grid_pos)), "DragShapeController")
 
 	# 创建放置动画：飞向网格位置并适当缩小
 	var tw = create_tween()
@@ -997,7 +927,6 @@ func _play_placement_animation(grid_pos: Vector2i) -> void:
 
 ## 完成放置（动画结束后调用）
 func _finish_placement(grid_pos: Vector2i) -> void:
-	GameLogger.info("放置动画完成，执行实际放置逻辑", "DragShapeController")
 
 	# 恢复鼠标过滤（确保地块和时间轴UI可以正常交互）
 	_restore_mouse_filters()
@@ -1015,12 +944,10 @@ func _finish_placement(grid_pos: Vector2i) -> void:
 	var placement_success = false
 	if timeline_manager:
 		placement_success = timeline_manager.place_action(action, grid_pos)
-		GameLogger.debug("时间轴放置结果: success=" + str(placement_success) + ", grid_pos=" + str(grid_pos), "DragShapeController")
 	
 	if placement_success:
 		player_action_placed.emit(action)
 	else:
-		GameLogger.warning("时间轴放置失败！grid_pos=" + str(grid_pos) + ", shape_coords=" + str(current_shape_coords), "DragShapeController")
 		# 放置失败，触发拒绝动画
 		_play_reject_animation()
 		# 这里不调用end_dragging_success，因为放置失败了
@@ -1048,17 +975,17 @@ func _trigger_card_effect() -> void:
 	if current_card.has_method("apply_effect_immediate"):
 		# 如果有目标地块，触发效果
 		if is_instance_valid(current_target_tile):
-			GameLogger.info("触发卡牌效果，目标地块: %s" % current_target_tile.name, "DragShapeController")
 			# 注意：原apply_effect_immediate会销毁卡牌，但我们希望卡牌进入弃牌区
 			# 这里只记录日志，不实际触发效果（效果将在时间轴结算时触发）
 			# current_card.apply_effect_immediate(current_target_tile)  # 注释掉，避免销毁卡牌
+			pass
 
 			# 可以在这里发射信号让其他系统处理效果
 			# effect_triggered.emit(current_card, current_target_tile)
 		else:
-			GameLogger.info("卡牌没有目标地块，无法立即触发效果", "DragShapeController")
+			pass
 	else:
-		GameLogger.debug("卡牌没有apply_effect_immediate方法", "DragShapeController")
+		pass
 
 
 ## 成功结束拖拽
@@ -1078,7 +1005,7 @@ func end_dragging_success() -> void:
 			current_card.force_reset_visuals()
 		
 		# 将卡牌内部状态机硬重置为闲置状态
-		if "card_current_state" in current_card:
+		if _object_has_property(current_card, &"card_current_state"):
 			current_card.card_current_state = 0 # 0 对应 CustomCardState.IDLE
 			
 		current_card.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1088,11 +1015,11 @@ func end_dragging_success() -> void:
 		# ========================================================
 		# ★ 新增修复 2：将卡牌送入弃牌区前，彻底剥离拖拽Shader，恢复原始外观
 		# ========================================================
-		if "original_material" in current_card:
+		if _object_has_property(current_card, &"original_material"):
 			current_card.material = current_card.original_material
 			# 如果卡牌有正面贴图引用，一并恢复
 			var tex_node = current_card.get("front_face_texture")
-			if tex_node and "material" in tex_node:
+			if tex_node and _object_has_property(tex_node, &"material"):
 				tex_node.material = current_card.original_material
 				
 		# 关闭底层卡牌框架的高亮逻辑，并恢复透明度
@@ -1110,14 +1037,12 @@ func end_dragging_success() -> void:
 		# 直接尝试移入弃牌区
 		if is_instance_valid(discard_pile_node) and discard_pile_node.has_method("move_cards"):
 			discard_pile_node.move_cards([current_card])
-			GameLogger.info("卡牌已移入弃牌区: %s" % current_card.name, "DragShapeController")
 			
 			# 触发弃牌效果
 			if is_instance_valid(main_board) and main_board.has_method("_handle_discard_effects"):
 				main_board.call_deferred("_handle_discard_effects", current_card)
 		else:
 			# 终极回退
-			GameLogger.warning("未找到有效弃牌区，卡牌将返回手牌", "DragShapeController")
 			_return_card_to_hand(current_card)
 
 	# 收起时间轴
@@ -1128,7 +1053,7 @@ func end_dragging_success() -> void:
 
 ## 禁用时间轴网格单元格鼠标交互
 func _disable_grid_cells_mouse_filter() -> void:
-	if not timeline_ui or not ("grid_cells" in timeline_ui):
+	if not timeline_ui or not _object_has_property(timeline_ui, &"grid_cells"):
 		return
 	
 	var grid_cells = timeline_ui.grid_cells
@@ -1138,11 +1063,10 @@ func _disable_grid_cells_mouse_filter() -> void:
 	for cell in grid_cells.values():
 		if cell is Control:
 			cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			GameLogger.debug("已禁用网格单元格鼠标交互: " + str(cell.name), "DragShapeController")
 
 ## 恢复时间轴网格单元格鼠标交互
 func _restore_grid_cells_mouse_filter() -> void:
-	if not timeline_ui or not ("grid_cells" in timeline_ui):
+	if not timeline_ui or not _object_has_property(timeline_ui, &"grid_cells"):
 		return
 	
 	var grid_cells = timeline_ui.grid_cells
@@ -1152,7 +1076,6 @@ func _restore_grid_cells_mouse_filter() -> void:
 	for cell in grid_cells.values():
 		if cell is Control:
 			cell.mouse_filter = Control.MOUSE_FILTER_PASS
-			GameLogger.debug("已恢复网格单元格鼠标交互: " + str(cell.name), "DragShapeController")
 
 ## 将卡牌返回手牌
 func _return_card_to_hand(card: Node) -> void:
@@ -1168,9 +1091,8 @@ func _return_card_to_hand(card: Node) -> void:
 		card.scale = Vector2.ONE
 		# 将卡牌返回手牌
 		hand.move_cards([card])
-		GameLogger.info("卡牌已返回手牌: %s" % card.name, "DragShapeController")
 	else:
-		GameLogger.warning("无法找到手牌容器，卡牌将保留在原处: %s" % card.name, "DragShapeController")
+		pass
 	
 	if timeline_ui.has_method("toggle_expand"):
 		timeline_ui.toggle_expand()  # 回退方案
@@ -1199,7 +1121,6 @@ func force_cancel_drag() -> void:
 	if not is_dragging or not is_instance_valid(current_card):
 		return
 	
-	GameLogger.info("被外部强制打断拖拽，卡牌准备返回手牌", "DragShapeController")
 	
 	# 清除时间轴预览网格与高亮
 	if timeline_ui and timeline_ui.has_method("clear_grid_preview"):

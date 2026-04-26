@@ -75,6 +75,15 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 ## 商店页面只保留 Tooltip 触发职责，UI 构建与定位交给共享 presenter。
 var tooltip_presenter: CardTooltipPresenter = null
 
+
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
+
 ## ==========================================
 ## ★ 核心生命周期方法
 ## ==========================================
@@ -246,8 +255,8 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 	draft_card.raw_description = await _extract_card_description(real_card)
 	
 	# 2. 提取关键词词条
-	if "active_keywords" in real_card:
-		draft_card.active_keywords = real_card.active_keywords.duplicate()
+	if _object_has_property(real_card, &"active_keywords") and real_card.get("active_keywords") is Array:
+		draft_card.active_keywords = real_card.get("active_keywords").duplicate()
 	
 	# 3. 偷取真牌贴图 (从 FrontFace/TextureRect)
 	var front_texture = await _extract_front_texture(real_card, card_id)
@@ -722,11 +731,12 @@ func _extract_front_texture(real_card: Node, card_id: String) -> Texture2D:
 		if front_rect is TextureRect and front_rect.texture != null:
 			return front_rect.texture
 
-	if "front_face_texture" in real_card and real_card.front_face_texture != null:
-		if real_card.front_face_texture is TextureRect and real_card.front_face_texture.texture != null:
-			return real_card.front_face_texture.texture
-		if real_card.front_face_texture is Texture2D:
-			return real_card.front_face_texture
+	if _object_has_property(real_card, &"front_face_texture"):
+		var front_face_texture = real_card.get("front_face_texture")
+		if front_face_texture is TextureRect and front_face_texture.texture != null:
+			return front_face_texture.texture
+		if front_face_texture is Texture2D:
+			return front_face_texture
 
 	await get_tree().process_frame
 
@@ -764,8 +774,10 @@ func _extract_card_description(real_card: Node) -> String:
 		if parsed != "":
 			return parsed
 
-	if "raw_description" in real_card and real_card.raw_description != "":
-		return real_card.raw_description
+	if _object_has_property(real_card, &"raw_description"):
+		var raw_description = real_card.get("raw_description")
+		if typeof(raw_description) == TYPE_STRING and raw_description != "":
+			return raw_description
 
 	var card_info = real_card.get("card_info")
 	if typeof(card_info) == TYPE_DICTIONARY and card_info.has("效果"):

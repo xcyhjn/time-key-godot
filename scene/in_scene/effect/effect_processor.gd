@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # 脚本名称: EffectProcessor.gd
 # 功能概述: 时间轴结算的核心枢纽，负责将卡牌/敌人的静态数据转化为可执行的动态命令队列。
 # ------------------------------------------
@@ -116,7 +116,6 @@ static func _create_command_from_type(eff: Dictionary) -> EffectCommand:
 		# "heal":
 		#     return HealCommand.new(value)
 		_:
-			GameLogger.warning("未知的效果类型: " + str(type), "EffectProcessor")
 			return null
 
 

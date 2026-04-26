@@ -13,6 +13,7 @@ extends CanvasLayer
 @onready var rect_target_scale_y : float = rect.scale.x if pole else 1.0
 
 var clock_node : Node2D = null
+signal finish
 
 func move_clock_to_ui(target_clock: Node2D):
 	if not target_clock: return
@@ -62,6 +63,9 @@ func move_clock_to_ui(target_clock: Node2D):
 		tween.tween_property(menuui, "modulate:a", 1.0, 0.5)\
 			.set_trans(Tween.TRANS_SINE)\
 			.set_ease(Tween.EASE_IN_OUT)
+			
+	await tween.finished
+	finish.emit()
 
 func snap_clock_to_ui(target_clock: Node2D):
 	if not target_clock: return

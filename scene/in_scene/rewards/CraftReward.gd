@@ -1,4 +1,4 @@
-extends CanvasLayer
+﻿extends CanvasLayer
 
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
@@ -60,6 +60,15 @@ var can_close_selection_without_choice: bool = false
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
+
+
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
 
 @export_group("场景配置")
 @export var deck_grid_columns: int = 4
@@ -483,7 +492,6 @@ func _apply_crafting_result_to_deck() -> void:
 			GlobalDB.player_deck.remove_at(idx)
 
 	GlobalDB.player_deck.append(current_result_card_id)
-	GameLogger.info("合成完成：移除槽位卡牌并加入结果卡 %s" % current_result_card_id, "CraftReward")
 
 
 func _on_back_pressed() -> void:
@@ -574,8 +582,8 @@ func _update_result_description() -> void:
 		var description_text = ""
 		if result_preview_card.has_method("get_parsed_description"):
 			description_text = result_preview_card.get_parsed_description()
-		elif "raw_description" in result_preview_card:
-			description_text = result_preview_card.raw_description
+		elif _object_has_property(result_preview_card, &"raw_description"):
+			description_text = str(result_preview_card.get("raw_description"))
 
 		result_description_label.clear()
 		result_description_label.append_text(description_text if description_text != "" else "无效果文本")
@@ -743,8 +751,8 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node) -> 
 
 	draft_card.raw_description = await _extract_card_description(real_card)
 
-	if "active_keywords" in real_card:
-		draft_card.active_keywords = real_card.active_keywords.duplicate()
+	if _object_has_property(real_card, &"active_keywords") and real_card.get("active_keywords") is Array:
+		draft_card.active_keywords = real_card.get("active_keywords").duplicate()
 
 	var front_texture = await _extract_front_texture(real_card, card_id)
 	if front_texture != null:
@@ -770,11 +778,12 @@ func _extract_front_texture(real_card: Node, card_id: String) -> Texture2D:
 		if front_rect is TextureRect and front_rect.texture != null:
 			return front_rect.texture
 
-	if "front_face_texture" in real_card and real_card.front_face_texture != null:
-		if real_card.front_face_texture is TextureRect and real_card.front_face_texture.texture != null:
-			return real_card.front_face_texture.texture
-		if real_card.front_face_texture is Texture2D:
-			return real_card.front_face_texture
+	if _object_has_property(real_card, &"front_face_texture"):
+		var front_face_texture = real_card.get("front_face_texture")
+		if front_face_texture is TextureRect and front_face_texture.texture != null:
+			return front_face_texture.texture
+		if front_face_texture is Texture2D:
+			return front_face_texture
 
 	await get_tree().process_frame
 
@@ -812,8 +821,10 @@ func _extract_card_description(real_card: Node) -> String:
 		if parsed != "":
 			return parsed
 
-	if "raw_description" in real_card and real_card.raw_description != "":
-		return real_card.raw_description
+	if _object_has_property(real_card, &"raw_description"):
+		var raw_description = real_card.get("raw_description")
+		if typeof(raw_description) == TYPE_STRING and raw_description != "":
+			return raw_description
 
 	var card_info = real_card.get("card_info")
 	if typeof(card_info) == TYPE_DICTIONARY and card_info.has("效果"):

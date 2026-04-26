@@ -1,4 +1,4 @@
-class_name EnemyBase
+﻿class_name EnemyBase
 extends Node2D
 
 # ==========================================
@@ -16,7 +16,6 @@ var current_hp: int
 func _ready() -> void:
 	add_to_group("Enemies") # ★ 新增：实体敌人也自动加入组
 	current_hp = max_hp
-	GameLogger.info("【生成】%s 降临了！HP: %d" % [enemy_name, current_hp], "EnemyBase")
 
 
 # 通用受伤逻辑
@@ -29,7 +28,6 @@ func take_damage(amount: int) -> void:
 
 
 func die() -> void:
-	GameLogger.info("%s 死亡！" % enemy_name, "EnemyBase")
 	queue_free()
 # 虚函数：专用逻辑（留给子类重写）
 func execute_unique_action():
@@ -81,7 +79,7 @@ func _clear_red_effect() -> void:
 ## 显示伤害预览（子类实现）
 func _show_damage_preview(amount: int) -> void:
 	# 默认实现：在敌人上方显示伤害数字
-	GameLogger.info("预览伤害：%d" % amount, "EnemyBase")
+	pass
 
 
 ## 清除伤害预览（子类实现）

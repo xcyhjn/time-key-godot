@@ -45,10 +45,8 @@ func show_shape_preview(shape_coords: Array[Vector2i], initial_grid_pos: Vector2
 		hide_shape_preview()
 
 	if shape_coords.is_empty():
-		GameLogger.warning("形状坐标为空，无法显示预览", "TimelineVisualizer")
 		return
 
-	GameLogger.debug("显示形状预览，坐标数量: %s" % shape_coords.size(), "TimelineVisualizer")
 
 	# 保存状态
 	current_shape_coords = shape_coords.duplicate()
@@ -70,7 +68,6 @@ func hide_shape_preview() -> void:
 	if not is_showing_preview:
 		return
 
-	GameLogger.debug("隐藏形状预览", "TimelineVisualizer")
 
 	# 清除所有预览方块（已禁用预览，但保留清理逻辑）
 	_clear_preview_blocks()
@@ -94,7 +91,6 @@ func update_preview_position(grid_pos: Vector2i, is_valid: bool = true) -> void:
 	if grid_pos == current_grid_pos and is_valid == is_current_position_valid:
 		return
 
-	GameLogger.debug("更新预览位置: %s, 有效: %s" % [grid_pos, is_valid], "TimelineVisualizer")
 
 	# 更新状态
 	current_grid_pos = grid_pos
@@ -138,7 +134,6 @@ func is_position_valid(grid_pos: Vector2i) -> bool:
 ## 创建预览方块
 func _create_preview_blocks() -> void:
 	if not timeline_ui:
-		GameLogger.error("未找到 TimelineUI 引用，无法创建预览方块", "TimelineVisualizer")
 		return
 
 	_clear_preview_blocks()
@@ -156,7 +151,6 @@ func _create_preview_blocks() -> void:
 		container.add_child(block)
 		current_preview_blocks.append(block)
 
-	GameLogger.debug("创建 %s 个预览方块" % current_preview_blocks.size(), "TimelineVisualizer")
 
 
 ## 创建单个预览方块
@@ -201,7 +195,6 @@ func _update_preview_position(grid_pos: Vector2i) -> void:
 	# 获取时间轴网格背景的全局位置
 	var grid_bg = timeline_ui.get_node("GridBackground") as Control
 	if not grid_bg:
-		GameLogger.warning("未找到 GridBackground 节点", "TimelineVisualizer")
 		return
 
 	var grid_global_pos = grid_bg.global_position
@@ -210,7 +203,6 @@ func _update_preview_position(grid_pos: Vector2i) -> void:
 	if has_node("PreviewContainer"):
 		var container = $PreviewContainer
 		container.global_position = grid_global_pos
-		GameLogger.debug("设置预览容器位置: " + str(grid_global_pos), "TimelineVisualizer")
 
 	# 更新每个预览方块的位置和颜色
 	for i in range(current_shape_coords.size()):
@@ -225,10 +217,7 @@ func _update_preview_position(grid_pos: Vector2i) -> void:
 		if is_instance_valid(block):
 			# 设置位置（相对于预览容器，即网格背景）
 			block.position = Vector2(pos_x, pos_y)
-			GameLogger.debug("设置预览方块位置: 方块索引=" + str(i) + 
-				", 网格坐标=" + str(target_grid_pos) + 
-				", 像素位置=(" + str(pos_x) + ", " + str(pos_y) + ")", "TimelineVisualizer")
-
+				
 			# 更新颜色基于有效性
 			var style = block.get_theme_stylebox("panel") as StyleBoxFlat
 			if style:
@@ -248,7 +237,6 @@ func _update_preview_position(grid_pos: Vector2i) -> void:
 ## 连接到 DragShapeController 的事件
 func connect_to_drag_controller() -> void:
 	if not drag_shape_controller:
-		GameLogger.warning("未找到 DragShapeController，无法连接事件", "TimelineVisualizer")
 		return
 
 	# 监听拖拽开始事件
@@ -263,18 +251,15 @@ func connect_to_drag_controller() -> void:
 	if drag_shape_controller.has_signal("hover_position_changed"):
 		drag_shape_controller.hover_position_changed.connect(_on_hover_position_changed)
 
-	GameLogger.info("已连接到 DragShapeController", "TimelineVisualizer")
 
 
 ## 拖拽开始回调
 func _on_drag_started(card: Control, shape_coords: Array[Vector2i]) -> void:
-	GameLogger.debug("拖拽开始，显示形状预览", "TimelineVisualizer")
 	show_shape_preview(shape_coords)
 
 
 ## 拖拽结束回调
 func _on_drag_ended(card: Control, was_placed: bool) -> void:
-	GameLogger.debug("拖拽结束，隐藏形状预览", "TimelineVisualizer")
 	hide_shape_preview()
 
 
@@ -288,7 +273,6 @@ func _on_hover_position_changed(grid_pos: Vector2i, is_valid: bool) -> void:
 
 
 func _ready() -> void:
-	GameLogger.debug("时间轴可视化器已就绪", "TimelineVisualizer")
 
 	# 自动查找节点引用（备用方案）
 	if not timeline_ui and timeline_ui_path.is_empty():
@@ -313,12 +297,6 @@ func _process(delta: float) -> void:
 
 ## 调试：打印当前预览状态
 func debug_print_status() -> void:
-	GameLogger.info("=== 时间轴可视化器状态 ===", "TimelineVisualizer")
-	GameLogger.info("正在显示预览: %s" % is_showing_preview, "TimelineVisualizer")
-	GameLogger.info("形状坐标数量: %s" % current_shape_coords.size(), "TimelineVisualizer")
-	GameLogger.info("当前网格位置: %s" % current_grid_pos, "TimelineVisualizer")
-	GameLogger.info("当前位置有效: %s" % is_current_position_valid, "TimelineVisualizer")
-	GameLogger.info("预览方块数量: %s" % current_preview_blocks.size(), "TimelineVisualizer")
 
 	if is_showing_preview and not current_shape_coords.is_empty():
 		var abs_coords = get_current_preview_coords()

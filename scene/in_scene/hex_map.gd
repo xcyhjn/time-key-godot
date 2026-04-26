@@ -1,4 +1,4 @@
-# 原文件名: hex_map(地块生成).gd
+﻿# 原文件名: hex_map(地块生成).gd
 # 功能: 地块生成与战斗地图管理
 extends Node2D
 class_name battle
@@ -70,10 +70,21 @@ signal tile_topology_changed
 @export var spacing_y: float = 96.24
 @export var step_height: float = 48.0
 @export var tile_scale: float = 0.6
+## 是否启用“智能碰撞箱交互优化”：
+## - 闲置态：只允许有敌人建筑的格子参与鼠标命中
+## - 地块选择态：允许所有格子参与鼠标命中
+## - 平铺视角与3D视角共用同一套规则
+@export var enable_smart_collision_interaction: bool = true
 @export var hitbox_width: float = 168.0
-@export var hitbox_base_height: float = 96.0
-@export var hitbox_offset_x: float = -153.6
-@export var hitbox_offset_y: float = -240.0
+@export var hitbox_base_height: float = 60.0
+@export var hitbox_offset_x: float = 0
+@export var hitbox_offset_y: float = -110.0
+
+## 六边形碰撞箱顶部横边相对于最大宽度的比例。
+## 0.5 表示顶部横边宽度为整体最大宽度的一半。
+@export_range(0.1, 1.0, 0.01) var hitbox_top_width_ratio: float = 0.5
+## 碰撞箱的绘制/调试层级。
+@export var hitbox_z_index: int = 4096
 
 const REF_SCALE: float = 0.6
 
@@ -200,6 +211,19 @@ var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明�
 var current_enemy_intent_source_stack: Area2D = null
 var current_enemy_intent_target_stacks: Array[Area2D] = []
 var current_enemy_intent_source_restore_state: Dictionary = {}
+## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
+var _tiles_interactive_master_enabled: bool = true
+## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
+var _last_target_selection_active: bool = false
+
+
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
 
 ## 应用外部事件（整合自 node_2d.gd）
 func apply_external_event(payload: String) -> void:
@@ -219,6 +243,7 @@ func handle_event_logic():
 
 func _ready():
 	y_sort_enabled = true
+	set_process(enable_smart_collision_interaction)
 	if enemy_intent_frame_tex == null:
 		enemy_intent_frame_tex = ENEMY_INTENT_FRAME_TEXTURE
 	if enemy_intent_target_shader == null:
@@ -271,9 +296,10 @@ func _ready():
 		
 	if height_view_button:
 		height_view_button.pressed.connect(_on_height_view_toggle_pressed)
-		GameLogger.debug("成功绑定高度视图切换按钮", "HexMap")
 	else:
-		GameLogger.warning("未找到高度视图切换按钮，请确保按钮节点存在", "HexMap")
+		pass
+
+	_refresh_stack_interactivity()
 
 
 func build_map_pipeline():
@@ -287,7 +313,18 @@ func build_map_pipeline():
 
 	_assign_terrains_and_enemies()
 	_render_map()
+	_refresh_stack_interactivity()
 	enemy_roster_changed.emit()
+
+
+func _process(_delta: float) -> void:
+	if not enable_smart_collision_interaction:
+		return
+
+	var is_target_selection_active = _is_target_selection_active()
+	if is_target_selection_active != _last_target_selection_active:
+		_last_target_selection_active = is_target_selection_active
+		_refresh_stack_interactivity()
 
 
 func _generate_map_data():
@@ -420,7 +457,6 @@ func _populate_map_data(coords: Array[Vector2i], shape_type: String, shape_param
 		
 		map_data[coord_v2i] = tile_data
 	
-	GameLogger.debug("地图数据填充完成，形状: " + shape_type + "，坐标数量: " + str(coords.size()), "HexMap")
 
 
 ## 带随机数生成器的 tier 高度滚动（用于可重复生成）
@@ -436,13 +472,11 @@ func _generate_fan_map_data():
 	# 使用形状发生器模式：坐标采样 + 数据填充
 	var coords = _get_fan_coords(fan_radius, fan_angle_span, 90.0)
 	_populate_map_data(coords, "fan", {})
-	GameLogger.info("扇形地图生成完成，坐标数量: " + str(coords.size()), "HexMap")
 
 func _generate_circular_map_data():
 	# 使用形状发生器模式：坐标采样 + 数据填充
 	var coords = _get_circular_coords(map_radius)
 	_populate_map_data(coords, "circular", {})
-	GameLogger.info("圆形地图生成完成，坐标数量: " + str(coords.size()), "HexMap")
 
 func _roll_height_by_tier(tier: int) -> int:
 	var roll = randf()
@@ -491,7 +525,6 @@ func get_terrain_from_height(h: int) -> TerrainType:
 	#for landform_script in landform_pool:
 		#coord = landform_pick(landform_script)
 		#if coord == Vector2i(-100, -100):
-			#GameLogger.warning("地貌保底生成失败，找不到合法位置", "HexMap")
 			#continue
 			#
 		#var inst = landform_script.new(coord, self)
@@ -518,7 +551,7 @@ func _assign_terrains_and_enemies():
 	rng.randomize()
 	
 	# 【修复1】：清空上一局残留的高度池，并增加安全性校验
-	if GlobalClock and "tile_h_pool" in GlobalClock:
+	if GlobalClock and _object_has_property(GlobalClock, &"tile_h_pool"):
 		for h_key in GlobalClock.tile_h_pool.keys():
 			GlobalClock.tile_h_pool[h_key].clear()
 
@@ -544,7 +577,7 @@ func _assign_terrains_and_enemies():
 			data["terrain_type"] = terrain_type
 			
 		# 填入全局高度池（防报错：如果键不存在则动态创建）
-		if GlobalClock and "tile_h_pool" in GlobalClock:
+		if GlobalClock and _object_has_property(GlobalClock, &"tile_h_pool"):
 			if not GlobalClock.tile_h_pool.has(height):
 				GlobalClock.tile_h_pool[height] = []
 			GlobalClock.tile_h_pool[height].append(coord)
@@ -553,7 +586,6 @@ func _assign_terrains_and_enemies():
 	var absolute_max_landforms = int(valid_tile_count * max_landform_ratio)
 	var current_placed = 0
 	
-	GameLogger.debug("准备放置地貌。可用地块数: %d, 最大容纳量(35%%): %d" % [valid_tile_count, absolute_max_landforms], "HexMap")
 
 	# 优先放置中立地形（森林/雪山等），但不超过设定的最大值，也不超过全局总上限
 	var neutral_to_place = min(Max_Neutral_landform, absolute_max_landforms - current_placed)
@@ -563,7 +595,6 @@ func _assign_terrains_and_enemies():
 	var enemy_to_place = min(Max_Enemy_landform, absolute_max_landforms - current_placed)
 	current_placed += _place_from_pool(enemy_pool, enemy_to_place)
 	
-	GameLogger.info("地貌放置完毕。总计放置: %d (上限: %d)" % [current_placed, absolute_max_landforms], "HexMap")
 # ==========================================
 # 2. 通用抽取放置函数 (返回实际放置的数量)
 # ==========================================
@@ -623,7 +654,7 @@ func landform_pick(landform_script: Script) -> Vector2i:
 		var valid_heights = buffer.landform_rules["require_height"]
 		# 从允许的高度中随机挑一个高度层
 		var target_h = valid_heights[randi() % valid_heights.size()]
-		if GlobalClock and "tile_h_pool" in GlobalClock and GlobalClock.tile_h_pool.has(target_h):
+		if GlobalClock and _object_has_property(GlobalClock, &"tile_h_pool") and GlobalClock.tile_h_pool.has(target_h):
 			buffer_pool = GlobalClock.tile_h_pool[target_h].duplicate()
 	else:
 		# 没有高度限制，全图可放
@@ -713,6 +744,109 @@ func _render_map():
 		_create_stack_at(coord, map_data[coord])
 
 
+## 当前是否处于“地块选择态”。
+## 只要 CardManager.current_selected_card 有效，就认为玩家正在选择地块目标。
+func _is_target_selection_active() -> bool:
+	var cm = get_card_manager()
+	if not cm:
+		return false
+	var selected_card = cm.get("current_selected_card")
+	return is_instance_valid(selected_card)
+
+
+## 判断某个格子上当前是否存在敌人建筑。
+## 这里优先依赖 Enemies 分组判断，因为敌方地貌在创建时已经统一入组。
+func _stack_has_enemy_building(stack: Area2D) -> bool:
+	if not is_instance_valid(stack):
+		return false
+	if not stack.has_meta("occupant"):
+		return false
+
+	var occupant = stack.get_meta("occupant")
+	if not is_instance_valid(occupant):
+		return false
+
+	return occupant.is_in_group("Enemies")
+
+
+## 根据当前状态刷新所有格子的 input_pickable：
+## 1. 外部主开关关闭时，全部禁用
+## 2. 智能优化关闭时，全部启用
+## 3. 地块选择态时，全部启用
+## 4. 闲置态时，仅启用敌人建筑格
+func _refresh_stack_interactivity() -> void:
+	var allow_all = false
+
+	if not _tiles_interactive_master_enabled:
+		allow_all = false
+	elif not enable_smart_collision_interaction:
+		allow_all = true
+	else:
+		allow_all = _is_target_selection_active()
+
+	for stack in stack_nodes.values():
+		if not is_instance_valid(stack) or not (stack is Area2D):
+			continue
+
+		if not _tiles_interactive_master_enabled:
+			stack.input_pickable = false
+		elif allow_all:
+			stack.input_pickable = true
+		else:
+			stack.input_pickable = _stack_has_enemy_building(stack)
+
+
+## 根据当前导出的碰撞参数，构建标准六边形碰撞多边形。
+## 调整 hitbox_width / hitbox_base_height / hitbox_top_width_ratio 时，
+## 最终都会通过这一个函数反映到真实碰撞形状上。
+func _build_hitbox_polygon() -> PackedVector2Array:
+	var half_w := hitbox_width * 0.5
+	var half_h := hitbox_base_height * 0.5
+	var top_half_w := half_w * hitbox_top_width_ratio
+
+	return PackedVector2Array([
+		Vector2(-top_half_w, -half_h),
+		Vector2(top_half_w, -half_h),
+		Vector2(half_w, 0.0),
+		Vector2(top_half_w, half_h),
+		Vector2(-top_half_w, half_h),
+		Vector2(-half_w, 0.0)
+	])
+
+
+func _get_safe_hitbox_z_index() -> int:
+	# CanvasItem 的安全范围通常是 [-4096, 4096]。
+	# 这里统一夹紧，避免检查器里被手动改成更大的值时再次刷报错。
+	return clampi(hitbox_z_index, -4096, 4096)
+
+
+## 重新应用单个地块的碰撞箱形状与位置。
+func _refresh_collision_for_stack(stack: Area2D) -> void:
+	if not is_instance_valid(stack):
+		return
+
+	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
+	if not is_instance_valid(collision) or not (collision is CollisionPolygon2D):
+		return
+
+	var height = stack.get_meta("height") if stack.has_meta("height") else 1
+	var current_step_h = step_height * (tile_scale / REF_SCALE)
+	var top_block_y = 0.0 if current_view_state == MapViewState.VIEW_FLAT else -(int(height) - 1) * current_step_h
+
+	collision.polygon = _build_hitbox_polygon()
+	collision.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y)
+	collision.z_as_relative = false
+	collision.z_index = _get_safe_hitbox_z_index()
+
+
+## 对当前地图中的所有碰撞箱执行一次重建。
+## 调整 hitbox 参数后调用它，就不需要重新生成整张地图。
+func rebuild_all_collision_shapes() -> void:
+	for stack in stack_nodes.values():
+		if is_instance_valid(stack) and stack is Area2D:
+			_refresh_collision_for_stack(stack)
+
+
 func _get_hex_pixel_pos(hex_coord: Vector2) -> Vector2:
 	var ratio = tile_scale / REF_SCALE
 	var screen_x = hex_coord.x * spacing_x * ratio
@@ -765,12 +899,11 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 		sprites_in_stack.append(sprite)
 
 	var collision = CollisionPolygon2D.new()
-	var w = hitbox_width
-	var h = hitbox_base_height
-	collision.polygon = PackedVector2Array([
-		Vector2(-w / 4.0, -h / 2.0), Vector2(w / 4.0, -h / 2.0), Vector2(w / 2.0, 0),
-		Vector2(w / 4.0, h / 2.0), Vector2(-w / 4.0, h / 2.0), Vector2(-w / 2.0, 0)
-	])
+	collision.polygon = _build_hitbox_polygon()
+	# 把碰撞箱本体的层级抬高。
+	# 这样在启用碰撞调试显示时，它会尽量显示在最上面，不容易被地块/建筑贴图视觉干扰。
+	collision.z_as_relative = false
+	collision.z_index = _get_safe_hitbox_z_index()
 	
 	# ★ 核心修复：如果是平铺视角，碰撞格必须贴地
 	var top_block_y = 0.0 if current_view_state == MapViewState.VIEW_FLAT else -(height - 1) * current_step_h
@@ -828,7 +961,6 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 ## @param coord 六边形坐标（Vector2i）
 func refresh_tile_visual(coord: Vector2i) -> void:
 	if not map_data.has(coord):
-		GameLogger.warning("尝试刷新不存在的地块坐标: " + str(coord), "HexMap")
 		return
 	
 	# 获取地块数据
@@ -843,7 +975,7 @@ func refresh_tile_visual(coord: Vector2i) -> void:
 	
 	# 重新创建视觉节点（_create_stack_at 使用 Vector2i 坐标）
 	_create_stack_at(coord, data)
-	GameLogger.debug("地块视觉刷新完成，坐标: " + str(coord), "HexMap")
+	_refresh_stack_interactivity()
 
 
 func get_card_manager() -> Node:
@@ -1023,7 +1155,6 @@ func _is_stack_valid_target(stack: Area2D) -> bool:
 
 ## 右键取消选中卡牌
 func _cancel_card_selection() -> void:
-	GameLogger.info("在地块上右键取消卡牌选中", "HexMap")
 
 	# 通知卡牌管理器取消选中
 	var cm = get_card_manager()
@@ -1038,7 +1169,6 @@ func _cancel_card_selection() -> void:
 		_tween_shader_param(selected_stack, "is_selected_blend", 0.0, 0.2)
 		selected_stack = null
 
-	GameLogger.info("卡牌选中已取消", "HexMap")
 
 
 ## 更新所有地块的条件效果（在卡牌选中状态变化时调用）
@@ -1351,7 +1481,6 @@ func add_landform_visual_at(coord: Vector2i) -> void:
 	if landform_inst.Attitude == landform_inst.Attitude_Pool.Enemy:
 		enemy_roster_changed.emit()
 	
-	GameLogger.debug("更新地貌视觉: %s at %s" % [landform_inst.name, coord], "HexMap")
 
 
 ## 地形名称转换函数（整合自 node_2d.gd）
@@ -1388,7 +1517,6 @@ func refresh_landform_visual(coord: Vector2i) -> void:
 
 ## 处理回合结束时的建筑行为
 func _on_step_next(step: int, behavior: int) -> void:
-	GameLogger.info("触发建筑行为: step=%d, behavior=%d" % [step, behavior], "HexMap")
 	
 	# 遍历所有地块，触发建筑的 Behavior 方法
 	for coord_v2 in map_data.keys():
@@ -1398,7 +1526,6 @@ func _on_step_next(step: int, behavior: int) -> void:
 			if landform_inst.has_method("Behavior"):
 				# 调用建筑的 Behavior 方法
 				landform_inst.Behavior(step, map_data, null, behavior)
-				GameLogger.debug("执行建筑行为: %s at %s" % [landform_inst.name, coord_v2], "HexMap")
 
 ## 未处理的输入事件（整合自 node_2d.gd）
 func _unhandled_input(event):
@@ -1551,10 +1678,8 @@ func _start_pillar_floating_animation(stack: Area2D) -> void:
 	# 获取光柱引用
 	var pillar = stack.get_meta("height_view_pillar") if stack.has_meta("height_view_pillar") else null
 	if not is_instance_valid(pillar):
-		GameLogger.debug("光柱引用无效，无法启动浮动动画", "HexMap")
 		return
 	
-	GameLogger.debug("开始光柱浮动动画，幅度: " + str(height_view_hover_amplitude) + "，速度: " + str(height_view_hover_speed), "HexMap")
 	
 	# 停止现有动画（如果存在）
 	if height_view_pillar_tweens.has(stack):
@@ -1601,16 +1726,13 @@ func _stop_pillar_floating_animation(stack: Area2D) -> void:
 
 ## 统一开启或关闭所有地块的鼠标交互
 func set_tiles_interactive(enabled: bool) -> void:
-	for stack in stack_nodes.values():
-		if is_instance_valid(stack) and stack is Area2D:
-			stack.input_pickable = enabled
-	GameLogger.debug("地块交互状态已设置为: " + str(enabled), "HexMap")
+	_tiles_interactive_master_enabled = enabled
+	_refresh_stack_interactivity()
 
 
 ## 锁定或解锁地块的视觉状态（保留当前的高亮和消融效果）
 func set_visuals_locked(locked: bool) -> void:
 	is_visuals_locked = locked
-	GameLogger.debug("地块视觉状态锁已设置为: " + str(locked), "HexMap")
 	
 	if locked:
 		# 进入时间占位放置阶段时，保留高亮，但必须释放防遮挡消融，避免地块“消失”。
@@ -1656,7 +1778,6 @@ func recollect_sprites_for_landform(landform_obj: landform) -> void:
 ## 接收外部节点（如血条），将其内部的贴图加入地块渲染序列
 func register_extra_render_node(coord: Vector2i, node: Node) -> void:
 	if not stack_nodes.has(coord): 
-		GameLogger.warning("注册血条失败：找不到地块坐标 " + str(coord), "HexMap")
 		return
 	
 	var stack = stack_nodes[coord]
@@ -1679,7 +1800,6 @@ func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void
 				node.set_instance_shader_parameter("total_height", float(height + 2))
 			
 			list.append(node) 
-			GameLogger.debug("🩸 成功将血条组件收编进地块渲染序列: " + node.name, "HexMap")
 			
 	for child in node.get_children():
 		_find_and_register_ui_sprites(child, list, height)
@@ -1881,7 +2001,6 @@ func is_entity_alive(entity: Node) -> bool:
 ## 执行毁灭流程
 func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
 	var sprites = stack.get_meta("sprites") as Array
-	GameLogger.info("交由 VFXManager 播放地块毁灭动画: " + str(coord), "HexMap")
 	
 	# ★ 核心解耦：等待 VFXManager 的表现播完
 	await VFXManager.play_tile_destruction_vfx(sprites, get_tree())
@@ -1892,6 +2011,7 @@ func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
 	
 	stack_nodes.erase(coord)
 	map_data.erase(coord)
+	_refresh_stack_interactivity()
 	
 	var occupant = stack.get_meta("occupant")
 	if is_instance_valid(occupant):
@@ -1899,7 +2019,6 @@ func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
 	
 	enemy_roster_changed.emit()
 	tile_topology_changed.emit()
-	GameLogger.info("地块已从地图彻底抹除: " + str(coord), "HexMap")
 
 # ==========================================
 # ★ 状态机 Shader 驱动引擎
@@ -1963,7 +2082,6 @@ func change_tile_state(stack: Area2D, new_state: TileVisualState) -> void:
 
 ## 压缩为平铺视图 (利用缓存精准归位)
 func _compress_to_single_height_view() -> void:
-	GameLogger.info("状态机切换 -> 平铺视图", "HexMap")
 	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
 	height_view_original_materials.clear()
 	
@@ -2025,7 +2143,6 @@ func _compress_to_single_height_view() -> void:
 
 ## 恢复 3D 视图 (直接从字典中精准读取坐标)
 func _restore_original_height_view() -> void:
-	GameLogger.info("恢复 3D 视图", "HexMap")
 	
 	for coord in stack_nodes.keys():
 		var stack = stack_nodes[coord]

@@ -1,4 +1,4 @@
-@abstract class_name landform
+﻿@abstract class_name landform
 extends  Node2D
 
 signal Blood_change(Blood)
@@ -344,7 +344,6 @@ func set_health(new_hp: float) -> void:
 	# 更新 damage_rate 基于当前生命值
 	if Max_Blood > 0:
 		damage_rate = 1.0 - (float(HP) / float(Max_Blood))
-		GameLogger.debug("地形血量更新: current_hp=%d, damage_rate=%.2f" % [HP, damage_rate], "landform")
 
 
 func heal(amount: float) -> void:
@@ -360,7 +359,6 @@ func take_damage(amount: int) -> void:
 		return
 	# 这里可以播放通用的受伤动画，比如 $AnimationPlayer.play("hurt")
 	set_health(HP - amount)
-	GameLogger.debug("地形受伤: amount=%d, current_hp=%d, damage_rate=%.2f" % [amount, HP, damage_rate], "landform")
 	
 
 
@@ -373,7 +371,6 @@ func State_Update():
 		Revived()
 
 func die() -> void:
-	GameLogger.info("【地形实体死亡】%s 被摧毁" % landform_name, "landform")
 	State_Main = Main_State_Pool.Broken
 	
 	# 因为上面【修复1】赋值了 self.tex，现在可以直接无缝切换为战损贴图了
@@ -419,7 +416,6 @@ func get_intent_action(target_tile: Node = null) -> TimelineAction:
 		action_data                 # p_data
 	)
 	
-	GameLogger.debug("创建地形意图行动: %s" % landform_name, "landform")
 	return action
 
 
@@ -427,7 +423,6 @@ func get_intent_action(target_tile: Node = null) -> TimelineAction:
 func set_timeline_shape(shape_key: String) -> void:
 	timeline_shape_key = shape_key
 	parse_timeline_shape()
-	GameLogger.debug("设置地形时间占位形状: %s -> %s" % [shape_key, timeline_shape_coords], "landform")
 
 func Revived():
 	State_Main = Main_State_Pool.Normal

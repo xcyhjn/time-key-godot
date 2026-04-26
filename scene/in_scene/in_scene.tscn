@@ -95,10 +95,7 @@ hex_top_tex = ExtResource("2_27d84")
 hex_side_tex = ExtResource("3_x0x3q")
 block_material = SubResource("ShaderMaterial_djuk3")
 inner_tier_radius = 2
-hitbox_width = 200.0
-hitbox_base_height = 120.0
-hitbox_offset_x = 0.0
-hitbox_offset_y = -100.0
+hitbox_base_height = 80.0
 show_height_pillars = false
 height_view_shader_material = SubResource("ShaderMaterial_kuo1e")
 
@@ -219,6 +216,20 @@ offset_left = 271.0
 offset_right = 955.0
 offset_bottom = 211.0
 script = ExtResource("23_1wmus")
+slot_size = null
+spacing = null
+grid_width = null
+grid_height = null
+margin_top_preset = null
+expanded_scale = null
+anim_duration = null
+enemy_intent_preview_scale = null
+enemy_intent_removal_scale = null
+enemy_intent_removal_duration = null
+enemy_intent_preview_z_index = null
+enemy_intent_pulse_speed = null
+enemy_intent_pulse_min_alpha = null
+enemy_intent_pulse_max_alpha = null
 mask_color = Color(0.26657525, 0.26657513, 0.26657534, 0.6)
 mask_layer = 1
 
@@ -249,6 +260,7 @@ theme_override_fonts/mono_font = ExtResource("5_6migj")
 
 [node name="TimelineManager" type="Node" parent="ui/TimelineSystem" unique_id=2115352708]
 script = ExtResource("13_4x367")
+max_enemy_intents_per_turn = null
 
 [node name="DragShapeController" type="Node2D" parent="ui/TimelineSystem" unique_id=516552955]
 script = ExtResource("14_j0ayu")
@@ -364,10 +376,10 @@ custom_minimum_size = Vector2(100, 0)
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -273.0
-offset_top = 40.0
-offset_right = -50.0
-offset_bottom = 143.0
+offset_left = -320.0
+offset_top = 180.0
+offset_right = -97.0
+offset_bottom = 283.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxTexture_pg1mb")
 script = ExtResource("22_nj7no")

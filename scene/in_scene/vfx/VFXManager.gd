@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # 脚本名称: VFXManager.gd
 # 功能概述: 全局特效与动画表现管理器，实现逻辑计算与视觉表现的彻底解耦。
 # ------------------------------------------
@@ -21,7 +21,6 @@ static func play_vfx(vfx_name: String, target_pos: Vector2, tree: SceneTree) -> 
 	# 假设你以后会有个特效预制体字典
 	# var vfx_scene = preload("res://vfx/slash.tscn")
 	
-	GameLogger.debug("播放特效: %s 在位置: %s" % [vfx_name, target_pos], "VFXManager")
 	
 	# 这里模拟一个通用的受击特效表现（例如目标闪烁或震动）
 	# 实际开发中，你可以实例化特效节点，并 await 特效的 finished 信号

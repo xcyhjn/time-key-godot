@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # 脚本名称: ElevationCommand.gd
 # 功能概述: 地形升降执行命令，负责调度地块的高度更改和特效等待。
 # ==========================================
@@ -12,7 +12,6 @@ func execute(tree: SceneTree) -> void:
 	if not is_instance_valid(hex_map) or target_tiles.is_empty():
 		return
 		
-	GameLogger.info("执行地形改造：变动值 %d，波及地块数 %d" % [elevation_value, target_tiles.size()], "ElevationCommand")
 	
 	if hex_map.has_method("animate_elevation_change"):
 		# 1. 并行触发：循环调用所有地块的升降动画
@@ -26,4 +25,4 @@ func execute(tree: SceneTree) -> void:
 		# 为了视觉稳定感，等待 0.8 秒后，再执行卡牌的下一个效果（比如伤害）。
 		await tree.create_timer(0.8).timeout
 	else:
-		GameLogger.error("HexMap 缺少 animate_elevation_change 方法！", "ElevationCommand")
+		pass

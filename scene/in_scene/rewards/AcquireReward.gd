@@ -55,6 +55,15 @@ var selected_draft_card: Control = null
 ## 获取卡牌奖励页也复用通用 Tooltip presenter。
 var tooltip_presenter: CardTooltipPresenter = null
 
+
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
+
 ## ==========================================
 ## ★ 核心生命周期方法
 ## ==========================================
@@ -221,8 +230,8 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 	draft_card.raw_description = await _extract_card_description(real_card)
 	
 	# 2. 提取关键词词条
-	if "active_keywords" in real_card:
-		draft_card.active_keywords = real_card.active_keywords.duplicate()
+	if _object_has_property(real_card, &"active_keywords") and real_card.get("active_keywords") is Array:
+		draft_card.active_keywords = real_card.get("active_keywords").duplicate()
 	
 	# 3. 偷取真牌贴图
 	var front_texture = await _extract_front_texture(real_card, card_id)
@@ -360,8 +369,8 @@ func _get_current_era() -> int:
 		if global_clock:
 			if global_clock.has_method("get_current_era"):
 				return global_clock.get_current_era()
-			elif "era" in global_clock:
-				return int(global_clock.era)
+			elif _object_has_property(global_clock, &"era"):
+				return int(global_clock.get("era"))
 	
 	# 备用方案: 从场景中查找
 	var root = Engine.get_main_loop().root
@@ -369,8 +378,8 @@ func _get_current_era() -> int:
 	if clock:
 		if clock.has_method("get_current_era"):
 			return clock.get_current_era()
-		elif "era" in clock:
-			return int(clock.era)
+		elif _object_has_property(clock, &"era"):
+			return int(clock.get("era"))
 	
 	# 默认值
 	return 1
@@ -391,11 +400,12 @@ func _extract_front_texture(real_card: Node, card_id: String) -> Texture2D:
 		if front_rect is TextureRect and front_rect.texture != null:
 			return front_rect.texture
 
-	if "front_face_texture" in real_card and real_card.front_face_texture != null:
-		if real_card.front_face_texture is TextureRect and real_card.front_face_texture.texture != null:
-			return real_card.front_face_texture.texture
-		if real_card.front_face_texture is Texture2D:
-			return real_card.front_face_texture
+	if _object_has_property(real_card, &"front_face_texture"):
+		var front_face_texture = real_card.get("front_face_texture")
+		if front_face_texture is TextureRect and front_face_texture.texture != null:
+			return front_face_texture.texture
+		if front_face_texture is Texture2D:
+			return front_face_texture
 
 	await get_tree().process_frame
 
@@ -433,8 +443,10 @@ func _extract_card_description(real_card: Node) -> String:
 		if parsed != "":
 			return parsed
 
-	if "raw_description" in real_card and real_card.raw_description != "":
-		return real_card.raw_description
+	if _object_has_property(real_card, &"raw_description"):
+		var raw_description = real_card.get("raw_description")
+		if typeof(raw_description) == TYPE_STRING and raw_description != "":
+			return raw_description
 
 	var card_info = real_card.get("card_info")
 	if typeof(card_info) == TYPE_DICTIONARY and card_info.has("效果"):

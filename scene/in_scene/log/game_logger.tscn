@@ -1,8 +1,0 @@
-[gd_scene format=3 uid="uid://bn2k400g2ncr3"]
-
-[ext_resource type="Script" uid="uid://d3tmueetvu0so" path="res://scene/in_scene/log/GameLogger.gd" id="1_utor2"]
-
-[node name="GameLogger" type="Node"]
-script = ExtResource("1_utor2")
-current_log_level = 2
-enabled = false

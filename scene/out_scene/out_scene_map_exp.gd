@@ -43,15 +43,26 @@ var chosen_char_index: int = -1
 ## 这里不直接在 apply_external_event() 里处理，是为了确保 OutScene 的节点树先 ready 完成。
 var pending_external_event: Variant = null
 
+
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
+
 # ==========================================
 # 2. 初始化逻辑
 # ==========================================
 func _ready():
 	# 检查是否有保存的状态
 	if MapState.is_initialized:
-		await dim.use(1,1)
+		dim.show()
 		_load_from_global()
+		dim.use(1,1)
 	else:
+		is_moving = true
 		_init_new_map()
 		_update_visual_states()
 		mask._update_shader_screen_size(0.225)
@@ -59,7 +70,9 @@ func _ready():
 		await point.stopped
 		await mask.start_iris_out(0.23)
 		cartoon.move_clock_to_ui(clock)
+		await cartoon.finish
 		MapState.ui_settled = true
+		is_moving = false
 	
 	_update_visual_states()
 	_refresh_global_progress_labels()
@@ -143,7 +156,6 @@ func _load_from_global():
 	# 恢复玩家位置（像素）
 	player_sprite.position = Vector2(player_hex.x * step_x, player_hex.y * step_y + player_hex.x * stagger_y)
 	camera.position = player_sprite.position
-
 
 ## 接收来自其它场景的外部事件。
 ## 当前主要用于“局内结算结束 -> 返回局外”时携带战斗返回信息。
@@ -481,7 +493,7 @@ func _switch_scene_with_data(path: String, data: String):
 		else:
 			# 兼容旧版节点路径写法。
 			var target_node = next_scene.get_node_or_null("Main/Node2D")
-			if target_node and "received_text" in target_node:
+			if target_node and _object_has_property(target_node, &"received_text"):
 				target_node.received_text = data
 
 	get_tree().root.add_child(next_scene)

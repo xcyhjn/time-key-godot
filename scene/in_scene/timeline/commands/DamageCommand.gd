@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # 脚本名称: DamageCommand.gd
 # 功能概述: 具体的伤害执行命令，负责寻址、存活校验、特效播放与实际扣血。
 # ------------------------------------------
@@ -24,7 +24,6 @@ func execute(tree: SceneTree) -> void:
 	if not is_instance_valid(hex_map) or target_tiles.is_empty():
 		return
 		
-	GameLogger.info("执行群体伤害：造成 %d 点伤害，波及地块数 %d" % [amount, target_tiles.size()], "DamageCommand")
 	
 	var hit_anyone = false
 	for tile in target_tiles:
