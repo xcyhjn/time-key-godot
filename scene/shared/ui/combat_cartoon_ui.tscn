@@ -8,9 +8,12 @@
 [ext_resource type="Script" uid="uid://b8ch0oltwvgij" path="res://scene/out_scene/point.gd" id="6_point"]
 [ext_resource type="Texture2D" uid="uid://b2n28xtpsessh" path="res://image/clock/point.png" id="7_point_tex"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="8_font"]
+[ext_resource type="Script" uid="uid://bft7hmdxwglsu" path="res://scene/shared/ui/era_progress.gd" id="8_vwg1y"]
 [ext_resource type="Texture2D" uid="uid://ckleisa7b53ix" path="res://image/character/0.png" id="9_char"]
 [ext_resource type="Shader" uid="uid://dy01xyj3taymq" path="res://shaders/color_BG.gdshader" id="10_shader"]
 [ext_resource type="Script" uid="uid://c77sa0nlxsqs6" path="res://scene/color_bg.gd" id="11_color_bg"]
+[ext_resource type="Texture2D" uid="uid://cwcyw7rabsblq" path="res://image/setting.png" id="11_hprhu"]
+[ext_resource type="Texture2D" uid="uid://dkmpaccessu4k" path="res://image/setting3.png" id="12_2s6v3"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_luvo3"]
 texture = ExtResource("2_rect")
@@ -138,12 +141,12 @@ layer = 900
 script = ExtResource("1_cartoon")
 
 [node name="Rect" type="TileMapLayer" parent="." unique_id=417868497]
-z_index = -1
+z_index = 1
 scale = Vector2(0.75, 0.75)
 tile_set = SubResource("TileSet_uwoi5")
 
 [node name="Pole" type="TileMapLayer" parent="." unique_id=1289060419]
-z_index = -1
+z_index = 1
 scale = Vector2(0.9, 0.9)
 tile_set = SubResource("TileSet_2s6v3")
 
@@ -183,6 +186,20 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="era_progress" type="TextureProgressBar" parent="MenuUI/Control" unique_id=43934042]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.3
+anchor_top = -0.16
+anchor_right = 0.7
+anchor_bottom = 0.24
+max_value = 8.0
+value = 8.0
+fill_mode = 8
+nine_patch_stretch = true
+texture_progress = ExtResource("3_pole")
+script = ExtResource("8_vwg1y")
+
 [node name="era" type="Label" parent="MenuUI/Control" unique_id=1770587770]
 texture_filter = 1
 layout_mode = 1
@@ -220,6 +237,18 @@ anchor_bottom = 0.062
 texture = ExtResource("9_char")
 expand_mode = 1
 
+[node name="setting" type="TextureButton" parent="MenuUI/Control" unique_id=2119154157]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.965
+anchor_top = 0.014
+anchor_right = 0.992
+anchor_bottom = 0.062
+texture_normal = ExtResource("11_hprhu")
+texture_pressed = ExtResource("11_hprhu")
+texture_hover = ExtResource("12_2s6v3")
+stretch_mode = 0
+
 [node name="ColorBG" type="ColorRect" parent="." unique_id=1842402333]
 visible = false
 material = SubResource("ShaderMaterial_color_bg")
@@ -232,3 +261,5 @@ size_flags_vertical = 4
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
 script = ExtResource("11_color_bg")
+
+[connection signal="button_down" from="MenuUI/Control/setting" to="." method="_on_setting_button_down"]

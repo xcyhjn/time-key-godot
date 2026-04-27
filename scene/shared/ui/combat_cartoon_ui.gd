@@ -269,3 +269,6 @@ func set_character_index(index: int) -> void:
 
 	if index >= 0 and index < CHARACTER_TEXTURES.size():
 		character_icon.texture = CHARACTER_TEXTURES[index]
+
+func _on_setting_button_down() -> void:
+	pass # Replace with function body.

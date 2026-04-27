@@ -34,6 +34,9 @@
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="25_3ibov"]
 [ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="25_q2y5e"]
 [ext_resource type="Texture2D" uid="uid://bohhy3b6w0eff" path="res://image/pole.png" id="27_jf5bm"]
+[ext_resource type="Script" uid="uid://bft7hmdxwglsu" path="res://scene/shared/ui/era_progress.gd" id="28_17nnv"]
+[ext_resource type="Texture2D" uid="uid://cwcyw7rabsblq" path="res://image/setting.png" id="29_k6tjf"]
+[ext_resource type="Texture2D" uid="uid://dkmpaccessu4k" path="res://image/setting3.png" id="30_17nnv"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_2aorf"]
 load_path = "res://.godot/imported/out-block_grass.png-fc63eecee49babab7777cbd485dbb6fa.ctex"
@@ -290,6 +293,21 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="era_progress" type="TextureProgressBar" parent="UI/CartoonUI/MenuUI/Control" unique_id=470006888]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.3
+anchor_top = -0.16
+anchor_right = 0.7
+anchor_bottom = 0.24
+offset_bottom = 3.0517578e-05
+max_value = 8.0
+value = 8.0
+fill_mode = 8
+nine_patch_stretch = true
+texture_progress = ExtResource("27_jf5bm")
+script = ExtResource("28_17nnv")
+
 [node name="era" type="Label" parent="UI/CartoonUI/MenuUI/Control" unique_id=1757116521]
 texture_filter = 1
 layout_mode = 1
@@ -327,6 +345,18 @@ anchor_bottom = 0.062
 texture = ExtResource("5_3ibov")
 expand_mode = 1
 
+[node name="setting" type="TextureButton" parent="UI/CartoonUI/MenuUI/Control" unique_id=138382935]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.965
+anchor_top = 0.014
+anchor_right = 0.992
+anchor_bottom = 0.062
+texture_normal = ExtResource("29_k6tjf")
+texture_pressed = ExtResource("29_k6tjf")
+texture_hover = ExtResource("30_17nnv")
+stretch_mode = 0
+
 [node name="ColorBG" type="ColorRect" parent="UI/CartoonUI" unique_id=1653450264]
 material = SubResource("ShaderMaterial_6hq8d")
 anchors_preset = 15
@@ -351,3 +381,5 @@ layer = 2
 layer = 3
 visible = false
 mode = 0
+
+[connection signal="button_down" from="UI/CartoonUI/MenuUI/Control/setting" to="UI/CartoonUI" method="_on_setting_button_down"]
