@@ -9,7 +9,7 @@ const DEFAULT_FONT: Font = preload("res://fonts/ark-pixel-12px-proportional-zh_c
 @export var panel_size: Vector2 = Vector2(340.0, 120.0)
 @export var health_bar_size: Vector2 = Vector2(300.0, 28.0)
 @export var margin_top: float = 24.0
-@export var margin_right: float = 28.0
+@export var margin_left: float = 56.0
 
 @export_group("胜利阈值")
 @export var low_health_ratio: float = 0.1
@@ -121,9 +121,8 @@ func _update_layout() -> void:
 	if not is_instance_valid(panel):
 		return
 
-	var viewport_size = get_viewport_rect().size
 	panel.position = Vector2(
-		viewport_size.x - panel_size.x - margin_right,
+		margin_left,
 		margin_top
 	)
 	panel.size = panel_size

@@ -281,7 +281,7 @@ func _ready():
 		preload("res://scene/in_scene/enermy/altar.gd")
 	]
 	var screen_size = get_viewport_rect().size
-	map_root.position = Vector2(screen_size.x * 0.5, screen_size.y * 0.3)
+	map_root.position = Vector2(screen_size.x * 0.5, screen_size.y * 0.5)
 
 	# 2. 根据不同的事件类型，初始化不同的视觉效果（可选）
 	handle_event_logic()
@@ -981,19 +981,38 @@ func refresh_tile_visual(coord: Vector2i) -> void:
 func get_card_manager() -> Node:
 	# CardManager 由 ui/Main(in_scene.gd) 在运行时创建，统一从 MainBoard 获取。
 	var main_board = get_tree().get_first_node_in_group("MainBoard")
-	if main_board and main_board.get("manager_instance"):
-		return main_board.manager_instance
+	if is_instance_valid(main_board):
+		var manager_from_main = main_board.get("manager_instance")
+		if is_instance_valid(manager_from_main):
+			return manager_from_main
 	
 	# 备用方案：通过元数据查找
 	var tree_root = get_tree().root
-	if tree_root and tree_root.has_meta("card_manager"):
-		return tree_root.get_meta("card_manager")
+	var manager_from_root := _get_valid_card_manager_from_meta(tree_root)
+	if is_instance_valid(manager_from_root):
+		return manager_from_root
 	
 	# 回退到当前场景元数据
 	var scene_root = get_tree().current_scene
-	if scene_root and scene_root.has_meta("card_manager"):
-		return scene_root.get_meta("card_manager")
+	var manager_from_scene := _get_valid_card_manager_from_meta(scene_root)
+	if is_instance_valid(manager_from_scene):
+		return manager_from_scene
 	
+	return null
+
+
+## 安全读取节点上缓存的 CardManager。
+## 第二次从局外进入局内时，树根上可能残留上一场战斗已经释放的 CardManager。
+## 这里遇到无效引用会主动移除元数据，避免 Godot 报 “Trying to return a previously freed instance”。
+func _get_valid_card_manager_from_meta(owner_node: Node) -> Node:
+	if not owner_node or not owner_node.has_meta("card_manager"):
+		return null
+
+	var cached_manager = owner_node.get_meta("card_manager")
+	if is_instance_valid(cached_manager):
+		return cached_manager
+
+	owner_node.remove_meta("card_manager")
 	return null
 
 # ==========================================

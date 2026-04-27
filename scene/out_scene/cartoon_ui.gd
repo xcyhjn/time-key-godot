@@ -1,5 +1,9 @@
 extends CanvasLayer
 
+## 局外 CartoonUI 只负责世界地图上的时钟收纳动画。
+## 局内战斗 HUD 使用 scene/shared/ui/combat_cartoon_ui.gd，
+## 避免把局外开场动画、黑幕转场和战斗固定 HUD 混在同一份脚本里。
+
 ## 动画配置
 @export var transition_duration : float = 1.0  # 动画持续时间
 @export var ui_scale : Vector2 = Vector2(1.5, 1.5) # 最终缩小的比例
@@ -10,7 +14,7 @@ extends CanvasLayer
 @onready var rect = $Rect
 @onready var menuui = $MenuUI/Control
 @onready var pole_target_scale_y : float = pole.scale.x if pole else 1.0
-@onready var rect_target_scale_y : float = rect.scale.x if pole else 1.0
+@onready var rect_target_scale_y : float = rect.scale.x if rect else 1.0
 
 var clock_node : Node2D = null
 signal finish

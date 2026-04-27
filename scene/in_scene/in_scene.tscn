@@ -29,6 +29,7 @@
 [ext_resource type="Texture2D" uid="uid://cxxrld3kjarqv" path="res://image/hourglass.png" id="25_7x3b2"]
 [ext_resource type="Script" uid="uid://cre0cpi03gwt5" path="res://scene/in_scene/enermy/total_enemy_health_bar.gd" id="26_yy4gm"]
 [ext_resource type="PackedScene" uid="uid://bh6q6oqow5tay" path="res://scene/in_scene/victory/combat_victory_banner.tscn" id="28_8xrm8"]
+[ext_resource type="PackedScene" uid="uid://c0tpr22lesut" path="res://scene/shared/ui/combat_cartoon_ui.tscn" id="29_cartoon"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_djuk3"]
 shader = ExtResource("4_tpwa4")
@@ -216,20 +217,6 @@ offset_left = 271.0
 offset_right = 955.0
 offset_bottom = 211.0
 script = ExtResource("23_1wmus")
-slot_size = null
-spacing = null
-grid_width = null
-grid_height = null
-margin_top_preset = null
-expanded_scale = null
-anim_duration = null
-enemy_intent_preview_scale = null
-enemy_intent_removal_scale = null
-enemy_intent_removal_duration = null
-enemy_intent_preview_z_index = null
-enemy_intent_pulse_speed = null
-enemy_intent_pulse_min_alpha = null
-enemy_intent_pulse_max_alpha = null
 mask_color = Color(0.26657525, 0.26657513, 0.26657534, 0.6)
 mask_layer = 1
 
@@ -260,7 +247,6 @@ theme_override_fonts/mono_font = ExtResource("5_6migj")
 
 [node name="TimelineManager" type="Node" parent="ui/TimelineSystem" unique_id=2115352708]
 script = ExtResource("13_4x367")
-max_enemy_intents_per_turn = null
 
 [node name="DragShapeController" type="Node2D" parent="ui/TimelineSystem" unique_id=516552955]
 script = ExtResource("14_j0ayu")
@@ -349,7 +335,7 @@ offset_bottom = 40.0
 mouse_filter = 2
 script = ExtResource("18_0vlha")
 pulse_shader = ExtResource("19_b3wb3")
-hand_y_offset = 100.0
+hand_y_offset = 180.0
 
 [node name="DimMenu" parent="ui" unique_id=1999609201 instance=ExtResource("20_lifwa")]
 visible = false
@@ -363,8 +349,10 @@ hex_map = NodePath("../../map/HexMap")
 
 [node name="TotalEnemyHealthBar" type="Node2D" parent="ui" unique_id=637956336]
 script = ExtResource("26_yy4gm")
-margin_top = 240.0
-margin_right = 56.0
+margin_top = 90.0
+margin_left = 280.0
+
+[node name="CartoonUI" parent="." unique_id=1045097520 instance=ExtResource("29_cartoon")]
 
 [node name="TimecoinView" type="Node" parent="." unique_id=512071538]
 

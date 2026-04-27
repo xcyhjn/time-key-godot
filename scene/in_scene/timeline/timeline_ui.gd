@@ -10,6 +10,10 @@ const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent
 
 @export_group("Layout Settings")
 @export var margin_top_preset: float = 0.0      # 紧贴屏幕最上沿的距离 (设为0即死死贴住)
+## 额外预留给顶部 UI 的空间。
+## 这个值主要由外部（例如局内的 CartoonUI）在运行时注入，
+## 用来把时间轴整体往下压，避免与顶部 HUD 重叠。
+@export var top_reserved_space: float = 0.0
 @export var expanded_scale: Vector2 = Vector2(1.5, 1.5)
 @export var anim_duration: float = 0.3
 
@@ -96,12 +100,13 @@ func _apply_anchor_layout() -> void:
 	# 2. 动态计算网格的【真实物理宽度】和【真实物理高度】
 	var actual_width = (grid_width * slot_size) + ((grid_width - 1) * spacing)
 	var actual_height = (grid_height * slot_size) + ((grid_height - 1) * spacing)
+	var effective_top_offset = margin_top_preset + top_reserved_space
 	
 	# 3. 设置精确的偏移量（完美贴身包裹，彻底解决偏左问题）
 	offset_left = -actual_width / 2.0
 	offset_right = actual_width / 2.0
-	offset_top = margin_top_preset  # 紧贴屏幕顶部
-	offset_bottom = margin_top_preset + actual_height
+	offset_top = effective_top_offset
+	offset_bottom = effective_top_offset + actual_height
 	
 	# 4. 强制底层立刻刷新布局，防止 size 计算滞后
 	force_update_transform()
@@ -113,6 +118,14 @@ func _apply_anchor_layout() -> void:
 	if is_instance_valid(grid_background):
 		grid_background.position = Vector2.ZERO
 		grid_background.size = size
+
+
+## 外部接口：设置顶部需要额外避让的像素高度。
+## 例如局内把 CartoonUI 放到最上方后，就可以把该 UI 的占位高度传进来，
+## 让时间轴整体向下移动而不需要手动改 tscn 偏移。
+func set_top_reserved_space(px: float) -> void:
+	top_reserved_space = max(px, 0.0)
+	_apply_anchor_layout()
 	
 
 

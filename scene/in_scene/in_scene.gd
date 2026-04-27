@@ -72,6 +72,7 @@ var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
 @onready var win = $"../GameWinScreen"
 @onready var total_enemy_health_bar = $"../TotalEnemyHealthBar"
 @onready var combat_victory_banner = $"../../combat_victory_banner"
+@onready var combat_cartoon_ui = $"../../CartoonUI"
 
 # ================================
 # ★ 导出调整项：Tooltip 资源
@@ -160,6 +161,11 @@ func _ready() -> void:
 	# 初始化时间轴UI引用
 	if timeline_ui:
 		pass
+
+	# CartoonUI 是 in_scene 根节点的另一个子节点。
+	# ui/Main 的 _ready 可能早于同级 CartoonUI 的 _ready，
+	# 因此延后一帧再读它的 @onready 引用，避免只生成闹钟、不生成面板。
+	call_deferred("_setup_combat_cartoon_ui")
 	
 	# 2. 连接失败按钮点击信号
 	if is_instance_valid(lose_button):
@@ -216,6 +222,44 @@ func _push_era_to_global() -> void:
 		elif GlobalClock and _object_has_property(GlobalClock, &"phase"):
 			phase_value = int(GlobalClock.get("phase"))
 		MapState.set_saved_era_progress(current_era_value, phase_value)
+
+
+## 初始化局内顶部 CartoonUI。
+## 目标：
+## - 局内不播放时钟入场动画
+## - 直接把时钟停靠到右上角
+## - 刷新顶部时代/阶段文本
+## - 把时间轴整体向下让位，避免与顶部 UI 重叠
+func _setup_combat_cartoon_ui() -> void:
+	if not is_instance_valid(combat_cartoon_ui):
+		return
+
+	_refresh_combat_cartoon_ui_progress()
+
+	if combat_cartoon_ui.has_method("set_character_index") and MapState:
+		combat_cartoon_ui.set_character_index(int(MapState.chosen_char_index))
+
+	if combat_cartoon_ui.has_method("apply_combat_layout"):
+		combat_cartoon_ui.apply_combat_layout()
+
+	if is_instance_valid(timeline_ui) and timeline_ui.has_method("set_top_reserved_space") and combat_cartoon_ui.has_method("get_reserved_height"):
+		timeline_ui.set_top_reserved_space(float(combat_cartoon_ui.get_reserved_height()))
+
+
+## 刷新局内顶部 CartoonUI 的时代/阶段文字。
+func _refresh_combat_cartoon_ui_progress() -> void:
+	if not is_instance_valid(combat_cartoon_ui):
+		return
+	if not combat_cartoon_ui.has_method("set_progress_labels"):
+		return
+
+	var phase_value := 1
+	if GlobalClock and GlobalClock.has_method("get_current_phase"):
+		phase_value = int(GlobalClock.get_current_phase())
+	elif GlobalClock and _object_has_property(GlobalClock, &"phase"):
+		phase_value = int(GlobalClock.get("phase"))
+
+	combat_cartoon_ui.set_progress_labels(current_era_value, phase_value)
 
 
 ## 安全判断对象是否声明了某个属性。
@@ -526,6 +570,7 @@ func start_new_turn():
 	# 1. 时代值 +1 等系统级结算
 	current_era_value += 1
 	_push_era_to_global()
+	_refresh_combat_cartoon_ui_progress()
 
 	# 2. 玩家抽牌
 	# ★ 新增修复：调用已存在的 attempt_draw_cards，取代之前错误的 draw_cards 函数名

@@ -69,12 +69,19 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	# Register CardManager to scene root for flexible CardContainer discovery
-	var scene_root = get_tree().root
+	# Register CardManager to both tree root and current scene.
+	# 一些旧脚本会从 root 取，一些会从 current_scene 取；两边都写入可以减少查找分歧。
+	var tree_root = get_tree().root
+	if tree_root:
+		tree_root.set_meta("card_manager", self)
+		if debug_mode:
+			print("CardManager registered to tree root: ", tree_root.name)
+
+	var scene_root = get_tree().current_scene
 	if scene_root:
 		scene_root.set_meta("card_manager", self)
 		if debug_mode:
-			print("CardManager registered to scene root (using tree root): ", scene_root.name)
+			print("CardManager registered to current scene: ", scene_root.name)
 
 	card_factory.card_size = card_size
 	card_factory.preload_card_data()
@@ -97,12 +104,31 @@ func reset_history() -> void:
 
 
 func _exit_tree() -> void:
-	# Unregister CardManager from scene root
+	# 清理 _ready() 写入的所有 card_manager 元数据。
+	# 旧代码只清 current_scene，但 _ready() 实际写在 get_tree().root 上，
+	# 因此第二次进局内时 root 可能还留着上一场已经释放的 CardManager。
+	var tree_root = get_tree().root
+	_remove_card_manager_meta(tree_root)
+
 	var scene_root = get_tree().current_scene
-	if scene_root and scene_root.has_meta("card_manager"):
-		scene_root.remove_meta("card_manager")
+	_remove_card_manager_meta(scene_root)
+
+
+func _remove_card_manager_meta(owner_node: Node) -> void:
+	if not owner_node or not owner_node.has_meta("card_manager"):
+		return
+
+	var registered_manager = owner_node.get_meta("card_manager")
+	if not is_instance_valid(registered_manager):
+		owner_node.remove_meta("card_manager")
 		if debug_mode:
-			print("CardManager unregistered from scene root")
+			print("Removed stale CardManager meta from: ", owner_node.name)
+		return
+
+	if registered_manager == self:
+		owner_node.remove_meta("card_manager")
+		if debug_mode:
+			print("CardManager unregistered from: ", owner_node.name)
 	
 
 func _add_card_container(id: int, card_container: CardContainer) -> void:

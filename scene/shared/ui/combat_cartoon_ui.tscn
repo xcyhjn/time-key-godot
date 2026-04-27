@@ -1,0 +1,234 @@
+[gd_scene format=3 uid="uid://c0tpr22lesut"]
+
+[ext_resource type="Script" uid="uid://d41ale5gr4p" path="res://scene/shared/ui/combat_cartoon_ui.gd" id="1_cartoon"]
+[ext_resource type="Texture2D" uid="uid://ce8w3th2o2j84" path="res://image/gold rect.png" id="2_rect"]
+[ext_resource type="Texture2D" uid="uid://bohhy3b6w0eff" path="res://image/pole.png" id="3_pole"]
+[ext_resource type="Texture2D" uid="uid://bgi3uwvhw54gd" path="res://image/clock/ring.png" id="4_ring"]
+[ext_resource type="Texture2D" uid="uid://el0fworygbkr" path="res://image/clock/clock_noring.png" id="5_clock"]
+[ext_resource type="Script" uid="uid://b8ch0oltwvgij" path="res://scene/out_scene/point.gd" id="6_point"]
+[ext_resource type="Texture2D" uid="uid://b2n28xtpsessh" path="res://image/clock/point.png" id="7_point_tex"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="8_font"]
+[ext_resource type="Texture2D" uid="uid://ckleisa7b53ix" path="res://image/character/0.png" id="9_char"]
+[ext_resource type="Shader" uid="uid://dy01xyj3taymq" path="res://shaders/color_BG.gdshader" id="10_shader"]
+[ext_resource type="Script" uid="uid://c77sa0nlxsqs6" path="res://scene/color_bg.gd" id="11_color_bg"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_luvo3"]
+texture = ExtResource("2_rect")
+margins = Vector2i(12, 4)
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+8:3/0 = 0
+9:3/0 = 0
+10:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+8:4/0 = 0
+9:4/0 = 0
+10:4/0 = 0
+1:5/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+5:5/0 = 0
+6:5/0 = 0
+7:5/0 = 0
+8:5/0 = 0
+9:5/0 = 0
+1:6/0 = 0
+2:6/0 = 0
+3:6/0 = 0
+4:6/0 = 0
+5:6/0 = 0
+6:6/0 = 0
+7:6/0 = 0
+8:6/0 = 0
+9:6/0 = 0
+0:7/0 = 0
+1:7/0 = 0
+2:7/0 = 0
+3:7/0 = 0
+4:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+7:7/0 = 0
+8:7/0 = 0
+9:7/0 = 0
+0:8/0 = 0
+1:8/0 = 0
+2:8/0 = 0
+3:8/0 = 0
+4:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+8:8/0 = 0
+9:8/0 = 0
+0:5/0 = 0
+0:6/0 = 0
+10:5/0 = 0
+10:6/0 = 0
+10:7/0 = 0
+10:8/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vwg1y"]
+texture = ExtResource("3_pole")
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_uwoi5"]
+sources/0 = SubResource("TileSetAtlasSource_luvo3")
+sources/1 = SubResource("TileSetAtlasSource_vwg1y")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hprhu"]
+texture = ExtResource("3_pole")
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_2s6v3"]
+sources/0 = SubResource("TileSetAtlasSource_hprhu")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_color_bg"]
+shader = ExtResource("10_shader")
+shader_parameter/circle_size = 1.0
+shader_parameter/screen_width = 1152.0
+shader_parameter/screen_height = 648.0
+
+[node name="CartoonUI" type="CanvasLayer" unique_id=1539542262]
+layer = 900
+script = ExtResource("1_cartoon")
+
+[node name="Rect" type="TileMapLayer" parent="." unique_id=417868497]
+z_index = -1
+scale = Vector2(0.75, 0.75)
+tile_set = SubResource("TileSet_uwoi5")
+
+[node name="Pole" type="TileMapLayer" parent="." unique_id=1289060419]
+z_index = -1
+scale = Vector2(0.9, 0.9)
+tile_set = SubResource("TileSet_2s6v3")
+
+[node name="ClockLayer" type="CanvasLayer" parent="." unique_id=1805056604]
+layer = 1100
+
+[node name="Ring" type="Sprite2D" parent="ClockLayer" unique_id=925363251]
+visible = false
+position = Vector2(1774, 144)
+texture = ExtResource("4_ring")
+
+[node name="Clock" type="Sprite2D" parent="ClockLayer" unique_id=1917306571]
+position = Vector2(160, 160)
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("5_clock")
+
+[node name="Point" type="Node2D" parent="ClockLayer/Clock" unique_id=1628657491]
+scale = Vector2(0.16010009, 0.16010009)
+script = ExtResource("6_point")
+
+[node name="Point" type="Sprite2D" parent="ClockLayer/Clock/Point" unique_id=1799736086]
+texture_filter = 1
+position = Vector2(0, -72.99997)
+scale = Vector2(1.4140626, 1.4140626)
+texture = ExtResource("7_point_tex")
+
+[node name="MenuUI" type="CanvasLayer" parent="." unique_id=1503058080]
+layer = 901
+
+[node name="Control" type="Control" parent="MenuUI" unique_id=73971873]
+z_index = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="era" type="Label" parent="MenuUI/Control" unique_id=1770587770]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.45
+anchor_top = 0.023
+anchor_right = 0.55
+anchor_bottom = 0.035
+theme_override_fonts/font = ExtResource("8_font")
+theme_override_font_sizes/font_size = 24
+text = "第1时代"
+horizontal_alignment = 1
+
+[node name="process" type="Label" parent="MenuUI/Control" unique_id=1804841807]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.023
+anchor_right = 0.1
+anchor_bottom = 0.023
+theme_override_fonts/font = ExtResource("8_font")
+theme_override_font_sizes/font_size = 24
+text = "0 / 8"
+horizontal_alignment = 1
+
+[node name="character" type="TextureRect" parent="MenuUI/Control" unique_id=1941760777]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.008
+anchor_top = 0.014
+anchor_right = 0.035
+anchor_bottom = 0.062
+texture = ExtResource("9_char")
+expand_mode = 1
+
+[node name="ColorBG" type="ColorRect" parent="." unique_id=1842402333]
+visible = false
+material = SubResource("ShaderMaterial_color_bg")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+script = ExtResource("11_color_bg")
