@@ -159,15 +159,14 @@ func _set_board_mode() -> void:
 	selection_mask.hide()
 	selection_title_label.hide()
 	deck_scroll_container.hide()
-	btn_confirm.hide()
-	btn_confirm.disabled = true
+	btn_confirm.show()
 	btn_confirm.text = "确认"
-	btn_back.disabled = false
 	btn_back.text = "退出"
 
 	_refresh_slot_placeholders()
 	_update_result_description()
 	_update_connection_lines()
+	_refresh_reward_action_buttons()
 
 
 func _set_selection_mode(slot_index: int) -> void:
@@ -182,6 +181,7 @@ func _set_selection_mode(slot_index: int) -> void:
 	btn_confirm.show()
 	btn_confirm.text = "确认"
 	btn_confirm.disabled = true
+	btn_back.disabled = false
 
 
 func _on_slot_pressed(slot_index: int) -> void:
@@ -220,6 +220,7 @@ func _generate_selection_cards(slot_index: int) -> void:
 	if not pending_selected_entry.is_empty():
 		_apply_selected_entry_to_grid(_entry_key(pending_selected_entry))
 		btn_confirm.disabled = false
+		btn_back.disabled = true
 	elif not _has_clickable_entry(current_deck_entries):
 		can_close_selection_without_choice = true
 		btn_confirm.disabled = false
@@ -329,10 +330,20 @@ func _create_selection_card(entry: Dictionary, temp_pile: Node) -> void:
 
 
 func _on_deck_card_clicked(clicked_card: Control, entry: Dictionary) -> void:
+	# 如果当前槽位已有卡牌，并且玩家再次点击同一张卡，
+	# 就把这个槽位清空，回到“未操作/可重新退出”的状态。
+	var current_entry = slot_entries[active_slot_index]
+	if current_entry != null and current_entry["deck_index"] == entry["deck_index"]:
+		await _clear_active_slot_selection()
+		return
+
+	# 选择新卡后，退出按钮禁用，确认按钮启用。
+	# 这样选择阶段也遵守“有操作先确认/取消，不能直接退出”的规则。
 	pending_selected_entry = _copy_entry(entry)
 	_apply_selected_entry_to_grid(entry["deck_index"])
 	btn_confirm.disabled = false
 	btn_confirm.text = "确认"
+	btn_back.disabled = true
 
 
 func _apply_selected_entry_to_grid(deck_index: int) -> void:
@@ -346,7 +357,10 @@ func _apply_selected_entry_to_grid(deck_index: int) -> void:
 
 
 func _on_confirm_pressed() -> void:
-	if craft_mode != CraftMode.SELECTING:
+	if craft_mode == CraftMode.BOARD:
+		if current_result_card_id.is_empty():
+			return
+		await _claim_result_card()
 		return
 
 	if can_close_selection_without_choice and pending_selected_entry.is_empty():
@@ -357,6 +371,19 @@ func _on_confirm_pressed() -> void:
 		return
 
 	await _commit_pending_selection()
+
+
+## 清空当前正在选择的槽位。
+## 这是合成页的“再次点击选定卡牌取消选择”入口，
+## 会同步移除槽位预览、结果预览，并回到棋盘模式刷新按钮状态。
+func _clear_active_slot_selection() -> void:
+	var slot_index = active_slot_index
+	slot_entries[slot_index] = null
+	pending_selected_entry.clear()
+	_clear_slot_preview(slot_index)
+	await _refresh_result_preview()
+	_clear_selection_deck()
+	_set_board_mode()
 
 
 func _commit_pending_selection() -> void:
@@ -448,12 +475,11 @@ func _create_preview_card(card_id: String, preview_size: Vector2, tooltip_enable
 
 
 func _on_result_card_clicked(_card: Control) -> void:
-	await _claim_result_card()
+	_refresh_reward_action_buttons()
 
 
 func _on_result_slot_pressed() -> void:
-	if result_preview_card != null:
-		await _claim_result_card()
+	_refresh_reward_action_buttons()
 
 
 func _claim_result_card() -> void:
@@ -475,8 +501,8 @@ func _claim_result_card() -> void:
 	_apply_crafting_result_to_deck()
 	hide_tooltip()
 	_reset_crafting_state()
-	_set_board_mode()
-	btn_back.disabled = false
+	set_meta("settlement_reward_committed", true)
+	close()
 
 
 func _apply_crafting_result_to_deck() -> void:
@@ -495,6 +521,8 @@ func _apply_crafting_result_to_deck() -> void:
 
 
 func _on_back_pressed() -> void:
+	if btn_back.disabled:
+		return
 	if _has_unfinished_crafting():
 		exit_warning_dialog.popup_centered()
 		return
@@ -525,6 +553,31 @@ func _reset_crafting_state() -> void:
 	_refresh_slot_placeholders()
 	_update_result_description()
 	_update_connection_lines()
+	_refresh_reward_action_buttons()
+
+
+## 统一维护“退出/确认”按钮状态。
+## - 无操作：退出可点，确认禁用。
+## - 已选择合成素材但还没形成结果：退出禁用，确认禁用；玩家可再次点击槽位里的已选卡牌取消。
+## - 已形成结果：退出禁用，确认启用；确认后写入牌组并退出收获页。
+func _refresh_reward_action_buttons() -> void:
+	if not is_instance_valid(btn_back) or not is_instance_valid(btn_confirm):
+		return
+	if craft_mode == CraftMode.SELECTING:
+		return
+
+	btn_confirm.show()
+	btn_confirm.text = "确认"
+
+	if not current_result_card_id.is_empty():
+		btn_back.disabled = true
+		btn_confirm.disabled = false
+	elif _has_unfinished_crafting():
+		btn_back.disabled = true
+		btn_confirm.disabled = true
+	else:
+		btn_back.disabled = false
+		btn_confirm.disabled = true
 
 
 func _clear_selection_deck() -> void:

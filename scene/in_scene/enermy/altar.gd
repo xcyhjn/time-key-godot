@@ -1,4 +1,4 @@
-﻿extends landform
+extends landform
 
 var rivet_land : String
 
@@ -9,7 +9,9 @@ func _init(location_in : Vector2i,battle_in):
 	"altar", 
 	["res://image/enermy/altar/altar_snow.png",
 	"res://image/enermy/altar/altar_water.png"], 
-	["res://image/enermy/villiage/Highest_Building_Broken.png"], 
+	# 破损状态专用贴图：tile.gd 的 tex_toggle() 会在建筑进入 Broken 状态时读取这里的资源，
+	# 因此只需要把祭坛自己的破损图登记到 damaged_tex 数组中，就能跟随原有状态切换逻辑自动换图。
+	["res://image/enermy/altar/altar_snow_broken.png"],
 	{"chance": 0.3},
 	location_in,
 	false,
@@ -18,6 +20,8 @@ func _init(location_in : Vector2i,battle_in):
 		return
 	willing_pool = {Only_will : Only_Done}
 	Attitude = Attitude_Pool.Enemy
+	settlement_reward_type = "acquire"
+	settlement_reward_label = "卡牌奖励"
 	# 祭坛的时间轴意图形状：
 	set_timeline_shape("1,11")
 

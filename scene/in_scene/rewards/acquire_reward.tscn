@@ -3,10 +3,10 @@
 [ext_resource type="Script" uid="uid://yrbynqewqk2v" path="res://scene/in_scene/rewards/AcquireReward.gd" id="1_jueru"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="1_tqqae"]
 
-[node name="AcquireReward" type="CanvasLayer"]
+[node name="AcquireReward" type="CanvasLayer" unique_id=497040658]
 script = ExtResource("1_jueru")
 
-[node name="BackgroundMask" type="ColorRect" parent="."]
+[node name="BackgroundMask" type="ColorRect" parent="." unique_id=1101269762]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -14,7 +14,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.4509804)
 
-[node name="TitleLabe" type="Label" parent="."]
+[node name="TitleLabe" type="Label" parent="." unique_id=825383474]
 offset_left = 752.0
 offset_top = 76.0
 offset_right = 944.0
@@ -23,28 +23,28 @@ theme_override_fonts/font = ExtResource("1_tqqae")
 theme_override_font_sizes/font_size = 48
 text = "获取卡牌"
 
-[node name="CardContainer" type="HBoxContainer" parent="."]
+[node name="CardContainer" type="HBoxContainer" parent="." unique_id=2128961066]
 offset_left = 269.0
 offset_top = 205.0
 offset_right = 1365.0
 offset_bottom = 872.0
 
-[node name="BtnBack" type="Button" parent="."]
+[node name="BtnBack" type="Button" parent="." unique_id=1930924197]
 anchors_preset = -1
-offset_left = 100.0
-offset_top = 848.0
-offset_right = 210.0
-offset_bottom = 899.0
+offset_left = 80.0
+offset_top = 904.0
+offset_right = 220.0
+offset_bottom = 976.0
 theme_override_fonts/font = ExtResource("1_tqqae")
 theme_override_font_sizes/font_size = 32
-text = "返回"
+text = "退出"
 
-[node name="BtnConfirm" type="Button" parent="."]
+[node name="BtnConfirm" type="Button" parent="." unique_id=4081697]
 anchors_preset = -1
-offset_left = 1592.0
-offset_top = 856.0
-offset_right = 1803.0
-offset_bottom = 920.0
+offset_left = 1686.0
+offset_top = 904.0
+offset_right = 1826.0
+offset_bottom = 976.0
 theme_override_fonts/font = ExtResource("1_tqqae")
 theme_override_font_sizes/font_size = 32
 text = "确认"

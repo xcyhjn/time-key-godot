@@ -74,6 +74,7 @@ func _ready():
 	
 	# 初始隐藏确认按钮（未选择卡牌时不可用）
 	btn_confirm.disabled = true
+	btn_back.disabled = false
 	
 	# ★ 延迟一帧确保所有节点完成初始化
 	await get_tree().process_frame
@@ -120,6 +121,7 @@ func open():
 	btn_back.show()
 	btn_confirm.show()
 	btn_confirm.disabled = true  # 未选择卡牌时不可用
+	btn_back.disabled = false
 
 ## 关闭场景
 func close():
@@ -255,6 +257,16 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 
 ## 牌组卡牌点击事件 (单选)
 func _on_deck_card_clicked(clicked_card: Control):
+	# 再次点击当前选中的卡牌时取消删除选择。
+	# 取消后不产生任何操作，退出按钮恢复可用，确认按钮不可用。
+	if selected_draft_card == clicked_card:
+		selected_draft_card = null
+		for card in current_deck_cards:
+			card.set_selected(false)
+		btn_confirm.disabled = true
+		btn_back.disabled = false
+		return
+
 	selected_draft_card = clicked_card
 	
 	# 更新所有卡牌的选中状态
@@ -263,9 +275,12 @@ func _on_deck_card_clicked(clicked_card: Control):
 	
 	# 启用确认按钮
 	btn_confirm.disabled = false
+	btn_back.disabled = true
 
 ## 返回按钮
 func _on_back_pressed():
+	if btn_back.disabled:
+		return
 	print("返回主选项...")
 	close()
 
@@ -302,13 +317,9 @@ func _on_confirm_pressed():
 		
 		selected_draft_card = null
 		
-		# 如果牌组为空，自动关闭场景
-		if current_deck_cards.size() == 0:
-			print("牌组已空，自动关闭删除场景")
-			close()
-		else:
-			# 重新启用返回按钮
-			btn_back.disabled = false
+		# 确认删除后，本次建筑奖励已经被领取，随后直接返回收获界面。
+		set_meta("settlement_reward_committed", true)
+		close()
 	)
 
 ## ==========================================
@@ -326,8 +337,11 @@ func _remove_card_from_deck(card_id: String):
 		# 备用方案: 从全局牌组列表中移除
 		print("⚠️ 移除卡牌 %s (需要对接牌组管理系统)" % card_id)
 		
-		# 这里可以对接你的全局牌组数据
-		# 例如: GlobalDeck.remove_card(card_id)
+		# 这里直接对接当前项目的全局牌组数据。
+		# 只删除第一张匹配卡，避免同名卡牌被一次性全部删掉。
+		if GlobalDB and GlobalDB.player_deck.has(card_id):
+			GlobalDB.player_deck.erase(card_id)
+			print("✅ 已从 GlobalDB.player_deck 移除卡牌: %s" % card_id)
 
 ## 获取当前牌组卡牌ID列表 (需要对接你的牌组管理系统)
 func _get_current_deck_card_ids() -> Array[String]:
@@ -336,9 +350,11 @@ func _get_current_deck_card_ids() -> Array[String]:
 	if deck_manager and deck_manager.has_method("get_deck_card_ids"):
 		return deck_manager.get_deck_card_ids()
 	
-	# 备用方案: 返回模拟数据用于测试
-	print("⚠️ 使用模拟牌组数据 (需要对接牌组管理系统)")
-	return ["1", "2", "3"]  # 示例卡牌ID（已移除不存在的pot和hailong）
+	# 备用方案: 直接读取当前项目的全局牌组。
+	if GlobalDB:
+		return GlobalDB.player_deck.duplicate()
+
+	return []
 
 ## ==========================================
 ## ★ 工具函数

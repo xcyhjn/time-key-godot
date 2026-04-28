@@ -40,7 +40,8 @@ offset_left = 150.0
 offset_top = -17.0
 offset_right = 402.0
 offset_bottom = 306.0
-text = "选择主卡"
+text = "
+"
 
 [node name="PlaceholderLabel" type="Label" parent="CraftingBoard/Slot1" unique_id=1694975399]
 layout_mode = 1
@@ -74,7 +75,6 @@ offset_left = 150.0
 offset_top = 380.0
 offset_right = 430.0
 offset_bottom = 747.0
-text = "选择副卡"
 
 [node name="PlaceholderLabel" type="Label" parent="CraftingBoard/Slot2" unique_id=677265741]
 layout_mode = 1
@@ -108,7 +108,8 @@ offset_left = 913.0
 offset_top = 182.0
 offset_right = 1135.0
 offset_bottom = 461.0
-text = "领取合成结果"
+text = "
+"
 
 [node name="PlaceholderLabel" type="Label" parent="CraftingBoard/ResultSlot" unique_id=1143366683]
 layout_mode = 1
@@ -186,44 +187,45 @@ theme_override_constants/margin_bottom = 18
 
 [node name="ResultDescriptionLabel" type="RichTextLabel" parent="ResultDescriptionPanel/ResultDescriptionMargin" unique_id=725444293]
 layout_mode = 2
-bbcode_enabled = true
-fit_content = true
-scroll_active = false
-autowrap_mode = 3
 theme_override_fonts/normal_font = ExtResource("2_e5usn")
 theme_override_fonts/bold_font = ExtResource("2_e5usn")
 theme_override_font_sizes/normal_font_size = 20
 theme_override_font_sizes/bold_font_size = 20
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 
 [node name="BtnBack" type="Button" parent="." unique_id=179673410]
-offset_left = 94.0
-offset_top = 898.0
-offset_right = 300.0
-offset_bottom = 997.0
+offset_left = 80.0
+offset_top = 904.0
+offset_right = 220.0
+offset_bottom = 976.0
 theme_override_fonts/font = ExtResource("2_e5usn")
 theme_override_font_sizes/font_size = 32
-text = "返回"
+text = "退出"
 
 [node name="BtnConfirm" type="Button" parent="." unique_id=846519495]
-visible = false
-offset_left = 1469.0
-offset_top = 910.0
-offset_right = 1657.0
-offset_bottom = 998.0
+offset_left = 1686.0
+offset_top = 904.0
+offset_right = 1826.0
+offset_bottom = 976.0
 theme_override_fonts/font = ExtResource("2_e5usn")
 theme_override_font_sizes/font_size = 32
 text = "确认"
 
 [node name="ExitWarningDialog" type="ConfirmationDialog" parent="." unique_id=490553670]
+oversampling_override = 1.0
 title = "未完成合成"
+position = Vector2i(0, 36)
+size = Vector2i(200, 144)
 ok_button_text = "是"
 cancel_button_text = "否"
 
 [node name="WarningLabel" type="Label" parent="ExitWarningDialog" unique_id=1186366996]
-offset_left = 28.0
-offset_top = 24.0
-offset_right = 476.0
-offset_bottom = 96.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 192.0
+offset_bottom = 95.0
 theme_override_fonts/font = ExtResource("2_e5usn")
 theme_override_font_sizes/font_size = 20
 text = "当前合成未完成，是否退出并放弃本次合成？"

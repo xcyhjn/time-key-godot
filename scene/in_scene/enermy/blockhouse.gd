@@ -14,6 +14,8 @@ func _init(location_in : Vector2i,battle_in):
 	if location_in == Vector2i(-100, -100):
 		return
 	Attitude = Attitude_Pool.Enemy
+	settlement_reward_type = "remove"
+	settlement_reward_label = "删卡奖励"
 	# 设置时间占位形状为1x2
 	willing_pool = {tree_harvest_will : tree_harvest_done,
 					material_prepare_will : material_prepare_done,

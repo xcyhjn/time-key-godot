@@ -7,6 +7,13 @@ instance uniform float highlight_blend = 0.0;   // 范围波及进度 (0~1)
 instance uniform float is_selected_blend = 0.0; // 中心选中描边进度 (0~1)
 instance uniform vec4 highlight_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 
+// 局外收获常驻高亮层。
+// settlement_highlight_blend 只负责“变白/变金”，不推动顶点上浮；
+// settlement_hover_blend 才在鼠标悬浮时接入原本的 hex 悬浮位移动画。
+instance uniform float settlement_highlight_blend = 0.0;
+instance uniform float settlement_hover_blend = 0.0;
+instance uniform vec4 settlement_highlight_color : source_color = vec4(1.0, 0.78, 0.18, 1.0);
+
 instance uniform float dissolve_blend = 0.0;    // 毁灭/隐藏进度 (0=正常, 1=完全消融)
 instance uniform float block_idx = 0.0;         // 当前层级 (0为底座)
 instance uniform float total_height = 1.0;      // 柱子总高度
@@ -26,10 +33,11 @@ void vertex() {
     bool can_float = (block_idx > 0.0) || (total_height <= 1.5);
     
     // ★ 只有在3D视图 (is_flat_view < 0.5) 时才允许上下浮动！
-    if (is_flat_view < 0.5 && can_float && highlight_blend > 0.0) {
+    float hover_strength = max(highlight_blend, settlement_hover_blend);
+    if (is_flat_view < 0.5 && can_float && hover_strength > 0.0) {
         float target_height = max_float_height - (block_idx * 5.0); 
         float wiggle = sin(TIME * wiggle_speed + (block_idx * 1.5)) * wiggle_amount;
-        VERTEX.y += (target_height + wiggle) * highlight_blend;
+        VERTEX.y += (target_height + wiggle) * hover_strength;
     }
 }
 
@@ -53,6 +61,14 @@ void fragment() {
     }
 
     // 2. 状态机高亮逻辑 (3D 和 平铺 无缝共用)
+    if (settlement_highlight_blend > 0.0 && tex_color.a > 0.0) {
+        final_color.rgb = mix(
+            final_color.rgb,
+            settlement_highlight_color.rgb,
+            settlement_highlight_blend * settlement_highlight_color.a
+        );
+    }
+
     if (is_selected_blend > 0.5) {
         if (tex_color.a == 0.0) {
             vec2 pixel_size = TEXTURE_PIXEL_SIZE * highlight_width;

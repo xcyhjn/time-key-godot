@@ -75,6 +75,7 @@ func _ready():
 	
 	# 初始隐藏确认按钮（未选择卡牌时不可用）
 	btn_confirm.disabled = true
+	btn_back.disabled = false
 	
 	# ★ 延迟一帧确保所有节点完成初始化
 	await get_tree().process_frame
@@ -110,6 +111,7 @@ func open():
 	btn_back.show()
 	btn_confirm.show()
 	btn_confirm.disabled = true  # 未选择卡牌时不可用
+	btn_back.disabled = false
 
 ## 关闭场景
 func close():
@@ -248,6 +250,16 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 
 ## 卡牌点击事件 (单选互斥)
 func _on_draft_card_clicked(clicked_card: Control):
+	# 再次点击已选中的卡牌时取消选择。
+	# 这样奖励页回到“无操作”状态，退出按钮恢复可用，确认按钮重新禁用。
+	if selected_draft_card == clicked_card:
+		selected_draft_card = null
+		for card in current_draft_cards:
+			card.set_selected(false)
+		btn_confirm.disabled = true
+		btn_back.disabled = false
+		return
+
 	selected_draft_card = clicked_card
 	
 	# 更新所有卡牌的选中状态
@@ -256,9 +268,12 @@ func _on_draft_card_clicked(clicked_card: Control):
 	
 	# 启用确认按钮
 	btn_confirm.disabled = false
+	btn_back.disabled = true
 
 ## 返回按钮
 func _on_back_pressed():
+	if btn_back.disabled:
+		return
 	print("返回主选项...")
 	close()
 
@@ -339,6 +354,9 @@ func _fly_to_deck_pile(card: Control):
 				deck_manager.card_factory.create_card(card.card_id, main.deck_pile)
 				print("✅ 已成功将 %s 加入抽牌堆！" % card.card_id)
 		
+		# 只有确认并完成数据写入后，才标记本次建筑奖励已被领取。
+		set_meta("settlement_reward_committed", true)
+
 		# 关闭场景
 		close()
 	)
@@ -371,7 +389,7 @@ func _get_current_era() -> int:
 				return global_clock.get_current_era()
 			elif _object_has_property(global_clock, &"era"):
 				return int(global_clock.get("era"))
-	
+
 	# 备用方案: 从场景中查找
 	var root = Engine.get_main_loop().root
 	var clock = root.find_child("GlobalClock", true, false)

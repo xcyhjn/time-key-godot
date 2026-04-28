@@ -7,6 +7,13 @@ var pile_scene = load("res://addons/card-framework/pile.tscn")
 var card_scene_ref = load("res://scene/card/custom_card.tscn")
 var pile_viewer_scene = preload("res://scene/pile/pile_viewer.tscn")
 
+const SETTLEMENT_REWARD_SCENE_PATHS := {
+	"shop": "res://scene/in_scene/rewards/shop.tscn",
+	"acquire": "res://scene/in_scene/rewards/acquire_reward.tscn",
+	"remove": "res://scene/in_scene/rewards/remove_reward.tscn",
+	"craft": "res://scene/in_scene/rewards/craft_reward.tscn",
+}
+
 # 弃牌堆显示
 var player_hand: Hand
 var deck_pile: Pile
@@ -92,12 +99,18 @@ var card_tooltip_presenter: CardTooltipPresenter = null
 ## 单独导出成可调字段，方便你未来切换为别的世界地图场景而不改代码。
 @export_file("*.tscn") var out_scene_path: String = "res://scene/out_scene/Out_Scene.tscn"
 
+@export_group("局外收获配置")
+## 是否继续显示左侧四个旧奖励按钮。
+## 默认关闭，让玩家从建筑 tooltip 进入奖励；需要调试奖励页时可以在检查器里打开。
+@export var show_settlement_debug_buttons: bool = false
+
 ## 记录进入局内时携带的外部数据。
 ## 目前主要用于保留 battle_normal / battle_elite / boss_stage 这类来源标签，
 ## 让回到局外时仍然能带回基础上下文。
 var incoming_external_payload: Variant = null
 var incoming_battle_tag: String = ""
 var incoming_map_seed: String = ""
+var active_settlement_reward_context: Dictionary = {}
 
 
 func _ready() -> void:
@@ -176,6 +189,10 @@ func _ready() -> void:
 		Signal_Bus.defeat_triggered.connect(_on_defeat_triggered)
 		if not Signal_Bus.combat_victory_triggered.is_connected(_on_combat_victory_triggered):
 			Signal_Bus.combat_victory_triggered.connect(_on_combat_victory_triggered)
+
+	if is_instance_valid(hex_map) and hex_map.has_signal("settlement_reward_requested"):
+		if not hex_map.settlement_reward_requested.is_connected(_on_settlement_reward_requested):
+			hex_map.settlement_reward_requested.connect(_on_settlement_reward_requested)
 	
 
 ## 从全局单例拉取当前时代值。
@@ -262,15 +279,24 @@ func _refresh_combat_cartoon_ui_progress() -> void:
 	combat_cartoon_ui.set_progress_labels(current_era_value, phase_value)
 
 
-## 安全判断对象是否声明了某个属性。
-## 这里不用 `"prop" in obj`，是为了减少不同对象类型下的歧义。
+## 安全判断对象是否声明了当前场景会读取的全局进度属性。
+## 注意：这里不要再调用 get_property_list()。
+## GlobalClock 是一个带 UI/Shader 子节点的自动加载场景，Godot 在枚举完整属性列表时可能会顺带触碰
+## ShaderMaterial 的内部版本数据，进而触发 “Parameter version is null” 的渲染层报错。
+## 局内时代同步只需要 era / phase 两个字段，所以改成白名单判断，既更轻，也不会扫描无关资源。
 func _object_has_property(target: Object, property_name: StringName) -> bool:
 	if target == null:
 		return false
-	for property_info in target.get_property_list():
-		if property_info.get("name", &"") == property_name:
-			return true
-	return false
+	if property_name != &"era" and property_name != &"phase":
+		return false
+	if target == GlobalClock or target == Global:
+		return true
+
+	var target_script = target.get_script()
+	if target_script == null:
+		return false
+	var script_path = target_script.resource_path
+	return script_path == "res://scene/global/global_clock.gd" or script_path == "res://scene/global/global.gd"
 
 
 ## 游戏开始时生成初始敌人意图
@@ -957,104 +983,72 @@ func _switch_scene_with_data(path: String, payload: Variant = null) -> void:
 
 # 商店按钮回调
 func _on_shop_button_pressed():
-	# 隐藏除hexmap和时间币外的所有UI
-	hide_ui_for_external_scene()
-	
-	# 加载并显示商店场景
-	var shop_scene = preload("res://scene/in_scene/rewards/shop.tscn")
-	if is_instance_valid(shop_scene):
-		var shop_instance = shop_scene.instantiate()
-		add_child(shop_instance)
-		# 确保商店场景显示在最上层
-		shop_instance.show()
-		# 设置 CardManager 引用
-		if shop_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
-			shop_instance.set_deck_manager(manager_instance)
-		
-		# 调用open_shop方法初始化商店
-		if shop_instance.has_method("open_shop"):
-			shop_instance.open_shop()
-		elif shop_instance.has_method("open"):
-			shop_instance.open()
-		else:
-			shop_instance.show()
-		
-		# 连接退出信号（如果场景有退出按钮）
-		_connect_exit_signal_for_external_scene(shop_instance)
-	else:
-		pass
+	_open_settlement_reward_scene("shop", {})
 
 # 获取卡牌奖励按钮回调
 func _on_acquire_reward_button_pressed():
-	# 隐藏除hexmap和时间币外的所有UI
-	hide_ui_for_external_scene()
-	
-	var acquire_scene = preload("res://scene/in_scene/rewards/acquire_reward.tscn")
-	if is_instance_valid(acquire_scene):
-		var acquire_instance = acquire_scene.instantiate()
-		add_child(acquire_instance)
-		acquire_instance.show()
-		if acquire_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
-			acquire_instance.set_deck_manager(manager_instance)
-		
-		# 调用open方法初始化场景
-		if acquire_instance.has_method("open"):
-			acquire_instance.open()
-		else:
-			acquire_instance.show()
-		
-		# 连接退出信号（如果场景有退出按钮）
-		_connect_exit_signal_for_external_scene(acquire_instance)
-	else:
-		pass
+	_open_settlement_reward_scene("acquire", {})
 
 # 删除卡牌奖励按钮回调
 func _on_remove_reward_button_pressed():
-	# 隐藏除hexmap和时间币外的所有UI
-	hide_ui_for_external_scene()
-	
-	var remove_scene = preload("res://scene/in_scene/rewards/remove_reward.tscn")
-	if is_instance_valid(remove_scene):
-		var remove_instance = remove_scene.instantiate()
-		add_child(remove_instance)
-		remove_instance.show()
-		if remove_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
-			remove_instance.set_deck_manager(manager_instance)
-		
-		# 调用open方法初始化场景
-		if remove_instance.has_method("open"):
-			remove_instance.open()
-		else:
-			remove_instance.show()
-		
-		# 连接退出信号（如果场景有退出按钮）
-		_connect_exit_signal_for_external_scene(remove_instance)
-	else:
-		pass
+	_open_settlement_reward_scene("remove", {})
 
 # 合成卡牌奖励按钮回调
 func _on_craft_reward_button_pressed():
-	# 隐藏除hexmap和时间币外的所有UI
+	_open_settlement_reward_scene("craft", {})
+
+
+## HexMap 点击某个收获建筑后会进入这里。
+## Main 只关心奖励类型与上下文，不再关心建筑具体是哪一个脚本类。
+func _on_settlement_reward_requested(reward_info: Dictionary) -> void:
+	if current_battle_state != BattleFlowState.SETTLEMENT:
+		return
+
+	var reward_type := str(reward_info.get("reward_type", ""))
+	_open_settlement_reward_scene(reward_type, reward_info)
+
+
+## 打开局外收获奖励页的统一入口。
+## 说明:
+## - reward_context 为空时，表示旧调试按钮打开，不会消耗任何建筑。
+## - reward_context 不为空时，会写到奖励场景 meta，退出时由 _on_external_scene_exit_pressed 统一判断是否消耗建筑。
+func _open_settlement_reward_scene(reward_type: String, reward_context: Dictionary) -> void:
+	if not SETTLEMENT_REWARD_SCENE_PATHS.has(reward_type):
+		push_warning("未知的局外收获类型：%s" % reward_type)
+		return
+
+	var scene_path := str(SETTLEMENT_REWARD_SCENE_PATHS[reward_type])
+	var packed_scene = load(scene_path)
+	if packed_scene == null:
+		push_error("无法加载局外收获场景：%s" % scene_path)
+		return
+
 	hide_ui_for_external_scene()
-	
-	var craft_scene = preload("res://scene/in_scene/rewards/craft_reward.tscn")
-	if is_instance_valid(craft_scene):
-		var craft_instance = craft_scene.instantiate()
-		add_child(craft_instance)
-		craft_instance.show()
-		if craft_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
-			craft_instance.set_deck_manager(manager_instance)
-		
-		# 调用open方法初始化场景
-		if craft_instance.has_method("open"):
-			craft_instance.open()
+	active_settlement_reward_context = reward_context.duplicate()
+
+	var reward_instance = packed_scene.instantiate()
+	add_child(reward_instance)
+	reward_instance.show()
+
+	if not reward_context.is_empty():
+		reward_instance.set_meta("settlement_reward_context", reward_context)
+		# 商店只有退出按钮，按下退出即视为已经使用该建筑。
+		if reward_type == "shop":
+			reward_instance.set_meta("settlement_reward_consume_on_exit", true)
 		else:
-			craft_instance.show()
-		
-		# 连接退出信号（如果场景有退出按钮）
-		_connect_exit_signal_for_external_scene(craft_instance)
+			reward_instance.set_meta("settlement_reward_committed", false)
+
+	if reward_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
+		reward_instance.set_deck_manager(manager_instance)
+
+	if reward_instance.has_method("open_shop"):
+		reward_instance.open_shop()
+	elif reward_instance.has_method("open"):
+		reward_instance.open()
 	else:
-		pass
+		reward_instance.show()
+
+	_connect_exit_signal_for_external_scene(reward_instance)
 
 
 # 当局外界面点击离开/下一关时调用这个函数
@@ -1072,8 +1066,11 @@ func proceed_to_next_stage():
 		hex_map.set_tiles_interactive(true)
 	if is_instance_valid(hex_map) and hex_map.has_method("set_visuals_locked"):
 		hex_map.set_visuals_locked(false)
+	if is_instance_valid(hex_map) and hex_map.has_method("exit_settlement_reward_mode"):
+		hex_map.exit_settlement_reward_mode()
 	_hide_settlement_buttons()
 	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
+	_set_single_health_bars_visible(true)
 	enable_player_inputs()
 
 	# 初始化新回合（比如自动抽5张牌）
@@ -1220,6 +1217,7 @@ func hide_ui_for_external_scene():
 	if is_instance_valid(remove_reward_button): remove_reward_button.hide()
 	if is_instance_valid(craft_reward_button): craft_reward_button.hide()
 	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.hide()
+	_set_single_health_bars_visible(false)
 	
 	# 8. 确保hexmap和时间币显示
 	if is_instance_valid(hex_map): 
@@ -1231,6 +1229,16 @@ func hide_ui_for_external_scene():
 		timecoin_container.show()
 		# 确保时间币UI在最上层
 		timecoin_container.z_index = 100
+
+
+## 单体血条由 HexMap/BarManager 动态生成。
+## 局外收获阶段要求不显示血条，所以这里统一转发给 BarManager。
+func _set_single_health_bars_visible(is_visible: bool) -> void:
+	if not is_instance_valid(hex_map):
+		return
+	var bar_manager = hex_map.get_node_or_null("BarManager")
+	if bar_manager and bar_manager.has_method("set_all_health_bars_visible"):
+		bar_manager.set_all_health_bars_visible(is_visible)
 	
 
 ## 退出局外场景后，恢复四个局外按钮
@@ -1238,36 +1246,38 @@ func restore_ui_after_external_scene():
 	
 	# 只恢复四个局外按钮，其他UI保持隐藏状态
 	var buttons_restored = 0
-	if is_instance_valid(shop_button):
+	if show_settlement_debug_buttons and is_instance_valid(shop_button):
 		shop_button.show()
 		buttons_restored += 1
-	else:
-		pass
+	elif is_instance_valid(shop_button):
+		shop_button.hide()
 	
-	if is_instance_valid(acquire_reward_button):
+	if show_settlement_debug_buttons and is_instance_valid(acquire_reward_button):
 		acquire_reward_button.show()
 		buttons_restored += 1
-	else:
-		pass
+	elif is_instance_valid(acquire_reward_button):
+		acquire_reward_button.hide()
 	
-	if is_instance_valid(remove_reward_button):
+	if show_settlement_debug_buttons and is_instance_valid(remove_reward_button):
 		remove_reward_button.show()
 		buttons_restored += 1
-	else:
-		pass
+	elif is_instance_valid(remove_reward_button):
+		remove_reward_button.hide()
 	
-	if is_instance_valid(craft_reward_button):
+	if show_settlement_debug_buttons and is_instance_valid(craft_reward_button):
 		craft_reward_button.show()
 		buttons_restored += 1
-	else:
-		pass
+	elif is_instance_valid(craft_reward_button):
+		craft_reward_button.hide()
 	
 	if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(end_combat_button):
 		end_combat_button.show()
 		end_combat_button.disabled = false
 	
-	if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(total_enemy_health_bar):
-		total_enemy_health_bar.show()
+	if current_battle_state == BattleFlowState.SETTLEMENT:
+		if is_instance_valid(total_enemy_health_bar):
+			total_enemy_health_bar.hide()
+		_set_single_health_bars_visible(false)
 	
 
 ## 完全恢复所有UI（用于返回游戏主界面）
@@ -1291,11 +1301,22 @@ func restore_all_ui():
 		_show_settlement_buttons()
 	else:
 		_hide_settlement_buttons()
-	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
+	if current_battle_state == BattleFlowState.SETTLEMENT:
+		if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.hide()
+		_set_single_health_bars_visible(false)
+	else:
+		if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
+		_set_single_health_bars_visible(true)
 	
 
 ## 连接外部场景的退出信号
 func _connect_exit_signal_for_external_scene(scene_instance: Node):
+	# 奖励/商店场景本身已经在 _ready 里把按钮接到自己的 close / exit 流程。
+	# 这些流程会回调 _on_external_scene_exit_pressed；这里如果再次直连按钮，
+	# 会绕过奖励页自己的“退出禁用 / 未完成确认”等状态机。
+	if scene_instance.has_method("_on_back_pressed") or scene_instance.has_method("_on_exit_pressed"):
+		return
+
 	# 尝试连接常见的退出按钮信号
 	# 1. 检查 btn_exit (商店使用)
 	if scene_instance.has_node("btn_exit"):
@@ -1347,20 +1368,52 @@ func _connect_exit_signal_for_external_scene(scene_instance: Node):
 
 ## 外部场景退出按钮回调
 func _on_external_scene_exit_pressed(scene_instance: Node):
+	var should_consume_settlement_reward := false
+	var reward_context: Dictionary = {}
+	if is_instance_valid(scene_instance) and scene_instance.has_meta("settlement_reward_context"):
+		var context_variant = scene_instance.get_meta("settlement_reward_context")
+		if typeof(context_variant) == TYPE_DICTIONARY:
+			reward_context = context_variant
+
+		var committed = bool(scene_instance.get_meta("settlement_reward_committed", false))
+		var consume_on_exit = bool(scene_instance.get_meta("settlement_reward_consume_on_exit", false))
+		should_consume_settlement_reward = committed or consume_on_exit
 	
 	# 0. 先隐藏场景实例，防止覆盖按钮
 	if is_instance_valid(scene_instance):
 		scene_instance.hide()
-	
+
+	# 1. 如果奖励页确认完成，则通知 HexMap 更新建筑状态。
+	if should_consume_settlement_reward:
+		_consume_settlement_reward_context(reward_context)
+
 	# 1. 恢复四个局外按钮
 	restore_ui_after_external_scene()
-	
+
 	# 2. 移除场景实例
 	if is_instance_valid(scene_instance):
 		scene_instance.queue_free()
+
+	active_settlement_reward_context.clear()
 	
 	# 3. 可选：如果需要完全恢复所有UI，可以调用 restore_all_ui()
 	# 但根据需求，只恢复四个局外按钮，其他UI保持隐藏
+
+
+## 消耗一个建筑绑定的收获奖励。
+## Main 只负责把“这个奖励已经被确认使用”的事实传回 HexMap；
+## 具体高亮、tooltip 文案、碰撞关闭都由 HexMap 统一处理。
+func _consume_settlement_reward_context(reward_context: Dictionary) -> void:
+	if reward_context.is_empty():
+		return
+	if not is_instance_valid(hex_map) or not hex_map.has_method("mark_settlement_reward_used"):
+		return
+
+	var reward_stack = reward_context.get("stack")
+	if is_instance_valid(reward_stack):
+		hex_map.mark_settlement_reward_used(reward_stack)
+
+	active_settlement_reward_context.clear()
 
 # 信号响应：执行实际的动画转换逻辑
 func _on_defeat_triggered():
@@ -1403,10 +1456,16 @@ func _hide_settlement_buttons() -> void:
 
 
 func _show_settlement_buttons() -> void:
-	if is_instance_valid(shop_button): shop_button.show()
-	if is_instance_valid(acquire_reward_button): acquire_reward_button.show()
-	if is_instance_valid(remove_reward_button): remove_reward_button.show()
-	if is_instance_valid(craft_reward_button): craft_reward_button.show()
+	if show_settlement_debug_buttons:
+		if is_instance_valid(shop_button): shop_button.show()
+		if is_instance_valid(acquire_reward_button): acquire_reward_button.show()
+		if is_instance_valid(remove_reward_button): remove_reward_button.show()
+		if is_instance_valid(craft_reward_button): craft_reward_button.show()
+	else:
+		if is_instance_valid(shop_button): shop_button.hide()
+		if is_instance_valid(acquire_reward_button): acquire_reward_button.hide()
+		if is_instance_valid(remove_reward_button): remove_reward_button.hide()
+		if is_instance_valid(craft_reward_button): craft_reward_button.hide()
 	if is_instance_valid(end_combat_button):
 		end_combat_button.show()
 		end_combat_button.disabled = false
@@ -1447,6 +1506,12 @@ func _on_combat_victory_triggered() -> void:
 			hex_map.set_visuals_locked(true)
 		if hex_map.has_method("update_all_stack_conditional_effects"):
 			hex_map.update_all_stack_conditional_effects()
+		if hex_map.has_method("enter_settlement_reward_mode"):
+			hex_map.enter_settlement_reward_mode(self)
+
+	if is_instance_valid(total_enemy_health_bar):
+		total_enemy_health_bar.hide()
+	_set_single_health_bars_visible(false)
 
 	if is_instance_valid(combat_victory_banner) and combat_victory_banner.has_method("play_banner"):
 		await combat_victory_banner.play_banner("战斗胜利")

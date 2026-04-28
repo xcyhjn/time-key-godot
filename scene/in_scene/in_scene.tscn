@@ -203,10 +203,10 @@ scale = Vector2(10, 10)
 texture_normal = ExtResource("10_c78qr")
 
 [node name="EndCombatButton" type="TextureButton" parent="ui" unique_id=1009921236]
-offset_left = 1477.0
-offset_top = 547.0
-offset_right = 1552.0
-offset_bottom = 611.0
+offset_left = 1637.0
+offset_top = 578.0
+offset_right = 1712.0
+offset_bottom = 642.0
 scale = Vector2(3, 3)
 texture_normal = ExtResource("11_oyewm")
 

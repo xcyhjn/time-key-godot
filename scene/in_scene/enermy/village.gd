@@ -19,6 +19,8 @@ func _init(location_in : Vector2,battle_in):
 	false,
 	battle_in)
 	Attitude = Attitude_Pool.Enemy
+	settlement_reward_type = "shop"
+	settlement_reward_label = "商店"
 	# 设置时间占位形状为1x2
 	set_timeline_shape("011")
 	

@@ -83,6 +83,17 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 		
 		landform_in.tree_exited.connect(HealthBuffer.queue_free)
 
+
+## 统一显示/隐藏所有单体血条。
+## 局外收获阶段不展示血条，但血条节点仍然保留在树上，
+## 这样如果后续回到战斗态，可以直接恢复显示而不用重新生成。
+func set_all_health_bars_visible(is_visible: bool) -> void:
+	for child in get_children():
+		if child == null:
+			continue
+		if child.name.begins_with("HealthBar_"):
+			child.visible = is_visible
+
 # ★ 新增：递归设置鼠标忽略函数
 func _set_mouse_ignore_recursive(node: Node):
 	if node is Control:

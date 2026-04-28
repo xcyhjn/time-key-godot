@@ -76,6 +76,21 @@ var sheild : int = 0
 var timeline_shape_coords: Array[Vector2i] = []             # ★ 必须是 Vector2i
 var _last_parsed_shape_key: String = ""
 
+@export_group("局外收获奖励")
+## 该建筑在战斗胜利后的收获类型。
+## 说明:
+## - "none": 没有可点击收获，不会生成局外 tooltip。
+## - "shop": 打开商店，商店关闭后直接视为已使用。
+## - "acquire": 获取卡牌奖励，需要确认后才消耗建筑。
+## - "remove": 删除卡牌奖励，需要确认后才消耗建筑。
+## - "craft": 合成卡牌奖励，需要确认后才消耗建筑。
+@export_enum("none", "shop", "acquire", "remove", "craft") var settlement_reward_type: String = "none"
+## Tooltip 第一段展示文案。留空时由 reward_type 自动兜底。
+@export var settlement_reward_label: String = ""
+## 记录本场战斗结算里这个建筑奖励是否已经领取。
+## 这个状态跟随建筑实例本身，方便 HexMap 刷新时仍能读到“已使用”。
+var settlement_reward_used: bool = false
+
 func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
 		push_error("无效的图像接口")
@@ -99,6 +114,50 @@ func set_rate(rate : float):
 
 func random_damage() -> void:
 	take_damage(randi_range(0, Max_Blood * 0.3))
+
+
+## 当前建筑是否拥有局外收获奖励。
+## 这里额外排除 Broken 状态，避免已经损毁的建筑在胜利后仍然发放奖励。
+func has_settlement_reward() -> bool:
+	return settlement_reward_type != "" and settlement_reward_type != "none" and State_Main != Main_State_Pool.Broken
+
+
+## 返回局外收获类型。
+## 独立封装一层，是为了后续某些建筑可以根据自身状态动态返回奖励类型。
+func get_settlement_reward_type() -> String:
+	return settlement_reward_type
+
+
+## 返回 tooltip 展示用的奖励名称。
+## 若具体建筑没有手动填写 settlement_reward_label，就从类型映射到稳定中文文案。
+func get_settlement_reward_label() -> String:
+	if settlement_reward_label.strip_edges() != "":
+		return settlement_reward_label
+
+	match settlement_reward_type:
+		"shop":
+			return "商店"
+		"acquire":
+			return "卡牌奖励"
+		"remove":
+			return "删卡奖励"
+		"craft":
+			return "合成奖励"
+		_:
+			return "收获"
+
+
+## 拼装局外常驻 tooltip 文案。
+## 这里统一输出“xx 未使用 / xx 已使用”，让 HexMap 不需要知道每种奖励的中文名。
+func get_settlement_reward_tooltip_text() -> String:
+	var used_text = "已使用" if settlement_reward_used else "未使用"
+	return "%s %s" % [get_settlement_reward_label(), used_text]
+
+
+## 奖励确认消耗后调用。
+## 只改逻辑状态，不直接改视觉；视觉统一由 HexMap 根据这个状态刷新。
+func mark_settlement_reward_used() -> void:
+	settlement_reward_used = true
 	
 
 func get_neighbor_coords(center: Vector2i) -> Array[Vector2i]:
