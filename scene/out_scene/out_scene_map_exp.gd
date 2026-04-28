@@ -56,6 +56,8 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 # 2. 初始化逻辑
 # ==========================================
 func _ready():
+	_connect_global_clock_progress_signal()
+
 	# 检查是否有保存的状态
 	if MapState.is_initialized:
 		dim.show()
@@ -77,6 +79,16 @@ func _ready():
 	_update_visual_states()
 	_refresh_global_progress_labels()
 	_consume_pending_room_resolution()
+
+
+func _connect_global_clock_progress_signal() -> void:
+	if GlobalClock and GlobalClock.has_signal("progress_changed"):
+		if not GlobalClock.progress_changed.is_connected(_on_global_clock_progress_changed):
+			GlobalClock.progress_changed.connect(_on_global_clock_progress_changed)
+
+
+func _on_global_clock_progress_changed(_era_value: int, _phase_value: int) -> void:
+	_refresh_global_progress_labels()
 	
 func _init_new_map():
 	if received_text == "":

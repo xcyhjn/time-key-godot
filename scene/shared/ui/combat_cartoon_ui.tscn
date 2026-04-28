@@ -159,7 +159,7 @@ position = Vector2(1774, 144)
 texture = ExtResource("4_ring")
 
 [node name="Clock" type="Sprite2D" parent="ClockLayer" unique_id=1917306571]
-position = Vector2(160, 160)
+position = Vector2(99, 157)
 scale = Vector2(1.5, 1.5)
 texture = ExtResource("5_clock")
 
@@ -185,6 +185,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+metadata/_edit_lock_ = true
 
 [node name="era_progress" type="TextureProgressBar" parent="MenuUI/Control" unique_id=43934042]
 layout_mode = 1
@@ -195,7 +196,7 @@ anchor_right = 0.7
 anchor_bottom = 0.24
 max_value = 8.0
 value = 8.0
-fill_mode = 8
+fill_mode = 0
 nine_patch_stretch = true
 texture_progress = ExtResource("3_pole")
 script = ExtResource("8_vwg1y")
@@ -204,9 +205,9 @@ script = ExtResource("8_vwg1y")
 texture_filter = 1
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.45
+anchor_left = 0.15
 anchor_top = 0.023
-anchor_right = 0.55
+anchor_right = 0.15
 anchor_bottom = 0.035
 theme_override_fonts/font = ExtResource("8_font")
 theme_override_font_sizes/font_size = 24
@@ -217,9 +218,9 @@ horizontal_alignment = 1
 texture_filter = 1
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.1
+anchor_left = 0.45
 anchor_top = 0.023
-anchor_right = 0.1
+anchor_right = 0.55
 anchor_bottom = 0.023
 theme_override_fonts/font = ExtResource("8_font")
 theme_override_font_sizes/font_size = 24

@@ -114,6 +114,8 @@ var active_settlement_reward_context: Dictionary = {}
 
 
 func _ready() -> void:
+	_connect_global_clock_progress_signal()
+
 	# 初始化游戏状态
 	_pull_era_from_global()
 	
@@ -195,22 +197,25 @@ func _ready() -> void:
 			hex_map.settlement_reward_requested.connect(_on_settlement_reward_requested)
 	
 
-## 从全局单例拉取当前时代值。
-## 优先级：
-## 1. GlobalClock.get_current_era()
-## 2. GlobalClock.era 字段
-## 3. Global.era 字段
-## 4. 默认值 1
-##
-## 这样无论时代值是由局外还是局内先写入，都能保持统一来源。
+func _connect_global_clock_progress_signal() -> void:
+	if GlobalClock and GlobalClock.has_signal("progress_changed"):
+		if not GlobalClock.progress_changed.is_connected(_on_global_clock_progress_changed):
+			GlobalClock.progress_changed.connect(_on_global_clock_progress_changed)
+
+
+func _on_global_clock_progress_changed(era_value: int, _phase_value: int) -> void:
+	current_era_value = max(era_value, 1)
+	_refresh_combat_cartoon_ui_progress()
+
+
+## 从 GlobalClock 拉取当前时代值。
+## UI 显示和回合推进都以 GlobalClock 为唯一来源。
 func _pull_era_from_global() -> void:
 	if GlobalClock:
 		if GlobalClock.has_method("get_current_era"):
 			current_era_value = int(GlobalClock.get_current_era())
 		elif _object_has_property(GlobalClock, &"era"):
 			current_era_value = int(GlobalClock.get("era"))
-	elif Global and _object_has_property(Global, &"era"):
-		current_era_value = int(Global.get("era"))
 	else:
 		current_era_value = 1
 
@@ -218,7 +223,7 @@ func _pull_era_from_global() -> void:
 	_push_era_to_global()
 
 
-## 把局内当前时代值回写到全局单例。
+## 把局内当前时代值回写到 GlobalClock。
 ## 这是“局内战斗进度”与“局外全局进度”之间的同步桥。
 func _push_era_to_global() -> void:
 	current_era_value = max(current_era_value, 1)
@@ -228,9 +233,6 @@ func _push_era_to_global() -> void:
 			GlobalClock.set_current_era(current_era_value)
 		elif _object_has_property(GlobalClock, &"era"):
 			GlobalClock.set("era", current_era_value)
-
-	if Global and _object_has_property(Global, &"era"):
-		Global.set("era", current_era_value)
 
 	if MapState and MapState.has_method("set_saved_era_progress"):
 		var phase_value := 1
@@ -269,6 +271,13 @@ func _refresh_combat_cartoon_ui_progress() -> void:
 		return
 	if not combat_cartoon_ui.has_method("set_progress_labels"):
 		return
+
+	var era_value := current_era_value
+	if GlobalClock and GlobalClock.has_method("get_current_era"):
+		era_value = int(GlobalClock.get_current_era())
+	elif GlobalClock and _object_has_property(GlobalClock, &"era"):
+		era_value = int(GlobalClock.get("era"))
+	current_era_value = max(era_value, 1)
 
 	var phase_value := 1
 	if GlobalClock and GlobalClock.has_method("get_current_phase"):
@@ -593,9 +602,9 @@ func _on_end_turn_pressed():
 func start_new_turn():
 	if current_battle_state != BattleFlowState.COMBAT:
 		return
-	# 1. 时代值 +1 等系统级结算
-	current_era_value += 1
-	_push_era_to_global()
+
+	# 1. 阶段值 +1；超过 8 时由 GlobalClock 推进到下一时代。
+	_advance_global_phase()
 	_refresh_combat_cartoon_ui_progress()
 
 	# 2. 玩家抽牌
@@ -609,6 +618,41 @@ func start_new_turn():
 
 	# 恢复 UI
 	enable_player_inputs()
+
+
+func _advance_global_phase() -> void:
+	if GlobalClock:
+		if GlobalClock.has_method("advance_phase"):
+			GlobalClock.advance_phase()
+		else:
+			var next_phase := 1
+			if GlobalClock.has_method("get_current_phase"):
+				next_phase = int(GlobalClock.get_current_phase()) + 1
+			elif _object_has_property(GlobalClock, &"phase"):
+				next_phase = int(GlobalClock.get("phase")) + 1
+
+			if GlobalClock.has_method("set_current_phase"):
+				GlobalClock.set_current_phase(next_phase)
+			elif _object_has_property(GlobalClock, &"phase"):
+				GlobalClock.set("phase", next_phase)
+
+			if GlobalClock.has_method("time_detect"):
+				GlobalClock.time_detect()
+
+		if GlobalClock.has_method("get_current_era"):
+			current_era_value = int(GlobalClock.get_current_era())
+		elif _object_has_property(GlobalClock, &"era"):
+			current_era_value = int(GlobalClock.get("era"))
+	else:
+		current_era_value = max(current_era_value, 1)
+
+	if MapState and MapState.has_method("set_saved_era_progress"):
+		var phase_value := 1
+		if GlobalClock and GlobalClock.has_method("get_current_phase"):
+			phase_value = int(GlobalClock.get_current_phase())
+		elif GlobalClock and _object_has_property(GlobalClock, &"phase"):
+			phase_value = int(GlobalClock.get("phase"))
+		MapState.set_saved_era_progress(current_era_value, phase_value)
 
 
 # ==========================================

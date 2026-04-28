@@ -76,7 +76,7 @@ layout_mode = 0
 offset_left = 164.0
 offset_top = 757.0
 offset_right = 468.0
-offset_bottom = 944.0
+offset_bottom = 942.0
 theme_override_constants/separation = 20
 alignment = 1
 
@@ -93,9 +93,16 @@ size_flags_vertical = 3
 theme = ExtResource("4_p81d2")
 text = "退出游戏"
 
+[node name="Back" type="Button" parent="MainContainer/MenuContainer/SaveOptions/ButtonGroup" unique_id=213119833]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("4_p81d2")
+text = "返回"
+
 [node name="MainQuit" parent="MainContainer" unique_id=1881415037 instance=ExtResource("6_orv4q")]
 layer = 1000
 visible = false
 
 [connection signal="button_down" from="MainContainer/MenuContainer/SaveOptions/ButtonGroup/SaveToTitle" to="MainContainer" method="_on_save_to_title_button_down"]
 [connection signal="button_down" from="MainContainer/MenuContainer/SaveOptions/ButtonGroup/Quit" to="MainContainer" method="_on_quit_button_down"]
+[connection signal="pressed" from="MainContainer/MenuContainer/SaveOptions/ButtonGroup/Back" to="MainContainer" method="_on_back_pressed"]

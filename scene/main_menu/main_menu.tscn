@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://378syxx0nj4d"]
 
 [ext_resource type="Script" uid="uid://cixesxu60xs3q" path="res://scene/main_menu/main_menu.gd" id="1_rq7sb"]
-[ext_resource type="Texture2D" uid="uid://b10kctwdj6ct3" path="res://image/titleBG.png" id="2_3k2ij"]
+[ext_resource type="Texture2D" uid="uid://j6rjonojkebq" path="res://image/BG.png" id="2_t6h3x"]
 [ext_resource type="Texture2D" uid="uid://el0fworygbkr" path="res://image/clock/clock_noring.png" id="3_bj3ug"]
 [ext_resource type="Script" uid="uid://b8ch0oltwvgij" path="res://scene/out_scene/point.gd" id="4_bj3ug"]
 [ext_resource type="Texture2D" uid="uid://b2n28xtpsessh" path="res://image/clock/point.png" id="4_eo5a4"]
@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://b3oxrni5xbtas" path="res://scene/main_menu/menu_guide/main_guide.tscn" id="9_cta3x"]
 [ext_resource type="Texture2D" uid="uid://dh8ohe5k8scha" path="res://image/main_menu/u_l_a.png" id="9_e1cfd"]
 [ext_resource type="PackedScene" uid="uid://diy1bx2xob7ix" path="res://scene/main_menu/menu_quit/main_quit.tscn" id="10_tm7m5"]
+[ext_resource type="Shader" uid="uid://bskf7y4qgx8me" path="res://shaders/main_menu_fog_mask.gdshader" id="10_y7b3k"]
 [ext_resource type="Texture2D" uid="uid://lwpe2l5dsn11" path="res://image/main_menu/u_l_4.png" id="11_cta3x"]
 [ext_resource type="Texture2D" uid="uid://dovmwav0leyla" path="res://image/main_menu/m_L_1.png" id="13_cta3x"]
 [ext_resource type="Texture2D" uid="uid://ciwjuse75t2v2" path="res://image/main_menu/m_l_a.png" id="14_tm7m5"]
@@ -33,6 +34,18 @@
 [ext_resource type="Texture2D" uid="uid://bxwuu3uqpjnw2" path="res://image/main_menu/d_r_a.png" id="30_w2se8"]
 [ext_resource type="Texture2D" uid="uid://dqy8gsn4bbwh5" path="res://image/main_menu/d_r_4.png" id="32_87akv"]
 [ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="33_t6h3x"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fog_mask"]
+shader = ExtResource("10_y7b3k")
+shader_parameter/fog_tint = Color(0.85882354, 0.92156863, 0.9607843, 0.7176471)
+shader_parameter/blur_strength = 0.42
+shader_parameter/blur_radius = 2.8
+shader_parameter/blur_lod = 1.35
+shader_parameter/fog_alpha = 0.46
+shader_parameter/fog_scale = 2.15
+shader_parameter/fog_speed = 0.025
+shader_parameter/fog_contrast = 0.78
+shader_parameter/distortion_pixels = 1.8
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_lt21p"]
 resource_local_to_scene = true
@@ -212,10 +225,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 4
-texture = ExtResource("2_3k2ij")
+texture = ExtResource("2_t6h3x")
 expand_mode = 1
 stretch_mode = 6
 metadata/_edit_lock_ = true
+
+[node name="ColorRect" type="ColorRect" parent="BG_Layer" unique_id=1326455045]
+material = SubResource("ShaderMaterial_fog_mask")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Clock" type="Sprite2D" parent="BG_Layer" unique_id=2037557903]
 position = Vector2(960, 540)

@@ -21,6 +21,7 @@
 [ext_resource type="Shader" uid="uid://d3sbyeeqsa34" path="res://shaders/pulse_highlight.gdshader.gdshader" id="19_b3wb3"]
 [ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="20_lifwa"]
 [ext_resource type="PackedScene" uid="uid://cwskcr8vc6as3" path="res://scene/game_over/game_over.tscn" id="20_nj7no"]
+[ext_resource type="PackedScene" uid="uid://ij3dvdfrdp25" path="res://scene/pause_menu/pause_menu.tscn" id="21_pause"]
 [ext_resource type="Texture2D" uid="uid://dhlwuga6drnjh" path="res://image/timecoin_ui_back.png" id="22_ma4x0"]
 [ext_resource type="Script" uid="uid://berteeiph66x1" path="res://scene/in_scene/timecoin_ui.gd" id="22_nj7no"]
 [ext_resource type="Script" uid="uid://4joa75umyfqs" path="res://scene/in_scene/timeline/timeline_ui.gd" id="23_1wmus"]
@@ -84,6 +85,7 @@ texture = ExtResource("1_1gj6i")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 3000, 3000)
+metadata/_edit_lock_ = true
 
 [node name="map" type="Control" parent="." unique_id=505748231]
 anchors_preset = 0
@@ -266,6 +268,7 @@ timeline_ui_path = NodePath("../../TimelineUI")
 drag_shape_controller_path = NodePath("../DragShapeController")
 
 [node name="AcquireRewardButton" type="Button" parent="ui" unique_id=1860315344]
+visible = false
 offset_left = 33.0
 offset_top = 86.0
 offset_right = 150.0
@@ -273,6 +276,7 @@ offset_bottom = 139.0
 text = "获取卡牌"
 
 [node name="CraftRewardButton" type="Button" parent="ui" unique_id=1723925105]
+visible = false
 offset_left = 33.0
 offset_top = 152.0
 offset_right = 150.0
@@ -280,6 +284,7 @@ offset_bottom = 205.0
 text = "合成"
 
 [node name="RemoveRewardButton" type="Button" parent="ui" unique_id=1250307217]
+visible = false
 offset_left = 35.0
 offset_top = 220.0
 offset_right = 150.0
@@ -287,6 +292,7 @@ offset_bottom = 271.0
 text = "删卡"
 
 [node name="ShopButton" type="Button" parent="ui" unique_id=827260404]
+visible = false
 offset_left = 35.0
 offset_top = 17.0
 offset_right = 150.0
@@ -294,10 +300,10 @@ offset_bottom = 76.0
 text = "商店"
 
 [node name="HeightViewToggleButton" type="Button" parent="ui" unique_id=1242454706]
-offset_left = 1447.0
-offset_top = 101.0
-offset_right = 1560.0
-offset_bottom = 153.0
+offset_left = 1349.0
+offset_top = 264.0
+offset_right = 1462.0
+offset_bottom = 316.0
 text = "视角切换"
 
 [node name="WinButton" type="Button" parent="ui" unique_id=1004531811]
@@ -350,9 +356,12 @@ hex_map = NodePath("../../map/HexMap")
 [node name="TotalEnemyHealthBar" type="Node2D" parent="ui" unique_id=637956336]
 script = ExtResource("26_yy4gm")
 margin_top = 90.0
-margin_left = 280.0
+margin_left = 200.0
 
 [node name="CartoonUI" parent="." unique_id=1045097520 instance=ExtResource("29_cartoon")]
+
+[node name="PauseMenu" parent="." unique_id=383384250 instance=ExtResource("21_pause")]
+layer = 2000
 
 [node name="TimecoinView" type="Node" parent="." unique_id=512071538]
 

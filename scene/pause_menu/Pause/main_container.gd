@@ -84,3 +84,14 @@ func _on_save_to_title_button_down() -> void:
 
 func _on_quit_button_down() -> void:
 	quit.play_entrance()
+
+
+func return_to_game() -> void:
+	if not visible:
+		return
+
+	await close_menu()
+
+
+func _on_back_pressed() -> void:
+	await return_to_game()

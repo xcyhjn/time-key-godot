@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://dcrv2iwut3e5y"]
+
+[ext_resource type="Script" uid="uid://biddqg06qvndu" path="res://scene/in_scene/hex_map.gd" id="1_q6r6c"]
+[ext_resource type="Texture2D" uid="uid://5eq5pmcy6x7l" path="res://image/inscene_block/grass.png" id="2_kdubu"]
+[ext_resource type="Texture2D" uid="uid://cn6lxb76f7fmb" path="res://image/inscene_block/dirt.png" id="3_d21ai"]
+[ext_resource type="Shader" uid="uid://pdp2mrgq6od7" path="res://shaders/hex.gdshader" id="4_rj586"]
+[ext_resource type="Script" uid="uid://bjwid4x1can0t" path="res://scene/in_scene/enermy/health_bar.gd" id="5_4d7sh"]
+[ext_resource type="Texture2D" uid="uid://bks043lephgga" path="res://image/texture/FDA2A135E3966CB2DAEB7B49CE9EC876.jpg" id="6_kdubu"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ir8iy"]
+shader = ExtResource("4_rj586")
+shader_parameter/max_float_height = -35.0
+shader_parameter/wiggle_speed = 3.5
+shader_parameter/wiggle_amount = 5.0
+shader_parameter/highlight_width = 4.0
+shader_parameter/dissolve_block_size = 40.0
+shader_parameter/dissolve_edge_color = Color(2, 1.5, 0.5, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hqns4"]
+shader = ExtResource("4_rj586")
+shader_parameter/max_float_height = -35.0
+shader_parameter/wiggle_speed = 3.5
+shader_parameter/wiggle_amount = 3.0
+shader_parameter/highlight_width = 4.0
+shader_parameter/dissolve_block_size = 40.0
+shader_parameter/dissolve_edge_color = Color(2, 1.5, 0.5, 1)
+
+[node name="Node2D" type="Node2D" unique_id=2068398387]
+
+[node name="Parallax2D" type="Parallax2D" parent="." unique_id=830984106]
+repeat_size = Vector2(3000, 3000)
+autoscroll = Vector2(5, 5)
+repeat_times = 10
+
+[node name="Sprite2D" type="Sprite2D" parent="Parallax2D" unique_id=945367885]
+texture_repeat = 2
+texture = ExtResource("6_kdubu")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 3000, 3000)
+
+[node name="HexMap" type="Node2D" parent="." unique_id=1265063172]
+script = ExtResource("1_q6r6c")
+hex_top_tex = ExtResource("2_kdubu")
+hex_side_tex = ExtResource("3_d21ai")
+block_material = SubResource("ShaderMaterial_ir8iy")
+inner_tier_radius = 2
+hitbox_base_height = 80.0
+show_height_pillars = false
+height_view_shader_material = SubResource("ShaderMaterial_hqns4")
+
+[node name="BarManager" type="Node2D" parent="HexMap" unique_id=542911781]
+visible = false
+script = ExtResource("5_4d7sh")

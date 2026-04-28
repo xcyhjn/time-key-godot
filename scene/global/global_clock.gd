@@ -49,6 +49,7 @@ func get_anim_speed() -> float:
 
 var era : int
 var phase : int
+signal progress_changed(era_value: int, phase_value: int)
 
 
 ## 统一提供给其它场景读取当前时代值的接口。
@@ -61,7 +62,7 @@ func get_current_era() -> int:
 ## 这里会做最基本的保护，防止时代被写成 0 或负数。
 func set_current_era(new_era: int) -> void:
 	era = max(new_era, 1)
-	_sync_progress_snapshot()
+	_emit_progress_changed()
 
 
 ## 提供当前阶段值读取接口，方便局外 UI 或后续调试面板展示。
@@ -72,20 +73,40 @@ func get_current_phase() -> int:
 ## 统一设置当前阶段值。
 func set_current_phase(new_phase: int) -> void:
 	phase = max(new_phase, 1)
-	_sync_progress_snapshot()
+	_normalize_phase_rollover()
+	_emit_progress_changed()
 
 func reset():
 	era = 1
 	phase = 1
-	_sync_progress_snapshot()
+	_emit_progress_changed()
 
 func time_detect():
 	if phase > 8:
-		era_change()
+		_normalize_phase_rollover()
+		_emit_progress_changed()
 
 func era_change():
 	era += 1
 	phase = 1
+	_emit_progress_changed()
+
+
+func advance_phase(step_amount: int = 1) -> void:
+	phase += max(step_amount, 1)
+	_normalize_phase_rollover()
+	_emit_progress_changed()
+
+
+func _normalize_phase_rollover() -> void:
+	if phase > 8:
+		era += 1
+		phase = 1
+
+
+func _emit_progress_changed() -> void:
+	_sync_progress_snapshot()
+	progress_changed.emit(get_current_era(), get_current_phase())
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS

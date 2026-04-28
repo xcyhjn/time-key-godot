@@ -30,6 +30,13 @@ const OUT_SCENE_TEMPLATE := preload("res://scene/out_scene/Out_Scene.tscn")
 ## 闹钟最终缩放值，与局外 CartoonUI 缩到顶部后的大小保持一致。
 @export var clock_scale: Vector2 = Vector2(1.5, 1.5)
 
+## Use the Clock/Ring positions placed in combat_cartoon_ui.tscn.
+## Keep this on when you want the editor layout to be the source of truth.
+@export var use_scene_clock_position: bool = true
+
+## Toggles the bell decoration above the clock.
+@export var show_ring: bool = false
+
 ## 闹钟中心距离屏幕顶部的像素位置。
 ## 这个值沿用局外收纳完成后的 y 坐标，让两个场景视觉一致。
 @export var clock_top_margin: float = 160.0
@@ -53,6 +60,8 @@ const OUT_SCENE_TEMPLATE := preload("res://scene/out_scene/Out_Scene.tscn")
 ## Ring 是闹钟顶部铃铛装饰，应跟随右上角 Clock，而不是跟随居中的 Rect / Pole。
 @export var ring_offset_from_clock: Vector2 = Vector2(0.0, -16.0)
 
+@export_node_path("CanvasLayer") var pause_menu_path: NodePath
+
 @onready var rect: TileMapLayer = $Rect
 @onready var pole: TileMapLayer = $Pole
 @onready var clock_layer: CanvasLayer = get_node_or_null("ClockLayer") as CanvasLayer
@@ -65,6 +74,8 @@ const OUT_SCENE_TEMPLATE := preload("res://scene/out_scene/Out_Scene.tscn")
 @onready var era_label: Label = $MenuUI/Control/era
 @onready var process_label: Label = $MenuUI/Control/process
 @onready var character_icon: TextureRect = $MenuUI/Control/character
+@onready var scene_clock_position: Vector2 = clock.position if is_instance_valid(clock) else Vector2.ZERO
+@onready var scene_ring_position: Vector2 = ring.position if is_instance_valid(ring) else Vector2.ZERO
 
 ## 保存场景里配置好的原始缩放。
 ## 局内没有展开动画，所以运行时会直接恢复到这个值，而不是先压扁再 tween。
@@ -169,8 +180,8 @@ func _show_all_visuals_without_animation() -> void:
 		color_bg.hide()
 
 	if is_instance_valid(ring):
-		ring.show()
-		ring.modulate.a = 1.0
+		ring.visible = show_ring
+		ring.modulate.a = 1.0 if show_ring else 0.0
 
 	if is_instance_valid(rect):
 		rect.modulate.a = 1.0
@@ -219,11 +230,11 @@ func _get_panel_layer_origin_y(layer: TileMapLayer) -> float:
 	return panel_visual_top_margin - used_top_offset
 
 
-## 计算并应用左上角闹钟布局。
-## Clock / Ring 独立固定到左上角，不再把 Rect / Pole 一起拖到侧边。
+## 应用 Clock / Ring 布局。
+## 默认使用场景里手动摆好的坐标；关闭 use_scene_clock_position 时才回到旧的 margin 计算。
 func _place_clock_and_ring() -> void:
-	var target_pos := _get_clock_target_position()
-	var ring_pos := target_pos + ring_offset_from_clock
+	var target_pos := scene_clock_position if use_scene_clock_position else _get_clock_target_position()
+	var ring_pos := scene_ring_position if use_scene_clock_position else target_pos + ring_offset_from_clock
 
 	if is_instance_valid(clock):
 		clock.position = target_pos
@@ -233,6 +244,8 @@ func _place_clock_and_ring() -> void:
 
 	if is_instance_valid(ring):
 		ring.position = ring_pos
+		ring.visible = show_ring
+		ring.modulate.a = 1.0 if show_ring else 0.0
 
 
 ## 左上角停靠坐标。
@@ -271,4 +284,29 @@ func set_character_index(index: int) -> void:
 		character_icon.texture = CHARACTER_TEXTURES[index]
 
 func _on_setting_button_down() -> void:
-	pass # Replace with function body.
+	var pause_menu := _get_pause_menu()
+	if not is_instance_valid(pause_menu):
+		push_warning("CombatCartoonUI: PauseMenu node was not found.")
+		return
+
+	var main_container := pause_menu.get_node_or_null("MainContainer")
+	if not is_instance_valid(main_container) or not main_container.has_method("open_menu"):
+		push_warning("CombatCartoonUI: PauseMenu/MainContainer has no open_menu method.")
+		return
+
+	main_container.open_menu()
+
+
+func _get_pause_menu() -> Node:
+	if not pause_menu_path.is_empty():
+		var configured_pause_menu := get_node_or_null(pause_menu_path)
+		if is_instance_valid(configured_pause_menu):
+			return configured_pause_menu
+
+	var scene_root := get_tree().current_scene
+	if is_instance_valid(scene_root):
+		var found_pause_menu := scene_root.find_child("PauseMenu", true, false)
+		if is_instance_valid(found_pause_menu):
+			return found_pause_menu
+
+	return null
