@@ -1,10 +1,15 @@
 [gd_scene format=3 uid="uid://b7fftwdwy2mtf"]
 
 [ext_resource type="Script" uid="uid://cn0l1gj2u87r7" path="res://scene/out_scene/choose_menu/main_container2.gd" id="1_7veqg"]
+[ext_resource type="Texture2D" uid="uid://fjdhfqlpkfd0" path="res://image/character/chariot.png" id="2_3unmc"]
 [ext_resource type="Shader" uid="uid://bkkkpc13w05u8" path="res://shaders/choose_menu.gdshader" id="2_7veqg"]
-[ext_resource type="Texture2D" uid="uid://b4sgmk2u83thu" path="res://image/jibao.jpg" id="2_yqk63"]
 [ext_resource type="Theme" uid="uid://w172uwoow3s3" path="res://theme/OptionsMenu.theme" id="3_0qhe1"]
+[ext_resource type="Texture2D" uid="uid://coj033j0xiccm" path="res://image/character/soldier.png" id="3_7vxrj"]
+[ext_resource type="Texture2D" uid="uid://554ca0tx7ffi" path="res://image/character/knight.png" id="4_66qae"]
 [ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="4_rfyd2"]
+[ext_resource type="Texture2D" uid="uid://cn4vmu682m8qd" path="res://image/character/king.png" id="5_m0txe"]
+[ext_resource type="Texture2D" uid="uid://d38ln0rb2d0sy" path="res://image/character/queen.png" id="6_6pfyh"]
+[ext_resource type="Texture2D" uid="uid://ndldbn6yeuwu" path="res://image/character/bishop.png" id="7_rkmxe"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yqk63"]
 resource_local_to_scene = true
@@ -30,7 +35,7 @@ names = Array[String](["战车", "士兵", "骑士", "国王", "皇后", "主教
 descriptions = Array[String](["  故障机器人，一个具有极快启动速度的强大角色。从神秘的废品堆中醒来，它接下来会走去何方？......", "瓦库瓦库！", "......", "脑袋尖尖，故事多多！", "大手子来了。", "我在看着你......"])
 colors_start = Array[Color]([Color(0, 0.37254903, 0.84313726, 0.9411765), Color(1, 0.09019608, 0.05882353, 0.9411765), Color(0, 1, 0.24313726, 0.9411765), Color(0.7921569, 0.92156863, 0, 0.9411765), Color(0.747837, 0.7278515, 0.7278685, 0.9411765), Color(0.43529412, 0.23921569, 1, 0.9411765)])
 colors_end = Array[Color]([Color(0, 0.23921569, 0.84313726, 0.9019608), Color(0.52029693, 0, 0, 0.9019608), Color(3.2488256e-06, 0.511434, 0.104502074, 0.9019608), Color(0.63529414, 0.827451, 0, 0.9019608), Color(0.5339924, 0.5059007, 0.50593805, 0.9019608), Color(0.281018, 0.00061270443, 0.71793014, 0.9019608)])
-images = Array[Texture2D]([ExtResource("2_yqk63"), ExtResource("2_yqk63"), ExtResource("2_yqk63"), ExtResource("2_yqk63"), ExtResource("2_yqk63"), ExtResource("2_yqk63")])
+images = Array[Texture2D]([ExtResource("2_3unmc"), ExtResource("3_7vxrj"), ExtResource("4_66qae"), ExtResource("5_m0txe"), ExtResource("6_6pfyh"), ExtResource("7_rkmxe")])
 right_image_opacity = 0.75
 
 [node name="BackgroundShader" type="ColorRect" parent="MainContainer" unique_id=661187895]
