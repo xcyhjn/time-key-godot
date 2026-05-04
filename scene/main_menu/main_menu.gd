@@ -1,6 +1,20 @@
 extends Control
 
+const TutorialSaveScript = preload("res://scene/tutorial/tutorial_save.gd")
+
 @export var Scene_path: String = "res://scene/out_scene/Out_Scene.tscn"
+@export_file("*.tscn") var normal_scene_path: String = "res://scene/out_scene/Out_Scene.tscn"
+@export_file("*.tscn") var tutorial_scene_path: String = "res://scene/tutorial/tutorial_out_scene.tscn"
+
+@export_group("教程入口弹窗")
+@export var tutorial_prompt_title: String = "新手教程"
+@export var tutorial_prompt_text: String = "是否进入新手教程？\n教程会从局外选角开始，带你完成第一场战斗与收获流程。"
+@export var tutorial_prompt_yes_text: String = "是"
+@export var tutorial_prompt_no_text: String = "否"
+
+@export_group("教程调试")
+## 开启后，每次点击进入新游戏前都会删除 user://tutorial_settings.cfg，方便反复测试首次教程弹窗。
+@export var debug_clear_tutorial_record_on_new_game: bool = true
 
 @onready var Set = $UI/MainSet
 @onready var Guide = $UI/MainGuide
@@ -13,6 +27,8 @@ extends Control
 var progress: Array[float] = []
 # 用于暂存点击不同按钮时产生的参数
 var pending_data: String = ""
+var _tutorial_prompt_dialog: ConfirmationDialog = null
+var _tutorial_prompt_decision_made: bool = false
 
 func _ready() -> void:
 	await dim.use(1,1)
@@ -100,15 +116,79 @@ func _reset_run_state_for_new_game() -> void:
 
 # 按钮 1：传递空字符串
 func _on_new_game_btn_button_down() -> void:
+	_clear_tutorial_record_for_debug()
+	if TutorialSaveScript.should_show_prompt():
+		_show_tutorial_prompt()
+		return
+
+	await _start_normal_new_game()
+
+
+func _start_normal_new_game() -> void:
 	_reset_run_state_for_new_game()
+	Scene_path = normal_scene_path
 	pending_data = "" 
 	Global.clock.emit(2)
 	await Mask.start_iris_in(1.0)
 	_start_async_load()
 
+
+func _start_tutorial_new_game() -> void:
+	_reset_run_state_for_new_game()
+	Scene_path = tutorial_scene_path
+	pending_data = "tutorial"
+	Global.clock.emit(2)
+	await Mask.start_iris_in(1.0)
+	_start_async_load()
+
+
+func _clear_tutorial_record_for_debug() -> void:
+	if debug_clear_tutorial_record_on_new_game:
+		TutorialSaveScript.delete_settings_file_if_exists()
+
+
+## 首次点击新游戏时弹出教程选择。
+## 核心逻辑：无论选择“是/否”，都会立刻写入 user://，保证弹窗只触发一次。
+func _show_tutorial_prompt() -> void:
+	if not is_instance_valid(_tutorial_prompt_dialog):
+		_tutorial_prompt_dialog = ConfirmationDialog.new()
+		_tutorial_prompt_dialog.name = "TutorialPromptDialog"
+		_tutorial_prompt_dialog.exclusive = true
+		_tutorial_prompt_dialog.unresizable = true
+		add_child(_tutorial_prompt_dialog)
+		_tutorial_prompt_dialog.get_ok_button().pressed.connect(_on_tutorial_prompt_yes_pressed)
+		_tutorial_prompt_dialog.get_cancel_button().pressed.connect(_on_tutorial_prompt_no_pressed)
+		_tutorial_prompt_dialog.close_requested.connect(_on_tutorial_prompt_no_pressed)
+
+	_tutorial_prompt_decision_made = false
+	TutorialSaveScript.mark_prompt_seen(false)
+	_tutorial_prompt_dialog.title = tutorial_prompt_title
+	_tutorial_prompt_dialog.dialog_text = tutorial_prompt_text
+	_tutorial_prompt_dialog.ok_button_text = tutorial_prompt_yes_text
+	_tutorial_prompt_dialog.cancel_button_text = tutorial_prompt_no_text
+	_tutorial_prompt_dialog.popup_centered(Vector2i(520, 240))
+
+
+func _on_tutorial_prompt_yes_pressed() -> void:
+	if _tutorial_prompt_decision_made:
+		return
+	_tutorial_prompt_decision_made = true
+	TutorialSaveScript.mark_prompt_seen(true)
+	await _start_tutorial_new_game()
+
+
+func _on_tutorial_prompt_no_pressed() -> void:
+	if _tutorial_prompt_decision_made:
+		return
+	_tutorial_prompt_decision_made = true
+	TutorialSaveScript.mark_prompt_seen(false)
+	await _start_normal_new_game()
+
 # 按钮 2：传递玩家输入的字符
 func _on_new_game_btn_2_button_down() -> void:
+	_clear_tutorial_record_for_debug()
 	_reset_run_state_for_new_game()
+	Scene_path = normal_scene_path
 	$BG_Layer/LineEdit.show()
 	while not Input.is_action_just_pressed("ui_accept"):
 	# 关键：必须 await 每一帧，否则死循环会卡死游戏

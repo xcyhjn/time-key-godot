@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://cd6ayv6k5rwca"]
+
+[ext_resource type="PackedScene" uid="uid://bdsor6hek0y1j" path="res://scene/out_scene/Out_Scene.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://bi0w2v6a0upcq" path="res://scene/tutorial/tutorial_out_scene.gd" id="2_out_script"]
+[ext_resource type="Resource" uid="uid://i7wvevmuls2w" path="res://scene/tutorial/tutorial_first_run.tres" id="3_h7jgu"]
+[ext_resource type="Script" uid="uid://blvm048qh6p8g" path="res://scene/tutorial/tutorial_mask_layer.gd" id="3_mask"]
+[ext_resource type="Script" uid="uid://cppe4xy67w8ge" path="res://scene/tutorial/tutorial_out_scene_director.gd" id="4_director"]
+
+[node name="OutScene" unique_id=1558268240 instance=ExtResource("1_base")]
+script = ExtResource("2_out_script")
+tutorial_config = ExtResource("3_h7jgu")
+restrict_to_tutorial_path = true
+combat_scene = "res://scene/tutorial/tutorial_in_scene.tscn"
+
+[node name="TutorialGuideLayer" type="CanvasLayer" parent="." index="5" unique_id=436793486]
+layer = 5000
+
+[node name="TutorialMaskLayer" type="Control" parent="TutorialGuideLayer" index="0" unique_id=1670410025]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_mask")
+
+[node name="TutorialOutDirector" type="Node" parent="." index="6" unique_id=312068928]
+script = ExtResource("4_director")

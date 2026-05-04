@@ -11,6 +11,8 @@
 class_name EffectProcessor
 extends RefCounted
 
+const RecoverCommandScript = preload("res://scene/in_scene/timeline/commands/RecoverCommand.gd")
+
 ## 优化版：支持多命令完美的并行执行 (Fire and Forget 模式)
 static func process_action(action: TimelineAction, tree: SceneTree) -> void:
 	var command_queue: Array[EffectCommand] = []
@@ -112,9 +114,8 @@ static func _create_command_from_type(eff: Dictionary) -> EffectCommand:
 			return DamageCommand.new(value)
 		"elevation":
 			return ElevationCommand.new(value)
-		# 未来如果要加回血，只需要在这里加两行：
-		# "heal":
-		#     return HealCommand.new(value)
+		"recover", "heal":
+			return RecoverCommandScript.new(int(value))
 		_:
 			return null
 

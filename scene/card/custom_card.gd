@@ -47,29 +47,13 @@ var current_stats: Dictionary = { }
 var is_selected: bool = false
 @onready var shadow: TextureRect = $ShadowLayer
 
-# ================= 时间占位系统变量 =================
-@onready var time_block_sprite: Node = $TimeBlock  # 时间占位图片节点（可能是Control类型如TextureRect/ColorRect，也可能是Sprite2D）
+# ================= 时间轴放置形状数据 =================
 var timeline_shape_key: String = ""  # 形状键名，如 "1x1", "2x2"
 var timeline_shape_size: Vector2i = Vector2i(1, 1)  # 形状尺寸，如 1x1, 1x2, 2x2
 var timeline_shape_coords: Array[Vector2i] = []  # 形状坐标数组
 
-# 时间占位图片资源字典
-const TIMELINE_SHAPE_TEXTURES: Dictionary = {
-	"1": preload("res://image/time_block/1x1.png"),
-	"11": preload("res://image/time_block/1x2.png"),
-	"11,11": preload("res://image/time_block/2x2.png")
-	# 可扩展更多形状
-}
-
 # ★ 新增：卡牌影响范围 (AOE) 相对坐标
 var effect_range_offsets: Array[Vector2i] = [Vector2i(0, 0)] # 默认仅影响自身
-
-# 时间占位图片设置
-@export_group("时间占位图片设置")
-@export var time_block_offset: Vector2 = Vector2.ZERO  # 位置偏移量
-@export var time_block_scale_factor: float = 1.0  # 缩放因子
-@export var time_block_base_size: float = 80.0  # 基础格子大小，应与DragShapeController的slot_size一致
-@export var show_time_block_in_hand: bool = true  # 在手牌中是否显示时间占位图片
 
 func _ready() -> void:
 	super._ready()  # 必须先执行父类原有的初始化逻辑
@@ -223,8 +207,6 @@ func toggle_selection() -> void:
 			tw.tween_property(self, "position", Vector2(card_original_position.x, card_original_position.y + float_height), 0.2)
 			tw.tween_property(self, "scale", card_original_scale * 1.3, 0.2)
 
-			# 选中待选地块阶段不再给卡牌加蒙版，只有进入时间占位拖拽阶段才半透明。
-			_refresh_timeline_shape_visibility()
 			set_card_transparency(1.0)
 
 			# 更新地块的条件效果（选中卡牌时）
@@ -243,9 +225,6 @@ func force_deselect() -> void:
 	if cm:
 		cm.deselect_card()  
 
-	# ★ 核心修复：不要无条件隐藏！根据卡牌设定来决定
-	_refresh_timeline_shape_visibility()
-		
 	set_card_transparency(1.0)  # 恢复完全不透明
 	material = original_material
 	if front_face_texture:
@@ -283,15 +262,13 @@ func setup_card_data() -> void:
 	if card_info.is_empty(): return
 	raw_description = card_info.get("效果", "")
 	# ==========================================
-	# ★ 终极时间占位解析引擎：全自动裁剪与去重
+	# ★ 时间轴放置形状解析：全自动裁剪与去重
 	# ==========================================
 	var raw_shape = card_info.get("shape", ["1"]) # 默认给个单格
 	_normalize_and_parse_shape(raw_shape)
 	# ★ 新增：解析卡牌六边形作用范围
 	var raw_range = card_info.get("effect_range", 0) 
 	_parse_hex_effect_range(raw_range)
-	# 显示时间占位图片（如果启用手牌显示）
-	_refresh_timeline_shape_visibility()
 
 # ==========================================
 # ★ 核心矩阵解析与归一化方法
@@ -375,184 +352,6 @@ func _normalize_and_parse_shape(shape_data: Variant) -> void:
 # 2. ★ 核心：动态文本渲染器
 # ==========================================
 # ★ 修改：不再向 UI 渲染，而是返回解析好的 BBCode 字符串
-
-## 加载时间占位图片
-func _load_timeline_shape_texture() -> void:
-	if timeline_shape_key.is_empty():
-		return
-	
-	if timeline_shape_key in TIMELINE_SHAPE_TEXTURES:
-		var texture = TIMELINE_SHAPE_TEXTURES[timeline_shape_key]
-		if time_block_sprite:
-			# 调试：记录节点类型
-			var node_class = time_block_sprite.get_class()
-			
-			# 根据节点类型设置相应属性
-			if time_block_sprite is TextureRect:
-				time_block_sprite.texture = texture
-			elif time_block_sprite is ColorRect:
-				# ColorRect无法显示纹理，只能显示纯色
-				# 这里设置为半透明蓝色作为占位
-				time_block_sprite.color = Color(0.2, 0.4, 0.8, 0.7)
-			elif time_block_sprite is Sprite2D:
-				# Sprite2D支持纹理
-				time_block_sprite.texture = texture
-			else:
-				# 如果是普通Control节点，尝试动态添加TextureRect子节点
-				
-				# 检查节点是否支持texture属性
-				if time_block_sprite.has_method("set_texture") or _object_has_property(time_block_sprite, &"texture"):
-					# 尝试安全设置texture属性
-					if time_block_sprite.set_texture is Callable:
-						time_block_sprite.set_texture(texture)
-					elif _object_has_property(time_block_sprite, &"texture"):
-						time_block_sprite.texture = texture
-				else:
-					# 检查是否已经有TextureRect子节点
-					var texture_child = null
-					for child in time_block_sprite.get_children():
-						if child is TextureRect:
-							texture_child = child
-							break
-					
-					if not texture_child:
-						# 创建TextureRect子节点
-						texture_child = TextureRect.new()
-						texture_child.name = "TimelineShapeTexture"
-						texture_child.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-						texture_child.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-						texture_child.size = Vector2(timeline_shape_size.x * time_block_base_size, timeline_shape_size.y * time_block_base_size)  # 根据形状尺寸和基础大小设置
-						time_block_sprite.add_child(texture_child)
-					
-					texture_child.texture = texture
-		else:
-			pass
-	else:
-		pass
-
-
-## 显示时间占位图片
-func show_timeline_shape() -> void:
-	if not time_block_sprite:
-		return
-	if TimelineClearEffectUtil.is_clear_card(self):
-		# clear 卡的普通 shape 是空占位，真正范围在时间轴上用 11,11 预览；
-		# 卡面本身不显示 TimeBlock，避免玩家误解为普通单格占位卡。
-		hide_timeline_shape()
-		return
-	
-	# 确保图片已加载
-	_load_timeline_shape_texture()
-	
-	# 设置位置：卡牌上半部分，居中，应用偏移量
-	var card_size = size if has_method("get_size") else Vector2(100, 140)
-	var base_position = Vector2(card_size.x / 2, card_size.y / 6)  # 卡牌上半部分中央
-	time_block_sprite.position = base_position + time_block_offset
-	
-	# 设置大小：根据形状尺寸和基础格子大小，应用缩放因子
-	# 使用固定框大小，确保所有时间占位图片有统一的视觉大小
-	var max_shape_dim = max(timeline_shape_size.x, timeline_shape_size.y)
-	var base_block_size = time_block_base_size * time_block_scale_factor
-	var block_width = max_shape_dim * base_block_size
-	var block_height = max_shape_dim * base_block_size
-	
-	# 根据节点类型设置大小
-	if time_block_sprite is TextureRect:
-		time_block_sprite.custom_minimum_size = Vector2(block_width, block_height)
-		time_block_sprite.size = Vector2(block_width, block_height)
-	elif time_block_sprite is ColorRect:
-		time_block_sprite.size = Vector2(block_width, block_height)
-	elif time_block_sprite is Sprite2D:
-		# Sprite2D大小由纹理和缩放决定，设置缩放
-		# 假设时间占位图片的基础纹理大小为time_block_base_size x time_block_base_size
-		var texture_size = Vector2(time_block_base_size, time_block_base_size)
-		var scale_x = block_width / texture_size.x
-		var scale_y = block_height / texture_size.y
-		time_block_sprite.scale = Vector2(scale_x, scale_y)
-	else:
-		# 其他Control节点，尝试设置大小和位置属性
-		
-		# 尝试设置大小
-		if "size" in time_block_sprite:
-			time_block_sprite.size = Vector2(block_width, block_height)
-		if "custom_minimum_size" in time_block_sprite:
-			time_block_sprite.custom_minimum_size = Vector2(block_width, block_height)
-		
-		# 对于Control节点，设置锚点为左上角，确保位置正确
-		if "anchor_left" in time_block_sprite:
-			time_block_sprite.anchor_left = 0.0
-			time_block_sprite.anchor_top = 0.0
-			time_block_sprite.anchor_right = 0.0
-			time_block_sprite.anchor_bottom = 0.0
-		
-		# 设置位置偏移模式为绝对位置
-		if "offset_left" in time_block_sprite:
-			time_block_sprite.offset_left = time_block_sprite.position.x
-			time_block_sprite.offset_top = time_block_sprite.position.y
-			time_block_sprite.offset_right = time_block_sprite.position.x + block_width
-			time_block_sprite.offset_bottom = time_block_sprite.position.y + block_height
-	
-	# 设置层级比卡牌高一级
-	time_block_sprite.z_index = z_index + 1
-	
-	# 显示
-	time_block_sprite.visible = true
-	
-	# 应用卡牌当前shader效果（如果有）- 仅对支持material的节点类型
-	if material:
-		# 检查节点是否支持material属性
-		if time_block_sprite is TextureRect or time_block_sprite is ColorRect or time_block_sprite is Sprite2D:
-			if time_block_sprite.material:
-				time_block_sprite.material = material.duplicate()
-		elif "material" in time_block_sprite:
-			# 对于其他可能有material属性的节点类型
-			time_block_sprite.material = material.duplicate()
-	
-
-
-## 隐藏时间占位图片
-func hide_timeline_shape() -> void:
-	if time_block_sprite:
-		time_block_sprite.visible = false
-
-
-## 根据卡牌类型刷新卡面时间占位显示。
-## 普通卡牌继续遵守 show_time_block_in_hand；clear 类即时卡牌的 shape 字段可以是 "0"，
-## 它的真实 11,11 范围只在时间轴上显示，所以卡面不生成任何时间占位方格。
-func _refresh_timeline_shape_visibility() -> void:
-	if show_time_block_in_hand and not TimelineClearEffectUtil.is_clear_card(self):
-		show_timeline_shape()
-	else:
-		hide_timeline_shape()
-
-
-## 获取时间占位图片位置（供DragShapeController使用）
-func get_timeline_shape_position() -> Vector2:
-	if time_block_sprite and time_block_sprite.visible:
-		return time_block_sprite.position
-	else:
-		# 如果时间占位图片不可见，返回卡牌中心偏上的位置
-		var card_size = size if has_method("get_size") else Vector2(100, 140)
-		return Vector2(card_size.x / 2, card_size.y / 4)
-
-
-## 获取时间占位图片全局位置（考虑旋转）
-func get_timeline_shape_global_position() -> Vector2:
-	if time_block_sprite and time_block_sprite.visible:
-		return time_block_sprite.global_position
-	else:
-		# 如果时间占位图片不可见，返回卡牌中心偏上的全局位置
-		var card_size = size if has_method("get_size") else Vector2(100, 140)
-		var local_pos = Vector2(card_size.x / 2, card_size.y / 4)
-		return global_position + local_pos
-
-
-## 设置时间占位图片偏移量（供DragShapeController使用）
-func set_timeline_shape_offset(offset: Vector2) -> void:
-	# 这个方法可以用于存储额外的偏移量，目前不需要实际存储
-	# 但为了接口兼容性保留
-	pass
-
 
 ## 调整卡牌透明度（方案A）
 func set_card_transparency(alpha: float) -> void:
@@ -705,9 +504,6 @@ func force_reset_visuals() -> void:
 	if front_face_texture:
 		front_face_texture.material = original_material
 	set_card_transparency(1.0)
-	# ★ 核心修复：当卡牌洗切、抽卡回手时，框架会调用这个重置函数
-	# 我们在这里事件驱动地重新唤醒时间占位图片，0性能损耗！
-	_refresh_timeline_shape_visibility()
 
 func _on_gui_input(event: InputEvent):
 	# ★ 核心修复 2：拖拽期间禁止卡牌响应任何鼠标点击！

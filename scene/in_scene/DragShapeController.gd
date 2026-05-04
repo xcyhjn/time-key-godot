@@ -201,8 +201,6 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	if is_timeline_clear_mode:
 		# clear 是“手牌中静止、只借用时间轴选格”的即时效果。
 		# 这里提前返回，避免走下面普通卡牌的重挂父节点、缩放、拖拽 shader 和鼠标跟随逻辑。
-		if card.has_method("hide_timeline_shape"):
-			card.hide_timeline_shape()
 		if card.has_method("set_card_transparency"):
 			card.set_card_transparency(1.0)
 		# 卡牌视觉上仍停在手牌里，但当前输入焦点已经交给时间轴。

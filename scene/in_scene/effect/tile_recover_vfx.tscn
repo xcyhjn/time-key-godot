@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://brd1wlymdpypu"]
+
+[ext_resource type="Script" uid="uid://c6dlc55uwbund" path="res://scene/in_scene/effect/tile_recover_vfx.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dxu685momi8q7" path="res://image/effect/recover.png" id="2_texture"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_12rbs"]
+atlas = ExtResource("2_texture")
+region = Rect2(0, 0, 341, 387)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_biawa"]
+atlas = ExtResource("2_texture")
+region = Rect2(341, 0, 341, 387)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tqmpt"]
+atlas = ExtResource("2_texture")
+region = Rect2(682, 0, 341, 387)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qkt2b"]
+atlas = ExtResource("2_texture")
+region = Rect2(0, 387, 341, 387)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wl03s"]
+atlas = ExtResource("2_texture")
+region = Rect2(341, 387, 341, 387)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0adnc"]
+atlas = ExtResource("2_texture")
+region = Rect2(682, 387, 341, 387)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_recover"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_12rbs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_biawa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tqmpt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qkt2b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wl03s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0adnc")
+}],
+"loop": true,
+"name": &"recover",
+"speed": 6.0
+}]
+
+[node name="TileRecoverVFX" type="Node2D" unique_id=1338112974]
+script = ExtResource("1_script")
+animation_name = &"recover"
+auto_free_on_finish = true
+force_non_loop = true
+playback_speed_scale = 1.0
+window_size = Vector2(128, 128)
+window_offset = Vector2(0, -20)
+stretch_to_window = true
+vfx_z_index = 3500
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1291827332]
+sprite_frames = SubResource("SpriteFrames_recover")
+animation = &"recover"

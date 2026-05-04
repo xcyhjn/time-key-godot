@@ -13,10 +13,6 @@ hover_distance = 10
 hover_scale = 1.2
 float_height = -40.0
 tilt_intensity = 0.15
-time_block_offset = Vector2(-35, -70)
-time_block_scale_factor = 0.0
-time_block_base_size = 40.0
-show_time_block_in_hand = true
 
 [node name="MarginContainer" type="MarginContainer" parent="FrontFace/TextureRect" index="0" unique_id=1043172175]
 layout_mode = 0
@@ -39,10 +35,3 @@ offset_left = 3.0
 offset_right = 1430.0
 offset_bottom = 960.0
 mouse_filter = 1
-
-[node name="TimeBlock" type="Control" parent="." index="4" unique_id=613620142]
-anchors_preset = 0
-offset_left = 4.0
-offset_top = 3.0
-offset_right = 47.0
-offset_bottom = 47.0

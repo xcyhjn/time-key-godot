@@ -1,0 +1,12 @@
+{
+	"name": "tower",
+	"front_image": "tower_card.png",
+	"效果" : "建造高塔1",
+	"effects": [
+	{ "type": "built", "value": 1}
+  ],
+"effect_range": ["0,0"],
+	"shape": "1,111",
+	"时代" : "1",
+	"id" : "6"
+   }

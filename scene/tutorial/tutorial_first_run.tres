@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="TutorialConfig" format=3 uid="uid://i7wvevmuls2w"]
+
+[ext_resource type="Script" uid="uid://om5h5y5er8e1" path="res://scene/tutorial/tutorial_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")

@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://scene/in_scene/in_scene.tscn" id="1_base"]
+[ext_resource type="Script" path="res://scene/tutorial/tutorial_mask_layer.gd" id="2_mask"]
+[ext_resource type="Script" path="res://scene/tutorial/tutorial_in_scene_director.gd" id="3_director"]
+[ext_resource type="Script" path="res://scene/tutorial/tutorial_in_scene.gd" id="4_root"]
+[ext_resource type="Script" path="res://scene/tutorial/tutorial_hex_map.gd" id="5_hex"]
+
+[node name="in_scene" instance=ExtResource("1_base")]
+script = ExtResource("4_root")
+
+[node name="HexMap" parent="map" index="0"]
+script = ExtResource("5_hex")
+
+[node name="TutorialGuideLayer" type="CanvasLayer" parent="."]
+layer = 5000
+
+[node name="TutorialMaskLayer" type="Control" parent="TutorialGuideLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_mask")
+
+[node name="TutorialInDirector" type="Node" parent="."]
+script = ExtResource("3_director")

@@ -5,6 +5,7 @@ class_name battle
 
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
+const DEFAULT_RECOVER_VFX_SCENE: PackedScene = preload("res://scene/in_scene/effect/tile_recover_vfx.tscn")
 #血条信号测试用
 signal CreateBar(landform_in: landform, situation: int, x: float, y: float)
 signal enemy_roster_changed
@@ -71,6 +72,12 @@ signal map_intro_reveal_finished
 @export var enemy_intent_target_min_alpha: float = 0.2
 ## 目标波纹最大透明度。
 @export var enemy_intent_target_max_alpha: float = 0.95
+
+@export_group("卡牌回复特效")
+## recover/health 类时间轴效果结算时，是否在被回复的地块上播放回复动画。
+@export var recover_vfx_enabled: bool = true
+## 回复特效场景。HexMap 只负责生成；窗口、偏移、层级、速度等表现参数在该场景根节点中调整。
+@export var recover_vfx_scene: PackedScene = DEFAULT_RECOVER_VFX_SCENE
 
 @export_group("Grid Generation Settings")
 @export var map_generation_mode: int = 0  # 0=扇形战斗地图, 1=圆形随机地图
@@ -1982,6 +1989,49 @@ func _configure_intent_overlay_material(overlay_name: String, material: Material
 		shader_material.set_shader_parameter("ripple_density", enemy_intent_target_ripple_density)
 		shader_material.set_shader_parameter("min_alpha", enemy_intent_target_min_alpha)
 		shader_material.set_shader_parameter("max_alpha", enemy_intent_target_max_alpha)
+
+
+## 播放地块回复动画。
+## 说明:
+## - 由 RecoverCommand 在时间轴结算时调用。
+## - 动画节点挂在目标 stack 下，窗口位置跟随地块高度/视角变化后的碰撞中心。
+## - TileRecoverVFX 自己管理窗口大小、偏移、播放速度、层级和生命周期。
+func play_recover_effect_on_tile(stack: Area2D) -> void:
+	if not recover_vfx_enabled or not is_instance_valid(stack):
+		return
+
+	var effect_scene: PackedScene = recover_vfx_scene if recover_vfx_scene != null else DEFAULT_RECOVER_VFX_SCENE
+	if effect_scene == null:
+		return
+
+	var old_effect: Node = stack.get_node_or_null("RecoverVFX")
+	if is_instance_valid(old_effect):
+		old_effect.queue_free()
+
+	var effect: Node = effect_scene.instantiate()
+	if not is_instance_valid(effect):
+		return
+	if not (effect is Node2D):
+		effect.queue_free()
+		return
+
+	effect.name = "RecoverVFX"
+	var effect_node: Node2D = effect as Node2D
+	stack.add_child(effect)
+
+	var tile_anchor: Vector2 = _get_tile_effect_anchor(stack)
+	if effect.has_method("play_at"):
+		effect.play_at(tile_anchor)
+	elif effect.has_method("play_once"):
+		effect_node.position = tile_anchor
+		effect.play_once()
+
+
+func _get_tile_effect_anchor(stack: Area2D) -> Vector2:
+	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
+	if is_instance_valid(collision) and collision is Node2D:
+		return collision.position
+	return Vector2(hitbox_offset_x, hitbox_offset_y)
 
 
 func _update_occlusion(target_stack: Area2D):
