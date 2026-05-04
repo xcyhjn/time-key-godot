@@ -221,7 +221,7 @@ func toggle_selection() -> void:
 			var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD)
 			# 强制构造一个完整的 Vector2，绝对不会报类型错！
 			tw.tween_property(self, "position", Vector2(card_original_position.x, card_original_position.y + float_height), 0.2)
-			tw.tween_property(self, "scale", card_original_scale * 1.1, 0.2)
+			tw.tween_property(self, "scale", card_original_scale * 1.3, 0.2)
 
 			# 选中待选地块阶段不再给卡牌加蒙版，只有进入时间占位拖拽阶段才半透明。
 			_refresh_timeline_shape_visibility()

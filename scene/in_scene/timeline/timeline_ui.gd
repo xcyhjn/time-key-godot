@@ -1,6 +1,7 @@
 extends Control
 
 const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
+const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/TimelineActionShapeVisual.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -39,6 +40,19 @@ const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent
 @export var action_removal_drop_distance: float = 14.0
 ## 时间占位方格失效消失时的最终颜色。RGB 偏暗，Alpha 为 0，形成“变暗后淡出”的感觉。
 @export var action_removal_fade_color: Color = Color(0.28, 0.28, 0.28, 0.0)
+
+@export_group("行动整体轮廓")
+## 是否启用“同一个意图看起来像一个整体”的视觉层。
+## 关闭后会退回到单格 Panel 的显示方式，方便你对比新旧效果。
+@export var action_group_visual_enabled: bool = true
+## 整体外轮廓宽度。数值越大，不同意图贴在一起时的分界越明显。
+@export var action_group_outline_width: float = 3.0
+## 整体外轮廓颜色。这里使用接近黑色但保留一点透明度，避免时间轴变得过重。
+@export var action_group_outline_color: Color = Color(0.03, 0.03, 0.03, 0.95)
+## 同一意图内部相邻格子的弱分割线宽度。设为 0 可以完全隐藏内部格线。
+@export var action_group_internal_seam_width: float = 1.0
+## 同一意图内部弱分割线颜色。默认很淡，只提示占了几个格子，不抢外轮廓的信息层级。
+@export var action_group_internal_seam_color: Color = Color(1.0, 1.0, 1.0, 0.14)
 
 @export_group("卡牌遮罩设置")
 @export var mask_color: Color = Color(0.75, 0.75, 0.75, 0.6)  # 浅灰色半透明遮罩
@@ -232,8 +246,49 @@ func _init_background_grid():
 		grid_cells[grid_pos] = slot
 
 
+## 将 action.shape_coords 转成 shape_container 内部使用的局部坐标。
+## TimelineAction 允许 shape 坐标里存在负值或不从 0 开始；容器已经按 min_x / min_y 放到了正确位置，
+## 因此绘制整体轮廓时只需要从左上角重新归一化，避免视觉层和 Panel 方格发生偏移。
+func _get_local_shape_coords(shape_coords: Array[Vector2i], min_x: int, min_y: int) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for coord in shape_coords:
+		result.append(Vector2i(coord.x - min_x, coord.y - min_y))
+	return result
+
+
+## 给单个 TimelineAction 容器添加整体视觉层。
+## BACKPLATE 放在方格下方，负责连接同意图内部空隙；OUTLINE 放在方格上方，负责外轮廓和淡内线。
+func _add_action_shape_visual(
+	shape_container: Control,
+	local_shape_coords: Array[Vector2i],
+	action_color: Color,
+	visual_mode: int
+) -> void:
+	if not is_instance_valid(shape_container) or local_shape_coords.is_empty():
+		return
+
+	var visual := TimelineActionShapeVisualScene.new() as TimelineActionShapeVisual
+	visual.name = "ActionBackplateVisual" if visual_mode == TimelineActionShapeVisual.VisualMode.BACKPLATE else "ActionOutlineVisual"
+	visual.size = shape_container.size
+	visual.custom_minimum_size = shape_container.size
+	visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visual.z_index = 20 if visual_mode == TimelineActionShapeVisual.VisualMode.OUTLINE else 0
+	visual.setup(
+		visual_mode,
+		local_shape_coords,
+		slot_size,
+		spacing,
+		action_color,
+		action_group_outline_color,
+		action_group_outline_width,
+		action_group_internal_seam_color,
+		action_group_internal_seam_width
+	)
+	shape_container.add_child(visual)
+
+
 # ==========================================
-# ★ UI 绘制 (需求 2: 独立方格且有黑色描边)
+# ★ UI 绘制：方格保留交互，整体轮廓负责表达同一意图的归属
 # ==========================================
 func _on_action_placed(action: TimelineAction):
 	var shape_container = Control.new()
@@ -270,16 +325,34 @@ func _on_action_placed(action: TimelineAction):
 		(action.origin_grid_pos.y + min_y) * cell_span_y
 	)
 
-	# 为所有方块设置统一的黑框样式
+	var local_shape_coords := _get_local_shape_coords(action.shape_coords, min_x, min_y)
+	if action_group_visual_enabled:
+		# 底板先于 Panel 加入，专门填补同一意图内部的 spacing 缝隙。
+		# 这样 "11"、"11,1" 等多格意图会先有一个连起来的整体色块。
+		_add_action_shape_visual(
+			shape_container,
+			local_shape_coords,
+			action.color,
+			TimelineActionShapeVisual.VisualMode.BACKPLATE
+		)
+
+	# 为所有方块设置统一样式。
+	# 强黑边改由整体轮廓层负责；单个 Panel 不再画黑框，避免内部相邻格被误读成不同意图。
 	var style = StyleBoxFlat.new()
 	style.bg_color = action.color
-	style.set_border_width_all(2)
-	style.border_color = Color.BLACK  # ★ 黑色描边
+	if action_group_visual_enabled:
+		style.set_border_width_all(0)
+		style.border_color = Color.TRANSPARENT
+	else:
+		style.set_border_width_all(2)
+		style.border_color = Color.BLACK
 
 	for offset in action.shape_coords:
 		var target_grid_pos = action.origin_grid_pos + offset
 		var block = Panel.new()
+		block.name = "ActionBlock_%s_%s" % [target_grid_pos.x, target_grid_pos.y]
 		block.add_theme_stylebox_override("panel", style)
+		block.size = Vector2(slot_size, slot_size)
 		block.custom_minimum_size = Vector2(slot_size, slot_size)
 
 		# 计算相对于 shape_container 左上角的局部像素位置
@@ -311,6 +384,16 @@ func _on_action_placed(action: TimelineAction):
 
 		# 添加放置动画：从透明逐渐变为action.color
 		_animate_block_placement(block, action.color)
+
+	if action_group_visual_enabled:
+		# 外轮廓最后加入，确保它压在方格和敌人意图 pulse overlay 之上。
+		# 它只画整个形状外侧，内部相邻边仅保留很淡的 seam，归属关系会更清楚。
+		_add_action_shape_visual(
+			shape_container,
+			local_shape_coords,
+			action.color,
+			TimelineActionShapeVisual.VisualMode.OUTLINE
+		)
 
 
 func _on_timeline_cleared():
@@ -459,7 +542,7 @@ func animate_enemy_intent_removal(action: TimelineAction) -> void:
 ## 通用时间占位移除动画。
 ## 设计重点：
 ## - 原 action 容器可能正处在 hover 放大、敌人意图 pulse shader、地图联动高亮等状态。
-## - 移除时先生成一份“纯 Panel + StyleBox”的残影，残影不复制任何 ShaderMaterial / Overlay。
+## - 移除时先生成一份“纯 Panel + 整体轮廓绘制层”的残影，残影不复制任何 ShaderMaterial / Overlay。
 ## - 原容器随后立刻禁用交互并 queue_free，避免正在播放的 shader 参与淡出动画或留下幽灵输入。
 func animate_action_removal(action: TimelineAction, reason: String = "") -> void:
 	if not is_instance_valid(action):
@@ -501,7 +584,8 @@ func animate_action_removal(action: TimelineAction, reason: String = "") -> void
 
 
 ## 根据当前 action 容器生成一份无 Shader、无 Overlay、无鼠标交互的视觉残影。
-## 残影只复制方块的几何位置和 StyleBox 颜色，不复制子节点材质，确保清除动画是干净的一版。
+## 残影复制方块几何、StyleBox 颜色和 TimelineActionShapeVisual 的纯绘制参数，
+## 但不复制任何子节点材质，确保清除动画是干净且仍保留“同一意图整体感”的一版。
 func _create_action_removal_ghost(source_container: Control, action_id: int, reason: String = "") -> Control:
 	if not is_instance_valid(source_container):
 		return null
@@ -525,6 +609,11 @@ func _create_action_removal_ghost(source_container: Control, action_id: int, rea
 	parent.move_child(ghost, parent.get_child_count() - 1)
 
 	for child in source_container.get_children():
+		if child is TimelineActionShapeVisual:
+			var source_visual := child as TimelineActionShapeVisual
+			ghost.add_child(source_visual.clone_visual())
+			continue
+
 		if not (child is Panel):
 			continue
 
