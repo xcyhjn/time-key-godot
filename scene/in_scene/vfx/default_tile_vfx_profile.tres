@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="TileVFXProfile" format=3 uid="uid://dta2hg88e1y3u"]
+
+[ext_resource type="Script" uid="uid://dxo120qqs4je7" path="res://scene/in_scene/vfx/tile_vfx_profile.gd" id="1_profile_script"]
+
+[resource]
+script = ExtResource("1_profile_script")
+window_size = Vector2(200, 200)

@@ -1,5 +1,5 @@
 # 功能: 时间轴回复命令，负责在结算 recover 类型卡牌效果时为目标地貌恢复生命值。
-# 核心逻辑: 遍历 EffectProcessor 注入的 target_tiles，先播放 HexMap 的回复特效，再调用实体 heal(amount)。
+# 核心逻辑: 遍历 EffectProcessor 注入的 target_tiles，触发 VFXManager 的 recover 地块特效，再调用实体 heal(amount)。
 class_name RecoverCommand
 extends EffectCommand
 
@@ -23,9 +23,7 @@ func execute(tree: SceneTree) -> void:
 		if not _can_recover_entity(entity):
 			continue
 
-		if hex_map.has_method("play_recover_effect_on_tile"):
-			hex_map.play_recover_effect_on_tile(tile)
-
+		VFXManager.play_tile_vfx(&"recover", tile, tree)
 		entity.heal(amount)
 		recovered_anyone = true
 

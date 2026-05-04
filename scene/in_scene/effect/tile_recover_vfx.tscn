@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://brd1wlymdpypu"]
 
-[ext_resource type="Script" uid="uid://c6dlc55uwbund" path="res://scene/in_scene/effect/tile_recover_vfx.gd" id="1_script"]
+[ext_resource type="Script" path="res://scene/in_scene/vfx/tile_sprite_vfx.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://dxu685momi8q7" path="res://image/effect/recover.png" id="2_texture"]
+[ext_resource type="Resource" path="res://scene/in_scene/vfx/default_tile_vfx_profile.tres" id="3_profile"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_12rbs"]
 atlas = ExtResource("2_texture")
@@ -53,16 +54,10 @@ animations = [{
 "speed": 6.0
 }]
 
-[node name="TileRecoverVFX" type="Node2D" unique_id=1338112974]
+[node name="RecoverTileVFX" type="Node2D" unique_id=1338112974]
 script = ExtResource("1_script")
 animation_name = &"recover"
-auto_free_on_finish = true
-force_non_loop = true
-playback_speed_scale = 1.0
-window_size = Vector2(128, 128)
-window_offset = Vector2(0, -20)
-stretch_to_window = true
-vfx_z_index = 3500
+profile = ExtResource("3_profile")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1291827332]
 sprite_frames = SubResource("SpriteFrames_recover")
