@@ -1,9 +1,11 @@
-﻿class_name DragShapeController
+class_name DragShapeController
 extends Node2D
 # 原文件名: DragShapeController(时间轴拖拽控制).gd
 # 功能: 时间轴拖拽控制
 ## 拖拽形状控制器
 ## 处理卡牌拖拽到时间轴的交互，包括旋转、网格吸附和放置验证
+
+const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
 
 # ==========================================
 # 信号
@@ -52,6 +54,7 @@ var current_card: Control = null  ## 当前拖拽的卡牌
 var current_shape_coords: Array[Vector2i] = []  ## 当前形状坐标
 var current_target_tile: Node = null  ## 暂存的目标地块
 var drag_offset: Vector2 = Vector2.ZERO  ## 鼠标相对于卡牌中心的偏移
+var is_timeline_clear_mode: bool = false  ## clear 类即时卡牌专用模式：借用时间轴选格，但不创建 TimelineAction
 
 # ==========================================
 # 节点引用
@@ -147,11 +150,16 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	is_dragging = true
 	current_card = card
 	current_target_tile = target_tile
+	is_timeline_clear_mode = TimelineClearEffectUtil.is_clear_card(card)
 
 	# ==========================================
 	# ★ 核心修复：优先读取卡牌已解析的标准坐标数组
 	# ==========================================
-	if _object_has_property(card, &"timeline_shape_coords") and card.timeline_shape_coords is Array and not card.timeline_shape_coords.is_empty():
+	if is_timeline_clear_mode:
+		# clear 卡牌的普通 shape 可以是 "0"，真正的时间轴作用范围写在 effects.value。
+		# 这里改读 clear 专用范围，让 wind.json 能显示并处理 11,11，而不进入普通时间轴占位规则。
+		current_shape_coords = TimelineClearEffectUtil.get_clear_shape_coords(card)
+	elif _object_has_property(card, &"timeline_shape_coords") and card.timeline_shape_coords is Array and not card.timeline_shape_coords.is_empty():
 		# 直接同步卡牌内部已经由优化系统计算出的坐标
 		current_shape_coords = card.timeline_shape_coords.duplicate()
 	else:
@@ -189,6 +197,19 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 
 	# 禁用网格单元格鼠标交互
 	_disable_grid_cells_mouse_filter()
+
+	if is_timeline_clear_mode:
+		# clear 是“手牌中静止、只借用时间轴选格”的即时效果。
+		# 这里提前返回，避免走下面普通卡牌的重挂父节点、缩放、拖拽 shader 和鼠标跟随逻辑。
+		if card.has_method("hide_timeline_shape"):
+			card.hide_timeline_shape()
+		if card.has_method("set_card_transparency"):
+			card.set_card_transparency(1.0)
+		# 卡牌视觉上仍停在手牌里，但当前输入焦点已经交给时间轴。
+		# 临时忽略卡牌自身点击，避免玩家再次点到这张牌时触发普通选中/取消逻辑造成抖动。
+		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		drag_offset = Vector2.ZERO
+		return
 
 	# ★ 无副本架构：直接操作原卡牌
 	# 1. 通知卡牌进入拖拽状态
@@ -304,29 +325,35 @@ func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 	# ★ 修复编译错误：声明未使用的变量（原网格吸附相关变量）
 	# 变量已移除，网格吸附功能已取消
 
-	# ★ 已修改：取消网格吸附，让卡牌直接跟随鼠标（根据用户要求）
-	# 计算卡牌中心的目标位置（鼠标位置减去偏移量，保持自由拖拽行为）
-	var target_center = mouse_pos - drag_offset
-	
-	# 将卡牌中心位置转换为左上角位置
-	var card_top_left = target_center
-	if current_card.has_method("get_size"):
-		var card_size = current_card.get_size()
-		var card_scale = current_card.scale
-		card_top_left -= card_size * card_scale / 2
-
-	
-	current_card.global_position = card_top_left
+	if not is_timeline_clear_mode:
+		# ★ 已修改：取消网格吸附，让卡牌直接跟随鼠标（根据用户要求）
+		# clear 模式不进入这里，卡牌必须停留在手牌原位，只更新时间轴预览。
+		var target_center = mouse_pos - drag_offset
+		var card_top_left = target_center
+		if current_card.has_method("get_size"):
+			var card_size = current_card.get_size()
+			var card_scale = current_card.scale
+			card_top_left -= card_size * card_scale / 2
+		current_card.global_position = card_top_left
 
 	# 更新着色器状态
 	var is_valid = true
-	if timeline_manager and is_in_grid_bounds:
+	var drag_visual_state: int = 0
+	if is_timeline_clear_mode:
+		var grid_width_for_clear = timeline_ui.grid_width if _object_has_property(timeline_ui, &"grid_width") else 12
+		var grid_height_for_clear = timeline_ui.grid_height if _object_has_property(timeline_ui, &"grid_height") else 3
+		is_valid = is_in_grid_bounds and TimelineClearEffectUtil.is_origin_in_bounds(current_shape_coords, hover_grid_pos, grid_width_for_clear, grid_height_for_clear)
+		if is_valid and TimelineClearEffectUtil.has_overlap(timeline_manager, current_shape_coords, hover_grid_pos):
+			drag_visual_state = 2
+	elif timeline_manager and is_in_grid_bounds:
 		is_valid = timeline_manager.is_placement_valid(current_shape_coords, hover_grid_pos)
 	else:
 		is_valid = false
+	drag_visual_state = 1 if not is_valid else drag_visual_state
 	
-	if current_card.material:
+	if current_card.material and not is_timeline_clear_mode:
 		current_card.material.set_shader_parameter("is_invalid", not is_valid)
+		current_card.material.set_shader_parameter("drag_visual_state", drag_visual_state)
 
 	# 发射悬停位置变化信号（用于时间轴可视化器）
 	hover_position_changed.emit(hover_grid_pos, is_valid)
@@ -405,6 +432,10 @@ func _deferred_position_tooltip() -> void:
 ## 更新时间轴网格预览
 func _update_timeline_grid_preview(grid_pos: Vector2i, is_valid: bool) -> void:
 	if not timeline_ui or not current_shape_coords:
+		return
+
+	if is_timeline_clear_mode:
+		TimelineClearEffectUtil.update_preview(timeline_ui, timeline_manager, current_shape_coords, grid_pos)
 		return
 	
 	# 检查timeline_ui是否有update_grid_preview方法
@@ -515,9 +546,14 @@ func _end_dragging() -> void:
 	if is_instance_valid(card_to_restore):
 		drag_ended.emit(card_to_restore, false)  # false表示未放置
 
-	# 清除时间轴网格预览
-	if timeline_ui and timeline_ui.has_method("clear_grid_preview"):
-		timeline_ui.clear_grid_preview()
+	# 清除时间轴网格预览。
+	# clear 类即时卡牌会额外生成一层覆盖在已有行动方格上方的蓝/绿/红预览，
+	# 因此这里统一走专用清理接口；普通卡牌仍然只清理原本的网格预览。
+	if timeline_ui:
+		if is_timeline_clear_mode:
+			TimelineClearEffectUtil.clear_preview(timeline_ui)
+		elif timeline_ui.has_method("clear_grid_preview"):
+			timeline_ui.clear_grid_preview()
 	
 	# 收起时间轴（优先使用collapse方法，确保遮罩隐藏）
 	if timeline_ui:
@@ -539,6 +575,9 @@ func _end_dragging() -> void:
 
 	# 卡牌返回手牌逻辑
 	if is_instance_valid(card_to_restore):
+		# clear 模式开始时会让卡牌忽略鼠标输入；任何取消/失败回手路径都在这里恢复。
+		card_to_restore.mouse_filter = Control.MOUSE_FILTER_STOP
+
 		# 停止卡牌上的所有动画
 		if card_to_restore.has_method("force_reset_visuals"):
 			card_to_restore.force_reset_visuals()
@@ -558,6 +597,7 @@ func _end_dragging() -> void:
 	current_target_tile = null
 	current_shape_coords = []
 	current_card = null
+	is_timeline_clear_mode = false
 
 
 ## 恢复鼠标过滤
@@ -634,6 +674,12 @@ func _get_health_bar_manager() -> Node:
 ## 处理自由拖拽逻辑（鼠标不在时间轴上时）
 ## 卡牌自由跟随鼠标移动，不受网格约束
 func _handle_free_drag(mouse_pos: Vector2) -> void:
+	if is_timeline_clear_mode and timeline_ui:
+		# clear 预览是即时效果的临时示意，鼠标离开时间轴后必须立刻清掉。
+		# 这里不能只调用 clear_grid_preview()，因为重叠绿色需要一层盖在已有行动上方的预览节点。
+		TimelineClearEffectUtil.clear_preview(timeline_ui)
+		return
+
 	# 计算卡牌中心的目标位置（保持鼠标相对于卡牌中心的偏移）
 	var target_center = mouse_pos - drag_offset
 	
@@ -648,6 +694,7 @@ func _handle_free_drag(mouse_pos: Vector2) -> void:
 	current_card.global_position = card_top_left
 	if current_card.material:
 		current_card.material.set_shader_parameter("is_invalid", false)
+		current_card.material.set_shader_parameter("drag_visual_state", 0)
 
 # ==========================================
 # 输入处理
@@ -762,7 +809,14 @@ func try_place_shape() -> void:
 		pass
 
 	# 验证并放置
-	if timeline_manager and timeline_manager.is_placement_valid(current_shape_coords, origin_pos):
+	if is_timeline_clear_mode:
+		var clear_grid_width = timeline_ui.grid_width if _object_has_property(timeline_ui, &"grid_width") else max_grid_x
+		var clear_grid_height = timeline_ui.grid_height if _object_has_property(timeline_ui, &"grid_height") else max_grid_y
+		if TimelineClearEffectUtil.is_origin_in_bounds(current_shape_coords, origin_pos, clear_grid_width, clear_grid_height):
+			_execute_timeline_clear(origin_pos)
+		else:
+			_play_reject_animation()
+	elif timeline_manager and timeline_manager.is_placement_valid(current_shape_coords, origin_pos):
 		_place_action(origin_pos)
 	else:
 		_play_reject_animation()
@@ -774,6 +828,25 @@ func _place_action(origin_pos: Vector2i) -> void:
 
 	# 播放放置动画，动画完成后会调用_finish_placement
 	_play_placement_animation(origin_pos)
+
+
+## 执行 clear 类即时卡牌。
+## 这个分支不会调用 timeline_manager.place_action()，因此不会留下新的时间轴占位。
+## 点击确认后先清除蓝/绿/红预览，再让 TimelineClearEffect 找出范围内已有行动并触发移除动画。
+func _execute_timeline_clear(origin_pos: Vector2i) -> void:
+	is_placing = true
+	_restore_mouse_filters()
+
+	if timeline_ui:
+		# clear 的蓝/绿/红示意格包含覆盖层，确认施放前先完整移除，
+		# 之后被命中的原有时间占位方格会各自播放渐隐下落动画。
+		TimelineClearEffectUtil.clear_preview(timeline_ui)
+	_clear_effect_preview()
+
+	TimelineClearEffectUtil.execute(origin_pos, current_shape_coords, timeline_manager, timeline_ui)
+	end_dragging_success()
+	is_timeline_clear_mode = false
+	is_placing = false
 
 
 ## 将普通数组转换为Vector2i数组
@@ -883,6 +956,7 @@ func _play_placement_animation(grid_pos: Vector2i) -> void:
 		# 移除无效状态着色器
 		if current_card.material:
 			current_card.material.set_shader_parameter("is_invalid", false)
+			current_card.material.set_shader_parameter("drag_visual_state", 0)
 
 	# 禁用地块容器和时间轴UI的鼠标交互，防止意外触发
 	var hex_map = _get_hex_map()
@@ -1105,12 +1179,18 @@ func _return_card_to_hand(card: Node) -> void:
 	current_target_tile = null
 	current_shape_coords = []
 	current_card = null
+	is_timeline_clear_mode = false
 
 
 ## 检查放置是否有效（公共方法，供时间轴可视化器调用）
 func _is_placement_valid(grid_pos: Vector2i) -> bool:
 	if not timeline_manager or current_shape_coords.is_empty():
 		return false
+
+	if is_timeline_clear_mode:
+		var grid_width = timeline_ui.grid_width if _object_has_property(timeline_ui, &"grid_width") else 12
+		var grid_height = timeline_ui.grid_height if _object_has_property(timeline_ui, &"grid_height") else 3
+		return TimelineClearEffectUtil.is_origin_in_bounds(current_shape_coords, grid_pos, grid_width, grid_height)
 
 	return timeline_manager.is_placement_valid(current_shape_coords, grid_pos)
 
@@ -1122,9 +1202,13 @@ func force_cancel_drag() -> void:
 		return
 	
 	
-	# 清除时间轴预览网格与高亮
-	if timeline_ui and timeline_ui.has_method("clear_grid_preview"):
-		timeline_ui.clear_grid_preview()
+	# 清除时间轴预览网格与高亮。
+	# clear 模式可能存在额外覆盖层，强制打断时也要一并清理。
+	if timeline_ui:
+		if is_timeline_clear_mode:
+			TimelineClearEffectUtil.clear_preview(timeline_ui)
+		elif timeline_ui.has_method("clear_grid_preview"):
+			timeline_ui.clear_grid_preview()
 	_clear_effect_preview()
 	
 	# 隐式调用内部清理逻辑，将卡牌移回手牌容器

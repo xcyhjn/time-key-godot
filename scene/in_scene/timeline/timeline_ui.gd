@@ -1,4 +1,4 @@
-﻿extends Control
+extends Control
 
 const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
 
@@ -34,6 +34,11 @@ const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent
 @export var enemy_intent_pulse_min_alpha: float = 0.15
 ## 时间轴敌人意图脉冲 shader 的最大透明度。
 @export var enemy_intent_pulse_max_alpha: float = 0.75
+## 时间占位方格因为丢失目标、意图失效等“非回合结算原因”被移除时的下落距离。
+## 这个动画只播放在新生成的无 Shader 残影上，原占位节点会先解除材质和鼠标互动。
+@export var action_removal_drop_distance: float = 14.0
+## 时间占位方格失效消失时的最终颜色。RGB 偏暗，Alpha 为 0，形成“变暗后淡出”的感觉。
+@export var action_removal_fade_color: Color = Color(0.28, 0.28, 0.28, 0.0)
 
 @export_group("卡牌遮罩设置")
 @export var mask_color: Color = Color(0.75, 0.75, 0.75, 0.6)  # 浅灰色半透明遮罩
@@ -446,7 +451,17 @@ func clear_enemy_intent_preview() -> void:
 
 
 ## 当敌人意图在回合中途失效时，播放“暗淡 -> 消失”动画并移除容器。
+## 旧接口保留给已有调用使用，内部转到通用的时间占位移除动画。
 func animate_enemy_intent_removal(action: TimelineAction) -> void:
+	animate_action_removal(action, "enemy_intent_invalid")
+
+
+## 通用时间占位移除动画。
+## 设计重点：
+## - 原 action 容器可能正处在 hover 放大、敌人意图 pulse shader、地图联动高亮等状态。
+## - 移除时先生成一份“纯 Panel + StyleBox”的残影，残影不复制任何 ShaderMaterial / Overlay。
+## - 原容器随后立刻禁用交互并 queue_free，避免正在播放的 shader 参与淡出动画或留下幽灵输入。
+func animate_action_removal(action: TimelineAction, reason: String = "") -> void:
 	if not is_instance_valid(action):
 		return
 
@@ -462,14 +477,90 @@ func animate_enemy_intent_removal(action: TimelineAction) -> void:
 	if current_enemy_intent_preview_action == action:
 		clear_enemy_intent_preview()
 
+	if hovered_action == action:
+		if timeline_manager and timeline_manager.has_signal("action_hovered_changed"):
+			timeline_manager.action_hovered_changed.emit(action, false)
+		hovered_action = null
+
+	var ghost = _create_action_removal_ghost(container, action_id, reason)
+	_strip_action_container_runtime_effects(container)
+	container.queue_free()
+	action_containers.erase(action_id)
+
+	if not is_instance_valid(ghost):
+		return
+
 	var tw = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tw.tween_property(container, "modulate", Color(0.35, 0.35, 0.35, 0.0), enemy_intent_removal_duration)
-	tw.parallel().tween_property(container, "scale", enemy_intent_removal_scale, enemy_intent_removal_duration)
+	tw.tween_property(ghost, "modulate", action_removal_fade_color, enemy_intent_removal_duration)
+	tw.parallel().tween_property(ghost, "position:y", ghost.position.y + action_removal_drop_distance, enemy_intent_removal_duration)
+	tw.parallel().tween_property(ghost, "scale", enemy_intent_removal_scale, enemy_intent_removal_duration)
 	tw.tween_callback(func():
-		if is_instance_valid(container):
-			container.queue_free()
-		action_containers.erase(action_id)
+		if is_instance_valid(ghost):
+			ghost.queue_free()
 	)
+
+
+## 根据当前 action 容器生成一份无 Shader、无 Overlay、无鼠标交互的视觉残影。
+## 残影只复制方块的几何位置和 StyleBox 颜色，不复制子节点材质，确保清除动画是干净的一版。
+func _create_action_removal_ghost(source_container: Control, action_id: int, reason: String = "") -> Control:
+	if not is_instance_valid(source_container):
+		return null
+
+	var parent = source_container.get_parent()
+	if parent == null:
+		return null
+
+	var ghost = Control.new()
+	ghost.name = "ActionRemovalGhost_%s" % action_id
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ghost.size = source_container.size
+	ghost.position = source_container.position
+	ghost.pivot_offset = source_container.pivot_offset
+	ghost.scale = Vector2.ONE
+	ghost.modulate = Color.WHITE
+	ghost.z_index = max(source_container.z_index, enemy_intent_preview_z_index + 1)
+	ghost.set_meta("action_id", action_id)
+	ghost.set_meta("removal_reason", reason)
+	parent.add_child(ghost)
+	parent.move_child(ghost, parent.get_child_count() - 1)
+
+	for child in source_container.get_children():
+		if not (child is Panel):
+			continue
+
+		var source_block := child as Panel
+		var ghost_block := Panel.new()
+		ghost_block.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ghost_block.position = source_block.position
+		ghost_block.size = source_block.size
+		ghost_block.custom_minimum_size = source_block.custom_minimum_size
+		ghost_block.pivot_offset = source_block.pivot_offset
+		ghost_block.scale = source_block.scale
+		ghost_block.rotation = source_block.rotation
+
+		var source_style = source_block.get_theme_stylebox("panel")
+		if source_style != null:
+			ghost_block.add_theme_stylebox_override("panel", source_style.duplicate())
+
+		ghost.add_child(ghost_block)
+
+	return ghost
+
+
+## 递归卸载 action 容器上的运行时表现：
+## - 清掉 CanvasItem.material，避免 pulse / hover shader 继续参与渲染；
+## - 关闭 EnemyIntentOverlay，避免残留发光层；
+## - 禁用鼠标输入，避免移除中的节点继续触发 hover。
+func _strip_action_container_runtime_effects(node: Node) -> void:
+	if node is CanvasItem:
+		(node as CanvasItem).material = null
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if node is ColorRect and node.name == "EnemyIntentOverlay":
+		(node as ColorRect).visible = false
+
+	for child in node.get_children():
+		_strip_action_container_runtime_effects(child)
 
 
 ## 对同一个敌人意图容器中的所有格子 overlay 统一设置显示状态与脉冲颜色。

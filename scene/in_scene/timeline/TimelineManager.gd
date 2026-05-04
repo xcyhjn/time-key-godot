@@ -1,4 +1,4 @@
-﻿class_name TimelineManager
+class_name TimelineManager
 extends Node
 
 # 时间轴网格使用0-based索引系统（与GDScript数组索引一致）
@@ -337,15 +337,33 @@ func revalidate_enemy_intents(hex_map: battle, timeline_ui: Control = null) -> v
 		return
 
 	for action in invalid_actions:
-		if timeline_ui and timeline_ui.has_method("animate_enemy_intent_removal"):
+		remove_action_with_fade(action, timeline_ui, "enemy_intent_invalid")
+
+
+## 从时间轴中移除某个行动，并让 UI 播放“变暗、透明、轻微下落”的失效动画。
+## 这个接口专门用于回合结算以外的中途移除，例如：
+## - 敌人意图丢失目标
+## - 释放者死亡或意图接口关闭
+## - 后续卡牌效果主动打消某个时间占位
+##
+## 注意：回合结束 resolve_timeline() 的正常结算路径不走这里，避免破坏原本从左到右的结算节奏。
+func remove_action_with_fade(action: TimelineAction, timeline_ui: Control = null, reason: String = "") -> void:
+	if not is_instance_valid(action):
+		return
+
+	if timeline_ui != null:
+		if timeline_ui.has_method("animate_action_removal"):
+			timeline_ui.animate_action_removal(action, reason)
+		elif timeline_ui.has_method("animate_enemy_intent_removal"):
 			timeline_ui.animate_enemy_intent_removal(action)
 
-		for coord in action.get_absolute_coords():
+	for coord in action.get_absolute_coords():
+		if grid.get(coord) == action:
 			grid.erase(coord)
 
-		if hovered_action == action:
-			action_hovered_changed.emit(action, false)
-			hovered_action = null
+	if hovered_action == action:
+		action_hovered_changed.emit(action, false)
+		hovered_action = null
 
 
 func _on_block_hovered(action: TimelineAction):

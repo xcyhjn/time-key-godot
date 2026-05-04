@@ -6,6 +6,8 @@ extends Node2D
 
 class_name TimelineVisualizer
 
+const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
+
 @export_group("预览设置")
 @export var preview_block_size: float = 40.0  # 预览方块大小
 @export var preview_block_spacing: float = 2.0  # 预览方块间距
@@ -255,6 +257,13 @@ func connect_to_drag_controller() -> void:
 
 ## 拖拽开始回调
 func _on_drag_started(card: Control, shape_coords: Array[Vector2i]) -> void:
+	if TimelineClearEffectUtil.is_clear_card(card):
+		# clear 类即时卡牌已经由 TimelineClearEffect 在 TimelineUI 上绘制专用预览：
+		# 空格蓝色、重叠格绿色、越界红色。这里的旧通用预览只能整体变色，
+		# 如果继续显示会和 clear 的逐格语义冲突，所以直接关闭并退出。
+		hide_shape_preview()
+		return
+
 	show_shape_preview(shape_coords)
 
 

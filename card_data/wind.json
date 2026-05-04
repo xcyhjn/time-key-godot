@@ -1,0 +1,12 @@
+{
+	"name": "wind",
+	"front_image": "wind.png",
+	"效果" : "清除2x2的时间轴方格",
+    "effects": [
+	{ "type": "clear", "value": "11,11" }
+  ],
+"effect_range": ["0,0"],
+	"shape": "0",
+	"时代" : "1",
+	"id" : "4"
+   }

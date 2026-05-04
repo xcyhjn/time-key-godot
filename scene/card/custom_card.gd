@@ -1,7 +1,9 @@
-﻿# 原文件名: custom_card(卡牌模板).gd
+# 原文件名: custom_card(卡牌模板).gd
 # 功能: 卡牌模板
 class_name CustomCard
 extends Card  # 直接继承插件自带的 Card 类，白嫖它所有底层功能！
+
+const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
@@ -222,11 +224,17 @@ func toggle_selection() -> void:
 			tw.tween_property(self, "scale", card_original_scale * 1.1, 0.2)
 
 			# 选中待选地块阶段不再给卡牌加蒙版，只有进入时间占位拖拽阶段才半透明。
-			show_timeline_shape()
+			_refresh_timeline_shape_visibility()
 			set_card_transparency(1.0)
 
 			# 更新地块的条件效果（选中卡牌时）
 			_update_map_conditional_effects()
+
+			# clear 类卡牌不需要地图目标。
+			# 选中后延迟一帧直接进入时间轴放置状态，相当于“目标为空但判定合法”的专用打出路径；
+			# 这样不会伪造一次地图点击，也不会触发正常目标地块 AOE 高亮。
+			if TimelineClearEffectUtil.is_clear_card(self):
+				call_deferred("_play_no_target_timeline_card")
 
 func force_deselect() -> void:
 	is_selected = false
@@ -236,10 +244,7 @@ func force_deselect() -> void:
 		cm.deselect_card()  
 
 	# ★ 核心修复：不要无条件隐藏！根据卡牌设定来决定
-	if show_time_block_in_hand:
-		show_timeline_shape()
-	else:
-		hide_timeline_shape()
+	_refresh_timeline_shape_visibility()
 		
 	set_card_transparency(1.0)  # 恢复完全不透明
 	material = original_material
@@ -286,8 +291,7 @@ func setup_card_data() -> void:
 	var raw_range = card_info.get("effect_range", 0) 
 	_parse_hex_effect_range(raw_range)
 	# 显示时间占位图片（如果启用手牌显示）
-	if show_time_block_in_hand:
-		show_timeline_shape()
+	_refresh_timeline_shape_visibility()
 
 # ==========================================
 # ★ 核心矩阵解析与归一化方法
@@ -431,6 +435,11 @@ func _load_timeline_shape_texture() -> void:
 func show_timeline_shape() -> void:
 	if not time_block_sprite:
 		return
+	if TimelineClearEffectUtil.is_clear_card(self):
+		# clear 卡的普通 shape 是空占位，真正范围在时间轴上用 11,11 预览；
+		# 卡面本身不显示 TimeBlock，避免玩家误解为普通单格占位卡。
+		hide_timeline_shape()
+		return
 	
 	# 确保图片已加载
 	_load_timeline_shape_texture()
@@ -505,6 +514,16 @@ func show_timeline_shape() -> void:
 func hide_timeline_shape() -> void:
 	if time_block_sprite:
 		time_block_sprite.visible = false
+
+
+## 根据卡牌类型刷新卡面时间占位显示。
+## 普通卡牌继续遵守 show_time_block_in_hand；clear 类即时卡牌的 shape 字段可以是 "0"，
+## 它的真实 11,11 范围只在时间轴上显示，所以卡面不生成任何时间占位方格。
+func _refresh_timeline_shape_visibility() -> void:
+	if show_time_block_in_hand and not TimelineClearEffectUtil.is_clear_card(self):
+		show_timeline_shape()
+	else:
+		hide_timeline_shape()
 
 
 ## 获取时间占位图片位置（供DragShapeController使用）
@@ -688,10 +707,7 @@ func force_reset_visuals() -> void:
 	set_card_transparency(1.0)
 	# ★ 核心修复：当卡牌洗切、抽卡回手时，框架会调用这个重置函数
 	# 我们在这里事件驱动地重新唤醒时间占位图片，0性能损耗！
-	if show_time_block_in_hand:
-		show_timeline_shape()
-	else:
-		hide_timeline_shape()
+	_refresh_timeline_shape_visibility()
 
 func _on_gui_input(event: InputEvent):
 	# ★ 核心修复 2：拖拽期间禁止卡牌响应任何鼠标点击！
@@ -746,6 +762,18 @@ func play_card(target_hex: Area2D):
 		drag_controller.start_dragging(self, target_hex)
 	else:
 		apply_effect_immediate(target_hex)
+
+
+## clear 类即时卡牌专用入口。
+## 它只负责把卡牌移交给 DragShapeController，真正的时间轴蓝/绿/红预览和清除逻辑
+## 都集中在 TimelineClearEffect.gd 与 DragShapeController 的 clear 分支中。
+func _play_no_target_timeline_card() -> void:
+	if not TimelineClearEffectUtil.is_clear_card(self):
+		return
+	if card_current_state != CustomCardState.SELECTED:
+		return
+
+	play_card(null)
 
 # (仅作兜底或无时间轴卡牌使用)
 func apply_effect_immediate(target_hex: Area2D):
