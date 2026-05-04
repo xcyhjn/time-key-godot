@@ -167,8 +167,8 @@ func _ready() -> void:
 				timeline_manager.action_executed.connect(effect_processor.execute_action)
 	
 	# ★ 游戏开始时生成敌人意图（第一次生成敌人时）
-	# 延迟一帧调用，确保所有敌人都已初始化并添加到Enemies组
-	call_deferred("_generate_initial_enemy_intents")
+	# 如果 HexMap 正在播放入场涟漪，等地块和血条都露出后再部署时间轴意图。
+	_schedule_initial_enemy_intents()
 	
 	# ★ 增强光标提示框样式，模仿卡牌文本框
 	call_deferred("_enhance_cursor_tooltip")
@@ -310,6 +310,20 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 
 ## 游戏开始时生成初始敌人意图
 ## 确保在第一次生成敌人时也在时间轴上部署意图
+func _schedule_initial_enemy_intents() -> void:
+	if (
+		is_instance_valid(hex_map)
+		and hex_map.has_signal("map_intro_reveal_finished")
+		and hex_map.has_method("is_map_intro_reveal_active")
+		and hex_map.is_map_intro_reveal_active()
+	):
+		if not hex_map.map_intro_reveal_finished.is_connected(_generate_initial_enemy_intents):
+			hex_map.map_intro_reveal_finished.connect(_generate_initial_enemy_intents)
+		return
+
+	call_deferred("_generate_initial_enemy_intents")
+
+
 func _generate_initial_enemy_intents() -> void:
 	if not is_instance_valid(timeline_manager):
 		return

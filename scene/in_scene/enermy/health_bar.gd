@@ -1,4 +1,6 @@
-﻿extends Node2D
+﻿# 功能: 单体血条管理器，监听 HexMap.CreateBar 并为地貌/敌人生成对应血条。
+# 核心逻辑: Create_Blood_Bar 负责实例化血条、绑定生命值信号，并在地图入场动画期间把请求交给 HexMap 延后处理。
+extends Node2D
 class_name BarManager
 
 var HealthBar : Array[PackedScene] = [
@@ -22,6 +24,9 @@ func _ready() -> void:
 		parent.CreateBar.connect(Create_Blood_Bar)
 
 func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : float):
+	if _try_defer_for_map_intro(landform_in, situation, x, y):
+		return
+
 	print(str(landform_in.position) + ": 接受信号，制作血条中……")
 	
 	if HealthBar != null and situation < HealthBar.size():
@@ -82,6 +87,23 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 			landform_in.owner_battle.call_deferred("register_extra_render_node", landform_in.location, HealthBuffer)
 		
 		landform_in.tree_exited.connect(HealthBuffer.queue_free)
+
+
+## 地图初始涟漪入场期间不立刻生成血条，避免 UI 先于地块出现。
+## 返回 true 表示本次请求已被 HexMap 缓存，动画完成后会重新调用 Create_Blood_Bar。
+func _try_defer_for_map_intro(landform_in: landform, situation: int, x: float, y: float) -> bool:
+	var parent = get_parent()
+	if not is_instance_valid(parent):
+		return false
+	if not parent.has_method("should_defer_intro_health_bars"):
+		return false
+	if not parent.should_defer_intro_health_bars():
+		return false
+	if not parent.has_method("queue_intro_health_bar_request"):
+		return false
+
+	parent.queue_intro_health_bar_request(landform_in, situation, x, y)
+	return true
 
 
 ## 统一显示/隐藏所有单体血条。

@@ -1,4 +1,6 @@
-﻿class_name TotalEnemyHealthBar
+﻿# 功能: 敌方总血量 UI，汇总当前地图上所有敌方地貌的生命值。
+# 核心逻辑: rebuild_tracking 负责重新收集敌人并绑定血量信号；地图入场动画期间会延后初次刷新和显示。
+class_name TotalEnemyHealthBar
 extends Node2D
 
 const HEALTHBAR_TEXTURE: Texture2D = preload("res://image/UI_Healthbar.png")
@@ -35,7 +37,12 @@ func _ready() -> void:
 	_build_ui()
 	_resolve_hex_map()
 	_connect_viewport_resize()
-	call_deferred("rebuild_tracking")
+	if _should_wait_for_map_intro_reveal():
+		hide()
+		if not hex_map.map_intro_reveal_finished.is_connected(_on_map_intro_reveal_finished):
+			hex_map.map_intro_reveal_finished.connect(_on_map_intro_reveal_finished)
+	else:
+		call_deferred("rebuild_tracking")
 
 
 func _build_ui() -> void:
@@ -140,6 +147,21 @@ func _resolve_hex_map() -> void:
 	if Signal_Bus and Signal_Bus.has_signal("damage_dealt"):
 		if not Signal_Bus.damage_dealt.is_connected(_on_damage_dealt):
 			Signal_Bus.damage_dealt.connect(_on_damage_dealt)
+
+
+## 初次进入局内时，等待 HexMap 的地块涟漪入场完成后再显示/刷新总血量。
+func _should_wait_for_map_intro_reveal() -> bool:
+	return (
+		is_instance_valid(hex_map)
+		and hex_map.has_signal("map_intro_reveal_finished")
+		and hex_map.has_method("is_map_intro_reveal_active")
+		and hex_map.is_map_intro_reveal_active()
+	)
+
+
+func _on_map_intro_reveal_finished() -> void:
+	show()
+	rebuild_tracking()
 
 
 func rebuild_tracking() -> void:
