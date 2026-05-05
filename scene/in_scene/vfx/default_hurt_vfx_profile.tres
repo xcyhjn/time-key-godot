@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HurtVFXProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scene/in_scene/vfx/hurt_vfx_profile.gd" id="1_profile_script"]
+
+[resource]
+script = ExtResource("1_profile_script")
+hurt_color = Color(0.95, 0.08, 0.05, 1)
+hurt_color_blend = 0.75
+darken_factor = 0.55
+shake_distance = 10.0
+shake_count = 3
+shake_step_duration = 0.035
+recover_duration = 0.12
+use_global_anim_speed = true

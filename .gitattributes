@@ -6,3 +6,5 @@ scene/card/custom_card.gd text eol=crlf
 scene/in_scene/DragShapeController.gd text eol=crlf
 scene/in_scene/timeline/timeline_ui.gd text eol=crlf
 scene/in_scene/timeline/TimelineManager.gd text eol=crlf
+scene/in_scene/timeline/commands/DamageCommand.gd text eol=crlf
+scene/in_scene/vfx/VFXManager.gd text eol=crlf

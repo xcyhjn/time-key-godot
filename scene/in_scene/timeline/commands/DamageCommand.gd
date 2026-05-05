@@ -1,4 +1,4 @@
-﻿# ==========================================
+# ==========================================
 # 脚本名称: DamageCommand.gd
 # 功能概述: 具体的伤害执行命令，负责寻址、存活校验、特效播放与实际扣血。
 # ------------------------------------------
@@ -32,12 +32,11 @@ func execute(tree: SceneTree) -> void:
 		
 		if is_instance_valid(entity) and entity.has_method("take_damage"):
 			if entity.get("HP") != null and entity.HP > 0:
+				VFXManager.play_hurt_vfx(entity, tree)
 				entity.take_damage(amount)
 				if Signal_Bus and Signal_Bus.has_method("emit_damage_dealt"):
 					Signal_Bus.emit_damage_dealt(entity, amount)
 				
-				# 每个受伤的目标身上并行播放特效
-				# VFXManager.play_vfx("slash", tile.global_position, tree)
 				hit_anyone = true
 	
 	# 如果范围内有敌人挨打了，稍微顿帧一下增加打击感

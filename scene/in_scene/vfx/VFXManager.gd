@@ -1,4 +1,4 @@
-﻿# ==========================================
+# ==========================================
 # 脚本名称: VFXManager.gd
 # 功能概述: 全局特效与动画表现管理器，实现逻辑计算与视觉表现的彻底解耦。
 # ------------------------------------------
@@ -17,6 +17,10 @@ class_name VFXManager
 extends Node
 
 const DEFAULT_TILE_VFX_REGISTRY: TileVFXRegistry = preload("res://scene/in_scene/vfx/default_tile_vfx_registry.tres")
+const DEFAULT_HURT_VFX_PROFILE: HurtVFXProfile = preload("res://scene/in_scene/vfx/default_hurt_vfx_profile.tres")
+const HURT_VFX_TWEEN_META: StringName = &"_hurt_vfx_tween"
+const HURT_VFX_POSITION_META: StringName = &"_hurt_vfx_original_position"
+const HURT_VFX_MODULATE_META: StringName = &"_hurt_vfx_original_modulate"
 
 ## 播放特效并阻塞，直到特效播放完成
 static func play_vfx(vfx_name: String, target_pos: Vector2, tree: SceneTree) -> void:
@@ -34,6 +38,110 @@ static func play_vfx(vfx_name: String, target_pos: Vector2, tree: SceneTree) -> 
 # ==========================================
 # ★ 地形专用动画管理
 # ==========================================
+
+## 播放通用受伤反馈：目标图标变暗变红并左右抖动，播放完成后恢复原始状态。
+## 说明:
+## - 优先使用 landform.tex，也兼容直接传入 Sprite2D/Node2D。
+## - 不创建持久节点；动画结束时会恢复 modulate 和 position，避免残留。
+static func play_hurt_vfx(target: Node, tree: SceneTree, profile: HurtVFXProfile = null) -> Tween:
+	var sprite: Node2D = _resolve_hurt_vfx_target(target)
+	if not is_instance_valid(sprite) or not is_instance_valid(tree):
+		return null
+
+	var active_profile: HurtVFXProfile = profile if profile != null else DEFAULT_HURT_VFX_PROFILE
+	var speed_scale: float = _get_vfx_time_scale(active_profile.use_global_anim_speed)
+	_clear_hurt_vfx_target(sprite)
+
+	var original_position: Vector2 = sprite.position
+	var original_modulate: Color = sprite.modulate
+	var hurt_modulate: Color = _build_hurt_modulate(original_modulate, active_profile)
+
+	sprite.set_meta(HURT_VFX_POSITION_META, original_position)
+	sprite.set_meta(HURT_VFX_MODULATE_META, original_modulate)
+
+	var tw: Tween = tree.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	sprite.set_meta(HURT_VFX_TWEEN_META, tw)
+	tw.tween_property(sprite, "modulate", hurt_modulate, active_profile.shake_step_duration * speed_scale)
+	for i in range(active_profile.shake_count):
+		var direction: float = 1.0 if i % 2 == 0 else -1.0
+		tw.tween_property(sprite, "position:x", original_position.x + active_profile.shake_distance * direction, active_profile.shake_step_duration * speed_scale)
+		tw.tween_property(sprite, "position:x", original_position.x - active_profile.shake_distance * direction, active_profile.shake_step_duration * speed_scale)
+
+	tw.tween_property(sprite, "position", original_position, active_profile.shake_step_duration * speed_scale)
+	tw.parallel().tween_property(sprite, "modulate", original_modulate, active_profile.recover_duration * speed_scale)
+	tw.finished.connect(_finish_hurt_vfx_target.bind(sprite), CONNECT_ONE_SHOT)
+	return tw
+
+
+static func _resolve_hurt_vfx_target(target: Node) -> Node2D:
+	if not is_instance_valid(target):
+		return null
+	if target is Sprite2D:
+		return target as Sprite2D
+
+	var texture_node: Variant = target.get("tex")
+	if is_instance_valid(texture_node) and texture_node is Node2D:
+		return texture_node as Node2D
+
+	if target is Node2D:
+		return target as Node2D
+	return null
+
+
+static func _build_hurt_modulate(original_modulate: Color, profile: HurtVFXProfile) -> Color:
+	var darkened: Color = Color(
+		original_modulate.r * profile.darken_factor,
+		original_modulate.g * profile.darken_factor,
+		original_modulate.b * profile.darken_factor,
+		original_modulate.a
+	)
+	var hurt_color: Color = profile.hurt_color
+	hurt_color.a = original_modulate.a
+	return darkened.lerp(hurt_color, profile.hurt_color_blend)
+
+
+static func _restore_hurt_vfx_target(target: Node2D, original_position: Vector2, original_modulate: Color) -> void:
+	if not is_instance_valid(target):
+		return
+	target.position = original_position
+	target.modulate = original_modulate
+
+
+static func _finish_hurt_vfx_target(target: Node2D) -> void:
+	if not is_instance_valid(target):
+		return
+
+	var original_position: Vector2 = target.get_meta(HURT_VFX_POSITION_META, target.position)
+	var original_modulate: Color = target.get_meta(HURT_VFX_MODULATE_META, target.modulate)
+	_restore_hurt_vfx_target(target, original_position, original_modulate)
+	target.remove_meta(HURT_VFX_TWEEN_META)
+	target.remove_meta(HURT_VFX_POSITION_META)
+	target.remove_meta(HURT_VFX_MODULATE_META)
+
+
+static func _clear_hurt_vfx_target(target: Node2D) -> void:
+	if not is_instance_valid(target):
+		return
+
+	var old_tween: Variant = target.get_meta(HURT_VFX_TWEEN_META, null)
+	var original_position: Vector2 = target.get_meta(HURT_VFX_POSITION_META, target.position)
+	var original_modulate: Color = target.get_meta(HURT_VFX_MODULATE_META, target.modulate)
+	if old_tween is Tween and is_instance_valid(old_tween):
+		old_tween.kill()
+
+	_restore_hurt_vfx_target(target, original_position, original_modulate)
+	if target.has_meta(HURT_VFX_TWEEN_META):
+		target.remove_meta(HURT_VFX_TWEEN_META)
+	if target.has_meta(HURT_VFX_POSITION_META):
+		target.remove_meta(HURT_VFX_POSITION_META)
+	if target.has_meta(HURT_VFX_MODULATE_META):
+		target.remove_meta(HURT_VFX_MODULATE_META)
+
+
+static func _get_vfx_time_scale(use_global_anim_speed: bool) -> float:
+	if use_global_anim_speed and Global and Global.has_method("get_anim_speed"):
+		return maxf(float(Global.get_anim_speed()), 0.01)
+	return 1.0
 
 ## 播放挂在地块 stack 下的通用序列帧特效。
 ## 说明:
