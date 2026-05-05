@@ -74,6 +74,9 @@ var sheild : int = 0
 @export_group("时间占位系统")
 @export var timeline_shape_key: String = "1"         # 原始输入的字符串（如 "011"）
 @export var timeline_shape_size: Vector2i = Vector2i(1, 1)  # ★ 必须是 Vector2i
+## 敌人意图生成优先级。数值越高，TimelineManager 越先尝试把该单位的意图放进时间轴。
+## 具体敌人只需要在自己的脚本或检查器里改这个变量，不需要改 TimelineManager。
+@export var intent_priority: int = 0
 var timeline_shape_coords: Array[Vector2i] = []             # ★ 必须是 Vector2i
 var _last_parsed_shape_key: String = ""
 
@@ -318,6 +321,12 @@ func get_intent_target_affiliation() -> String:
 ## 默认 false
 func does_intent_include_self(_hex_map: battle) -> bool:
 	return false
+
+
+## 返回当前单位的时间轴意图优先级。
+## 独立成函数是为了给特殊敌人保留动态优先级入口，例如血量越低优先级越高。
+func get_intent_priority() -> int:
+	return intent_priority
 
 func set_battle(battle_in : battle):
 	owner_battle = battle_in

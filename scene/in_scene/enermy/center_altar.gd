@@ -18,6 +18,8 @@ func _init(location_in : Vector2,battle_in):
 	false,
 	battle_in)
 	Attitude = Attitude_Pool.Enemy
+	# 中心祭坛的扩张意图需要最高调度权，确保它先于普通敌人占用时间轴。
+	intent_priority = 999
 	settlement_reward_type = "shop"
 	settlement_reward_label = "商店"
 	willing_pool = {Only_will : Only_Done}

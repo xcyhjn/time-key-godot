@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 # 预加载资源
 var hand_scene = load("res://addons/card-framework/hand.tscn")
@@ -71,6 +71,7 @@ var drop_area = 4.0 / 7.0
 @onready var start_turn_button = $"../StartTurnButton"
 @onready var end_turn_button = $"../EndTurnButton"
 @onready var end_combat_button = $"../EndCombatButton"  # 根据你的实际路径修改
+@onready var debug_timecoin_button: Button = $"../DebugTimecoinButton"
 @onready var cursor_tooltip = $"../CursorTooltip"  # 指向刚才创建的 Label
 var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
 @onready var timeline_ui = $"../TimelineUI"  # 根据你的实际路径修改
@@ -104,6 +105,23 @@ var card_tooltip_presenter: CardTooltipPresenter = null
 ## 默认关闭，让玩家从建筑 tooltip 进入奖励；需要调试奖励页时可以在检查器里打开。
 @export var show_settlement_debug_buttons: bool = false
 
+@export_group("时间币调试")
+## 是否显示并启用局内时间币加速按钮。
+## 关闭后按钮会隐藏，正在运行的调试循环也会被停止。
+@export var enable_timecoin_debug_button: bool = true
+## 每次调试跳动增加的时间币数量。保持为正数，避免误触发 GlobalTimecoin 的参数保护。
+@export_range(1, 999, 1, "or_greater") var debug_timecoin_tick_amount: int = 3
+## 调试循环刚启动时的跳动间隔，数值越大越慢。
+@export_range(0.01, 5.0, 0.01, "or_greater") var debug_timecoin_start_interval: float = 0.5
+## 调试循环加速后的最短跳动间隔，防止过快刷屏或让 UI 动画完全看不清。
+@export_range(0.01, 5.0, 0.01, "or_greater") var debug_timecoin_min_interval: float = 0.05
+## 每次跳动后把间隔乘上该值。小于 1 会逐渐加速，越小加速越明显。
+@export_range(0.1, 1.0, 0.01) var debug_timecoin_interval_multiplier: float = 0.9
+## 调试按钮在暂停状态下显示的文字。
+@export var debug_timecoin_idle_text: String = "时间币调试"
+## 调试按钮在运行状态下显示的文字。
+@export var debug_timecoin_running_text: String = "暂停时间币"
+
 ## 记录进入局内时携带的外部数据。
 ## 目前主要用于保留 battle_normal / battle_elite / boss_stage 这类来源标签，
 ## 让回到局外时仍然能带回基础上下文。
@@ -111,6 +129,11 @@ var incoming_external_payload: Variant = null
 var incoming_battle_tag: String = ""
 var incoming_map_seed: String = ""
 var active_settlement_reward_context: Dictionary = {}
+
+## 时间币调试循环状态。
+## generation 用来让旧的 await 循环在按钮暂停、场景切换后自然失效，避免重复加币。
+var _debug_timecoin_running: bool = false
+var _debug_timecoin_generation: int = 0
 
 
 func _ready() -> void:
@@ -139,6 +162,7 @@ func _ready() -> void:
 
 	# 2. ★ 新增：构建并初始化词条 UI (杀戮尖塔风格)
 	setup_tooltip_ui()
+	setup_timecoin_debug_button()
 
 	# 3. 初始化卡牌系统
 	setup_card_system()
@@ -196,6 +220,77 @@ func _ready() -> void:
 		if not hex_map.settlement_reward_requested.is_connected(_on_settlement_reward_requested):
 			hex_map.settlement_reward_requested.connect(_on_settlement_reward_requested)
 	
+
+## 初始化局内时间币调试按钮。
+## 这个按钮只负责开启/暂停调试循环；真正的数值变化仍通过 GlobalTimecoin.add_timecoins，
+## 因此 UI、SignalBus、MapState 的既有更新链路都会被完整触发。
+func setup_timecoin_debug_button() -> void:
+	if not is_instance_valid(debug_timecoin_button):
+		return
+
+	debug_timecoin_button.visible = enable_timecoin_debug_button
+	debug_timecoin_button.text = debug_timecoin_idle_text
+	debug_timecoin_button.disabled = not enable_timecoin_debug_button
+
+	if debug_timecoin_button.pressed.is_connected(_on_debug_timecoin_button_pressed):
+		debug_timecoin_button.pressed.disconnect(_on_debug_timecoin_button_pressed)
+	debug_timecoin_button.pressed.connect(_on_debug_timecoin_button_pressed)
+
+	if not enable_timecoin_debug_button:
+		_stop_debug_timecoin_loop()
+
+
+## 点击后切换调试循环状态：第一次点击开始从慢到快加币，再次点击暂停。
+func _on_debug_timecoin_button_pressed() -> void:
+	if not enable_timecoin_debug_button:
+		_stop_debug_timecoin_loop()
+		return
+
+	if _debug_timecoin_running:
+		_stop_debug_timecoin_loop()
+	else:
+		_start_debug_timecoin_loop()
+
+
+func _start_debug_timecoin_loop() -> void:
+	_debug_timecoin_generation += 1
+	_debug_timecoin_running = true
+	if is_instance_valid(debug_timecoin_button):
+		debug_timecoin_button.text = debug_timecoin_running_text
+
+	_run_debug_timecoin_loop(_debug_timecoin_generation)
+
+
+func _stop_debug_timecoin_loop() -> void:
+	_debug_timecoin_generation += 1
+	_debug_timecoin_running = false
+	if is_instance_valid(debug_timecoin_button):
+		debug_timecoin_button.text = debug_timecoin_idle_text
+
+
+## 时间币调试循环。
+## 每次跳动后缩短等待间隔，形成“越跳越快”的调试节奏。
+func _run_debug_timecoin_loop(generation: int) -> void:
+	var interval: float = maxf(debug_timecoin_start_interval, debug_timecoin_min_interval)
+	var min_interval: float = maxf(debug_timecoin_min_interval, 0.01)
+	var multiplier: float = clampf(debug_timecoin_interval_multiplier, 0.1, 1.0)
+	var tick_amount: int = maxi(debug_timecoin_tick_amount, 1)
+
+	while (
+		_debug_timecoin_running
+		and generation == _debug_timecoin_generation
+		and is_inside_tree()
+	):
+		if GlobalTimecoin and GlobalTimecoin.has_method("add_timecoins"):
+			GlobalTimecoin.add_timecoins(tick_amount)
+		else:
+			push_warning("时间币调试失败：未找到 GlobalTimecoin.add_timecoins")
+			_stop_debug_timecoin_loop()
+			return
+
+		await get_tree().create_timer(interval).timeout
+		interval = maxf(min_interval, interval * multiplier)
+
 
 func _connect_global_clock_progress_signal() -> void:
 	if GlobalClock and GlobalClock.has_signal("progress_changed"):

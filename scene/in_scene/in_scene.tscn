@@ -304,11 +304,20 @@ offset_bottom = 76.0
 text = "商店"
 
 [node name="HeightViewToggleButton" type="Button" parent="ui" unique_id=1242454706]
-offset_left = 1349.0
-offset_top = 264.0
-offset_right = 1462.0
-offset_bottom = 316.0
+offset_left = 1509.0
+offset_top = 948.0
+offset_right = 1622.0
+offset_bottom = 1000.0
 text = "视角切换"
+
+[node name="DebugTimecoinButton" type="Button" parent="ui" unique_id=1262454271]
+offset_left = 1489.0
+offset_top = 884.0
+offset_right = 1634.0
+offset_bottom = 922.0
+theme_override_fonts/font = ExtResource("5_6migj")
+theme_override_font_sizes/font_size = 22
+text = "时间币调试"
 
 [node name="WinButton" type="Button" parent="ui" unique_id=1004531811]
 offset_left = 88.0

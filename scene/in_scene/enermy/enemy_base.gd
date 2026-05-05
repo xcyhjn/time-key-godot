@@ -1,4 +1,4 @@
-﻿class_name EnemyBase
+class_name EnemyBase
 extends Node2D
 
 # ==========================================
