@@ -67,8 +67,19 @@ func unlock_combat_input() -> void:
 
 
 func show_timeline() -> void:
+	if not is_instance_valid(main_board):
+		main_board = get_node_or_null(main_board_path)
+	if not is_instance_valid(timeline_ui):
+		timeline_ui = get_node_or_null(timeline_ui_path) as CanvasItem
+
+	if is_instance_valid(main_board) and main_board.has_method("play_timeline_intro_and_generate_enemy_intents"):
+		await main_board.call("play_timeline_intro_and_generate_enemy_intents")
+		return
+
 	if is_instance_valid(timeline_ui):
 		timeline_ui.show()
+		if timeline_ui.has_method("play_intro"):
+			await timeline_ui.call("play_intro")
 
 
 func clear_mask() -> void:

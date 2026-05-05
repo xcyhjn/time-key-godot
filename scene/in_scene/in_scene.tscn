@@ -31,6 +31,7 @@
 [ext_resource type="Script" uid="uid://cre0cpi03gwt5" path="res://scene/in_scene/enermy/total_enemy_health_bar.gd" id="26_yy4gm"]
 [ext_resource type="PackedScene" uid="uid://bh6q6oqow5tay" path="res://scene/in_scene/victory/combat_victory_banner.tscn" id="28_8xrm8"]
 [ext_resource type="PackedScene" uid="uid://c0tpr22lesut" path="res://scene/shared/ui/combat_cartoon_ui.tscn" id="29_cartoon"]
+[ext_resource type="Script" uid="uid://twuko3r63ago" path="res://scene/in_scene/timeline/TimelineIntroAnimator.gd" id="30_timeline_intro"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_djuk3"]
 shader = ExtResource("4_tpwa4")
@@ -233,6 +234,9 @@ layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 columns = 12
+
+[node name="TimelineIntroAnimator" type="Node" parent="ui/TimelineUI" unique_id=669111590]
+script = ExtResource("30_timeline_intro")
 
 [node name="CursorTooltip" type="RichTextLabel" parent="ui" unique_id=12040176]
 offset_right = 40.0

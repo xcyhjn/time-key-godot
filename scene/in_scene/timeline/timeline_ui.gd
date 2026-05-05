@@ -9,6 +9,12 @@ const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/Ti
 @export var grid_width: int = 12
 @export var grid_height: int = 3
 
+@export_group("Grid Visual Settings")
+## 时间轴空格子的默认底色。Alpha 越低越透明；RGB 越高越浅。
+@export var grid_cell_default_color: Color = Color(0.4, 0.4, 0.4, 0.6)
+## 鼠标悬停在空格子上时的底色。
+@export var grid_cell_hover_color: Color = Color(0.5, 0.5, 0.5, 0.75)
+
 @export_group("Layout Settings")
 @export var margin_top_preset: float = 0.0      # 紧贴屏幕最上沿的距离 (设为0即死死贴住)
 ## 额外预留给顶部 UI 的空间。
@@ -60,6 +66,7 @@ const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/Ti
 
 @onready var grid_background = $GridBackground
 @onready var shape_layer = $ShapeLayer
+@onready var timeline_intro_animator: TimelineIntroAnimator = get_node_or_null("TimelineIntroAnimator") as TimelineIntroAnimator
 var background_mask: ColorRect  # 遮罩节点（运行时创建）
 
 
@@ -70,6 +77,8 @@ var allow_click_to_expand: bool = false  # 是否允许通过点击缩放时间�
 var action_containers: Dictionary = {}
 var current_enemy_intent_preview_action: TimelineAction = null
 var enemy_intent_preview_tween: Tween = null
+var _timeline_intro_has_played: bool = false
+var _timeline_intro_in_progress: bool = false
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -163,6 +172,7 @@ func _ready():
 	_create_background_mask()
 
 	_init_background_grid()
+	_setup_timeline_intro_animator()
 	# 关键修复：
 	# - 敌人/玩家的时间轴 action 方块必须位于 GridBackground 之上，
 	#   否则鼠标 hover 会先命中底层网格单元，导致 action 方块无法正确回调。
@@ -225,7 +235,7 @@ func _init_background_grid():
 		
 		# 创建默认样式：半透明深灰色背景，无边框
 		var default_style = StyleBoxFlat.new()
-		default_style.bg_color = Color(0.2, 0.2, 0.2, 0.5)
+		default_style.bg_color = grid_cell_default_color
 		default_style.set_border_width_all(0)
 		slot.add_theme_stylebox_override("panel", default_style)
 
@@ -244,6 +254,37 @@ func _init_background_grid():
 		var grid_y = i / grid_width
 		var grid_pos = Vector2i(grid_x, grid_y)
 		grid_cells[grid_pos] = slot
+
+
+## 初始化时间轴入场动画子节点。
+## TimelineUI 只负责把自己创建好的格子/行动容器交给动画器，具体节奏与开关都在子节点导出参数里调。
+func _setup_timeline_intro_animator() -> void:
+	if not is_instance_valid(timeline_intro_animator):
+		return
+
+	timeline_intro_animator.setup(self, grid_background, shape_layer)
+	timeline_intro_animator.prepare_grid_for_intro(grid_cells)
+
+
+## 外部流程入口：播放时间轴背景格子的左下角涟漪入场。
+## 返回时表示背景格子已经固定在最终位置，后续再生成敌人意图会更干净。
+func play_intro() -> void:
+	if not is_instance_valid(timeline_intro_animator):
+		return
+	if _timeline_intro_in_progress:
+		await timeline_intro_animator.grid_intro_finished
+		return
+	if _timeline_intro_has_played and timeline_intro_animator.play_grid_intro_once:
+		return
+
+	_timeline_intro_in_progress = true
+	await timeline_intro_animator.play_grid_intro(grid_cells, grid_width, grid_height)
+	_timeline_intro_in_progress = false
+	_timeline_intro_has_played = true
+
+
+func is_intro_in_progress() -> bool:
+	return _timeline_intro_in_progress
 
 
 ## 将 action.shape_coords 转成 shape_container 内部使用的局部坐标。
@@ -293,6 +334,7 @@ func _add_action_shape_visual(
 func _on_action_placed(action: TimelineAction):
 	var shape_container = Control.new()
 	shape_layer.add_child(shape_container)
+	var use_action_intro := _should_play_action_intro(action)
 
 	# 将这个容器与具体的 Action 绑定，方便悬浮检测
 	shape_container.set_meta("action_ref", action)
@@ -382,8 +424,10 @@ func _on_action_placed(action: TimelineAction):
 
 		shape_container.add_child(block)
 
-		# 添加放置动画：从透明逐渐变为action.color
-		_animate_block_placement(block, action.color)
+		# 意图入场动画由 TimelineIntroAnimator 统一驱动整个容器；
+		# 普通玩家放置仍沿用原逐格弹出，保持手感不变。
+		if not use_action_intro:
+			_animate_block_placement(block, action.color)
 
 	if action_group_visual_enabled:
 		# 外轮廓最后加入，确保它压在方格和敌人意图 pulse overlay 之上。
@@ -395,12 +439,23 @@ func _on_action_placed(action: TimelineAction):
 			TimelineActionShapeVisual.VisualMode.OUTLINE
 		)
 
+	if use_action_intro:
+		timeline_intro_animator.play_action_intro(shape_container, action, grid_width, grid_height, true)
+
 
 func _on_timeline_cleared():
 	clear_enemy_intent_preview()
+	if is_instance_valid(timeline_intro_animator):
+		timeline_intro_animator.stop_action_intros()
 	action_containers.clear()
 	for child in shape_layer.get_children():
 		child.queue_free()
+
+
+func _should_play_action_intro(action: TimelineAction) -> bool:
+	if not is_instance_valid(timeline_intro_animator):
+		return false
+	return timeline_intro_animator.should_animate_action(action)
 
 
 # ==========================================
@@ -695,7 +750,7 @@ func _on_grid_cell_mouse_entered(cell_index: int) -> void:
 		var style = cell.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
 		if not style:
 			style = StyleBoxFlat.new()
-		style.bg_color = Color(0.3, 0.3, 0.3, 0.7)  # 悬停颜色
+		style.bg_color = grid_cell_hover_color
 		style.set_border_width_all(0)
 		cell.add_theme_stylebox_override("panel", style)
 
@@ -714,7 +769,7 @@ func _on_grid_cell_mouse_exited(cell_index: int) -> void:
 		var style = cell.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
 		if not style:
 			style = StyleBoxFlat.new()
-		style.bg_color = Color(0.2, 0.2, 0.2, 0.5)  # 原始颜色
+		style.bg_color = grid_cell_default_color
 		style.set_border_width_all(0)
 		cell.add_theme_stylebox_override("panel", style)
 
@@ -857,7 +912,7 @@ func clear_grid_preview() -> void:
 			var style = cell.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
 			if not style:
 				style = StyleBoxFlat.new()
-			style.bg_color = Color(0.2, 0.2, 0.2, 0.5)
+			style.bg_color = grid_cell_default_color
 			style.set_border_width_all(0)
 			cell.add_theme_stylebox_override("panel", style)
 			cell.scale = Vector2.ONE

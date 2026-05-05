@@ -1,4 +1,4 @@
-﻿extends Control
+extends Control
 
 # 预加载资源
 var hand_scene = load("res://addons/card-framework/hand.tscn")
@@ -327,7 +327,37 @@ func _schedule_initial_enemy_intents() -> void:
 func _generate_initial_enemy_intents() -> void:
 	if not is_instance_valid(timeline_manager):
 		return
-	
+
+	# 教程等特殊流程可能会在开局隐藏时间轴。
+	# 此时先不生成隐藏意图，等导演节点调用 play_timeline_intro_and_generate_enemy_intents() 再统一处理。
+	if is_instance_valid(timeline_ui) and not timeline_ui.visible:
+		return
+
+	await _play_timeline_intro_if_visible()
+	_refresh_enemy_intents_on_timeline()
+
+
+## 公共入口：显示时间轴、播放格子入场，然后重新生成当前敌人意图。
+## 教程 Dialogic 信号可以调用这个函数，确保“时间轴出现 -> 意图出现”的顺序稳定。
+func play_timeline_intro_and_generate_enemy_intents() -> void:
+	if is_instance_valid(timeline_ui):
+		timeline_ui.show()
+	if not is_instance_valid(timeline_manager):
+		return
+
+	await _play_timeline_intro_if_visible()
+	_refresh_enemy_intents_on_timeline()
+
+
+func _play_timeline_intro_if_visible() -> void:
+	if is_instance_valid(timeline_ui) and timeline_ui.visible and timeline_ui.has_method("play_intro"):
+		await timeline_ui.play_intro()
+
+
+func _refresh_enemy_intents_on_timeline() -> void:
+	if not is_instance_valid(timeline_manager):
+		return
+
 	# 清除任何可能的残留占用
 	if timeline_manager.has_method("clear_grid"):
 		timeline_manager.clear_grid()
