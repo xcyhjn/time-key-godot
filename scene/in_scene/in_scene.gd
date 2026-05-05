@@ -939,9 +939,53 @@ func hide_tooltip(card: Control = null):
 func is_valid_target(hovered_stack: Area2D, active_card: Control) -> bool:
 	if not is_instance_valid(hovered_stack) or not is_instance_valid(active_card):
 		return false
-	# TODO: 这里填入你的真实有效性检测。比如检测该地块上是否有可以攻击的敌人，距离是否足够等。
-	# 暂时默认只要是存在的地块就是有效目标。
+	if _card_has_effect_type(active_card, "built") or _card_has_effect_type(active_card, "build"):
+		return _is_empty_build_target(hovered_stack)
 	return true
+
+
+## built 类卡牌只允许选择空地块。
+## 放牌阶段先拦截非法目标，结算阶段 BuiltCommand 仍会再校验一次，避免时间轴期间地块状态变化。
+func _is_empty_build_target(stack: Area2D) -> bool:
+	if not is_instance_valid(stack):
+		return false
+
+	if stack.has_meta("occupant"):
+		var occupant: Variant = stack.get_meta("occupant")
+		if is_instance_valid(occupant):
+			return false
+
+	if not is_instance_valid(hex_map):
+		return false
+
+	var coord: Variant = hex_map.stack_nodes.find_key(stack)
+	if coord == null or not hex_map.map_data.has(coord):
+		return false
+
+	var tile_data: Variant = hex_map.map_data[coord]
+	if typeof(tile_data) != TYPE_DICTIONARY:
+		return false
+	if tile_data.has("landform") and is_instance_valid(tile_data["landform"]):
+		return false
+	if tile_data.has("landform_in") and is_instance_valid(tile_data["landform_in"]):
+		return false
+
+	return true
+
+
+func _card_has_effect_type(card: Control, effect_type: String) -> bool:
+	var card_info: Variant = card.get("card_info")
+	if typeof(card_info) != TYPE_DICTIONARY:
+		return false
+
+	var effects: Variant = card_info.get("effects", [])
+	if typeof(effects) != TYPE_ARRAY:
+		return false
+
+	for effect in effects:
+		if typeof(effect) == TYPE_DICTIONARY and str(effect.get("type", "")) == effect_type:
+			return true
+	return false
 
 
 # 控制单个地块叠加选中特效的开关

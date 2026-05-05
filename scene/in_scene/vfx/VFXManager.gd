@@ -21,6 +21,7 @@ const DEFAULT_HURT_VFX_PROFILE: HurtVFXProfile = preload("res://scene/in_scene/v
 const HURT_VFX_TWEEN_META: StringName = &"_hurt_vfx_tween"
 const HURT_VFX_POSITION_META: StringName = &"_hurt_vfx_original_position"
 const HURT_VFX_MODULATE_META: StringName = &"_hurt_vfx_original_modulate"
+const PIXEL_DISSOLVE_TWEEN_META: StringName = &"_pixel_dissolve_vfx_tween"
 
 ## 播放特效并阻塞，直到特效播放完成
 static func play_vfx(vfx_name: String, target_pos: Vector2, tree: SceneTree) -> void:
@@ -142,6 +143,98 @@ static func _get_vfx_time_scale(use_global_anim_speed: bool) -> float:
 	if use_global_anim_speed and Global and Global.has_method("get_anim_speed"):
 		return maxf(float(Global.get_anim_speed()), 0.01)
 	return 1.0
+
+
+## 播放通用像素粒子入场。
+## 核心逻辑: 复用 hex.gdshader 的 dissolve_blend，按 1 -> 0 倒放消融效果；目标可以是 landform、Sprite2D 或任意含 Sprite2D 子节点的 Node。
+static func play_pixel_spawn_vfx(target: Node, tree: SceneTree, duration: float = 0.45, use_global_anim_speed: bool = true) -> Tween:
+	return _play_pixel_dissolve_vfx(target, tree, 1.0, 0.0, duration, use_global_anim_speed)
+
+
+## 播放通用像素粒子退场。
+## 核心逻辑: 复用 hex.gdshader 的 dissolve_blend，按 0 -> 1 正向消融；调用方可 await 返回 Tween 的 finished 后再清理节点。
+static func play_pixel_despawn_vfx(target: Node, tree: SceneTree, duration: float = 0.45, use_global_anim_speed: bool = true) -> Tween:
+	return _play_pixel_dissolve_vfx(target, tree, 0.0, 1.0, duration, use_global_anim_speed)
+
+
+static func _play_pixel_dissolve_vfx(target: Node, tree: SceneTree, from_value: float, to_value: float, duration: float, use_global_anim_speed: bool) -> Tween:
+	if not is_instance_valid(target) or not is_instance_valid(tree):
+		return null
+
+	var items: Array[CanvasItem] = _collect_pixel_vfx_items(target)
+	if items.is_empty():
+		return null
+
+	var speed_scale: float = _get_vfx_time_scale(use_global_anim_speed)
+	var safe_duration: float = maxf(duration * speed_scale, 0.01)
+	var tw: Tween = tree.create_tween().set_parallel(true).set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+
+	for item in items:
+		_clear_pixel_dissolve_item(item)
+		item.set_meta(PIXEL_DISSOLVE_TWEEN_META, tw)
+		if item.material != null:
+			item.set_instance_shader_parameter("dissolve_blend", from_value)
+			tw.tween_method(
+				_set_pixel_dissolve_blend.bind(item),
+				from_value,
+				to_value,
+				safe_duration
+			)
+		else:
+			var from_alpha: float = 0.0 if from_value >= 1.0 else item.modulate.a
+			var to_alpha: float = 0.0 if to_value >= 1.0 else 1.0
+			item.modulate.a = from_alpha
+			tw.tween_property(item, "modulate:a", to_alpha, safe_duration)
+
+	tw.finished.connect(_finish_pixel_dissolve_items.bind(items), CONNECT_ONE_SHOT)
+	return tw
+
+
+static func _collect_pixel_vfx_items(target: Node) -> Array[CanvasItem]:
+	var items: Array[CanvasItem] = []
+
+	var texture_node: Variant = target.get("tex") if is_instance_valid(target) else null
+	if is_instance_valid(texture_node) and texture_node is CanvasItem:
+		items.append(texture_node as CanvasItem)
+
+	if target is Sprite2D or target is TextureRect:
+		var direct_item := target as CanvasItem
+		if not items.has(direct_item):
+			items.append(direct_item)
+
+	_collect_child_pixel_vfx_items(target, items)
+	return items
+
+
+static func _collect_child_pixel_vfx_items(node: Node, items: Array[CanvasItem]) -> void:
+	for child in node.get_children():
+		if child is Sprite2D or child is TextureRect:
+			var item := child as CanvasItem
+			if not items.has(item):
+				items.append(item)
+		_collect_child_pixel_vfx_items(child, items)
+
+
+static func _clear_pixel_dissolve_item(item: CanvasItem) -> void:
+	if not is_instance_valid(item):
+		return
+
+	var old_tween: Variant = item.get_meta(PIXEL_DISSOLVE_TWEEN_META, null)
+	if old_tween is Tween and is_instance_valid(old_tween):
+		old_tween.kill()
+	if item.has_meta(PIXEL_DISSOLVE_TWEEN_META):
+		item.remove_meta(PIXEL_DISSOLVE_TWEEN_META)
+
+
+static func _set_pixel_dissolve_blend(value: float, item: CanvasItem) -> void:
+	if is_instance_valid(item) and item.material != null:
+		item.set_instance_shader_parameter("dissolve_blend", value)
+
+
+static func _finish_pixel_dissolve_items(items: Array[CanvasItem]) -> void:
+	for item in items:
+		if is_instance_valid(item) and item.has_meta(PIXEL_DISSOLVE_TWEEN_META):
+			item.remove_meta(PIXEL_DISSOLVE_TWEEN_META)
 
 ## 播放挂在地块 stack 下的通用序列帧特效。
 ## 说明:

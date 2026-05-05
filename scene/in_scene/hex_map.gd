@@ -106,6 +106,12 @@ signal map_intro_reveal_finished
 @export var hitbox_base_height: float = 60.0
 @export var hitbox_offset_x: float = 0
 @export var hitbox_offset_y: float = -110.0
+## 怪物/地貌实体实例化后，挂到地块上的额外偏移。
+## 只调整实体节点位置，不影响碰撞箱、地块贴图、意图 overlay。
+@export var landform_instance_offset: Vector2 = Vector2(0.0, -20.0)
+## 怪物/地貌实体内部贴图的额外偏移。
+## 这个参数直接作用于 LandformSprite_*，用于微调真正看见的怪物/建筑图像位置；血条锚点会跟随该贴图。
+@export var landform_sprite_offset: Vector2 = Vector2(0.0, -10.0)
 
 ## 六边形碰撞箱顶部横边相对于最大宽度的比例。
 ## 0.5 表示顶部横边宽度为整体最大宽度的一半。
@@ -1190,7 +1196,7 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 	if data.has("landform") and data["landform"] != null:
 		var landform_inst = data["landform"]
 		enemy_instance = landform_inst
-		enemy_instance.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y - 20)
+		enemy_instance.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y) + landform_instance_offset
 		stack_container.add_child(enemy_instance)
 		
 		landform_inst.attach_visual(stack_container, height, current_step_h, tile_scale)
@@ -2044,7 +2050,287 @@ func _tween_shader_param(stack: Area2D, param_name: String, target_val: float, d
 	, current_val, target_val, duration)
 
 
-## 添加地貌视觉（用于地形实体死亡或损坏时更新视觉）
+## 运行期实体统一注册入口。
+## 核心逻辑: 统一写入 map_data、挂接 stack occupant、创建贴图，并按当前视角立即同步位置。
+## 说明:
+## - 建造卡、敌人召唤、雷达虚影等“局中新增实体”都应该优先走这里。
+## - 这样新增实体不会再遗漏平铺视角下落、血条锚点、分组和交互刷新。
+func register_runtime_landform(coord: Vector2i, entity: landform, landform_type: String = "") -> bool:
+	if not is_instance_valid(entity):
+		return false
+	if not stack_nodes.has(coord) or not map_data.has(coord):
+		return false
+
+	var stack: Area2D = stack_nodes[coord]
+	if not is_instance_valid(stack):
+		return false
+
+	var resolved_type := landform_type
+	if resolved_type == "":
+		resolved_type = entity.landform_name
+
+	var tile_data: Dictionary = map_data[coord]
+	tile_data["landform"] = entity
+	tile_data["landform_in"] = entity
+	tile_data["landform_type"] = resolved_type
+	map_data[coord] = tile_data
+
+	_attach_landform_entity_to_stack(coord, entity, stack)
+	_apply_landform_group(entity)
+	add_landform_visual_at(coord)
+	_sync_stack_to_current_view(coord, false)
+	_refresh_stack_interactivity()
+	tile_topology_changed.emit()
+	return true
+
+
+## 把逻辑实体挂到对应地块栈下，并重算它的 3D 基准坐标。
+## 平铺视角的下落偏移不在这里直接写死，而是交给 _sync_stack_to_current_view() 统一处理。
+func _attach_landform_entity_to_stack(coord: Vector2i, entity: landform, stack: Area2D) -> void:
+	if not is_instance_valid(entity) or not is_instance_valid(stack):
+		return
+
+	var height := _get_stack_height(stack)
+	var current_step_h := step_height * (tile_scale / REF_SCALE)
+	var top_block_y := -(height - 1) * current_step_h
+
+	entity.owner_battle = self
+	entity.location = coord
+	entity.target = coord
+	entity.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y) + landform_instance_offset
+
+	var old_parent := entity.get_parent()
+	if old_parent != stack:
+		if is_instance_valid(old_parent):
+			old_parent.remove_child(entity)
+		stack.add_child(entity)
+
+	stack.set_meta("occupant", entity)
+
+
+## 统一处理运行期实体阵营分组，避免各个建筑脚本重复维护。
+func _apply_landform_group(entity: landform) -> void:
+	if not is_instance_valid(entity):
+		return
+	if entity.Attitude == entity.Attitude_Pool.Enemy:
+		if not entity.is_in_group("Enemies"):
+			entity.add_to_group("Enemies")
+	else:
+		if not entity.is_in_group("Middle"):
+			entity.add_to_group("Middle")
+
+
+func _get_stack_height(stack: Area2D) -> int:
+	if not is_instance_valid(stack):
+		return 1
+	if stack.has_meta("height"):
+		return max(1, int(stack.get_meta("height")))
+	return 1
+
+
+func _get_stack_sprites(stack: Area2D) -> Array:
+	if not is_instance_valid(stack) or not stack.has_meta("sprites"):
+		return []
+	var stored_sprites: Variant = stack.get_meta("sprites")
+	if stored_sprites is Array:
+		return stored_sprites
+	return []
+
+
+func _cleanup_stack_sprites(stack: Area2D) -> Array:
+	var cleaned: Array = []
+
+	# 先保留原有顺序。地形块通常已经按底层到顶层排好，视角切换依赖这个顺序隐藏侧面块。
+	for sprite in _get_stack_sprites(stack):
+		_append_stack_render_sprite(cleaned, sprite)
+
+	# 再强制重扫 stack 直属 Sprite。运行期生成的 LandformSprite_* 偶尔会漏进旧缓存，
+	# 这里把真正挂在地块栈下的建筑/虚影贴图重新收编，保证平铺视角会一起下落。
+	for child in stack.get_children():
+		if child is Sprite2D:
+			_append_stack_render_sprite(cleaned, child)
+
+	var occupant: Variant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
+	if occupant is landform:
+		var occupant_landform := occupant as landform
+		_append_stack_render_sprite(cleaned, occupant_landform.tex)
+		for child in occupant_landform.get_children():
+			if child is Sprite2D:
+				_append_stack_render_sprite(cleaned, child)
+
+	stack.set_meta("sprites", cleaned)
+	return cleaned
+
+
+func _append_stack_render_sprite(list: Array, sprite: Variant) -> void:
+	if not is_instance_valid(sprite):
+		return
+	if not (sprite is Node and sprite is CanvasItem):
+		return
+	if (sprite as Node).is_queued_for_deletion():
+		return
+	if list.has(sprite):
+		return
+	list.append(sprite)
+
+
+func _get_height_view_drop_delta(stack: Area2D) -> float:
+	return float(_get_stack_height(stack) - 1) * filler_block_spacing * (tile_scale / REF_SCALE)
+
+
+func _find_health_bar_for_landform(entity: landform) -> Node:
+	if not is_instance_valid(entity):
+		return null
+	var bar_manager := get_node_or_null("BarManager")
+	if not is_instance_valid(bar_manager):
+		return null
+	return bar_manager.get_node_or_null("HealthBar_" + str(entity.get_instance_id()))
+
+
+func _get_or_create_height_view_cache(stack: Area2D) -> Dictionary:
+	if height_view_original_materials.has(stack):
+		return height_view_original_materials[stack]
+
+	var sprites_data: Array = []
+	for sprite in _cleanup_stack_sprites(stack):
+		if is_instance_valid(sprite):
+			sprites_data.append({"sprite": sprite, "original_position": _get_visual_node_position(sprite)})
+
+	var occupant: Variant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
+	var occupant_data: Variant = null
+	if is_instance_valid(occupant):
+		occupant_data = {"node": occupant, "original_position": _get_visual_node_position(occupant)}
+
+	var collision: Variant = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
+	var collision_data: Variant = null
+	if is_instance_valid(collision):
+		collision_data = {"node": collision, "original_position": _get_visual_node_position(collision)}
+
+	var health_bar_data: Variant = null
+	if occupant is landform:
+		var occupant_landform := occupant as landform
+		var health_bar := _find_health_bar_for_landform(occupant_landform)
+		if is_instance_valid(health_bar):
+			health_bar_data = {"node": health_bar, "original_position": _get_visual_node_position(health_bar)}
+
+	var cache := {
+		"sprites_data": sprites_data,
+		"occupant_data": occupant_data,
+		"collision_data": collision_data,
+		"health_bar_data": health_bar_data
+	}
+	height_view_original_materials[stack] = cache
+	return cache
+
+
+func _get_or_add_sprite_cache(cache: Dictionary, sprite: Node2D) -> Dictionary:
+	var sprites_data: Array = cache.get("sprites_data", [])
+	for sprite_data in sprites_data:
+		if sprite_data.get("sprite") == sprite:
+			return sprite_data
+
+	var new_data := {"sprite": sprite, "original_position": sprite.position}
+	sprites_data.append(new_data)
+	cache["sprites_data"] = sprites_data
+	return new_data
+
+
+func _get_visual_node_position(node: Node) -> Vector2:
+	if node is Node2D:
+		return (node as Node2D).position
+	if node is Control:
+		return (node as Control).position
+	return Vector2.ZERO
+
+
+func _sync_node_position_y(node: Node, target_y: float, animate: bool) -> void:
+	if not is_instance_valid(node):
+		return
+	if animate:
+		_tween_position_y(node, target_y, 0.3)
+		return
+
+	if node is Node2D:
+		var node_2d := node as Node2D
+		node_2d.position.y = target_y
+	elif node is Control:
+		var control := node as Control
+		control.position.y = target_y
+
+
+func _sync_cached_node_to_flat(cache: Dictionary, key: String, node: Node, drop_delta: float, animate: bool) -> void:
+	if not is_instance_valid(node) or not (node is Node2D or node is Control):
+		return
+
+	var data: Variant = cache.get(key, null)
+	if typeof(data) != TYPE_DICTIONARY or data.get("node") != node:
+		data = {"node": node, "original_position": _get_visual_node_position(node)}
+		cache[key] = data
+
+	var original_position: Vector2 = data.get("original_position", _get_visual_node_position(node))
+	_sync_node_position_y(node, original_position.y + drop_delta, animate)
+
+
+## 将指定地块栈立即同步到当前视角。
+## 作用: 给运行期后加入的贴图、实体、血条补上平铺视角下落位置和 3D 恢复缓存。
+func _sync_stack_to_current_view(coord: Vector2i, animate: bool = false) -> void:
+	if not stack_nodes.has(coord):
+		return
+
+	var stack: Area2D = stack_nodes[coord]
+	if not is_instance_valid(stack):
+		return
+
+	var height := _get_stack_height(stack)
+	var sprites := _cleanup_stack_sprites(stack)
+
+	if current_view_state != MapViewState.VIEW_FLAT:
+		for sprite in sprites:
+			var item := sprite as CanvasItem
+			if is_instance_valid(item) and item.material:
+				item.set_instance_shader_parameter("is_flat_view", 0.0)
+		return
+
+	var cache := _get_or_create_height_view_cache(stack)
+	var drop_delta := _get_height_view_drop_delta(stack)
+
+	for i in range(sprites.size()):
+		var sprite: Variant = sprites[i]
+		var item := sprite as CanvasItem
+		if not is_instance_valid(item):
+			continue
+		if item.material:
+			item.set_instance_shader_parameter("is_flat_view", 1.0)
+
+		if i < height - 1:
+			item.visible = false
+			item.modulate.a = 0.0
+			continue
+
+		if item.get_parent() == stack and item is Node2D:
+			var sprite_node := item as Node2D
+			var sprite_data := _get_or_add_sprite_cache(cache, sprite_node)
+			var original_position: Vector2 = sprite_data.get("original_position", sprite_node.position)
+			_sync_node_position_y(sprite_node, original_position.y + drop_delta, animate)
+
+	var occupant: Variant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
+	if is_instance_valid(occupant):
+		_sync_cached_node_to_flat(cache, "occupant_data", occupant, drop_delta, animate)
+
+		if occupant is landform:
+			var occupant_landform := occupant as landform
+			var health_bar := _find_health_bar_for_landform(occupant_landform)
+			if is_instance_valid(health_bar):
+				_sync_cached_node_to_flat(cache, "health_bar_data", health_bar, drop_delta, animate)
+
+	var collision: Variant = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
+	if is_instance_valid(collision):
+		_sync_cached_node_to_flat(cache, "collision_data", collision, drop_delta, animate)
+
+	height_view_original_materials[stack] = cache
+
+
+## 添加地貌视觉（用于地形实体死亡、损坏或运行期新增时更新视觉）
 func add_landform_visual_at(coord: Vector2i) -> void:
 	# 检查是否存在对应的栈容器和地貌数据（使用 Vector2i 键）
 	if not stack_nodes.has(coord):
@@ -2052,13 +2338,25 @@ func add_landform_visual_at(coord: Vector2i) -> void:
 	if not map_data.has(coord):
 		return
 	
-	var stack_container = stack_nodes[coord]
-	var data = map_data[coord]
+	var stack_container := stack_nodes[coord] as Area2D
+	if not is_instance_valid(stack_container):
+		return
+	var data: Dictionary = map_data[coord]
 	
 	# 获取地貌实例
-	var landform_inst = data.get("landform")
-	if landform_inst == null:
+	var landform_inst := data.get("landform") as landform
+	if not is_instance_valid(landform_inst):
 		return
+
+	if not data.has("landform_in") or not is_instance_valid(data["landform_in"]):
+		data["landform_in"] = landform_inst
+	if not data.has("landform_type") or str(data.get("landform_type", "")) == "":
+		data["landform_type"] = landform_inst.landform_name
+	map_data[coord] = data
+
+	# 兜底收编：兼容旧代码里只写 map_data 后直接调用 add_landform_visual_at() 的路径。
+	_attach_landform_entity_to_stack(coord, landform_inst, stack_container)
+	_apply_landform_group(landform_inst)
 	
 	var height = data["height"]
 	var current_step_h = step_height * (tile_scale / REF_SCALE)
@@ -2069,18 +2367,23 @@ func add_landform_visual_at(coord: Vector2i) -> void:
 	# 获取新创建的 landform 视觉精灵并应用shader
 	var unique_name = "LandformSprite_%s_%s" % [coord.x, coord.y]
 	var landform_sprite = stack_container.get_node_or_null(unique_name)
-	if landform_sprite and block_material:
-		# 为新生成的村庄应用shader材质
-		landform_sprite.material = block_material.duplicate()
-		# 建筑在地形之上，block_idx增加1以确保悬浮效果触发
-		landform_sprite.set_instance_shader_parameter("block_idx", float(height + 1))
-		landform_sprite.set_instance_shader_parameter("total_height", float(height + 2))
+	if landform_sprite:
+		if block_material:
+			# 为新生成的建筑/虚影应用shader材质
+			landform_sprite.material = block_material.duplicate()
+			# 建筑在地形之上，block_idx增加1以确保悬浮效果触发
+			landform_sprite.set_instance_shader_parameter("block_idx", float(height + 1))
+			landform_sprite.set_instance_shader_parameter("total_height", float(height + 2))
+			if current_view_state == MapViewState.VIEW_FLAT:
+				landform_sprite.set_instance_shader_parameter("is_flat_view", 1.0)
 		
 		# 将 landform 精灵添加到 sprites 元数据中，以便后续效果应用
-		var sprites = stack_container.get_meta("sprites") as Array
+		var sprites = _cleanup_stack_sprites(stack_container)
 		if not sprites.has(landform_sprite):
 			sprites.append(landform_sprite)
 			stack_container.set_meta("sprites", sprites)
+
+	_sync_stack_to_current_view(coord, false)
 	
 	if landform_inst.Attitude == landform_inst.Attitude_Pool.Enemy:
 		enemy_roster_changed.emit()
@@ -2699,27 +3002,27 @@ func _compress_to_single_height_view() -> void:
 		var stack = stack_nodes[coord]
 		if not is_instance_valid(stack): continue
 		
-		var sprites = stack.get_meta("sprites") as Array
-		var height = stack.get_meta("height") as int
+		var sprites = _cleanup_stack_sprites(stack)
+		var height = _get_stack_height(stack)
 		
 		# 1. 精确记录所有原始位置，用于恢复
 		var stack_sprites_data = []
 		for s in sprites:
 			if is_instance_valid(s):
-				stack_sprites_data.append({"sprite": s, "original_position": s.position})
+				stack_sprites_data.append({"sprite": s, "original_position": _get_visual_node_position(s)})
 				if s.material: s.set_instance_shader_parameter("is_flat_view", 1.0)
 
 		var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
-		var occ_data = {"node": occupant, "original_position": occupant.position} if is_instance_valid(occupant) else null
+		var occ_data = {"node": occupant, "original_position": _get_visual_node_position(occupant)} if is_instance_valid(occupant) else null
 		
 		var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-		var col_data = {"node": collision, "original_position": collision.position} if is_instance_valid(collision) else null
+		var col_data = {"node": collision, "original_position": _get_visual_node_position(collision)} if is_instance_valid(collision) else null
 		
 		var hb_data = null
 		var bar_manager = get_node_or_null("BarManager")
 		if bar_manager and is_instance_valid(occupant):
 			var hb = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
-			if is_instance_valid(hb): hb_data = {"node": hb, "original_position": hb.position}
+			if is_instance_valid(hb): hb_data = {"node": hb, "original_position": _get_visual_node_position(hb)}
 
 		# 写入缓存字典
 		height_view_original_materials[stack] = {
@@ -2741,7 +3044,7 @@ func _compress_to_single_height_view() -> void:
 				tw.tween_property(s, "modulate:a", 0.0, 0.3)
 				tw.tween_callback(func(): s.visible = false)
 			else:
-				# 顶部方块：落到地表
+				# 顶部方块和建筑贴图：一起落到平铺地表
 				if s.get_parent() == stack:
 					_tween_position_y(s, s.position.y + drop_delta, 0.3)
 
@@ -2778,8 +3081,8 @@ func _restore_original_height_view() -> void:
 				_tween_position_y(cached["health_bar_data"]["node"], cached["health_bar_data"]["original_position"].y, 0.3)
 
 		# 3. 侧边方块恢复可见
-		var sprites = stack.get_meta("sprites") as Array
-		var height = stack.get_meta("height") as int
+		var sprites = _cleanup_stack_sprites(stack)
+		var height = _get_stack_height(stack)
 		for i in range(sprites.size()):
 			var s = sprites[i]
 			if is_instance_valid(s) and i < height - 1:

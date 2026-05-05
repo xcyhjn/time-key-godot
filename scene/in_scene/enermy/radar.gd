@@ -73,10 +73,19 @@ func Only_Done(tile_info : Dictionary):
 		else:
 			buffer_underling = new(test_coord, owner_battle)
 			buffer_underling.Underlings = true
-			owner_battle.add_child(buffer_underling)
-			tile_info[test_coord]["landform"] = buffer_underling
-			tile_info[test_coord]["landform_type"] = buffer_underling.landform_name
-			owner_battle.add_landform_visual_at(test_coord)
+			var registered_successfully := false
+			if owner_battle.has_method("register_runtime_landform"):
+				registered_successfully = owner_battle.register_runtime_landform(test_coord, buffer_underling, buffer_underling.landform_name)
+			else:
+				tile_info[test_coord]["landform"] = buffer_underling
+				tile_info[test_coord]["landform_in"] = buffer_underling
+				tile_info[test_coord]["landform_type"] = buffer_underling.landform_name
+				owner_battle.add_landform_visual_at(test_coord)
+				registered_successfully = true
+
+			if not registered_successfully:
+				buffer_underling.queue_free()
+				break
 			
 			if buffer_underling.get("Attitude") == buffer_underling.Attitude_Pool.Enemy:
 				buffer_underling.add_to_group("Enemies")
