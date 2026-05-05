@@ -1,37 +1,32 @@
+class_name animal_husbandry
 extends landform
 
-var rivet_land : String
+var rivet_land : String = ""
+var timeline_buffer = "1"
 
-func _init(location_in : Vector2i,battle_in):
+
+func _init(location_in : Vector2,battle_in):
 	damage_rate = 0.5
 	Max_Blood = 100
 	super._init(
-	"altar", 
-	["res://image/enermy/altar/altar_snow.png",
-	"res://image/enermy/altar/altar_water.png"], 
-	# 破损状态专用贴图：tile.gd 的 tex_toggle() 会在建筑进入 Broken 状态时读取这里的资源，
-	# 因此只需要把祭坛自己的破损图登记到 damaged_tex 数组中，就能跟随原有状态切换逻辑自动换图。
-	["res://image/enermy/altar/altar_snow_broken.png"],
-	{"chance": 0.3},
+	"fishery" if rivet_land == "pond" else "ranch", 
+	["res://image/enermy/animal_husbandry/pond.png",
+	"res://image/enermy/animal_husbandry/ranch.png"], 
+	["res://image/enermy/animal_husbandry/broken_pond.png",
+	"res://image/enermy/animal_husbandry/broken_ranch.png"], 
+	{"require_height": [1, 2, 3, 4, 5], 
+	"chance": 0.3},
 	location_in,
 	false,
 	battle_in)
-	if location_in == Vector2i(-100, -100):
-		return
-	willing_pool = {Only_will : Only_Done}
 	Attitude = Attitude_Pool.Enemy
-	settlement_reward_type = "acquire"
-	settlement_reward_label = "卡牌奖励"
-	# 祭坛的时间轴意图形状：
-	set_timeline_shape("1,11")
-
-	# 祭坛本体默认以自身所在格作为目标锚点。
-	# 这样 owner_battle.add_landform_visual_at() 和后续意图锚点计算都不会拿到未初始化的 target。
-	target = location_in
-	get_possible_coords(location_in, battle_in.map_data)
+	settlement_reward_type = "shop"
+	settlement_reward_label = "商店"
+	# 设置时间占位形状为1x2
+	set_timeline_shape("011")
+	willing_pool = {Only_will : Only_Done}
 	if owner_battle != null:
 		owner_battle.add_landform_visual_at(target)
-
 
 func get_possible_coords(coord : Vector2i, tile_info : Dictionary) -> bool:
 	if landform_rules.keys().has("require_height") and !landform_rules["require_height"].has(tile_info[coord]["height"]) :
@@ -46,53 +41,34 @@ func get_possible_coords(coord : Vector2i, tile_info : Dictionary) -> bool:
 		# ★★★ 核心修复：必须先检查地图字典中是否存在这个邻居坐标！★★★
 		if tile_info.has(neighbor):
 			# 只有确定坐标存在，才能安全地访问 tile_info[neighbor]
-			if tile_info[neighbor].has("landform") and tile_info[neighbor]["landform"] != null and (tile_info[neighbor]["landform"].landform_name == "forest" or tile_info[neighbor]["landform"].landform_name == "snowpeak"):
+			if tile_info[neighbor].has("landform") and tile_info[neighbor]["landform"] != null and (tile_info[neighbor]["landform"].landform_name == "forest" or tile_info[neighbor]["landform"].landform_name == "pond"):
 				bool_buffer = true
 				rivet_land = tile_info[neighbor]["landform"].landform_name
 				break # 优化：只要找到周围哪怕一格有森林，就直接跳出循环，节省性能
-				
 	return bool_buffer
 
 func Only_will(tile_info : Dictionary):
 	pass
 
 func Only_Done(tile_info : Dictionary):
-	print(rivet_land)
-	match rivet_land:
-		"forest":forest_done(tile_info)
-		"snowpeak":snow_peak_done(tile_info)
-
-
-func forest_done(tile_info : Dictionary):
-	for neighbor in neighbors:
-		if tile_info[neighbor].keys().has("landform") and tile_info[neighbor]["landform"] != null:
-			tile_info[neighbor]["landform"].heal(tile_info[neighbor]["landform"].Max_Blood * 0.1)
-
-func snow_peak_done(tile_info : Dictionary):
-	for neighbor in neighbors:
-		if tile_info[neighbor].keys().has("landform") and tile_info[neighbor]["landform"] != null:
-			tile_info[neighbor]["landform"].State_Vice = tile_info[neighbor]["landform"].State_Vice | Vice_State_Pool.protected
-			
+	set_timeline_shape(timeline_buffer + "," + timeline_buffer)
+	if timeline_buffer.length() < 4:
+		timeline_buffer += "1"
 
 func Behavior(Step, info_in, Other, beha, rng):
-	# 如果村庄已经变成废墟，则不再执行任何行为
-	if State_Main == Main_State_Pool.Broken:
-		return
-	print(step)
 	if beha != -1:
 		willing = beha
 	if will:
 		willing_pool.values()[willing].call(info_in)
 		will = false
-		if willing < willing_pool.size() - 1:
+		if willing < willing_pool.size():
 			willing += 1
 		else:
 			willing = 0
-		print(willing_pool.values()[willing])
 	else:
 		willing_pool.keys()[willing].call(info_in)
 		will = true
-		print(willing_pool.keys()[willing])
+	
 
 
 ## ==========================================
@@ -114,27 +90,20 @@ func is_intent_preview_enabled() -> bool:
 func get_intent_description() -> String:
 	match rivet_land:
 		"forest":
-			return "森林祭坛：以自身与周围一圈为祭祀范围，使范围内友方地貌回复10%最大生命"
-		"snowpeak":
-			return "雪峰祭坛：以自身与周围一圈为祭祀范围，使范围内友方地貌获得护佑"
+			return "牧场：随回合推移逐渐增加占用时间轴的能力,最大占用8格"
+		"pond":
+			return "渔场：随回合推移逐渐增加占用时间轴的能力,最大占用8格"
 		_:
-			return "祭坛：以自身与周围一圈为祭祀范围"
+			return "畜牧：随回合推移逐渐增加占用时间轴的能力,最大占用8格"
 
 
 ## 返回地图效果范围。
 ## 这里改为显式偏移数组写法，避免阅读时还要额外换算“半径1”。
-## 这 7 个偏移分别对应：
+## 这 1 个偏移分别对应：
 ## - 自身中心格
-## - 六边形网格的六个相邻方向
 func get_intent_effect_range() -> Variant:
 	return [
-		"0,0",
-		"1,0",
-		"1,-1",
-		"0,-1",
-		"-1,0",
-		"-1,1",
-		"0,1"
+		"0,0"
 	]
 
 
@@ -163,11 +132,11 @@ func can_generate_intent(hex_map: battle) -> bool:
 ## 返回当前意图无效原因，用于 tooltip 第二行红字提示。
 func get_intent_invalid_reason(hex_map: battle) -> String:
 	if State_Main == Main_State_Pool.Broken:
-		return "祭坛已损毁"
+		return landform_name + "已损毁"
 	if not is_instance_valid(hex_map):
 		return "地图无效"
 	if not hex_map.map_data.has(location):
-		return "祭坛位置无效"
+		return landform_name + "位置无效"
 	return ""
 
 
@@ -207,3 +176,22 @@ func get_intent_action(target_tile: Node = null) -> TimelineAction:
 	)
 
 	return action
+
+func tex_picker():
+	match rivet_land:
+		"forest":
+			return landform_tex[1]
+		"pond":
+			return landform_tex[0]
+		_:
+			return landform_tex[1]
+
+
+func damaged_tex_picker():
+	match rivet_land:
+		"forest":
+			return landform_damaged_tex[1]
+		"pond":
+			return landform_damaged_tex[0]
+		_:
+			return landform_damaged_tex[1]

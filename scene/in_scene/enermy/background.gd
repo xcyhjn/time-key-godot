@@ -19,7 +19,6 @@ func _init(location_in : Vector2i,battle_in):
 	battle_in)
 	Attitude = Attitude_Pool.Middle
 	# 设置时间占位形状为1x2
-	set_timeline_shape("011")
 		
 func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_step_h: float, tile_scale : float) -> void:
 	var tex: Texture2D = null

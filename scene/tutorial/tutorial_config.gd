@@ -34,6 +34,8 @@ const MapGeneratorScript = preload("res://scene/out_scene/map_generator.gd")
 @export_group("Dialogic")
 ## 局外选角教学使用的 Dialogic timeline 名称；留空时只启用蒙版/锁定，不主动开启对话。
 @export var out_scene_timeline: String = ""
+## 局外角色确认后播放的 Dialogic timeline 名称；留空时角色确认后不追加对话。
+@export var out_scene_after_character_timeline: String = ""
 ## 局内战斗教学使用的 Dialogic timeline 名称；留空时只启用蒙版/锁定，不主动开启对话。
 @export var in_scene_timeline: String = ""
 

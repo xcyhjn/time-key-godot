@@ -11,3 +11,6 @@ func _ready() -> void:
 func Blood_change_Handler(Blood : float):
 	$MiddleHealth.value = Blood / Max_HP * 100
 	$MiddleInfo.text = Show_name + " : " + str(int(Blood)) + "/" + str(int(Max_HP))
+
+func free_handler():
+	queue_free()

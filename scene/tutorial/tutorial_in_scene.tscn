@@ -1,23 +1,43 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://gijnklajdg6g"]
 
-[ext_resource type="PackedScene" path="res://scene/in_scene/in_scene.tscn" id="1_base"]
-[ext_resource type="Script" path="res://scene/tutorial/tutorial_mask_layer.gd" id="2_mask"]
-[ext_resource type="Script" path="res://scene/tutorial/tutorial_in_scene_director.gd" id="3_director"]
-[ext_resource type="Script" path="res://scene/tutorial/tutorial_in_scene.gd" id="4_root"]
-[ext_resource type="Script" path="res://scene/tutorial/tutorial_hex_map.gd" id="5_hex"]
+[ext_resource type="PackedScene" uid="uid://jek608mf31r8" path="res://scene/in_scene/in_scene.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://blvm048qh6p8g" path="res://scene/tutorial/tutorial_mask_layer.gd" id="2_mask"]
+[ext_resource type="Script" uid="uid://dfr8btgs4brin" path="res://scene/tutorial/tutorial_in_scene_director.gd" id="3_director"]
+[ext_resource type="Script" uid="uid://cj6rekagbpboa" path="res://scene/in_scene/enermy/village.gd" id="4_hnual"]
+[ext_resource type="Script" uid="uid://v4bimn4m867o" path="res://scene/tutorial/tutorial_in_scene.gd" id="4_root"]
+[ext_resource type="Script" uid="uid://bcfnihiudytfo" path="res://scene/in_scene/enermy/background.gd" id="5_8jvlc"]
+[ext_resource type="Script" uid="uid://0kfhxhkaxvxy" path="res://scene/tutorial/tutorial_hex_map.gd" id="5_hex"]
 
-[node name="in_scene" instance=ExtResource("1_base")]
+[node name="in_scene" unique_id=374032777 instance=ExtResource("1_base")]
 script = ExtResource("4_root")
 
-[node name="HexMap" parent="map" index="0"]
+[node name="HexMap" parent="map" parent_id_path=PackedInt32Array(505748231) index="0" unique_id=289534085]
 script = ExtResource("5_hex")
+tutorial_tile_heights = {
+Vector2i(-1, 0): 2,
+Vector2i(-1, 1): 1,
+Vector2i(0, -1): 1,
+Vector2i(0, 0): 4,
+Vector2i(0, 1): 2,
+Vector2i(1, -1): 2,
+Vector2i(1, 0): 2
+}
+tutorial_tile_terrain_overrides = {}
+tutorial_use_nexus_core_center = true
+tutorial_landform_defs = Array[Dictionary]([{
+"coord": Vector2i(1, 0),
+"script": ExtResource("4_hnual")
+}, {
+"coord": Vector2i(-1, 0),
+"script": ExtResource("5_8jvlc")
+}])
 
-[node name="TutorialGuideLayer" type="CanvasLayer" parent="."]
+[node name="TutorialGuideLayer" type="CanvasLayer" parent="." index="7" unique_id=279804355]
 layer = 5000
 
-[node name="TutorialMaskLayer" type="Control" parent="TutorialGuideLayer"]
+[node name="TutorialMaskLayer" type="Control" parent="TutorialGuideLayer" index="0" unique_id=398030160]
 visible = false
-layout_mode = 1
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -26,5 +46,5 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_mask")
 
-[node name="TutorialInDirector" type="Node" parent="."]
+[node name="TutorialInDirector" type="Node" parent="." index="8" unique_id=161754164]
 script = ExtResource("3_director")

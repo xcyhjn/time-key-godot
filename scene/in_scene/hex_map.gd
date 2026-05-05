@@ -1,7 +1,9 @@
-﻿# 原文件名: hex_map(地块生成).gd
+# 原文件名: hex_map(地块生成).gd
 # 功能: 地块生成与战斗地图管理
 extends Node2D
 class_name battle
+
+var rng := RandomNumberGenerator.new()
 
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
@@ -319,7 +321,7 @@ func _ready():
 	
 	# 打印接收到的信息，方便调试（整合自 node_2d.gd）
 	if parts.size() > 1:
-		var features = parts[1].split(",") 
+		var features = parts[1].split(",")
 		# features 将会是 ["enhance", "combine"]
 		for feature in features:
 			print("该房间拥有特性:", feature)
@@ -342,9 +344,14 @@ func _ready():
 	]
 	
 	enemy_pool = [
+		#preload("res://scene/in_scene/enermy/tower.gd"),
+		preload("res://scene/in_scene/enermy/Animal_husbandry.gd"),
+		preload("res://scene/in_scene/enermy/iron_mine.gd"),
 		preload("res://scene/in_scene/enermy/village.gd"),
 		preload("res://scene/in_scene/enermy/blockhouse.gd"),
-		preload("res://scene/in_scene/enermy/altar.gd")
+		preload("res://scene/in_scene/enermy/altar.gd"),
+		preload("res://scene/in_scene/enermy/radar.gd"),
+		preload("res://scene/in_scene/enermy/center_altar.gd")
 	]
 	var screen_size = get_viewport_rect().size
 	map_root.position = Vector2(screen_size.x * 0.5, screen_size.y * 0.5)
@@ -452,7 +459,6 @@ func _get_circular_coords(radius: int) -> Array[Vector2i]:
 ## @param shape_params 形状参数（如 angle_span, radius 等）
 func _populate_map_data(coords: Array[Vector2i], shape_type: String, shape_params: Dictionary = {}) -> void:
 	# 初始化随机数生成器
-	var rng = RandomNumberGenerator.new()
 	if use_external_seed and received_text != "":
 		rng.seed = received_text.hash()
 	else:
@@ -620,7 +626,6 @@ func get_terrain_from_height(h: int) -> TerrainType:
 # 1. 核心分配逻辑 (严格遵循 35% 密度限制)
 # ==========================================
 func _assign_terrains_and_enemies():
-	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 	
 	# 【修复1】：清空上一局残留的高度池，并增加安全性校验
@@ -2116,15 +2121,21 @@ func refresh_landform_visual(coord: Vector2i) -> void:
 
 ## 处理回合结束时的建筑行为
 func _on_step_next(step: int, behavior: int) -> void:
-	
-	# 遍历所有地块，触发建筑的 Behavior 方法
-	for coord_v2 in map_data.keys():
+	for coord_v2 in iron_mine.Library:
 		var data = map_data[coord_v2]
-		if data.has("landform") and data["landform"] != null:
+		if data.has("landform") and data["landform"].landform_name == "iron_mine":
 			var landform_inst = data["landform"]
 			if landform_inst.has_method("Behavior"):
 				# 调用建筑的 Behavior 方法
-				landform_inst.Behavior(step, map_data, null, behavior)
+				landform_inst.Behavior(step, map_data, null, behavior, rng)
+	# 遍历所有地块，触发建筑的 Behavior 方法
+	for coord_v2 in map_data.keys():
+		var data = map_data[coord_v2]
+		if data.has("landform") and data["landform"] != null and data["landform"].landform_name != "iron_mine":
+			var landform_inst = data["landform"]
+			if landform_inst.has_method("Behavior"):
+				# 调用建筑的 Behavior 方法
+				landform_inst.Behavior(step, map_data, null, behavior, rng)
 
 ## 未处理的输入事件（整合自 node_2d.gd）
 func _unhandled_input(event):

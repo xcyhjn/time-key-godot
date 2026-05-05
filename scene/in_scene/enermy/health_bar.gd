@@ -1,4 +1,4 @@
-﻿# 功能: 单体血条管理器，监听 HexMap.CreateBar 并为地貌/敌人生成对应血条。
+# 功能: 单体血条管理器，监听 HexMap.CreateBar 并为地貌/敌人生成对应血条。
 # 核心逻辑: Create_Blood_Bar 负责实例化血条、绑定生命值信号，并在地图入场动画期间把请求交给 HexMap 延后处理。
 extends Node2D
 class_name BarManager
@@ -79,6 +79,7 @@ func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : f
 		
 		# 连接生命值变化信号并立即初始化显示
 		landform_in.Blood_change.connect(HealthBuffer.Blood_change_Handler)
+		landform_in.HealthBar_free.connect(HealthBuffer.free_handler)
 		HealthBuffer.Blood_change_Handler(landform_in.HP)
 		
 		# ★ 核心修改：使用 call_deferred 延迟一帧注册！

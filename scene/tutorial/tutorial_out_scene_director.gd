@@ -14,6 +14,8 @@ class_name TutorialOutSceneDirector
 @export var auto_show_character_focus_on_start: bool = false
 @export var auto_show_room_focus_after_character_confirmed: bool = false
 
+var _active_timeline_name: String = ""
+var _queued_timeline_name: String = ""
 var out_scene: TutorialOutScene = null
 var mask_layer: TutorialMaskLayer = null
 
@@ -35,6 +37,7 @@ func _setup() -> void:
 		out_scene.tutorial_character_confirmed.connect(_on_character_confirmed)
 	if not out_scene.tutorial_room_entering.is_connected(_on_room_entering):
 		out_scene.tutorial_room_entering.connect(_on_room_entering)
+	_connect_dialogic_signals()
 
 	if auto_show_character_focus_on_start:
 		show_character_focus()
@@ -62,6 +65,7 @@ func clear_mask() -> void:
 func _on_character_confirmed(_character_index: int) -> void:
 	if auto_show_room_focus_after_character_confirmed:
 		show_first_room_focus()
+	_start_or_queue_dialogic_timeline(tutorial_config.out_scene_after_character_timeline)
 
 
 func _on_room_entering(_room_hex: Vector2i) -> void:
@@ -83,4 +87,49 @@ func _start_dialogic_timeline(timeline_name: String) -> void:
 		return
 	if not is_instance_valid(Dialogic):
 		return
+	_active_timeline_name = timeline_name
 	Dialogic.start(timeline_name)
+
+
+func _start_or_queue_dialogic_timeline(timeline_name: String) -> void:
+	if timeline_name.strip_edges() == "":
+		return
+	if _active_timeline_name != "":
+		_queued_timeline_name = timeline_name
+		return
+	_start_dialogic_timeline(timeline_name)
+
+
+func _connect_dialogic_signals() -> void:
+	if not is_instance_valid(Dialogic):
+		return
+	if Dialogic.has_signal("timeline_ended") and not Dialogic.timeline_ended.is_connected(_on_dialogic_timeline_ended):
+		Dialogic.timeline_ended.connect(_on_dialogic_timeline_ended)
+	if Dialogic.has_signal("signal_event") and not Dialogic.signal_event.is_connected(_on_dialogic_signal_event):
+		Dialogic.signal_event.connect(_on_dialogic_signal_event)
+
+
+func _on_dialogic_timeline_ended() -> void:
+	_active_timeline_name = ""
+	if _queued_timeline_name == "":
+		return
+
+	var next_timeline: String = _queued_timeline_name
+	_queued_timeline_name = ""
+	_start_dialogic_timeline(next_timeline)
+
+
+func _on_dialogic_signal_event(argument: Variant) -> void:
+	var signal_name: String = ""
+	if typeof(argument) == TYPE_DICTIONARY:
+		signal_name = str(argument.get("name", argument.get("signal", "")))
+	else:
+		signal_name = str(argument)
+
+	match signal_name:
+		"show_character_focus":
+			show_character_focus()
+		"show_first_room_focus":
+			show_first_room_focus()
+		"clear_mask":
+			clear_mask()

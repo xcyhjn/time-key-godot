@@ -1,4 +1,4 @@
-﻿class_name village
+class_name village
 extends landform
 
 static var Library : Array[Vector2]
@@ -6,7 +6,7 @@ var possible_neighbor : Array[Vector2i]
 
 
 
-func _init(location_in : Vector2,battle_in):
+func _init(location_in : Vector2i,battle_in):
 	damage_rate = 0.5
 	Max_Blood = 100
 	super._init(
@@ -24,6 +24,8 @@ func _init(location_in : Vector2,battle_in):
 	# 设置时间占位形状为1x2
 	set_timeline_shape("011")
 	
+	if location_in == Vector2i(-100, -100):
+		return
 	target = location_in
 	Library.append(location_in)
 	willing_pool = {single_expand_unsure_will : single_expand_unsure_done,
@@ -153,14 +155,13 @@ func all_expand_done(tile_info : Dictionary, rng : RandomNumberGenerator) -> voi
 	return
 
 
-func Behavior(Step, info_in, Other, beha):
+func Behavior(Step, info_in, Other, beha, rng):
 	# 如果村庄已经变成废墟，则不再执行任何扩张行为
 	if State_Main == Main_State_Pool.Broken:
 		return
 	print(step)
 	if beha != -1:
 		willing = beha
-	var rng = RandomNumberGenerator.new()
 	possible_neighbor = get_possible_neighbor_coords(info_in, rng)
 	if will:
 		willing_pool.values()[willing].call(info_in, rng)

@@ -1,7 +1,8 @@
-﻿@abstract class_name landform
+@abstract class_name landform
 extends  Node2D
 
 signal Blood_change(Blood)
+signal HealthBar_free
 
 
 enum property_pool{
@@ -91,7 +92,7 @@ var _last_parsed_shape_key: String = ""
 ## 这个状态跟随建筑实例本身，方便 HexMap 刷新时仍能读到“已使用”。
 var settlement_reward_used: bool = false
 
-func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2, is_Underlings : bool,battle_in) -> void:
+func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2i, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
 		push_error("无效的图像接口")
 		return
@@ -256,7 +257,7 @@ func _add_landform_sprite(parent: Node2D, coord: Vector2, height: int, current_s
 
 	parent.add_child(lf_sprite)
  
-func Behavior(Step, info_in, Other, beha):
+func Behavior(Step, info_in, Other, beha , rng):
 	# 默认行为：什么也不做
 	# 子类可以重写此方法以实现特定行为
 	pass

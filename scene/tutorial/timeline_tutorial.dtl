@@ -1,0 +1,2 @@
+join hero_black left [animation="Fade In" length="0.2"]
+hero_black: 清除人类

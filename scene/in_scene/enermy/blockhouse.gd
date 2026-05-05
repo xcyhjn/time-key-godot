@@ -5,7 +5,8 @@ func _init(location_in : Vector2i,battle_in):
 	Max_Blood = 10
 	super._init(
 	"blockhouse", 
-	["res://image/enermy/blockhouse/blockhouse.png"], 
+	["res://image/enermy/blockhouse/blockhouse.png",
+	"res://image/enermy/animal_husbandry/pond.png"], 
 	["res://image/enermy/background/broken_trees.png"], 
 	{"chance": 0.5},
 	location_in,
@@ -42,10 +43,9 @@ func get_possible_coords(coord : Vector2i, tile_info : Dictionary) -> bool:
 				
 	return bool_buffer
 
-func Behavior(Step, info_in, Other, beha):
+func Behavior(Step, info_in, Other, beha, rng):
 	if beha != -1:
 		willing = beha
-	var rng = RandomNumberGenerator.new()
 	if will:
 		willing_pool.values()[willing].call()
 		will = false
