@@ -16,7 +16,7 @@ const TutorialSaveScript = preload("res://scene/tutorial/tutorial_save.gd")
 
 @export_group("教程调试")
 ## 开启后，每次点击进入新游戏前都会删除 user://tutorial_settings.cfg，方便反复测试首次教程弹窗。
-@export var debug_clear_tutorial_record_on_new_game: bool = true
+@export var debug_clear_tutorial_record_on_new_game: bool = false
 
 @onready var Set = $UI/MainSet
 @onready var Guide = $UI/MainGuide

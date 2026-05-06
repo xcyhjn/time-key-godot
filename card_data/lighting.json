@@ -1,6 +1,6 @@
 {
-	"name": "1",
-	"front_image": "1.png",
+	"name": "lighting",
+	"front_image": "lighting.png",
 	"效果" : "造成100点伤害",
 	"effects": [
 	{ "type": "damage", "value": 100 }

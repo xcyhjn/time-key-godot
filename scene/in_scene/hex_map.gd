@@ -356,8 +356,8 @@ func _ready():
 		preload("res://scene/in_scene/enermy/village.gd"),
 		preload("res://scene/in_scene/enermy/blockhouse.gd"),
 		preload("res://scene/in_scene/enermy/altar.gd"),
-		preload("res://scene/in_scene/enermy/radar.gd"),
-		preload("res://scene/in_scene/enermy/center_altar.gd")
+		#preload("res://scene/in_scene/enermy/radar.gd"),
+		#preload("res://scene/in_scene/enermy/center_altar.gd")
 	]
 	var screen_size = get_viewport_rect().size
 	map_root.position = Vector2(screen_size.x * 0.5, screen_size.y * 0.5)

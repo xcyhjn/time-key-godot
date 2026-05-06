@@ -5,6 +5,8 @@ extends Control
 @onready var content = $MenuContainer
 @onready var name_label = $MenuContainer/SaveOptions/Name
 @onready var desc_label = $MenuContainer/SaveOptions/Description
+# 假设确认按钮的节点名为 SaveToTitle，请根据实际路径调整
+@onready var confirm_button = $MenuContainer/SaveOptions/SaveToTitle 
 
 # --- 角色资源配置 (Inspector 中配置) ---
 @export_group("角色内容配置")
@@ -21,6 +23,7 @@ extends Control
 var target_slants = Vector2(0.72, 0.55) 
 var initial_slants = Vector2(-1.2, -1.0)
 var is_animating: bool = false
+var is_selectable: bool = false # 记录当前角色是否为初始可选
 
 func _ready():
 	self.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -46,6 +49,13 @@ func open_menu(type: int):
 	# 计算索引 (type 6 -> index 0)
 	var index = type - 6
 	
+	# --- 核心逻辑：判断是否为开放角色 (索引 1 和 3) ---
+	is_selectable = (index == 1 or index == 3)
+	
+	# 控制确认按钮的显示与隐藏
+	if confirm_button:
+		confirm_button.visible = is_selectable
+
 	# --- 1. 更新 UI 文本内容 ---
 	if index >= 0 and index < names.size():
 		if name_label: name_label.text = names[index]
@@ -72,7 +82,7 @@ func open_menu(type: int):
 	
 	tween.tween_property(self, "modulate:a", 1.0, 0.2)
 	tween.tween_method(set_left_slant, initial_slants.x, target_slants.x, 0.5)
-	tween.tween_method(set_right_slant, initial_slants.y, target_slants.y, 0.45) # 右边快 0.05s
+	tween.tween_method(set_right_slant, initial_slants.y, target_slants.y, 0.45) 
 	
 	if content:
 		content.modulate.a = 0
@@ -111,7 +121,9 @@ func set_right_slant(value: float):
 
 # --- 按钮回调 ---
 func _on_save_to_title_button_down():
-	if is_animating: return
+	# 动画中或者角色不可选时，禁止点击
+	if is_animating or not is_selectable: 
+		return
 	Global.choose_confirm.emit()
 	close_menu()
 

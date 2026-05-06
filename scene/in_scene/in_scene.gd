@@ -1,4 +1,4 @@
-﻿extends Control
+extends Control
 
 # 预加载资源
 var hand_scene = load("res://addons/card-framework/hand.tscn")
@@ -62,13 +62,14 @@ var drop_area = 4.0 / 7.0
 @onready var remove_reward_button = $"../RemoveRewardButton"
 @onready var craft_reward_button = $"../CraftRewardButton"
 @onready var lose_button = $"../LoseButton"
+@onready var win_debug_button: Button = $"../WinButton"
+@onready var combat_victory_debug_button: Button = $"../CombatVictoryDebugButton"
 @onready var game_over_ui = $"../GameOver"
 # ★ 新增：地图和时间币显示引用
 @onready var hex_map = $"../../map/HexMap"
 @onready var timecoin_container = get_node_or_null("/root/in_scene/TimecoinView/TimecoinCanvasLayer/TimecoinContainer")
 
-# ★ 新增：回合按钮引用
-@onready var start_turn_button = $"../StartTurnButton"
+# ★ 新增：回合与局内功能按钮引用
 @onready var end_turn_button = $"../EndTurnButton"
 @onready var end_combat_button = $"../EndCombatButton"  # 根据你的实际路径修改
 @onready var debug_timecoin_button: Button = $"../DebugTimecoinButton"
@@ -134,6 +135,13 @@ var active_settlement_reward_context: Dictionary = {}
 ## generation 用来让旧的 await 循环在按钮暂停、场景切换后自然失效，避免重复加币。
 var _debug_timecoin_running: bool = false
 var _debug_timecoin_generation: int = 0
+var _card_system_ready: bool = false
+var _resolution_hides_debug_buttons: bool = false
+
+## 首回合自动启动状态。
+## 进入局内后会等待地图入场与时间轴入场都完成，再触发一次真正的回合开始。
+var _first_turn_started: bool = false
+var _first_turn_starting: bool = false
 
 
 func _ready() -> void:
@@ -190,9 +198,9 @@ func _ready() -> void:
 			if not timeline_manager.action_executed.is_connected(effect_processor.execute_action):
 				timeline_manager.action_executed.connect(effect_processor.execute_action)
 	
-	# ★ 游戏开始时生成敌人意图（第一次生成敌人时）
-	# 如果 HexMap 正在播放入场涟漪，等地块和血条都露出后再部署时间轴意图。
-	_schedule_initial_enemy_intents()
+	# 局内开场不再提前生成一次敌方意图。
+	# 等地图与时间轴完成入场后，统一进入第一回合，再抽牌并生成敌方意图。
+	_schedule_auto_first_turn()
 	
 	# ★ 增强光标提示框样式，模仿卡牌文本框
 	call_deferred("_enhance_cursor_tooltip")
@@ -226,6 +234,11 @@ func _ready() -> void:
 ## 因此 UI、SignalBus、MapState 的既有更新链路都会被完整触发。
 func setup_timecoin_debug_button() -> void:
 	if not is_instance_valid(debug_timecoin_button):
+		return
+
+	if _resolution_hides_debug_buttons:
+		debug_timecoin_button.hide()
+		debug_timecoin_button.disabled = true
 		return
 
 	debug_timecoin_button.visible = enable_timecoin_debug_button
@@ -403,45 +416,57 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 	return script_path == "res://scene/global/global_clock.gd" or script_path == "res://scene/global/global.gd"
 
 
-## 游戏开始时生成初始敌人意图
-## 确保在第一次生成敌人时也在时间轴上部署意图
-func _schedule_initial_enemy_intents() -> void:
+## 安排局内自动进入第一回合。
+## 这取代旧的“开局先生成一次敌方意图”流程，避免第一回合开始时重复生成意图。
+func _schedule_auto_first_turn() -> void:
 	if (
 		is_instance_valid(hex_map)
 		and hex_map.has_signal("map_intro_reveal_finished")
 		and hex_map.has_method("is_map_intro_reveal_active")
 		and hex_map.is_map_intro_reveal_active()
 	):
-		if not hex_map.map_intro_reveal_finished.is_connected(_generate_initial_enemy_intents):
-			hex_map.map_intro_reveal_finished.connect(_generate_initial_enemy_intents)
+		if not hex_map.map_intro_reveal_finished.is_connected(_start_first_turn_after_scene_ready):
+			hex_map.map_intro_reveal_finished.connect(_start_first_turn_after_scene_ready)
 		return
 
-	call_deferred("_generate_initial_enemy_intents")
+	call_deferred("_start_first_turn_after_scene_ready")
 
 
-func _generate_initial_enemy_intents() -> void:
+## 普通局内首回合入口：时间轴隐藏时通常代表教程流程正在接管，先交给教程导演。
+func _start_first_turn_after_scene_ready() -> void:
+	await _start_first_turn_after_timeline_ready(false)
+
+
+## 教程 Dialogic 入口：显示时间轴后，同样走第一回合启动，保证规则和普通战斗一致。
+func play_timeline_intro_and_generate_enemy_intents() -> void:
+	if is_instance_valid(timeline_ui):
+		timeline_ui.show()
+	await _start_first_turn_after_timeline_ready(true)
+
+
+func _start_first_turn_after_timeline_ready(force_timeline_visible: bool = false) -> void:
+	if _first_turn_started or _first_turn_starting:
+		return
 	if not is_instance_valid(timeline_manager):
 		return
 
 	# 教程等特殊流程可能会在开局隐藏时间轴。
-	# 此时先不生成隐藏意图，等导演节点调用 play_timeline_intro_and_generate_enemy_intents() 再统一处理。
-	if is_instance_valid(timeline_ui) and not timeline_ui.visible:
+	# 此时先不自动开局，等导演节点调用 play_timeline_intro_and_generate_enemy_intents() 再继续。
+	if is_instance_valid(timeline_ui) and not timeline_ui.visible and not force_timeline_visible:
 		return
 
+	_first_turn_starting = true
+	disable_player_inputs()
+	await _wait_for_card_system_ready()
 	await _play_timeline_intro_if_visible()
-	_refresh_enemy_intents_on_timeline()
+	await _start_turn(false)
+	_first_turn_started = true
+	_first_turn_starting = false
 
 
-## 公共入口：显示时间轴、播放格子入场，然后重新生成当前敌人意图。
-## 教程 Dialogic 信号可以调用这个函数，确保“时间轴出现 -> 意图出现”的顺序稳定。
-func play_timeline_intro_and_generate_enemy_intents() -> void:
-	if is_instance_valid(timeline_ui):
-		timeline_ui.show()
-	if not is_instance_valid(timeline_manager):
-		return
-
-	await _play_timeline_intro_if_visible()
-	_refresh_enemy_intents_on_timeline()
+func _wait_for_card_system_ready() -> void:
+	while not _card_system_ready and is_inside_tree():
+		await get_tree().process_frame
 
 
 func _play_timeline_intro_if_visible() -> void:
@@ -627,9 +652,6 @@ func setup_card_system():
 			deck_button.gui_input.disconnect(_on_deck_button_gui_input)
 		deck_button.gui_input.connect(_on_deck_button_gui_input)
 
-	# ★ 新增：绑定回合控制按钮
-	if is_instance_valid(start_turn_button):
-		start_turn_button.pressed.connect(_on_start_turn_pressed)
 	if is_instance_valid(end_turn_button):
 		end_turn_button.pressed.connect(_on_end_turn_pressed)
 	
@@ -642,6 +664,8 @@ func setup_card_system():
 		remove_reward_button.pressed.connect(_on_remove_reward_button_pressed)
 	if is_instance_valid(craft_reward_button):
 		craft_reward_button.pressed.connect(_on_craft_reward_button_pressed)
+
+	_card_system_ready = true
 
 
 # --- 按钮逻辑修正 ---
@@ -694,26 +718,6 @@ func _on_discard_button_pressed():
 # ★ 回合流程控制区
 # ==========================================
 
-
-func _on_start_turn_pressed():
-
-	# 1. 切换按钮状态（防止连按）
-	start_turn_button.disabled = true
-	end_turn_button.disabled = false
-
-	# 2. 预设效果：回合开始抽 5 张牌
-	# 这里调用你之前写好的强力抽牌函数，它会自动处理洗牌！
-	attempt_draw_cards(5)
-
-	# 3. 在第一回合也生成敌人意图
-	var all_enemies = get_tree().get_nodes_in_group("Enemies")
-	if is_instance_valid(timeline_manager) and timeline_manager.has_method("generate_enemy_intents"):
-		timeline_manager.generate_enemy_intents(all_enemies)
-
-	# 你还可以在这里触发：地块上敌人的中毒掉血、技能冷却减少等逻辑
-
-# 在 in_scene.gd 中，找到 _on_end_turn_pressed() 并替换：
-
 func _on_end_turn_pressed():
 	if current_battle_state != BattleFlowState.COMBAT:
 		return
@@ -739,26 +743,33 @@ func _on_end_turn_pressed():
 	start_new_turn()
 
 func start_new_turn():
+	_start_turn(true)
+
+
+func _start_turn(advance_phase: bool = true) -> void:
 	if current_battle_state != BattleFlowState.COMBAT:
 		return
 
-	# 0. 回合开始先结算建筑状态。
+	if Signal_Bus:
+		Signal_Bus.new_turn_starting.emit()
+
+	# 回合开始先结算建筑状态。
 	# HexMap 会先创建状态快照，再逐个处理，避免中毒扩散在同一回合无限连锁。
 	if is_instance_valid(hex_map) and hex_map.has_method("process_turn_start_statuses"):
 		hex_map.process_turn_start_statuses()
 
-	# 1. 阶段值 +1；超过 8 时由 GlobalClock 推进到下一时代。
-	_advance_global_phase()
+	# 首回合进入局内时不额外推进阶段；后续回合开始才推进全局阶段。
+	if advance_phase:
+		_advance_global_phase()
 	_refresh_combat_cartoon_ui_progress()
 
-	# 2. 玩家抽牌
-	# ★ 新增修复：调用已存在的 attempt_draw_cards，取代之前错误的 draw_cards 函数名
-	attempt_draw_cards(5)
+	# 玩家先抽 5 张牌，抽牌/洗牌动画完成后再生成敌方意图。
+	await attempt_draw_cards(5)
 
-	# 3. 敌人生成新的意图并塞满时间轴
-	var all_enemies = get_tree().get_nodes_in_group("Enemies")
-	if is_instance_valid(timeline_manager) and timeline_manager.has_method("generate_enemy_intents"):
-		timeline_manager.generate_enemy_intents(all_enemies)
+	_refresh_enemy_intents_on_timeline()
+
+	if Signal_Bus and Signal_Bus.has_method("emit_turn_started"):
+		Signal_Bus.emit_turn_started(current_era_value)
 
 	# 恢复 UI
 	enable_player_inputs()
@@ -1290,7 +1301,6 @@ func proceed_to_next_stage():
 	# 把刚才隐藏的按钮全部恢复显示
 	if is_instance_valid(deck_button): deck_button.show()
 	if is_instance_valid(discard_button): discard_button.show()
-	if is_instance_valid(start_turn_button): start_turn_button.show()
 	if is_instance_valid(end_turn_button): end_turn_button.show()
 	if is_instance_valid(timeline_ui): timeline_ui.show()
 	if is_instance_valid(player_hand): player_hand.show()
@@ -1429,7 +1439,6 @@ func hide_ui_for_external_scene():
 	# 2. 隐藏按钮UI
 	if is_instance_valid(deck_button): deck_button.hide()
 	if is_instance_valid(discard_button): discard_button.hide()
-	if is_instance_valid(start_turn_button): start_turn_button.hide()
 	if is_instance_valid(end_turn_button): end_turn_button.hide()
 	if is_instance_valid(end_combat_button): end_combat_button.hide()
 	
@@ -1471,10 +1480,45 @@ func _set_single_health_bars_visible(is_visible: bool) -> void:
 	var bar_manager = hex_map.get_node_or_null("BarManager")
 	if bar_manager and bar_manager.has_method("set_all_health_bars_visible"):
 		bar_manager.set_all_health_bars_visible(is_visible)
+
+
+## 结算期统一隐藏调试入口。
+## 覆盖失败、胜利、旧奖励调试、时间币调试等按钮，防止结算界面露出开发控件。
+func _hide_debug_buttons_for_resolution() -> void:
+	_resolution_hides_debug_buttons = true
+	_stop_debug_timecoin_loop()
+
+	var debug_buttons: Array[Control] = [
+		debug_timecoin_button,
+		win_debug_button,
+		combat_victory_debug_button,
+		lose_button,
+		shop_button,
+		acquire_reward_button,
+		remove_reward_button,
+		craft_reward_button,
+	]
+
+	for button in debug_buttons:
+		if not is_instance_valid(button):
+			continue
+		button.hide()
+		if button is BaseButton:
+			(button as BaseButton).disabled = true
 	
 
 ## 退出局外场景后，恢复四个局外按钮
 func restore_ui_after_external_scene():
+	if _resolution_hides_debug_buttons:
+		if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(end_combat_button):
+			end_combat_button.show()
+			end_combat_button.disabled = false
+		if current_battle_state == BattleFlowState.SETTLEMENT:
+			if is_instance_valid(total_enemy_health_bar):
+				total_enemy_health_bar.hide()
+			_set_single_health_bars_visible(false)
+		return
+
 	
 	# 只恢复四个局外按钮，其他UI保持隐藏状态
 	var buttons_restored = 0
@@ -1522,7 +1566,6 @@ func restore_all_ui():
 	
 	if is_instance_valid(deck_button): deck_button.show()
 	if is_instance_valid(discard_button): discard_button.show()
-	if is_instance_valid(start_turn_button): start_turn_button.show()
 	if is_instance_valid(end_turn_button): end_turn_button.show()
 	if is_instance_valid(end_combat_button): end_combat_button.show()
 	
@@ -1650,6 +1693,8 @@ func _consume_settlement_reward_context(reward_context: Dictionary) -> void:
 # 信号响应：执行实际的动画转换逻辑
 func _on_defeat_triggered():
 	
+	_hide_debug_buttons_for_resolution()
+
 	# 隐藏所有战斗 UI
 	hide_ui_for_external_scene()
 	
@@ -1674,7 +1719,9 @@ func _on_combat_victory_debug_button_down() -> void:
 		Signal_Bus.emit_combat_victory_triggered()
 
 func _on_win_button_button_down() -> void:
-	win._on_victory_triggered()
+	_hide_debug_buttons_for_resolution()
+	if is_instance_valid(win) and win.has_method("_on_victory_triggered"):
+		win._on_victory_triggered()
 
 
 func _hide_settlement_buttons() -> void:
@@ -1688,6 +1735,12 @@ func _hide_settlement_buttons() -> void:
 
 
 func _show_settlement_buttons() -> void:
+	if _resolution_hides_debug_buttons:
+		if is_instance_valid(end_combat_button):
+			end_combat_button.show()
+			end_combat_button.disabled = false
+		return
+
 	if show_settlement_debug_buttons:
 		if is_instance_valid(shop_button): shop_button.show()
 		if is_instance_valid(acquire_reward_button): acquire_reward_button.show()
@@ -1709,7 +1762,6 @@ func _hide_combat_phase_ui_for_settlement() -> void:
 	if is_instance_valid(discard_pile): discard_pile.hide()
 	if is_instance_valid(deck_button): deck_button.hide()
 	if is_instance_valid(discard_button): discard_button.hide()
-	if is_instance_valid(start_turn_button): start_turn_button.hide()
 	if is_instance_valid(end_turn_button): end_turn_button.hide()
 	if is_instance_valid(timeline_ui):
 		if timeline_ui.has_method("clear_grid_preview"):
@@ -1724,6 +1776,7 @@ func _on_combat_victory_triggered() -> void:
 		return
 
 	current_battle_state = BattleFlowState.SETTLEMENT
+	_hide_debug_buttons_for_resolution()
 
 	disable_player_inputs()
 	_hide_combat_phase_ui_for_settlement()

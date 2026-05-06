@@ -48,6 +48,7 @@ inner_tier_radius = 2
 hitbox_base_height = 80.0
 show_height_pillars = false
 height_view_shader_material = SubResource("ShaderMaterial_hqns4")
+Max_Enemy_landform = 15
 
 [node name="BarManager" type="Node2D" parent="HexMap" unique_id=542911781]
 visible = false

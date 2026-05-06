@@ -9,6 +9,9 @@ var HealthBar : Array[PackedScene] = [
 ]
 
 @export_group("单体血条位置")
+## 是否允许运行时生成单体血条。
+## 关闭后，CreateBar 信号仍然会发出，但 BarManager 会直接忽略生成请求。
+@export var enable_health_bar_generation: bool = true
 ## 单体血条相对建筑锚点的世界偏移。
 ## 负 Y 会将血条整体上抬，减少对地块碰撞热区的遮挡。
 @export var health_bar_world_offset: Vector2 = Vector2(0.0, -56.0)
@@ -24,6 +27,9 @@ func _ready() -> void:
 		parent.CreateBar.connect(Create_Blood_Bar)
 
 func Create_Blood_Bar(landform_in : landform, situation : int, x : float , y : float):
+	if not enable_health_bar_generation:
+		return
+
 	if _try_defer_for_map_intro(landform_in, situation, x, y):
 		return
 

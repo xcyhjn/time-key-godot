@@ -8,8 +8,7 @@
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="5_6migj"]
 [ext_resource type="Script" uid="uid://bjwid4x1can0t" path="res://scene/in_scene/enermy/health_bar.gd" id="6_cmmty"]
 [ext_resource type="Script" uid="uid://istgpa5ab80k" path="res://scene/in_scene/camera_2d_inscene.gd" id="7_bbffy"]
-[ext_resource type="Texture2D" uid="uid://ca7ln3w63nyne" path="res://image/behide.png" id="8_hr4wu"]
-[ext_resource type="Texture2D" uid="uid://da1qrxudkpuji" path="res://image/Play.png" id="9_5dcpt"]
+[ext_resource type="Texture2D" uid="uid://cnpf6ij61c6qg" path="res://image/card_pile.png" id="8_h0845"]
 [ext_resource type="Texture2D" uid="uid://dwkqtxwdvfuqx" path="res://image/PlayPause.png" id="10_c78qr"]
 [ext_resource type="Texture2D" uid="uid://b080xjkdaw1he" path="res://image/fc1084.png" id="11_oyewm"]
 [ext_resource type="Script" uid="uid://b57d8s2xwou05" path="res://scene/in_scene/timeline/TimelineManager.gd" id="13_4x367"]
@@ -145,7 +144,7 @@ offset_top = 776.0
 offset_right = 544.0526
 offset_bottom = 1441.7896
 scale = Vector2(0.3, 0.3)
-texture_normal = ExtResource("8_hr4wu")
+texture_normal = ExtResource("8_h0845")
 ignore_texture_size = true
 
 [node name="Label" type="Label" parent="ui/DeckButton" unique_id=155726935]
@@ -166,12 +165,12 @@ text = "1"
 
 [node name="DiscardButton" type="TextureButton" parent="ui" unique_id=809995140]
 custom_minimum_size = Vector2(125, 175)
-offset_left = 1720.0
-offset_top = 788.0
-offset_right = 2190.0
-offset_bottom = 1460.5
+offset_left = 1698.0001
+offset_top = 832.00006
+offset_right = 2167.9998
+offset_bottom = 1504.5
 scale = Vector2(0.3, 0.3)
-texture_normal = ExtResource("8_hr4wu")
+texture_normal = ExtResource("8_h0845")
 ignore_texture_size = true
 
 [node name="Label" type="Label" parent="ui/DiscardButton" unique_id=1461265274]
@@ -189,19 +188,11 @@ theme_override_fonts/font = ExtResource("5_6migj")
 theme_override_font_sizes/font_size = 64
 text = "1"
 
-[node name="StartTurnButton" type="TextureButton" parent="ui" unique_id=1659503511]
-offset_left = 37.000004
-offset_top = 328.00003
-offset_right = 53.000004
-offset_bottom = 344.00003
-scale = Vector2(10, 10)
-texture_normal = ExtResource("9_5dcpt")
-
 [node name="EndTurnButton" type="TextureButton" parent="ui" unique_id=1176916968]
-offset_left = 1695.0
-offset_top = 410.0
-offset_right = 1711.0
-offset_bottom = 426.0
+offset_left = 1121.0
+offset_top = 908.0
+offset_right = 1137.0
+offset_bottom = 924.0
 scale = Vector2(10, 10)
 texture_normal = ExtResource("10_c78qr")
 
