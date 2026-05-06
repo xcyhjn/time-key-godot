@@ -7,6 +7,8 @@ const TutorialSaveScript = preload("res://scene/tutorial/tutorial_save.gd")
 @export_file("*.tscn") var tutorial_scene_path: String = "res://scene/tutorial/tutorial_out_scene.tscn"
 
 @export_group("教程入口弹窗")
+@export var tutorial_font: Font
+@export var custom_theme: Theme
 @export var tutorial_prompt_title: String = "新手教程"
 @export var tutorial_prompt_text: String = "是否进入新手教程？\n教程会从局外选角开始，带你完成第一场战斗与收获流程。"
 @export var tutorial_prompt_yes_text: String = "是"
@@ -23,18 +25,84 @@ const TutorialSaveScript = preload("res://scene/tutorial/tutorial_save.gd")
 @onready var Mask = $ColorBG
 @onready var point = $BG_Layer/Clock/Point
 @onready var dim = $UI/DimMenu
+@onready var seed_line_edit: LineEdit = $LineEdit
 
 var progress: Array[float] = []
 # 用于暂存点击不同按钮时产生的参数
 var pending_data: String = ""
 var _tutorial_prompt_dialog: ConfirmationDialog = null
 var _tutorial_prompt_decision_made: bool = false
+var _tutorial_prompt_close_only: bool = false
 
 func _ready() -> void:
 	await dim.use(1,1)
 	Global.clock.emit(1)
 	set_process(false)
 	$UI_Layer/ProgressBar.hide()
+	if is_instance_valid(seed_line_edit):
+		seed_line_edit.hide()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		if _handle_escape():
+			get_viewport().set_input_as_handled()
+
+
+func _handle_escape() -> bool:
+	if _close_tutorial_prompt_from_escape():
+		return true
+	if _close_seed_input_from_escape():
+		return true
+	if _close_active_overlay_from_escape():
+		return true
+	if _can_open_settings_from_escape():
+		_on_settings_btn_button_down()
+		return true
+	return false
+
+
+func _can_open_settings_from_escape() -> bool:
+	if _tutorial_prompt_is_open():
+		return false
+	if _is_seed_input_open():
+		return false
+	if not is_instance_valid(Set):
+		return false
+	if Set.visible:
+		return false
+	if is_instance_valid(Guide) and Guide.visible:
+		return false
+	if is_instance_valid(Quit) and Quit.visible:
+		return false
+	return true
+
+
+func _close_tutorial_prompt_from_escape() -> bool:
+	if not _tutorial_prompt_is_open():
+		return false
+	_on_tutorial_prompt_close_requested()
+	return true
+
+
+func _close_seed_input_from_escape() -> bool:
+	if not _is_seed_input_open():
+		return false
+	_hide_seed_input()
+	return true
+
+
+func _close_active_overlay_from_escape() -> bool:
+	if is_instance_valid(Set) and Set.visible and Set.has_method("_on_back_button_down"):
+		Set._on_back_button_down()
+		return true
+	if is_instance_valid(Guide) and Guide.visible and Guide.has_method("_on_back_button_down"):
+		Guide._on_back_button_down()
+		return true
+	if is_instance_valid(Quit) and Quit.visible and Quit.has_method("_on_back_button_down"):
+		Quit._on_back_button_down()
+		return true
+	return false
 
 func _process(_delta: float) -> void:
 	var status = ResourceLoader.load_threaded_get_status(Scene_path, progress)
@@ -156,11 +224,19 @@ func _show_tutorial_prompt() -> void:
 		_tutorial_prompt_dialog.exclusive = true
 		_tutorial_prompt_dialog.unresizable = true
 		add_child(_tutorial_prompt_dialog)
+		if tutorial_font:
+			_tutorial_prompt_dialog.add_theme_font_override("font", tutorial_font)
+			_tutorial_prompt_dialog.add_theme_font_override("title_font", tutorial_font)
+			_tutorial_prompt_dialog.get_ok_button().add_theme_font_override("font", tutorial_font)
+			_tutorial_prompt_dialog.get_cancel_button().add_theme_font_override("font", tutorial_font)
+		if custom_theme:
+			_tutorial_prompt_dialog.theme = custom_theme
 		_tutorial_prompt_dialog.get_ok_button().pressed.connect(_on_tutorial_prompt_yes_pressed)
 		_tutorial_prompt_dialog.get_cancel_button().pressed.connect(_on_tutorial_prompt_no_pressed)
-		_tutorial_prompt_dialog.close_requested.connect(_on_tutorial_prompt_no_pressed)
+		_tutorial_prompt_dialog.close_requested.connect(_on_tutorial_prompt_close_requested)
 
 	_tutorial_prompt_decision_made = false
+	_tutorial_prompt_close_only = false
 	TutorialSaveScript.mark_prompt_seen(false)
 	_tutorial_prompt_dialog.title = tutorial_prompt_title
 	_tutorial_prompt_dialog.dialog_text = tutorial_prompt_text
@@ -184,16 +260,48 @@ func _on_tutorial_prompt_no_pressed() -> void:
 	TutorialSaveScript.mark_prompt_seen(false)
 	await _start_normal_new_game()
 
+
+func _on_tutorial_prompt_close_requested() -> void:
+	if _tutorial_prompt_decision_made or _tutorial_prompt_close_only:
+		return
+
+	_tutorial_prompt_close_only = true
+	TutorialSaveScript.mark_prompt_seen(false)
+	if is_instance_valid(_tutorial_prompt_dialog):
+		_tutorial_prompt_dialog.hide()
+	_tutorial_prompt_close_only = false
+
+
+func _tutorial_prompt_is_open() -> bool:
+	return is_instance_valid(_tutorial_prompt_dialog) and _tutorial_prompt_dialog.visible
+
+
+func _is_seed_input_open() -> bool:
+	return is_instance_valid(seed_line_edit) and seed_line_edit.visible
+
+
+func _hide_seed_input(clear_text: bool = false) -> void:
+	if not is_instance_valid(seed_line_edit):
+		return
+	seed_line_edit.hide()
+	seed_line_edit.release_focus()
+	if clear_text:
+		seed_line_edit.text = ""
+
 # 按钮 2：传递玩家输入的字符
 func _on_new_game_btn_2_button_down() -> void:
 	_clear_tutorial_record_for_debug()
 	_reset_run_state_for_new_game()
 	Scene_path = normal_scene_path
-	$BG_Layer/LineEdit.show()
+	if not is_instance_valid(seed_line_edit):
+		return
+	seed_line_edit.show()
+	seed_line_edit.grab_focus()
 	while not Input.is_action_just_pressed("ui_accept"):
 	# 关键：必须 await 每一帧，否则死循环会卡死游戏
 		await get_tree().process_frame
-	pending_data = $BG_Layer/LineEdit.text
+	pending_data = seed_line_edit.text
+	_hide_seed_input()
 	_start_async_load()
 
 func _on_continue_btn_button_down() -> void:

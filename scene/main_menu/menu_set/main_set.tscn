@@ -8,6 +8,7 @@
 script = ExtResource("1_277lv")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=1294905625]
+modulate = Color(1, 1, 1, 0)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -15,8 +16,10 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="OptionsMenu" parent="." unique_id=646142702 instance=ExtResource("1_rp58b")]
+modulate = Color(1, 1, 1, 0)
 
 [node name="Back" type="Button" parent="." unique_id=1300345776]
+modulate = Color(1, 1, 1, 0)
 offset_left = 57.0
 offset_top = 885.0
 offset_right = 160.0

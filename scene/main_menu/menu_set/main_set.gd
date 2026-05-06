@@ -21,6 +21,9 @@ var _is_animating: bool = false
 var _active_tween: Tween
 
 func _ready() -> void:
+	panel_container.modulate.a = 0.0
+	menu.modulate.a = 0.0
+	back_button.modulate.a = 0.0
 	self.hide()
 
 # --- 入场动画 ---

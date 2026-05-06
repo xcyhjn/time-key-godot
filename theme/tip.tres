@@ -1,0 +1,15 @@
+[gd_resource type="Theme" format=3 uid="uid://dq68holf5037x"]
+
+[ext_resource type="Texture2D" uid="uid://c7twpxiq65ml" path="res://image/black rect.png" id="1_sshux"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_amw6t"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_5abhp"]
+texture = ExtResource("1_sshux")
+expand_margin_left = 2048.0
+expand_margin_top = 2048.0
+expand_margin_right = 2048.0
+expand_margin_bottom = 2048.0
+
+[resource]
+default_font = ExtResource("2_amw6t")
+AcceptDialog/styles/panel = SubResource("StyleBoxTexture_5abhp")

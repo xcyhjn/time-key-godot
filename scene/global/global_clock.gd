@@ -110,8 +110,15 @@ func _emit_progress_changed() -> void:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process_input(false)
 	_restore_progress_snapshot()
 	timeline_finished.connect(__advance)
+
+
+## GlobalClock 只负责时间与进度数据，不再接管全局 Esc 输入。
+## 暂停/返回这类输入应由具体场景自己处理，避免和主菜单、局内 UI 冲突。
+func _input(_event: InputEvent) -> void:
+	return
 
 
 ## 把当前时代/阶段写入 MapState，作为跨场景保底快照。
@@ -131,12 +138,10 @@ func _restore_progress_snapshot() -> void:
 
 	_sync_progress_snapshot()
 
-func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
-		toggle_pause()
-		get_viewport().set_input_as_handled()
-
 func toggle_pause() -> void:
+	if PAUSE_MENU_SCENE == null:
+		push_warning("GlobalClock: PAUSE_MENU_SCENE 未配置，忽略暂停请求。")
+		return
 	if not get_tree().paused:
 		current_pause_menu = PAUSE_MENU_SCENE.instantiate()
 		add_child(current_pause_menu) 

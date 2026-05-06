@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cixesxu60xs3q" path="res://scene/main_menu/main_menu.gd" id="1_rq7sb"]
 [ext_resource type="Texture2D" uid="uid://j6rjonojkebq" path="res://image/BG.png" id="2_t6h3x"]
 [ext_resource type="Texture2D" uid="uid://el0fworygbkr" path="res://image/clock/clock_noring.png" id="3_bj3ug"]
+[ext_resource type="Theme" uid="uid://dq68holf5037x" path="res://theme/tip.tres" id="3_ojiqs"]
 [ext_resource type="Script" uid="uid://b8ch0oltwvgij" path="res://scene/out_scene/point.gd" id="4_bj3ug"]
 [ext_resource type="Texture2D" uid="uid://b2n28xtpsessh" path="res://image/clock/point.png" id="4_eo5a4"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="5_lt21p"]
@@ -206,6 +207,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rq7sb")
+tutorial_font = ExtResource("5_lt21p")
+custom_theme = ExtResource("3_ojiqs")
 metadata/_edit_vertical_guides_ = [261.0, 961.0, 1660.0]
 metadata/_edit_horizontal_guides_ = [271.0, 460.0, 811.0]
 
@@ -255,15 +258,6 @@ texture_filter = 1
 position = Vector2(0, -72.99997)
 scale = Vector2(1.4140626, 1.4140626)
 texture = ExtResource("4_eo5a4")
-
-[node name="LineEdit" type="LineEdit" parent="BG_Layer" unique_id=1657605641]
-visible = false
-layout_mode = 0
-offset_left = 559.0
-offset_top = 483.0
-offset_right = 1403.0
-offset_bottom = 563.0
-size_flags_vertical = 8
 
 [node name="UI_Layer" type="MarginContainer" parent="." unique_id=991695947]
 layout_mode = 0
@@ -542,6 +536,17 @@ mouse_filter = 2
 color = Color(0, 0, 0, 1)
 script = ExtResource("8_3k2ij")
 metadata/_edit_lock_ = true
+
+[node name="LineEdit" type="LineEdit" parent="." unique_id=1657605641]
+visible = false
+z_index = 5
+layout_mode = 0
+offset_left = 559.0
+offset_top = 483.0
+offset_right = 1403.0
+offset_bottom = 563.0
+size_flags_vertical = 8
+theme_override_fonts/font = ExtResource("5_lt21p")
 
 [node name="UI" type="Control" parent="." unique_id=266235427]
 layout_mode = 1
