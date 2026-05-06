@@ -1,11 +1,12 @@
 class_name center_altar
 extends landform
 
+
 var rivet_land : String = ""
 var timeline_buffer = "111111"
 
 
-func _init(location_in : Vector2,battle_in):
+func _init(location_in : Vector2i,battle_in):
 	damage_rate = 0.5
 	Max_Blood = 100
 	super._init(
@@ -23,8 +24,7 @@ func _init(location_in : Vector2,battle_in):
 	settlement_reward_type = "shop"
 	settlement_reward_label = "商店"
 	willing_pool = {Only_will : Only_Done}
-	if owner_battle != null:
-		owner_battle.add_landform_visual_at(target)
+	target = location_in
 
 func get_possible_coords(coord : Vector2i, tile_info : Dictionary) -> bool:
 	if landform_rules.keys().has("require_height") and !landform_rules["require_height"].has(tile_info[coord]["height"]) :

@@ -742,6 +742,11 @@ func start_new_turn():
 	if current_battle_state != BattleFlowState.COMBAT:
 		return
 
+	# 0. 回合开始先结算建筑状态。
+	# HexMap 会先创建状态快照，再逐个处理，避免中毒扩散在同一回合无限连锁。
+	if is_instance_valid(hex_map) and hex_map.has_method("process_turn_start_statuses"):
+		hex_map.process_turn_start_statuses()
+
 	# 1. 阶段值 +1；超过 8 时由 GlobalClock 推进到下一时代。
 	_advance_global_phase()
 	_refresh_combat_cartoon_ui_progress()

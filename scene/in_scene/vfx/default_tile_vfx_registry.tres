@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="TileVFXRegistry" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="TileVFXRegistry" format=3 uid="uid://ulef1jg5ccm4"]
 
-[ext_resource type="Script" path="res://scene/in_scene/vfx/tile_vfx_registry.gd" id="1_registry_script"]
-[ext_resource type="Resource" path="res://scene/in_scene/vfx/default_tile_vfx_profile.tres" id="2_default_profile"]
-[ext_resource type="PackedScene" path="res://scene/in_scene/effect/tile_recover_vfx.tscn" id="3_recover_scene"]
+[ext_resource type="Script" uid="uid://6sh8eo6ifjla" path="res://scene/in_scene/vfx/tile_vfx_registry.gd" id="1_registry_script"]
+[ext_resource type="Resource" uid="uid://dta2hg88e1y3u" path="res://scene/in_scene/vfx/default_tile_vfx_profile.tres" id="2_default_profile"]
+[ext_resource type="PackedScene" uid="uid://brd1wlymdpypu" path="res://scene/in_scene/effect/tile_recover_vfx.tscn" id="3_recover_scene"]
+[ext_resource type="PackedScene" uid="uid://cuk6iq1nwe3w7" path="res://scene/in_scene/effect/tile_poison_vfx.tscn" id="4_poison_scene"]
 
 [resource]
 script = ExtResource("1_registry_script")
-default_profile = ExtResource("2_default_profile")
 tile_vfx_scenes = {
+"poison": ExtResource("4_poison_scene"),
 "recover": ExtResource("3_recover_scene")
 }

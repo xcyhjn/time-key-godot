@@ -4,7 +4,7 @@
 extends Node
 
 # ★ 新增：玩家当前的逻辑牌组（存储卡牌的 ID 字符串）
-const STARTER_DECK: Array[String] = ["1", "1", "2", "2", "recover", "wind", "wind", "recover", "3","tower","tower"]
+const STARTER_DECK: Array[String] = ["1", "1", "2", "2", "recover", "wind", "wind", "recover","tower","tower","poison","poison"]
 var player_deck: Array[String] = STARTER_DECK.duplicate()
 ## 关键词库：包含颜色和详细解释
 const KEYWORDS: Dictionary = {
@@ -21,8 +21,8 @@ const KEYWORDS: Dictionary = {
 		"desc": "地块高度下降1"
 	},
 	"中毒": {
-		"color": "#3b6328",
-		"desc": "每回合开始目标受到中毒层数的伤害，并且每回合向周围扩散，同时层数减1"
+		"color": "#a855f7",
+		"desc": "每回合向周围扩散，每层中毒在回合开始时候扣除所属建筑10%的血量，在这之后减少一层"
 	},
 	"迷信": {
 		"color": "#750a99",

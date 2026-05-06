@@ -5,6 +5,7 @@ const PHASE_IDLE := "idle"
 const PHASE_TARGET_SELECT := "target_select"
 const PHASE_TIMELINE_DRAG := "timeline_drag"
 const PHASE_BLOCKED := "blocked"
+const KEYWORD_TOOLTIP_PANEL_SCENE := preload("res://scene/shared/tooltip/keyword_tooltip_panel.tscn")
 
 # ==========================================
 # 脚本名称: enemy_intent_presentation_controller.gd
@@ -54,6 +55,10 @@ const PHASE_BLOCKED := "blocked"
 ## tooltip 距离屏幕边缘的安全留白。
 ## 仅用于防止 tooltip 出现在屏幕外，不用于避让建筑。
 @export var tooltip_screen_margin: Vector2 = Vector2(16.0, 16.0)
+## 建筑状态关键词副 tooltip 和主 tooltip 的横向间距。
+@export var status_keyword_tooltip_gap: float = 14.0
+## 建筑状态关键词副 tooltip 的最小描述宽度。
+@export var status_keyword_tooltip_width: float = 240.0
 
 @export_group("Map Intent Colors")
 ## 默认情况下，施法者本体使用的高亮颜色（白色系）。
@@ -92,6 +97,7 @@ var current_intent_data: EnemyIntentData = null
 var current_hover_origin: String = ""
 ## 上一帧记录的系统阶段，用于侦测阶段切换并及时清掉不该残留的意图预览。
 var last_phase: String = ""
+var status_keyword_tooltip_hbox: HBoxContainer = null
 
 
 func _ready() -> void:
@@ -209,6 +215,7 @@ func clear_intent_preview(restore_card_hover: bool = true) -> void:
 
 	if is_instance_valid(main_board) and is_instance_valid(main_board.get("cursor_tooltip")):
 		main_board.cursor_tooltip.hide()
+	_hide_status_keyword_tooltips()
 
 	current_intent_data = null
 	current_hover_origin = ""
@@ -231,7 +238,9 @@ func _show_intent_tooltip(intent_data: EnemyIntentData) -> void:
 	if not is_instance_valid(main_board) or not is_instance_valid(main_board.get("cursor_tooltip")):
 		return
 
-	var tooltip_lines = [intent_data.description]
+	var tooltip_lines: Array[String] = []
+	tooltip_lines.append(intent_data.description)
+	tooltip_lines.append_array(_get_source_status_lines(intent_data.source_node))
 	if not intent_data.is_valid:
 		tooltip_lines.append("[color=#ff5555]%s[/color]" % (intent_data.invalid_reason if intent_data.invalid_reason != "" else "无可用目标"))
 
@@ -239,6 +248,7 @@ func _show_intent_tooltip(intent_data: EnemyIntentData) -> void:
 	main_board.cursor_tooltip.clear()
 	main_board.cursor_tooltip.append_text("\n".join(tooltip_lines))
 	main_board.cursor_tooltip.show()
+	_rebuild_status_keyword_tooltips(intent_data.source_node)
 	call_deferred("_position_intent_tooltip", intent_data.source_coord)
 
 
@@ -250,8 +260,9 @@ func _position_intent_tooltip(source_coord: Vector2i) -> void:
 	var tooltip_pos = source_stack.global_position + tooltip_offset if is_instance_valid(source_stack) else get_viewport().get_visible_rect().size * 0.5
 
 	var panel_size = Vector2(220.0, 80.0)
-	if main_board.get("cursor_tooltip_panel") != null and is_instance_valid(main_board.cursor_tooltip_panel):
-		panel_size = main_board.cursor_tooltip_panel.size
+	var cursor_tooltip_panel := _get_cursor_tooltip_panel()
+	if is_instance_valid(cursor_tooltip_panel):
+		panel_size = cursor_tooltip_panel.size
 	else:
 		panel_size = main_board.cursor_tooltip.get_combined_minimum_size()
 
@@ -261,6 +272,155 @@ func _position_intent_tooltip(source_coord: Vector2i) -> void:
 
 	if main_board.has_method("set_cursor_tooltip_position"):
 		main_board.set_cursor_tooltip_position(tooltip_pos)
+	_position_status_keyword_tooltips()
+
+
+func _get_source_status_lines(source_node: Node) -> Array[String]:
+	if not is_instance_valid(source_node):
+		return []
+	if not source_node.has_method("get_status_tooltip_lines"):
+		return []
+
+	var raw_lines: Variant = source_node.get_status_tooltip_lines()
+	if not (raw_lines is Array):
+		return []
+
+	var result: Array[String] = []
+	for line in raw_lines:
+		result.append(str(line))
+	return result
+
+
+func _get_source_status_keywords(source_node: Node) -> Array[String]:
+	if not is_instance_valid(source_node):
+		return []
+	if not source_node.has_method("get_status_keyword_names"):
+		return []
+
+	var raw_keywords: Variant = source_node.get_status_keyword_names()
+	if not (raw_keywords is Array):
+		return []
+
+	var result: Array[String] = []
+	for keyword in raw_keywords:
+		var keyword_name := str(keyword)
+		if keyword_name != "" and not result.has(keyword_name):
+			result.append(keyword_name)
+	return result
+
+
+func _rebuild_status_keyword_tooltips(source_node: Node) -> void:
+	_hide_status_keyword_tooltips()
+
+	var keywords: Array[String] = _get_source_status_keywords(source_node)
+	if keywords.is_empty():
+		return
+
+	var host := _get_status_tooltip_host()
+	if not is_instance_valid(host):
+		return
+
+	status_keyword_tooltip_hbox = HBoxContainer.new()
+	status_keyword_tooltip_hbox.name = "EnemyStatusKeywordTooltips"
+	status_keyword_tooltip_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	status_keyword_tooltip_hbox.add_theme_constant_override("separation", int(status_keyword_tooltip_gap))
+	host.add_child(status_keyword_tooltip_hbox)
+
+	for keyword_name in keywords:
+		var panel := _create_status_keyword_panel(keyword_name)
+		if is_instance_valid(panel):
+			status_keyword_tooltip_hbox.add_child(panel)
+
+	_position_status_keyword_tooltips()
+
+
+func _create_status_keyword_panel(keyword_name: String) -> PanelContainer:
+	if not GlobalDB.KEYWORDS.has(keyword_name):
+		return null
+
+	var keyword_data: Dictionary = GlobalDB.KEYWORDS[keyword_name]
+	var panel := KEYWORD_TOOLTIP_PANEL_SCENE.instantiate() as PanelContainer
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.12, 0.12, 0.12, 0.95)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(0.8, 0.6, 0.2, 1.0)
+	style.set_corner_radius_all(6)
+	panel.add_theme_stylebox_override("panel", style)
+
+	var margin := panel.get_node_or_null("Margin") as MarginContainer
+	if is_instance_valid(margin):
+		margin.add_theme_constant_override("margin_left", 12)
+		margin.add_theme_constant_override("margin_right", 12)
+		margin.add_theme_constant_override("margin_top", 10)
+		margin.add_theme_constant_override("margin_bottom", 10)
+
+	var title_label := panel.get_node_or_null("Margin/ContentVBox/TitleLabel") as Label
+	if is_instance_valid(title_label):
+		title_label.text = keyword_name
+		title_label.add_theme_color_override("font_color", Color(str(keyword_data.get("color", "#ffffff"))))
+
+	var desc_label := panel.get_node_or_null("Margin/ContentVBox/DescriptionLabel") as RichTextLabel
+	if is_instance_valid(desc_label):
+		desc_label.custom_minimum_size = Vector2(status_keyword_tooltip_width, 0.0)
+		desc_label.clear()
+		desc_label.append_text(str(keyword_data.get("desc", "")))
+
+	return panel
+
+
+func _position_status_keyword_tooltips() -> void:
+	if not is_instance_valid(status_keyword_tooltip_hbox):
+		return
+	if not is_instance_valid(main_board):
+		return
+
+	var main_panel: Control = _get_cursor_tooltip_panel() if is_instance_valid(_get_cursor_tooltip_panel()) else main_board.cursor_tooltip
+	if not is_instance_valid(main_panel):
+		return
+
+	var screen_size := get_viewport().get_visible_rect().size
+	var main_pos: Vector2 = main_panel.global_position
+	var main_size: Vector2 = main_panel.size if main_panel.size != Vector2.ZERO else main_panel.get_combined_minimum_size()
+	var keywords_size: Vector2 = status_keyword_tooltip_hbox.size if status_keyword_tooltip_hbox.size != Vector2.ZERO else status_keyword_tooltip_hbox.get_combined_minimum_size()
+
+	var target_x := main_pos.x + main_size.x + status_keyword_tooltip_gap
+	if target_x + keywords_size.x > screen_size.x - tooltip_screen_margin.x:
+		target_x = main_pos.x - keywords_size.x - status_keyword_tooltip_gap
+
+	var target_y := clampf(
+		main_pos.y,
+		tooltip_screen_margin.y,
+		screen_size.y - keywords_size.y - tooltip_screen_margin.y
+	)
+
+	status_keyword_tooltip_hbox.global_position = Vector2(target_x, target_y)
+
+
+func _hide_status_keyword_tooltips() -> void:
+	if is_instance_valid(status_keyword_tooltip_hbox):
+		status_keyword_tooltip_hbox.queue_free()
+	status_keyword_tooltip_hbox = null
+
+
+func _get_status_tooltip_host() -> Node:
+	if not is_instance_valid(main_board):
+		return null
+	var cursor_tooltip_panel := _get_cursor_tooltip_panel()
+	if is_instance_valid(cursor_tooltip_panel):
+		return cursor_tooltip_panel.get_parent()
+	return main_board.get_parent()
+
+
+func _get_cursor_tooltip_panel() -> Control:
+	if not is_instance_valid(main_board):
+		return null
+	var panel: Variant = main_board.get("cursor_tooltip_panel")
+	return panel as Control
 
 
 func _find_action_by_source(source_node: Node) -> TimelineAction:

@@ -27,6 +27,7 @@ Signal_Bus="*uid://db1rpjhabup7l"
 GlobalDB="*uid://c42gcxvrqf4h7"
 GlobalTimecoin="*uid://ddrq5364kxv52"
 Dialogic="*uid://ds2q0uclmolvu"
+StatusDb="*uid://b27xf024l3mrg"
 
 [dialogic]
 

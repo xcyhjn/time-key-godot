@@ -1,6 +1,8 @@
 @abstract class_name landform
 extends  Node2D
 
+const StatusComponentScript = preload("res://scene/in_scene/status/status_component.gd")
+
 signal Blood_change(Blood)
 signal HealthBar_free
 
@@ -70,6 +72,19 @@ var neighbors : Array[Vector2i]
 var step : int
 
 var sheild : int = 0
+var status_component: StatusComponent = null
+
+@export_group("状态图标显示")
+## 状态图标相对建筑本体的本地偏移。x 控制左右，y 越小越往上。
+@export var status_icon_offset: Vector2 = Vector2(0.0, -82.0)
+## 多个状态图标并排时的间距。
+@export var status_icon_spacing: Vector2 = Vector2(26.0, 0.0)
+## 状态图标目标尺寸。中毒图标太小就调大这里。
+@export var status_icon_size: Vector2 = Vector2(56.0, 56.0)
+## 状态图标层级，需高于建筑贴图和地块高亮。
+@export var status_icon_z_index: int = 3600
+## 刷新状态图标时是否播放弹出反馈。
+@export var status_icon_animate_refresh: bool = true
 
 @export_group("时间占位系统")
 @export var timeline_shape_key: String = "1"         # 原始输入的字符串（如 "011"）
@@ -111,6 +126,134 @@ func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[Stri
 	self.owner_battle = battle_in
 	self.neighbors = get_neighbor_coords(location_in)
 	self.HP = Max_Blood
+	_ensure_status_component()
+
+
+## 确保每个建筑都有独立状态组件。
+## 状态组件挂在 landform 自身，后续刷新建筑视觉或移动建筑时状态跟着实体走。
+func _ensure_status_component() -> StatusComponent:
+	if is_instance_valid(status_component):
+		return status_component
+
+	status_component = StatusComponentScript.new() as StatusComponent
+	status_component.name = "StatusComponent"
+	add_child(status_component)
+	status_component.setup(self)
+	status_component.configure_display(
+		status_icon_offset,
+		status_icon_spacing,
+		status_icon_size,
+		status_icon_z_index,
+		status_icon_animate_refresh
+	)
+	return status_component
+
+
+func add_status(status_id: StringName, stacks: int, source_tile: Area2D = null, tree: SceneTree = null) -> void:
+	if stacks <= 0 or State_Main == Main_State_Pool.Broken:
+		return
+
+	var component := _ensure_status_component()
+	component.add_status(status_id, stacks)
+	_play_status_apply_vfx(status_id, source_tile, tree)
+
+
+func get_status_stacks(status_id: StringName) -> int:
+	if not is_instance_valid(status_component):
+		return 0
+	return status_component.get_status_stacks(status_id)
+
+
+func has_status(status_id: StringName) -> bool:
+	return get_status_stacks(status_id) > 0
+
+
+func get_status_tooltip_lines() -> Array[String]:
+	if not is_instance_valid(status_component):
+		return []
+	return status_component.get_tooltip_status_lines()
+
+
+func get_status_keyword_names() -> Array[String]:
+	if not is_instance_valid(status_component):
+		return []
+	return status_component.get_keyword_names()
+
+
+func process_turn_start_statuses(status_snapshot: Dictionary, tree: SceneTree = null) -> void:
+	if State_Main == Main_State_Pool.Broken:
+		return
+	if not is_instance_valid(status_component):
+		return
+
+	if int(status_snapshot.get(StatusDB.POISON_ID, 0)) > 0:
+		_process_poison_turn_start(int(status_snapshot[StatusDB.POISON_ID]), tree)
+
+
+func _process_poison_turn_start(poison_stacks: int, tree: SceneTree = null) -> void:
+	if poison_stacks <= 0:
+		return
+
+	_spread_poison_to_neighbors()
+	var damage_amount: int = maxi(1, int(ceil(Max_Blood * StatusDB.get_poison_damage_ratio() * poison_stacks)))
+	take_damage(damage_amount)
+	if Signal_Bus and Signal_Bus.has_method("emit_damage_dealt"):
+		Signal_Bus.emit_damage_dealt(self, damage_amount)
+
+	if is_instance_valid(status_component):
+		status_component.tick_poison_after_damage()
+
+
+func _spread_poison_to_neighbors() -> void:
+	if not is_instance_valid(owner_battle):
+		return
+	if not _object_has_property(owner_battle, &"stack_nodes"):
+		return
+	if State_Main == Main_State_Pool.Broken:
+		return
+
+	var spread_amount: int = StatusDB.get_poison_spread_amount()
+	if spread_amount <= 0:
+		return
+
+	for neighbor_coord in get_neighbor_coords(location):
+		if not owner_battle.stack_nodes.has(neighbor_coord):
+			continue
+		var neighbor_stack := owner_battle.stack_nodes[neighbor_coord] as Area2D
+		if not is_instance_valid(neighbor_stack):
+			continue
+		var neighbor_entity: Node = neighbor_stack.get_meta("occupant") if neighbor_stack.has_meta("occupant") else null
+		if is_instance_valid(neighbor_entity) and neighbor_entity.has_method("add_status"):
+			neighbor_entity.add_status(StatusDB.POISON_ID, spread_amount, neighbor_stack, get_tree())
+
+
+func _play_status_apply_vfx(status_id: StringName, source_tile: Area2D = null, tree: SceneTree = null) -> void:
+	var definition: Dictionary = StatusDB.get_status_definition(status_id)
+	var vfx_name: StringName = StringName(definition.get("vfx_name", &""))
+	if vfx_name == &"":
+		return
+
+	var target_tile: Area2D = source_tile
+	if not is_instance_valid(target_tile) and is_instance_valid(owner_battle) and _object_has_property(owner_battle, &"stack_nodes"):
+		target_tile = owner_battle.stack_nodes.get(location, null) as Area2D
+
+	if not is_instance_valid(target_tile):
+		return
+
+	var active_tree := tree if tree != null else get_tree()
+	if active_tree != null:
+		VFXManager.play_tile_vfx(vfx_name, target_tile, active_tree)
+
+
+## 轻量属性白名单检测。
+## 这里沿用项目里已有的保护写法，避免在运行时直接假设某个对象总是暴露指定字段。
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
 
 
 func set_rate(rate : float):
@@ -343,6 +486,9 @@ func attach_visual(parent: Node2D, height: int, current_step_h: float, tile_scal
 		old_node.queue_free()
 
 	_add_landform_sprite(parent, location, height, current_step_h, tile_scale)
+	_ensure_status_component()
+	if is_instance_valid(status_component):
+		status_component.refresh_status_icons()
 
 
 ## 核心二进制矩阵解析引擎
@@ -441,6 +587,8 @@ func State_Update():
 
 func die() -> void:
 	State_Main = Main_State_Pool.Broken
+	if is_instance_valid(status_component):
+		status_component.clear_statuses()
 	
 	# 因为上面【修复1】赋值了 self.tex，现在可以直接无缝切换为战损贴图了
 	tex_toggle()

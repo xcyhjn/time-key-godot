@@ -13,6 +13,7 @@ extends RefCounted
 
 const RecoverCommandScript = preload("res://scene/in_scene/timeline/commands/RecoverCommand.gd")
 const BuiltCommandScript = preload("res://scene/in_scene/timeline/commands/BuiltCommand.gd")
+const PoisonCommandScript = preload("res://scene/in_scene/timeline/commands/PoisonCommand.gd")
 
 ## 优化版：支持多命令完美的并行执行 (Fire and Forget 模式)
 static func process_action(action: TimelineAction, tree: SceneTree) -> void:
@@ -119,6 +120,8 @@ static func _create_command_from_type(eff: Dictionary) -> EffectCommand:
 			return RecoverCommandScript.new(int(value))
 		"built", "build":
 			return BuiltCommandScript.new(StringName(str(eff.get("creation", ""))), int(value))
+		"poison":
+			return PoisonCommandScript.new(int(value))
 		_:
 			return null
 

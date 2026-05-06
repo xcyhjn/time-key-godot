@@ -2167,6 +2167,8 @@ func _append_stack_render_sprite(list: Array, sprite: Variant) -> void:
 		return
 	if not (sprite is Node and sprite is CanvasItem):
 		return
+	if (sprite as Node).name.begins_with("StatusIcon_"):
+		return
 	if (sprite as Node).is_queued_for_deletion():
 		return
 	if list.has(sprite):
@@ -2902,6 +2904,37 @@ func get_entity_at_hex(coord: Vector2i) -> Node:
 		if is_instance_valid(entity):
 			return entity
 	return null
+
+
+## 回合开始统一状态结算入口。
+## 核心逻辑:
+## - 先拍下所有建筑的状态层数，避免中毒扩散在同一回合继续连锁触发。
+## - 再按快照逐个让建筑处理状态效果，例如中毒扩散、扣血、衰减。
+func process_turn_start_statuses() -> void:
+	var status_snapshots: Array[Dictionary] = []
+
+	for coord in stack_nodes.keys():
+		var entity: Node = get_entity_at_hex(coord)
+		if not is_instance_valid(entity):
+			continue
+		if not entity.has_method("process_turn_start_statuses"):
+			continue
+		var component: Variant = entity.get("status_component")
+		if not is_instance_valid(component) or not component.has_method("get_status_snapshot"):
+			continue
+
+		status_snapshots.append({
+			"entity": entity,
+			"snapshot": component.get_status_snapshot()
+		})
+
+	for entry in status_snapshots:
+		var entity: Node = entry.get("entity", null)
+		if is_instance_valid(entity) and entity.has_method("process_turn_start_statuses"):
+			entity.process_turn_start_statuses(entry.get("snapshot", {}), get_tree())
+
+	if has_signal("tile_topology_changed"):
+		tile_topology_changed.emit()
 
 ## 检查实体是否存活/有效
 func is_entity_alive(entity: Node) -> bool:
