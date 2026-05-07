@@ -14,15 +14,45 @@ func execute(tree: SceneTree) -> void:
 		
 	
 	if hex_map.has_method("animate_elevation_change"):
-		# 1. 并行触发：循环调用所有地块的升降动画
-		# 此时我们不使用 await，让它们瞬间在同一帧内同时开始抖动和升起
+		# 1. 并行触发：循环调用所有地块的升降动画。
+		# 这些协程会自行等待高度变化、超限销毁队列和最终清理。
 		for tile in target_tiles:
 			if is_instance_valid(tile):
 				hex_map.animate_elevation_change(tile, elevation_value)
 		
-		# 2. 统一阻塞：由于动画都在并行，我们只需让时间轴等待一个固定时间。
-		# 你的 hexmap 里震动0.2秒 + 升降0.4秒 = 0.6秒。
-		# 为了视觉稳定感，等待 0.8 秒后，再执行卡牌的下一个效果（比如伤害）。
-		await tree.create_timer(0.8).timeout
+		# 2. 统一阻塞：等待本次所有地块退出动画/销毁队列。
+		await _wait_for_tiles_to_finish(tree)
 	else:
 		pass
+
+
+func _wait_for_tiles_to_finish(tree: SceneTree) -> void:
+	var has_pending := true
+	while has_pending:
+		has_pending = false
+		for tile in target_tiles:
+			if not is_instance_valid(tile):
+				continue
+			var is_animating := tile.has_meta("is_animating") and bool(tile.get_meta("is_animating"))
+			var queued_for_destruction := tile.has_meta("queued_for_height_limit_destruction")
+			if is_animating or queued_for_destruction:
+				has_pending = true
+				break
+		if has_pending:
+			await tree.process_frame
+
+	if is_instance_valid(hex_map):
+		var padding := 0.0
+		if _object_has_property(hex_map, &"elevation_resolution_padding"):
+			padding = maxf(0.0, float(hex_map.get("elevation_resolution_padding")))
+		if padding > 0.0:
+			await tree.create_timer(padding).timeout
+
+
+func _object_has_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false

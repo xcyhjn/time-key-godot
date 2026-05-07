@@ -13,6 +13,25 @@ const OUT_SCENE_TEMPLATE := preload("res://scene/out_scene/Out_Scene.tscn")
 ## TimelineUI 会读取这个值，把时间轴向下挪，避免与上方面板互相盖住。
 @export var reserved_height: float = 90.0
 
+@export_group("Intro Animation")
+## 是否启用局内顶部 HUD 的入场浮现。
+@export var intro_enabled: bool = true
+## 是否只在本次进入局内时播放一次。
+@export var intro_play_once: bool = true
+## 顶部 HUD 的统一入场时长。
+@export var intro_duration: float = 0.42
+## 顶部面板起始时的纵向压缩比例。
+@export_range(0.0, 1.0, 0.01) var intro_panel_start_scale_y: float = 0.0
+## 闹钟入场时的起始缩放倍率。
+@export_range(0.0, 2.0, 0.01) var intro_clock_start_scale_multiplier: float = 0.84
+## 闹钟入场时的额外偏移。
+@export var intro_clock_start_offset: Vector2 = Vector2(-18.0, -18.0)
+## 顶部文案层的起始透明度。
+@export_range(0.0, 1.0, 0.01) var intro_menu_start_alpha: float = 0.0
+## 面板/闹钟动画曲线。
+@export var intro_trans_type: Tween.TransitionType = Tween.TRANS_BACK
+@export var intro_ease_type: Tween.EaseType = Tween.EASE_OUT
+
 @export_group("Canvas Layers")
 ## Rect / Pole 所在的画布层。
 ## 局内主 UI 的 CanvasLayer 是 1000，因此面板层放到 900；
@@ -92,6 +111,9 @@ const CHARACTER_TEXTURES: Array[Texture2D] = [
 	preload("res://image/character/5.png")
 ]
 
+var _intro_has_played: bool = false
+var _intro_in_progress: bool = false
+
 
 func _ready() -> void:
 	_apply_canvas_layers()
@@ -129,10 +151,13 @@ func _on_viewport_size_changed() -> void:
 ## 这个方法可以安全重复调用；它只会刷新坐标、透明度和 tile 数据，不创建重复节点。
 func apply_combat_layout() -> void:
 	_ensure_panel_tile_data()
-	_show_all_visuals_without_animation()
 	_stop_clock_pointer()
 	_place_panel()
 	_place_clock_and_ring()
+	if intro_enabled and not _intro_has_played and not _intro_in_progress:
+		_apply_intro_hidden_state()
+	else:
+		_show_all_visuals_without_animation()
 
 
 ## 从局外 CartoonUI 模板复制 Rect / Pole 的 tile_set 与 tile_map_data。
@@ -196,6 +221,33 @@ func _show_all_visuals_without_animation() -> void:
 		menu_control.show()
 
 
+## 将顶部 HUD 复位到入场前状态，供 play_intro() 与首帧布局共用。
+func _apply_intro_hidden_state() -> void:
+	if is_instance_valid(color_bg):
+		color_bg.hide()
+
+	if is_instance_valid(ring):
+		ring.visible = show_ring
+		ring.modulate.a = 0.0
+
+	if is_instance_valid(rect):
+		rect.modulate.a = 0.0
+		rect.scale = Vector2(rect_target_scale.x, rect_target_scale.y * intro_panel_start_scale_y)
+
+	if is_instance_valid(pole):
+		pole.modulate.a = 0.0
+		pole.scale = Vector2(pole_target_scale.x, pole_target_scale.y * intro_panel_start_scale_y)
+
+	if is_instance_valid(clock):
+		clock.modulate.a = 0.0
+		clock.scale = clock_scale * intro_clock_start_scale_multiplier
+		clock.position = scene_clock_position + intro_clock_start_offset if use_scene_clock_position else _get_clock_target_position() + intro_clock_start_offset
+
+	if is_instance_valid(menu_control):
+		menu_control.modulate.a = intro_menu_start_alpha
+		menu_control.show()
+
+
 ## 停止闹钟指针状态机。
 ## point.gd 的 0 号状态是 STOP；局内 HUD 不跟随鼠标也不旋转。
 func _stop_clock_pointer() -> void:
@@ -246,6 +298,64 @@ func _place_clock_and_ring() -> void:
 		ring.position = ring_pos
 		ring.visible = show_ring
 		ring.modulate.a = 1.0 if show_ring else 0.0
+
+
+## 触发局内顶部 HUD 入场。与 TimelineUI 一样，外部可先调用再轮询 is_intro_in_progress()。
+func play_intro() -> void:
+	if not intro_enabled:
+		_show_all_visuals_without_animation()
+		_intro_has_played = true
+		_intro_in_progress = false
+		return
+	if _intro_in_progress:
+		return
+	if _intro_has_played and intro_play_once:
+		_show_all_visuals_without_animation()
+		return
+
+	_ensure_panel_tile_data()
+	_stop_clock_pointer()
+	_place_panel()
+	_place_clock_and_ring()
+	_apply_intro_hidden_state()
+
+	_intro_in_progress = true
+	var safe_duration := maxf(intro_duration, 0.01)
+	var clock_target_pos := scene_clock_position if use_scene_clock_position else _get_clock_target_position()
+	var ring_target_pos := scene_ring_position if use_scene_clock_position else clock_target_pos + ring_offset_from_clock
+	var tween := create_tween().set_parallel(true)
+
+	if is_instance_valid(rect):
+		tween.tween_property(rect, "modulate:a", 1.0, safe_duration * 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(rect, "scale", rect_target_scale, safe_duration).set_trans(intro_trans_type).set_ease(intro_ease_type)
+
+	if is_instance_valid(pole):
+		tween.tween_property(pole, "modulate:a", 1.0, safe_duration * 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(pole, "scale", pole_target_scale, safe_duration).set_trans(intro_trans_type).set_ease(intro_ease_type)
+
+	if is_instance_valid(clock):
+		tween.tween_property(clock, "modulate:a", 1.0, safe_duration * 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(clock, "position", clock_target_pos, safe_duration).set_trans(intro_trans_type).set_ease(intro_ease_type)
+		tween.tween_property(clock, "scale", clock_scale, safe_duration).set_trans(intro_trans_type).set_ease(intro_ease_type)
+
+	if is_instance_valid(ring):
+		ring.position = ring_target_pos
+		tween.tween_property(ring, "modulate:a", 1.0 if show_ring else 0.0, safe_duration * 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+	if is_instance_valid(menu_control):
+		tween.tween_property(menu_control, "modulate:a", 1.0, safe_duration * 0.85).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+	tween.finished.connect(_finish_intro, CONNECT_ONE_SHOT)
+
+
+func is_intro_in_progress() -> bool:
+	return _intro_in_progress
+
+
+func _finish_intro() -> void:
+	_intro_in_progress = false
+	_intro_has_played = true
+	_show_all_visuals_without_animation()
 
 
 ## 左上角停靠坐标。

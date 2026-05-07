@@ -1,7 +1,7 @@
 {
-	"name": "2",
-	"front_image": "2.png",
-	"效果" : "地块抬升1或者下降1",
+	"name": "earthquake",
+	"front_image": "earthquake.png",
+	"效果" : "抬升范围地块1",
 	"effects": [
 	{ "type": "elevation", "value": 2 }
   ],

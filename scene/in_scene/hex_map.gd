@@ -195,18 +195,36 @@ enum LandformType { NONE, MINE, CAVE, VILLAGE, RUINS }  # 整合自 node_2d.gd�
 # 地形升降动画配置
 # ==========================================
 @export_group("地形升降动画 (Elevation Animation)")
-@export var ele_anim_duration: float = 0.4  # 升降过程的耗时
+@export var ele_anim_duration: float = 0.15  # 升降过程的耗时，调小可加速地块高度变化。
 @export var ele_shake_intensity: float = 6.0 # 升降前地壳震动的像素幅度
-@export var ele_shake_duration: float = 0.2  # 地壳震动的准备时间
+@export var ele_shake_duration: float = 0.08  # 地壳震动的准备时间，调小可减少升降前摇。
 @export var ele_trans_type: Tween.TransitionType = Tween.TRANS_ELASTIC # 弹性缓冲，效果最好
 @export var ele_ease_type: Tween.EaseType = Tween.EASE_OUT
 @export var elevation_move_distance: float = 48.0 #地块升降高度控制
 # ★ 新增：控制物理补块（侧面贴图）生成时的垂直间距
 @export var filler_block_spacing: float = 48.0
+## 时间轴等待升降/崩塌表现时额外预留的缓冲，避免下一格过早结算。
+@export var elevation_resolution_padding: float = 0.05
 
 @export_group("高度限制设置")
-@export var max_height: int = 7  ## 超过此高度地块会崩塌
+@export var max_height: int = 6  ## 超过此高度地块会崩塌
 @export var min_height: int = 0  ## 低于此高度地块会湮灭
+
+@export_group("地块消失动画")
+## 同一批最多同时消失的地块数量。默认 2，用于让大范围超限时两两崩塌。
+@export_range(1, 12, 1, "or_greater") var tile_destruction_batch_size: int = 3
+## 每批消失前额外等待一小段时间收集同一波超限地块，避免刚好错帧时只消失 1 块。
+@export_range(0.0, 1.0, 0.01, "or_greater") var tile_destruction_batch_collect_delay: float = 0.06
+## 消失前左右抖动次数。调小可以加速崩塌表现。
+@export_range(0, 20, 1) var tile_destruction_shake_count: int = 3
+## 单次左右抖动的耗时。
+@export_range(0.0, 1.0, 0.01, "or_greater") var tile_destruction_shake_step_duration: float = 0.015
+## 消失前左右抖动的像素幅度。
+@export var tile_destruction_shake_distance: float = 15.0
+## 像素溶解消失的耗时。
+@export_range(0.01, 3.0, 0.01, "or_greater") var tile_destruction_dissolve_duration: float = 0.25
+## 每组消失批次之间的间隔。默认 0，两两接力时更快。
+@export_range(0.0, 2.0, 0.01, "or_greater") var tile_destruction_batch_interval: float = 0.0
 
 # ==========================================
 # ★ 视觉状态机定义
@@ -289,6 +307,8 @@ var _has_played_map_intro_reveal: bool = false
 ## 入场动画期间暂存的单体血条生成请求，动画结束后统一交还给 BarManager。
 var _pending_intro_health_bar_requests: Array[Dictionary] = []
 var _pending_intro_health_bar_request_ids: Dictionary = {}
+var _pending_height_limit_destructions: Array[Dictionary] = []
+var _height_limit_destruction_batch_running: bool = false
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -1312,6 +1332,7 @@ func enter_settlement_reward_mode(host_node: Node = null) -> void:
 	current_settlement_reward_mode = SettlementRewardMode.AVAILABLE
 	_tiles_interactive_master_enabled = true
 	set_visuals_locked(true)
+	_set_camera_zoom_input_enabled(false)
 
 	_clear_all_aoe_highlights()
 	_clear_occlusion_effects()
@@ -1326,6 +1347,7 @@ func exit_settlement_reward_mode() -> void:
 	current_settlement_reward_mode = SettlementRewardMode.DISABLED
 	settlement_reward_host = null
 	settlement_reward_hovered_stack = null
+	_set_camera_zoom_input_enabled(true)
 
 	for stack in settlement_reward_stacks:
 		if not is_instance_valid(stack):
@@ -2329,6 +2351,10 @@ func _sync_stack_to_current_view(coord: Vector2i, animate: bool = false) -> void
 	if is_instance_valid(collision):
 		_sync_cached_node_to_flat(cache, "collision_data", collision, drop_delta, animate)
 
+	var settlement_tooltip := stack.get_node_or_null("SettlementRewardTooltip") as PanelContainer
+	if is_instance_valid(settlement_tooltip):
+		_update_settlement_reward_tooltip_position(stack, settlement_tooltip)
+
 	height_view_original_materials[stack] = cache
 
 
@@ -2427,8 +2453,10 @@ func refresh_landform_visual(coord: Vector2i) -> void:
 ## 处理回合结束时的建筑行为
 func _on_step_next(step: int, behavior: int) -> void:
 	for coord_v2 in iron_mine.Library:
+		if not map_data.has(coord_v2):
+			continue
 		var data = map_data[coord_v2]
-		if data.has("landform") and data["landform"].landform_name == "iron_mine":
+		if data.has("landform") and is_instance_valid(data["landform"]) and data["landform"].landform_name == "iron_mine":
 			var landform_inst = data["landform"]
 			if landform_inst.has_method("Behavior"):
 				# 调用建筑的 Behavior 方法
@@ -2436,7 +2464,7 @@ func _on_step_next(step: int, behavior: int) -> void:
 	# 遍历所有地块，触发建筑的 Behavior 方法
 	for coord_v2 in map_data.keys():
 		var data = map_data[coord_v2]
-		if data.has("landform") and data["landform"] != null and data["landform"].landform_name != "iron_mine":
+		if data.has("landform") and is_instance_valid(data["landform"]) and data["landform"].landform_name != "iron_mine":
 			var landform_inst = data["landform"]
 			if landform_inst.has_method("Behavior"):
 				# 调用建筑的 Behavior 方法
@@ -2464,9 +2492,31 @@ func toggle_height_view() -> void:
 	else:
 		current_view_state = MapViewState.VIEW_3D
 		_restore_original_height_view()
-		
+
 	await get_tree().create_timer(0.4).timeout
+	_refresh_all_settlement_reward_tooltip_positions()
 	is_view_transitioning = false
+
+
+func _refresh_all_settlement_reward_tooltip_positions() -> void:
+	if settlement_reward_stacks.is_empty():
+		return
+
+	for stack in settlement_reward_stacks:
+		if not is_instance_valid(stack):
+			continue
+		var panel := stack.get_node_or_null("SettlementRewardTooltip") as PanelContainer
+		if is_instance_valid(panel):
+			_update_settlement_reward_tooltip_position(stack, panel)
+
+
+func _set_camera_zoom_input_enabled(enabled: bool) -> void:
+	var camera = get_node_or_null("../Camera2D")
+	if not is_instance_valid(camera) and get_tree().current_scene:
+		camera = get_tree().current_scene.get_node_or_null("map/Camera2D")
+
+	if is_instance_valid(camera) and _object_has_property(camera, &"zoom_input_enabled"):
+		camera.set("zoom_input_enabled", enabled)
 ## 为单个精灵设置shader参数补间（辅助函数）
 # ★ 修复：移除强类型限制 (删除了 : Sprite2D)，以兼容 UI 组件 (TextureProgressBar 等)
 func _tween_shader_param_single(sprite, param_name: String, target_val: float, duration: float) -> void:
@@ -2729,30 +2779,34 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	if not is_instance_valid(stack): return
 	stack.set_meta("is_animating", true)
 
-	var old_height = stack.get_meta("height") as int
-	var new_height = old_height + delta_height
+	var old_height: int = int(stack.get_meta("height"))
+	var new_height: int = old_height + delta_height
 	var coord = stack_nodes.find_key(stack)
 	if coord == null: 
 		stack.set_meta("is_animating", false)
 		return
 		
-	if new_height > max_height or new_height <= min_height:
-		await _perform_tile_destruction(stack, coord)
-		return
-		
-	new_height = clampi(new_height, 1, 99)
-	var actual_delta = new_height - old_height
+	var should_destroy_after_elevation := new_height > max_height or new_height <= min_height
+	var visual_height: int = new_height
+	if should_destroy_after_elevation and new_height <= min_height:
+		visual_height = 1
+	else:
+		visual_height = clampi(visual_height, 1, 99)
+
+	var actual_delta = visual_height - old_height
 	if actual_delta == 0: 
 		stack.set_meta("is_animating", false)
+		if should_destroy_after_elevation:
+			await _queue_tile_destruction_and_wait(stack, coord)
 		return
 
 	# --- 统一数据更新 ---
-	stack.set_meta("height", new_height)
-	map_data[coord]["height"] = new_height
+	stack.set_meta("height", visual_height)
+	map_data[coord]["height"] = visual_height
 	if GlobalClock and "tile_h_pool" in GlobalClock:
 		if GlobalClock.tile_h_pool.has(old_height): GlobalClock.tile_h_pool[old_height].erase(coord)
-		if not GlobalClock.tile_h_pool.has(new_height): GlobalClock.tile_h_pool[new_height] = []
-		GlobalClock.tile_h_pool[new_height].append(coord)
+		if not GlobalClock.tile_h_pool.has(visual_height): GlobalClock.tile_h_pool[visual_height] = []
+		GlobalClock.tile_h_pool[visual_height].append(coord)
 
 	var sprites = stack.get_meta("sprites") as Array
 	var terrain_type = map_data[coord]["terrain_type"]
@@ -2815,20 +2869,23 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 		for i in range(sprites.size()):
 			if is_instance_valid(sprites[i]) and sprites[i].material:
 				sprites[i].set_instance_shader_parameter("block_idx", float(i))
-				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
+				sprites[i].set_instance_shader_parameter("total_height", float(visual_height))
 
 		# 纯二维数字弹跳动画
 		var label = stack.get_meta("height_indicator_label") if stack.has_meta("height_indicator_label") else null
 		if is_instance_valid(label):
-			label.text = str(new_height)
+			label.text = str(visual_height)
+			var label_step_duration: float = maxf(0.01, ele_anim_duration * 0.5)
 			var tw_label = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw_label.tween_property(label, "scale", Vector2(1.8, 1.8), 0.2)
-			tw_label.parallel().tween_property(label, "modulate", Color(1.0, 0.2, 0.2), 0.2) 
-			tw_label.tween_property(label, "scale", Vector2.ONE, 0.3)
-			tw_label.parallel().tween_property(label, "modulate", Color.WHITE, 0.3)
+			tw_label.tween_property(label, "scale", Vector2(1.8, 1.8), label_step_duration)
+			tw_label.parallel().tween_property(label, "modulate", Color(1.0, 0.2, 0.2), label_step_duration)
+			tw_label.tween_property(label, "scale", Vector2.ONE, label_step_duration)
+			tw_label.parallel().tween_property(label, "modulate", Color.WHITE, label_step_duration)
 			await tw_label.finished
 
 		stack.set_meta("is_animating", false)
+		if should_destroy_after_elevation:
+			await _queue_tile_destruction_and_wait(stack, coord)
 		return
 	# ==========================================
 	# ★ 3D 视图分支：安全相对移动
@@ -2858,7 +2915,7 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 		if is_instance_valid(part) and part.get_parent() not in moving_parts:
 			var p_id = part.get_instance_id()
 			var target_pos = original_positions[p_id] + Vector2(0, y_offset_movement)
-			tw.tween_property(part, "position:x", original_positions[p_id].x + randf_range(-5,5), 0.1)
+			tw.tween_property(part, "position:x", original_positions[p_id].x + randf_range(-ele_shake_intensity, ele_shake_intensity), ele_shake_duration)
 			tw.chain().tween_property(part, "position", target_pos, ele_anim_duration).set_trans(ele_trans_type).set_ease(ele_ease_type)
 
 	tw.chain().tween_callback(func():
@@ -2886,11 +2943,14 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 		for i in range(sprites.size()):
 			if is_instance_valid(sprites[i]) and sprites[i].material:
 				sprites[i].set_instance_shader_parameter("block_idx", float(i))
-				sprites[i].set_instance_shader_parameter("total_height", float(new_height))
+				sprites[i].set_instance_shader_parameter("total_height", float(visual_height))
 	)
 	
 	await tw.finished
 	if is_instance_valid(stack): stack.set_meta("is_animating", false)
+	if should_destroy_after_elevation:
+		await _queue_tile_destruction_and_wait(stack, coord)
+		return
 	tile_topology_changed.emit()
 	
 ## 安全获取地块上的占位实体（地貌或敌人）
@@ -2903,6 +2963,7 @@ func get_entity_at_hex(coord: Vector2i) -> Node:
 		var entity = stack.get_meta("occupant")
 		if is_instance_valid(entity):
 			return entity
+		stack.remove_meta("occupant")
 	return null
 
 
@@ -2949,22 +3010,135 @@ func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
 	var sprites = stack.get_meta("sprites") as Array
 	
 	# ★ 核心解耦：等待 VFXManager 的表现播完
-	await VFXManager.play_tile_destruction_vfx(sprites, get_tree())
+	await VFXManager.play_tile_destruction_vfx(
+		sprites,
+		get_tree(),
+		tile_destruction_shake_count,
+		tile_destruction_shake_step_duration,
+		tile_destruction_shake_distance,
+		tile_destruction_dissolve_duration
+	)
 	
 	# 表现播完后，执行逻辑抹除
+	var occupant: Variant = null
+	if is_instance_valid(stack) and stack.has_meta("occupant"):
+		occupant = stack.get_meta("occupant")
+
 	if is_instance_valid(stack):
 		stack.queue_free()
 	
+	var destroyed_height := 0
+	if map_data.has(coord) and typeof(map_data[coord]) == TYPE_DICTIONARY:
+		destroyed_height = int(map_data[coord].get("height", 0))
+	if GlobalClock and "tile_h_pool" in GlobalClock and GlobalClock.tile_h_pool.has(destroyed_height):
+		GlobalClock.tile_h_pool[destroyed_height].erase(coord)
+
 	stack_nodes.erase(coord)
 	map_data.erase(coord)
 	_refresh_stack_interactivity()
-	
-	var occupant = stack.get_meta("occupant")
+
+	_remove_destroyed_coord_from_landform_libraries(coord)
+
 	if is_instance_valid(occupant):
 		occupant.queue_free()
 	
 	enemy_roster_changed.emit()
 	tile_topology_changed.emit()
+
+
+## 运行期高度崩塌会直接删除地块，因此要同步清理仍保存旧坐标的静态库。
+## 当前主要用于 iron_mine / village 这类会缓存全局坐标列表的旧建筑逻辑。
+func _remove_destroyed_coord_from_landform_libraries(coord: Vector2i) -> void:
+	if iron_mine != null and "Library" in iron_mine:
+		iron_mine.Library.erase(coord)
+
+	if village != null and "Library" in village:
+		village.Library.erase(coord)
+
+
+## 将超限地块排入两两消失队列，并等待该地块真正完成销毁。
+## 核心逻辑: 高度变化先在 animate_elevation_change() 中播完；这里只负责把销毁节奏统一交给批处理。
+func _queue_tile_destruction_and_wait(stack: Area2D, coord: Vector2i) -> void:
+	if not is_instance_valid(stack):
+		return
+
+	stack.set_meta("is_animating", false)
+	if not stack.has_meta("queued_for_height_limit_destruction"):
+		stack.set_meta("queued_for_height_limit_destruction", true)
+		_pending_height_limit_destructions.append({"stack": stack, "coord": coord})
+
+	if not _height_limit_destruction_batch_running:
+		_run_height_limit_destruction_batches()
+
+	while is_instance_valid(stack) and stack.has_meta("queued_for_height_limit_destruction"):
+		await get_tree().process_frame
+
+
+## 按批次处理超限销毁。默认每批两个地块，参数在“地块消失动画”分组里导出。
+func _run_height_limit_destruction_batches() -> void:
+	if _height_limit_destruction_batch_running:
+		return
+
+	_height_limit_destruction_batch_running = true
+	if tile_destruction_batch_collect_delay > 0.0:
+		await get_tree().create_timer(tile_destruction_batch_collect_delay).timeout
+	else:
+		await get_tree().process_frame
+	while not _pending_height_limit_destructions.is_empty():
+		var batch: Array[Dictionary] = []
+		var batch_size := maxi(1, tile_destruction_batch_size)
+		while batch.size() < batch_size and not _pending_height_limit_destructions.is_empty():
+			var entry: Dictionary = _pending_height_limit_destructions.pop_front()
+			var entry_stack: Variant = entry.get("stack", null)
+			if is_instance_valid(entry_stack):
+				batch.append(entry)
+
+		if batch.is_empty():
+			continue
+
+		for entry in batch:
+			_perform_queued_tile_destruction(entry)
+
+		await _wait_for_height_limit_destruction_batch(batch)
+		if tile_destruction_batch_interval > 0.0 and not _pending_height_limit_destructions.is_empty():
+			await get_tree().create_timer(tile_destruction_batch_interval).timeout
+
+	_height_limit_destruction_batch_running = false
+
+
+func _perform_queued_tile_destruction(entry: Dictionary) -> void:
+	var stack_value: Variant = entry.get("stack", null)
+	var coord: Vector2i = entry.get("coord", Vector2i.ZERO)
+	if not is_instance_valid(stack_value):
+		return
+
+	if not (stack_value is Area2D):
+		return
+
+	var stack = stack_value
+	await _perform_tile_destruction(stack, coord)
+	if is_instance_valid(stack):
+		stack.remove_meta("queued_for_height_limit_destruction")
+
+
+func _wait_for_height_limit_destruction_batch(batch: Array[Dictionary]) -> void:
+	var has_pending := true
+	while has_pending:
+		has_pending = false
+		for entry in batch:
+			var stack_value: Variant = entry.get("stack", null)
+			if not is_instance_valid(stack_value):
+				continue
+
+			if not (stack_value is Area2D):
+				continue
+
+			var stack = stack_value
+			if is_instance_valid(stack) and stack.has_meta("queued_for_height_limit_destruction"):
+				has_pending = true
+				break
+		if has_pending:
+			await get_tree().process_frame
 
 # ==========================================
 # ★ 状态机 Shader 驱动引擎

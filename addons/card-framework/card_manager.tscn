@@ -9,4 +9,3 @@ anchors_preset = 0
 script = ExtResource("1_cp2xm")
 card_size = Vector2(100, 140)
 card_factory_scene = ExtResource("2_57jpu")
-debug_mode = true

@@ -1,18 +1,20 @@
 [gd_scene format=3 uid="uid://yt0q353h1l0g"]
 
 [ext_resource type="Script" uid="uid://cnprhvmcrm1oc" path="res://scene/in_scene/rewards/RemoveReward.gd" id="1_5eqb1"]
+[ext_resource type="StyleBox" uid="uid://bqtefxup2k8n6" path="res://theme/reward_bg_style.tres" id="2_02hcx"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_nngso"]
+[ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="4_7ef8k"]
 
 [node name="RemoveReward" type="CanvasLayer" unique_id=1170982480]
 script = ExtResource("1_5eqb1")
 
-[node name="BackgroundMask" type="ColorRect" parent="." unique_id=793342001]
+[node name="BackgroundMask" type="Panel" parent="." unique_id=1891942639]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.4509804)
+theme_override_styles/panel = ExtResource("2_02hcx")
 
 [node name="TitleLabel" type="Label" parent="." unique_id=1858421249]
 anchors_preset = -1
@@ -25,8 +27,8 @@ theme_override_font_sizes/font_size = 60
 text = "卡牌移除"
 
 [node name="DeckScrollContainer" type="ScrollContainer" parent="." unique_id=1324974754]
-offset_left = 243.0
-offset_top = 171.0
+offset_left = 246.0
+offset_top = 217.0
 offset_right = 1487.0
 offset_bottom = 842.0
 
@@ -45,10 +47,11 @@ mouse_filter = 2
 [node name="BtnBack" type="Button" parent="." unique_id=853703854]
 offset_left = 80.0
 offset_top = 904.0
-offset_right = 220.0
-offset_bottom = 976.0
+offset_right = 229.0
+offset_bottom = 1007.0
+theme = ExtResource("4_7ef8k")
 theme_override_fonts/font = ExtResource("2_nngso")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 60
 text = "退出"
 
 [node name="BtnConfirm" type="Button" parent="." unique_id=896627696]
@@ -56,6 +59,7 @@ offset_left = 1686.0
 offset_top = 904.0
 offset_right = 1826.0
 offset_bottom = 976.0
+theme = ExtResource("4_7ef8k")
 theme_override_fonts/font = ExtResource("2_nngso")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 60
 text = "确认"

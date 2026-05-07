@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 # 预加载资源
 var hand_scene = load("res://addons/card-framework/hand.tscn")
@@ -45,7 +45,7 @@ var drop_area = 4.0 / 7.0
 
 @export_group("主桌面排版 (Board Layout)")
 @export var card_size: Vector2 = Vector2(125.0, 175.0)  # 卡牌尺寸
-@export var hand_y_offset: float = 120.0  # 手牌区域下沉量 (默认 0.7 比例基础上的像素下移)
+@export var hand_y_offset: float = 150.0  # 手牌区域下沉量 (默认 0.7 比例基础上的像素下移)
 @export var hand_x_position_ratio: float = 0.5  # 手牌水平位置比例 (0.0=左, 0.5=中, 1.0=右)
 @export var hand_y_position_ratio: float = 0.7  # 手牌垂直位置比例 (0.0=上, 0.7=下)
 @export var hand_spacing: float = 20.0  # 手牌间距
@@ -72,7 +72,7 @@ var drop_area = 4.0 / 7.0
 # ★ 新增：回合与局内功能按钮引用
 @onready var end_turn_button = $"../EndTurnButton"
 @onready var end_combat_button = $"../EndCombatButton"  # 根据你的实际路径修改
-@onready var debug_timecoin_button: Button = $"../DebugTimecoinButton"
+@onready var height_view_toggle_button: Button = $"../HeightViewToggleButton"
 @onready var cursor_tooltip = $"../CursorTooltip"  # 指向刚才创建的 Label
 var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
 @onready var timeline_ui = $"../TimelineUI"  # 根据你的实际路径修改
@@ -106,22 +106,11 @@ var card_tooltip_presenter: CardTooltipPresenter = null
 ## 默认关闭，让玩家从建筑 tooltip 进入奖励；需要调试奖励页时可以在检查器里打开。
 @export var show_settlement_debug_buttons: bool = false
 
-@export_group("时间币调试")
-## 是否显示并启用局内时间币加速按钮。
-## 关闭后按钮会隐藏，正在运行的调试循环也会被停止。
-@export var enable_timecoin_debug_button: bool = true
-## 每次调试跳动增加的时间币数量。保持为正数，避免误触发 GlobalTimecoin 的参数保护。
-@export_range(1, 999, 1, "or_greater") var debug_timecoin_tick_amount: int = 3
-## 调试循环刚启动时的跳动间隔，数值越大越慢。
-@export_range(0.01, 5.0, 0.01, "or_greater") var debug_timecoin_start_interval: float = 0.5
-## 调试循环加速后的最短跳动间隔，防止过快刷屏或让 UI 动画完全看不清。
-@export_range(0.01, 5.0, 0.01, "or_greater") var debug_timecoin_min_interval: float = 0.05
-## 每次跳动后把间隔乘上该值。小于 1 会逐渐加速，越小加速越明显。
-@export_range(0.1, 1.0, 0.01) var debug_timecoin_interval_multiplier: float = 0.9
-## 调试按钮在暂停状态下显示的文字。
-@export var debug_timecoin_idle_text: String = "时间币调试"
-## 调试按钮在运行状态下显示的文字。
-@export var debug_timecoin_running_text: String = "暂停时间币"
+@export_group("时间货币调试")
+## 开启后，局内按键盘 9 可直接获得调试时间货币。
+@export var enable_keyboard_timecoin_debug: bool = true
+## 每次按下 9 获得的时间货币数量。
+@export_range(1, 999999, 1, "or_greater") var keyboard_timecoin_debug_amount: int = 1000
 
 ## 记录进入局内时携带的外部数据。
 ## 目前主要用于保留 battle_normal / battle_elite / boss_stage 这类来源标签，
@@ -131,10 +120,6 @@ var incoming_battle_tag: String = ""
 var incoming_map_seed: String = ""
 var active_settlement_reward_context: Dictionary = {}
 
-## 时间币调试循环状态。
-## generation 用来让旧的 await 循环在按钮暂停、场景切换后自然失效，避免重复加币。
-var _debug_timecoin_running: bool = false
-var _debug_timecoin_generation: int = 0
 var _card_system_ready: bool = false
 var _resolution_hides_debug_buttons: bool = false
 
@@ -170,7 +155,6 @@ func _ready() -> void:
 
 	# 2. ★ 新增：构建并初始化词条 UI (杀戮尖塔风格)
 	setup_tooltip_ui()
-	setup_timecoin_debug_button()
 
 	# 3. 初始化卡牌系统
 	setup_card_system()
@@ -228,82 +212,6 @@ func _ready() -> void:
 		if not hex_map.settlement_reward_requested.is_connected(_on_settlement_reward_requested):
 			hex_map.settlement_reward_requested.connect(_on_settlement_reward_requested)
 	
-
-## 初始化局内时间币调试按钮。
-## 这个按钮只负责开启/暂停调试循环；真正的数值变化仍通过 GlobalTimecoin.add_timecoins，
-## 因此 UI、SignalBus、MapState 的既有更新链路都会被完整触发。
-func setup_timecoin_debug_button() -> void:
-	if not is_instance_valid(debug_timecoin_button):
-		return
-
-	if _resolution_hides_debug_buttons:
-		debug_timecoin_button.hide()
-		debug_timecoin_button.disabled = true
-		return
-
-	debug_timecoin_button.visible = enable_timecoin_debug_button
-	debug_timecoin_button.text = debug_timecoin_idle_text
-	debug_timecoin_button.disabled = not enable_timecoin_debug_button
-
-	if debug_timecoin_button.pressed.is_connected(_on_debug_timecoin_button_pressed):
-		debug_timecoin_button.pressed.disconnect(_on_debug_timecoin_button_pressed)
-	debug_timecoin_button.pressed.connect(_on_debug_timecoin_button_pressed)
-
-	if not enable_timecoin_debug_button:
-		_stop_debug_timecoin_loop()
-
-
-## 点击后切换调试循环状态：第一次点击开始从慢到快加币，再次点击暂停。
-func _on_debug_timecoin_button_pressed() -> void:
-	if not enable_timecoin_debug_button:
-		_stop_debug_timecoin_loop()
-		return
-
-	if _debug_timecoin_running:
-		_stop_debug_timecoin_loop()
-	else:
-		_start_debug_timecoin_loop()
-
-
-func _start_debug_timecoin_loop() -> void:
-	_debug_timecoin_generation += 1
-	_debug_timecoin_running = true
-	if is_instance_valid(debug_timecoin_button):
-		debug_timecoin_button.text = debug_timecoin_running_text
-
-	_run_debug_timecoin_loop(_debug_timecoin_generation)
-
-
-func _stop_debug_timecoin_loop() -> void:
-	_debug_timecoin_generation += 1
-	_debug_timecoin_running = false
-	if is_instance_valid(debug_timecoin_button):
-		debug_timecoin_button.text = debug_timecoin_idle_text
-
-
-## 时间币调试循环。
-## 每次跳动后缩短等待间隔，形成“越跳越快”的调试节奏。
-func _run_debug_timecoin_loop(generation: int) -> void:
-	var interval: float = maxf(debug_timecoin_start_interval, debug_timecoin_min_interval)
-	var min_interval: float = maxf(debug_timecoin_min_interval, 0.01)
-	var multiplier: float = clampf(debug_timecoin_interval_multiplier, 0.1, 1.0)
-	var tick_amount: int = maxi(debug_timecoin_tick_amount, 1)
-
-	while (
-		_debug_timecoin_running
-		and generation == _debug_timecoin_generation
-		and is_inside_tree()
-	):
-		if GlobalTimecoin and GlobalTimecoin.has_method("add_timecoins"):
-			GlobalTimecoin.add_timecoins(tick_amount)
-		else:
-			push_warning("时间币调试失败：未找到 GlobalTimecoin.add_timecoins")
-			_stop_debug_timecoin_loop()
-			return
-
-		await get_tree().create_timer(interval).timeout
-		interval = maxf(min_interval, interval * multiplier)
-
 
 func _connect_global_clock_progress_signal() -> void:
 	if GlobalClock and GlobalClock.has_signal("progress_changed"):
@@ -470,8 +378,43 @@ func _wait_for_card_system_ready() -> void:
 
 
 func _play_timeline_intro_if_visible() -> void:
+	var intro_started: bool = false
+
+	if is_instance_valid(combat_cartoon_ui) and combat_cartoon_ui.has_method("play_intro"):
+		combat_cartoon_ui.play_intro()
+		intro_started = true
+
+	if is_instance_valid(total_enemy_health_bar) and total_enemy_health_bar.has_method("play_intro"):
+		total_enemy_health_bar.play_intro()
+		intro_started = true
+
 	if is_instance_valid(timeline_ui) and timeline_ui.visible and timeline_ui.has_method("play_intro"):
-		await timeline_ui.play_intro()
+		timeline_ui.play_intro()
+		intro_started = true
+
+	if intro_started:
+		await _wait_for_battle_intro_ui()
+
+
+func _wait_for_battle_intro_ui() -> void:
+	while _is_any_battle_intro_ui_running():
+		await get_tree().process_frame
+
+
+func _is_any_battle_intro_ui_running() -> bool:
+	if is_instance_valid(combat_cartoon_ui) and combat_cartoon_ui.has_method("is_intro_in_progress"):
+		if bool(combat_cartoon_ui.call("is_intro_in_progress")):
+			return true
+
+	if is_instance_valid(total_enemy_health_bar) and total_enemy_health_bar.has_method("is_intro_in_progress"):
+		if bool(total_enemy_health_bar.call("is_intro_in_progress")):
+			return true
+
+	if is_instance_valid(timeline_ui) and timeline_ui.visible and timeline_ui.has_method("is_intro_in_progress"):
+		if bool(timeline_ui.call("is_intro_in_progress")):
+			return true
+
+	return false
 
 
 func _refresh_enemy_intents_on_timeline() -> void:
@@ -895,6 +838,18 @@ func attempt_draw_cards(count: int):
 
 # --- 弃牌判定逻辑 (拖拽松手) ---
 func _input(event):
+	if (
+		enable_keyboard_timecoin_debug
+		and event is InputEventKey
+		and event.pressed
+		and not event.echo
+		and event.keycode == KEY_9
+	):
+		if GlobalTimecoin and GlobalTimecoin.has_method("add_timecoins"):
+			GlobalTimecoin.add_timecoins(keyboard_timecoin_debug_amount)
+			get_viewport().set_input_as_handled()
+			return
+
 	# 在“已选中卡牌但尚未进入时间占位拖拽”阶段，右键任意位置都可以取消选牌。
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
@@ -1441,6 +1396,9 @@ func hide_ui_for_external_scene():
 	if is_instance_valid(discard_button): discard_button.hide()
 	if is_instance_valid(end_turn_button): end_turn_button.hide()
 	if is_instance_valid(end_combat_button): end_combat_button.hide()
+	if is_instance_valid(height_view_toggle_button):
+		height_view_toggle_button.hide()
+		height_view_toggle_button.disabled = true
 	
 	# 3. 隐藏时间轴UI
 	if is_instance_valid(timeline_ui): timeline_ui.hide()
@@ -1483,13 +1441,11 @@ func _set_single_health_bars_visible(is_visible: bool) -> void:
 
 
 ## 结算期统一隐藏调试入口。
-## 覆盖失败、胜利、旧奖励调试、时间币调试等按钮，防止结算界面露出开发控件。
+## 覆盖失败、胜利、旧奖励调试等按钮，防止结算界面露出开发控件。
 func _hide_debug_buttons_for_resolution() -> void:
 	_resolution_hides_debug_buttons = true
-	_stop_debug_timecoin_loop()
 
 	var debug_buttons: Array[Control] = [
-		debug_timecoin_button,
 		win_debug_button,
 		combat_victory_debug_button,
 		lose_button,
@@ -1568,6 +1524,9 @@ func restore_all_ui():
 	if is_instance_valid(discard_button): discard_button.show()
 	if is_instance_valid(end_turn_button): end_turn_button.show()
 	if is_instance_valid(end_combat_button): end_combat_button.show()
+	if is_instance_valid(height_view_toggle_button):
+		height_view_toggle_button.show()
+		height_view_toggle_button.disabled = false
 	
 	if is_instance_valid(timeline_ui): timeline_ui.show()
 	

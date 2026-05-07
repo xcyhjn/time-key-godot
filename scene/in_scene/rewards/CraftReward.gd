@@ -15,7 +15,7 @@ const CRAFTING_RECIPES := {
 	"1_2": "3",
 }
 
-@onready var background_mask: ColorRect = $BackgroundMask
+@onready var background_mask: Panel = $BackgroundMask
 @onready var title_label: Label = $TitleLabel
 @onready var crafting_board: Control = $CraftingBoard
 @onready var slot1: Button = $CraftingBoard/Slot1
@@ -518,6 +518,17 @@ func _apply_crafting_result_to_deck() -> void:
 			GlobalDB.player_deck.remove_at(idx)
 
 	GlobalDB.player_deck.append(current_result_card_id)
+
+	var main = get_tree().get_first_node_in_group("MainBoard")
+	if (
+		deck_manager
+		and deck_manager.has_method("sync_runtime_deck_from_global")
+		and main
+		and main.deck_pile
+	):
+		deck_manager.sync_runtime_deck_from_global(main.deck_pile)
+		if main.has_method("update_counts_and_ui"):
+			main.update_counts_and_ui()
 
 
 func _on_back_pressed() -> void:

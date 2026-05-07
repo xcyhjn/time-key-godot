@@ -112,21 +112,39 @@ static func _finish_hurt_vfx_target(target: Node2D) -> void:
 	if not is_instance_valid(target):
 		return
 
-	var original_position: Vector2 = target.get_meta(HURT_VFX_POSITION_META, target.position)
-	var original_modulate: Color = target.get_meta(HURT_VFX_MODULATE_META, target.modulate)
+	var original_position: Vector2 = target.position
+	if target.has_meta(HURT_VFX_POSITION_META):
+		original_position = target.get_meta(HURT_VFX_POSITION_META)
+
+	var original_modulate: Color = target.modulate
+	if target.has_meta(HURT_VFX_MODULATE_META):
+		original_modulate = target.get_meta(HURT_VFX_MODULATE_META)
+
 	_restore_hurt_vfx_target(target, original_position, original_modulate)
-	target.remove_meta(HURT_VFX_TWEEN_META)
-	target.remove_meta(HURT_VFX_POSITION_META)
-	target.remove_meta(HURT_VFX_MODULATE_META)
+	if target.has_meta(HURT_VFX_TWEEN_META):
+		target.remove_meta(HURT_VFX_TWEEN_META)
+	if target.has_meta(HURT_VFX_POSITION_META):
+		target.remove_meta(HURT_VFX_POSITION_META)
+	if target.has_meta(HURT_VFX_MODULATE_META):
+		target.remove_meta(HURT_VFX_MODULATE_META)
 
 
 static func _clear_hurt_vfx_target(target: Node2D) -> void:
 	if not is_instance_valid(target):
 		return
 
-	var old_tween: Variant = target.get_meta(HURT_VFX_TWEEN_META, null)
-	var original_position: Vector2 = target.get_meta(HURT_VFX_POSITION_META, target.position)
-	var original_modulate: Color = target.get_meta(HURT_VFX_MODULATE_META, target.modulate)
+	var old_tween: Variant = null
+	if target.has_meta(HURT_VFX_TWEEN_META):
+		old_tween = target.get_meta(HURT_VFX_TWEEN_META)
+
+	var original_position: Vector2 = target.position
+	if target.has_meta(HURT_VFX_POSITION_META):
+		original_position = target.get_meta(HURT_VFX_POSITION_META)
+
+	var original_modulate: Color = target.modulate
+	if target.has_meta(HURT_VFX_MODULATE_META):
+		original_modulate = target.get_meta(HURT_VFX_MODULATE_META)
+
 	if old_tween is Tween and is_instance_valid(old_tween):
 		old_tween.kill()
 
@@ -219,7 +237,9 @@ static func _clear_pixel_dissolve_item(item: CanvasItem) -> void:
 	if not is_instance_valid(item):
 		return
 
-	var old_tween: Variant = item.get_meta(PIXEL_DISSOLVE_TWEEN_META, null)
+	var old_tween: Variant = null
+	if item.has_meta(PIXEL_DISSOLVE_TWEEN_META):
+		old_tween = item.get_meta(PIXEL_DISSOLVE_TWEEN_META)
 	if old_tween is Tween and is_instance_valid(old_tween):
 		old_tween.kill()
 	if item.has_meta(PIXEL_DISSOLVE_TWEEN_META):
@@ -325,18 +345,28 @@ static func play_tile_elevation_vfx(moving_parts: Array, original_positions: Dic
 
 ## 2. 播放地块毁灭动画
 ## 使用 await 阻塞，等待全部光效和崩塌表现播完
-static func play_tile_destruction_vfx(sprites: Array, tree: SceneTree) -> void:
+static func play_tile_destruction_vfx(
+	sprites: Array,
+	tree: SceneTree,
+	shake_count: int = 5,
+	shake_step_duration: float = 0.05,
+	shake_distance: float = 15.0,
+	dissolve_duration: float = 1.0
+) -> void:
 	if sprites.is_empty() or not is_instance_valid(tree): 
 		return
 		
 	var tw = tree.create_tween().set_parallel(true).set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	var safe_shake_count: int = maxi(0, shake_count)
+	var safe_shake_step_duration: float = maxf(0.0, shake_step_duration)
+	var safe_dissolve_duration: float = maxf(0.01, dissolve_duration)
 	
 	for s in sprites:
 		if is_instance_valid(s):
 			# 阶段A: 剧烈左右抖动
-			for i in range(5):
-				tw.tween_property(s, "position:x", s.position.x + randf_range(-15.0, 15.0), 0.05)
-				tw.chain().tween_property(s, "position:x", s.position.x, 0.05)
+			for i in range(safe_shake_count):
+				tw.tween_property(s, "position:x", s.position.x + randf_range(-shake_distance, shake_distance), safe_shake_step_duration)
+				tw.chain().tween_property(s, "position:x", s.position.x, safe_shake_step_duration)
 			
 			# 阶段B: 像素化消融 Shader 渐变
 			if s.material:
@@ -344,6 +374,6 @@ static func play_tile_destruction_vfx(sprites: Array, tree: SceneTree) -> void:
 				tw.tween_method(func(v: float): 
 					if is_instance_valid(s) and s.material:
 						s.set_instance_shader_parameter("dissolve_blend", v)
-				, 0.0, 1.0, 1.0)
+				, 0.0, 1.0, safe_dissolve_duration)
 				
 	await tw.finished

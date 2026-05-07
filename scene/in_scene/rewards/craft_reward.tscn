@@ -1,19 +1,21 @@
 [gd_scene format=3 uid="uid://bvwy75nmi8v2q"]
 
 [ext_resource type="Script" uid="uid://c2kaxsrkwq2n8" path="res://scene/in_scene/rewards/CraftReward.gd" id="1_fjv8y"]
+[ext_resource type="StyleBox" uid="uid://bqtefxup2k8n6" path="res://theme/reward_bg_style.tres" id="2_50vpy"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_e5usn"]
+[ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="4_4k6hw"]
 
 [node name="CraftReward" type="CanvasLayer" unique_id=1945781406]
 script = ExtResource("1_fjv8y")
 metadata/_edit_vertical_guides_ = [402.0]
 
-[node name="BackgroundMask" type="ColorRect" parent="." unique_id=899903680]
+[node name="BackgroundMask" type="Panel" parent="." unique_id=127836147]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.4509804)
+theme_override_styles/panel = ExtResource("2_50vpy")
 metadata/_edit_lock_ = true
 
 [node name="TitleLabel" type="Label" parent="." unique_id=2001394329]
@@ -29,10 +31,10 @@ text = "合成卡牌"
 [node name="CraftingBoard" type="Control" parent="." unique_id=1263047477]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 279.0
-offset_top = 198.0
-offset_right = 1489.0
-offset_bottom = 856.0
+offset_left = 277.0
+offset_top = 230.0
+offset_right = 1487.0
+offset_bottom = 888.0
 
 [node name="Slot1" type="Button" parent="CraftingBoard" unique_id=1509616699]
 layout_mode = 0
@@ -73,8 +75,8 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 150.0
 offset_top = 380.0
-offset_right = 430.0
-offset_bottom = 747.0
+offset_right = 402.0
+offset_bottom = 703.0
 
 [node name="PlaceholderLabel" type="Label" parent="CraftingBoard/Slot2" unique_id=677265741]
 layout_mode = 1
@@ -106,8 +108,8 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 913.0
 offset_top = 182.0
-offset_right = 1135.0
-offset_bottom = 461.0
+offset_right = 1193.0
+offset_bottom = 574.0
 text = "
 "
 
@@ -200,8 +202,9 @@ offset_left = 80.0
 offset_top = 904.0
 offset_right = 220.0
 offset_bottom = 976.0
+theme = ExtResource("4_4k6hw")
 theme_override_fonts/font = ExtResource("2_e5usn")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 60
 text = "退出"
 
 [node name="BtnConfirm" type="Button" parent="." unique_id=846519495]
@@ -209,8 +212,9 @@ offset_left = 1686.0
 offset_top = 904.0
 offset_right = 1826.0
 offset_bottom = 976.0
+theme = ExtResource("4_4k6hw")
 theme_override_fonts/font = ExtResource("2_e5usn")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 60
 text = "确认"
 
 [node name="ExitWarningDialog" type="ConfirmationDialog" parent="." unique_id=490553670]

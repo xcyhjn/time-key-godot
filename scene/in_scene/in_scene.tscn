@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://o24takqau3p" path="res://scene/in_scene/timeline/timeline_visualizer.gd" id="17_utgoe"]
 [ext_resource type="Script" uid="uid://dxge25pjqhhag" path="res://scene/in_scene/in_scene.gd" id="18_0vlha"]
 [ext_resource type="Shader" uid="uid://d3sbyeeqsa34" path="res://shaders/pulse_highlight.gdshader.gdshader" id="19_b3wb3"]
+[ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="19_ej18f"]
 [ext_resource type="PackedScene" uid="uid://berunvbh1p375" path="res://scene/dim_menu/dim_menu.tscn" id="20_lifwa"]
 [ext_resource type="PackedScene" uid="uid://cwskcr8vc6as3" path="res://scene/game_over/game_over.tscn" id="20_nj7no"]
 [ext_resource type="PackedScene" uid="uid://ij3dvdfrdp25" path="res://scene/pause_menu/pause_menu.tscn" id="21_pause"]
@@ -139,10 +140,11 @@ offset_bottom = 8.0
 
 [node name="DeckButton" type="TextureButton" parent="ui" unique_id=1748254046]
 custom_minimum_size = Vector2(125, 175)
+anchors_preset = -1
 offset_left = 73.0
-offset_top = 776.0
+offset_top = 850.0
 offset_right = 544.0526
-offset_bottom = 1441.7896
+offset_bottom = 1515.7896
 scale = Vector2(0.3, 0.3)
 texture_normal = ExtResource("8_h0845")
 ignore_texture_size = true
@@ -165,10 +167,11 @@ text = "1"
 
 [node name="DiscardButton" type="TextureButton" parent="ui" unique_id=809995140]
 custom_minimum_size = Vector2(125, 175)
-offset_left = 1698.0001
-offset_top = 832.00006
-offset_right = 2167.9998
-offset_bottom = 1504.5
+anchors_preset = -1
+offset_left = 1696.0001
+offset_top = 853.00006
+offset_right = 2165.9995
+offset_bottom = 1525.5
 scale = Vector2(0.3, 0.3)
 texture_normal = ExtResource("8_h0845")
 ignore_texture_size = true
@@ -189,10 +192,10 @@ theme_override_font_sizes/font_size = 64
 text = "1"
 
 [node name="EndTurnButton" type="TextureButton" parent="ui" unique_id=1176916968]
-offset_left = 1121.0
-offset_top = 908.0
-offset_right = 1137.0
-offset_bottom = 924.0
+offset_left = 1639.0
+offset_top = 407.00003
+offset_right = 1655.0
+offset_bottom = 423.00003
 scale = Vector2(10, 10)
 texture_normal = ExtResource("10_c78qr")
 
@@ -295,22 +298,15 @@ offset_bottom = 76.0
 text = "商店"
 
 [node name="HeightViewToggleButton" type="Button" parent="ui" unique_id=1242454706]
-offset_left = 1509.0
-offset_top = 948.0
-offset_right = 1622.0
-offset_bottom = 1000.0
+offset_left = 1381.0
+offset_top = 199.0
+offset_right = 1525.0
+offset_bottom = 258.0
+theme = ExtResource("19_ej18f")
 text = "视角切换"
 
-[node name="DebugTimecoinButton" type="Button" parent="ui" unique_id=1262454271]
-offset_left = 1489.0
-offset_top = 884.0
-offset_right = 1634.0
-offset_bottom = 922.0
-theme_override_fonts/font = ExtResource("5_6migj")
-theme_override_font_sizes/font_size = 22
-text = "时间币调试"
-
 [node name="WinButton" type="Button" parent="ui" unique_id=1004531811]
+visible = false
 offset_left = 88.0
 offset_top = 599.0
 offset_right = 224.0
@@ -345,7 +341,7 @@ offset_bottom = 40.0
 mouse_filter = 2
 script = ExtResource("18_0vlha")
 pulse_shader = ExtResource("19_b3wb3")
-hand_y_offset = 180.0
+hand_spacing = 30.0
 
 [node name="DimMenu" parent="ui" unique_id=1999609201 instance=ExtResource("20_lifwa")]
 visible = false

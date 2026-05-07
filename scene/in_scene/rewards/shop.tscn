@@ -1,30 +1,36 @@
 [gd_scene format=3 uid="uid://dxo156u2xl6i1"]
 
 [ext_resource type="Script" uid="uid://c6iwuhkwt5581" path="res://scene/in_scene/rewards/ShopManager.gd" id="1_rcy7u"]
+[ext_resource type="StyleBox" uid="uid://bqtefxup2k8n6" path="res://theme/reward_bg_style.tres" id="2_gyg7a"]
 [ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_le8b7"]
 
 [node name="Shop" type="CanvasLayer" unique_id=1068575831]
 script = ExtResource("1_rcy7u")
-card_display_size = Vector2(200, 280)
+card_display_size = Vector2(250, 350)
 
 [node name="Background" type="Panel" parent="." unique_id=682836356]
-anchors_preset = 15
+anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 110.0
+offset_top = 116.0
+offset_right = -85.0
+offset_bottom = -97.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = ExtResource("2_gyg7a")
 
 [node name="ShopGrid" type="GridContainer" parent="." unique_id=715922616]
-offset_left = 118.0
-offset_top = 66.0
-offset_right = 1449.0
+offset_left = 196.0
+offset_top = 212.0
+offset_right = 1386.0
 offset_bottom = 934.0
 
 [node name="Sidebar" type="VBoxContainer" parent="." unique_id=841017804]
-offset_left = 1515.0
-offset_top = 104.0
-offset_right = 1835.0
-offset_bottom = 901.0
+offset_left = 1443.0
+offset_top = 387.0
+offset_right = 1763.0
+offset_bottom = 879.0
 theme_override_constants/separation = 60
 alignment = 1
 
@@ -33,10 +39,6 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("2_le8b7")
 theme_override_font_sizes/font_size = 40
 text = "退出"
-
-[node name="SpacerControl" type="Control" parent="Sidebar" unique_id=205110356]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
 
 [node name="RefreshGroup" type="VBoxContainer" parent="Sidebar" unique_id=687945948]
 layout_mode = 2

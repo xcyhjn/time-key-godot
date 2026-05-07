@@ -422,7 +422,7 @@ func _initialize_drop_zone() -> void:
 			sensor_size = card_manager.card_size
 		drop_zone.set_sensor(sensor_size, sensor_position, sensor_texture, sensor_visibility)
 		if debug_mode:
-			drop_zone.sensor_outline.visible = true
+			drop_zone.sensor_outline.visible = false
 		else:
 			drop_zone.sensor_outline.visible = false
 

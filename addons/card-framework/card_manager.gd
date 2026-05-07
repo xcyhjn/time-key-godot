@@ -274,3 +274,24 @@ func remove_card_from_deck(card_id: String) -> void:
 func add_card_to_deck(card_id: String) -> void:
 	GlobalDB.player_deck.append(card_id)
 	print("已将新卡牌加入全局牌组 ID: ", card_id)
+
+
+## 用 GlobalDB.player_deck 重建当前局内抽牌堆显示。
+## 供收获/删卡/合成等会直接改全局牌组的场景在确认后立即刷新局内牌堆。
+func sync_runtime_deck_from_global(deck_pile: CardContainer) -> void:
+	if deck_pile == null:
+		return
+	if card_factory == null:
+		push_warning("CardManager: sync_runtime_deck_from_global 时 card_factory 尚未初始化")
+		return
+
+	var existing_cards: Array = deck_pile._held_cards.duplicate()
+	for card in existing_cards:
+		if is_instance_valid(card):
+			deck_pile.remove_card(card)
+			card.queue_free()
+
+	deck_pile._held_cards.clear()
+
+	for card_id in GlobalDB.player_deck:
+		card_factory.create_card(card_id, deck_pile)

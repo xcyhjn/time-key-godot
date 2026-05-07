@@ -19,11 +19,28 @@ const DEFAULT_FONT: Font = preload("res://fonts/ark-pixel-12px-proportional-zh_c
 @export_group("文案")
 @export var title_text: String = "敌方总血量"
 
+@export_group("Intro Animation")
+## 是否启用总血条的局内入场浮现。
+@export var intro_enabled: bool = true
+## 是否只在本次进入局内时播放一次。
+@export var intro_play_once: bool = true
+## 总血条入场时长。
+@export var intro_duration: float = 0.38
+## 入场时整体向下偏移的起始距离。
+@export var intro_start_offset: Vector2 = Vector2(0.0, -18.0)
+## 入场时的起始缩放。
+@export var intro_start_scale: Vector2 = Vector2(0.92, 0.92)
+## 入场动画曲线。
+@export var intro_trans_type: Tween.TransitionType = Tween.TRANS_BACK
+@export var intro_ease_type: Tween.EaseType = Tween.EASE_OUT
+
 var hex_map: Node = null
 var tracked_enemies: Dictionary = {}
 var max_total_health: int = 0
 var current_total_health: int = 0
 var has_triggered_combat_victory: bool = false
+var _intro_has_played: bool = false
+var _intro_in_progress: bool = false
 
 var panel: PanelContainer
 var title_label: Label
@@ -160,7 +177,6 @@ func _should_wait_for_map_intro_reveal() -> bool:
 
 
 func _on_map_intro_reveal_finished() -> void:
-	show()
 	rebuild_tracking()
 
 
@@ -256,6 +272,55 @@ func _update_display() -> void:
 		percent = int(round((float(current_total_health) / float(max_total_health)) * 100.0))
 
 	info_label.text = "%d / %d (%d%%)" % [current_total_health, max_total_health, percent]
+
+
+## 局内首波 UI 入场时调用。会和 TimelineUI、CartoonUI 一起并行播放。
+func play_intro() -> void:
+	if not intro_enabled:
+		show()
+		_apply_intro_final_state()
+		_intro_has_played = true
+		_intro_in_progress = false
+		return
+	if _intro_in_progress:
+		return
+	if _intro_has_played and intro_play_once:
+		show()
+		_apply_intro_final_state()
+		return
+
+	show()
+	_intro_in_progress = true
+	_apply_intro_hidden_state()
+
+	var safe_duration := maxf(intro_duration, 0.01)
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(self, "position", Vector2.ZERO, safe_duration).set_trans(intro_trans_type).set_ease(intro_ease_type)
+	tween.tween_property(self, "scale", Vector2.ONE, safe_duration).set_trans(intro_trans_type).set_ease(intro_ease_type)
+	tween.tween_property(self, "modulate:a", 1.0, safe_duration * 0.85).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.finished.connect(_finish_intro, CONNECT_ONE_SHOT)
+
+
+func is_intro_in_progress() -> bool:
+	return _intro_in_progress
+
+
+func _apply_intro_hidden_state() -> void:
+	position = intro_start_offset
+	scale = intro_start_scale
+	modulate.a = 0.0
+
+
+func _apply_intro_final_state() -> void:
+	position = Vector2.ZERO
+	scale = Vector2.ONE
+	modulate.a = 1.0
+
+
+func _finish_intro() -> void:
+	_intro_in_progress = false
+	_intro_has_played = true
+	_apply_intro_final_state()
 
 
 func _flash_damage_feedback() -> void:

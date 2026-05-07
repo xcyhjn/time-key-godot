@@ -36,8 +36,18 @@ var original_material: Material = null  # 原始材质（用于清除拖拽效�
 # ★ 导出调整项：在属性面板实时调参
 # ================================
 @export_group("卡牌悬浮")
-@export var float_height: float = -40.0  # 选中时向上浮动的高度
+@export var float_height: float = -80.0  # 选中时向上浮动的高度
 @export var tilt_intensity: float = 0.15  # 倾斜跟随鼠标的强度
+@export var selected_scale_multiplier: float = 1.5  # 选中时的整体放大倍率
+@export var selected_enter_duration: float = 0.2  # 进入选中状态的补间时长
+@export var selected_exit_duration: float = 0.3  # 取消选中返回手牌的补间时长
+@export var selected_tilt_follow_speed: float = 12.0  # 选中状态下旋转跟随鼠标的速度
+@export var selected_shadow_follow_speed: float = 10.0  # 选中状态下阴影跟随鼠标的速度
+@export var selected_shadow_base_offset: Vector2 = Vector2(10.0, 20.0)  # 选中状态下阴影基础偏移
+@export var selected_shadow_parallax_ratio: float = 0.05  # 选中状态下阴影视差强度
+@export var state_hover_scale_multiplier: float = 1.0  # 覆盖底层 hover_scale 的额外倍率
+@export var state_holding_scale_multiplier: float = 1.05  # 拖拽状态相对 hover 的额外倍率
+@export var state_hover_tween_duration: float = 0.1  # custom_card 内部状态切换的缩放时长
 
 var raw_description: String = ""
 var active_keywords: Array = []  # 记录当前牌有哪些关键词，供悬停Tooltip读取
@@ -204,8 +214,8 @@ func toggle_selection() -> void:
 			# 卡牌升起动画 (替换 toggle_selection 里的 tw 动画部分)
 			var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD)
 			# 强制构造一个完整的 Vector2，绝对不会报类型错！
-			tw.tween_property(self, "position", Vector2(card_original_position.x, card_original_position.y + float_height), 0.2)
-			tw.tween_property(self, "scale", card_original_scale * 1.3, 0.2)
+			tw.tween_property(self, "position", Vector2(card_original_position.x, card_original_position.y + float_height), selected_enter_duration)
+			tw.tween_property(self, "scale", card_original_scale * selected_scale_multiplier, selected_enter_duration)
 
 			set_card_transparency(1.0)
 
@@ -232,9 +242,9 @@ func force_deselect() -> void:
 	
 	z_index = original_z_index
 	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(self, "position", card_original_position, 0.3)
-	tw.tween_property(self, "scale", card_original_scale, 0.3)
-	tw.tween_property(self, "rotation", 0.0, 0.3)
+	tw.tween_property(self, "position", card_original_position, selected_exit_duration)
+	tw.tween_property(self, "scale", card_original_scale, selected_exit_duration)
+	tw.tween_property(self, "rotation", 0.0, selected_exit_duration)
 
 	_update_map_conditional_effects()
 
@@ -447,17 +457,20 @@ func _enter_state(state: DraggableState, from_state: DraggableState) -> void:
 	# ★ 致命报错修复：安全转换缩放值
 	# Godot 4 严禁使用 float 去改变 Vector2 的 scale
 	# ==========================================
-	var safe_hover_scale: Vector2
-	if typeof(hover_scale) == TYPE_FLOAT or typeof(hover_scale) == TYPE_INT:
-		safe_hover_scale = Vector2(hover_scale, hover_scale)
-	else:
-		#safe_hover_scale = hover_scale # 如果你原本声明的就是 Vector2，则直接使用
-		pass
+	var safe_hover_scale: Vector2 = original_scale
+	var hover_scale_value: Variant = hover_scale
+	if typeof(hover_scale_value) == TYPE_FLOAT or typeof(hover_scale_value) == TYPE_INT:
+		safe_hover_scale = Vector2(float(hover_scale_value), float(hover_scale_value))
+	elif typeof(hover_scale_value) == TYPE_VECTOR2:
+		var hover_scale_vector: Vector2 = hover_scale_value
+		safe_hover_scale = hover_scale_vector
+
+	safe_hover_scale *= state_hover_scale_multiplier
 	match state:
 		DraggableState.HOVERING:
 			z_index = 100
 			# 绝对安全的类型匹配动画
-			tween.tween_property(self, "scale", safe_hover_scale, 0.1)
+			tween.tween_property(self, "scale", safe_hover_scale, state_hover_tween_duration)
 			_set_shader(true)
 			_request_tooltip(true)
 			is_pressed = false
@@ -465,7 +478,7 @@ func _enter_state(state: DraggableState, from_state: DraggableState) -> void:
 		DraggableState.HOLDING:
 			z_index = 101
 			# 虽然由于拦截了点击，这里基本不会触发了，但依然保持规范
-			tween.tween_property(self, "scale", safe_hover_scale * 1.05, 0.1)
+			tween.tween_property(self, "scale", safe_hover_scale * state_holding_scale_multiplier, state_hover_tween_duration)
 			_set_shader(true)
 			_request_tooltip(false)
 			is_pressed = true
@@ -496,7 +509,7 @@ func force_reset_visuals() -> void:
 	if tween and tween.is_valid(): tween.kill()
 	tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-	tween.tween_property(self, "scale", card_original_scale, 0.1)
+	tween.tween_property(self, "scale", card_original_scale, state_hover_tween_duration)
 	_set_shader(false)
 	_request_tooltip(false)
 	is_pressed = false
@@ -538,12 +551,12 @@ func _process(delta: float):
 	var target_rot = clamped_offset.x * (tilt_intensity * 0.01)
 
 	# 丝滑插值过度
-	rotation = lerp(rotation, target_rot, delta * 12.0)
+	rotation = lerp(rotation, target_rot, delta * selected_tilt_follow_speed)
 
 	# 立体视差效果：阴影向鼠标反方向移动
 	if shadow:
-		var target_shadow_pos = Vector2(10, 20) - (clamped_offset * 0.05)
-		shadow.position = lerp(shadow.position, target_shadow_pos, delta * 10.0)
+		var target_shadow_pos = selected_shadow_base_offset - (clamped_offset * selected_shadow_parallax_ratio)
+		shadow.position = lerp(shadow.position, target_shadow_pos, delta * selected_shadow_follow_speed)
 ## 重构：打出卡牌不再直接生效，而是移交时间轴排程
 func play_card(target_hex: Area2D):
 	is_selected = false

@@ -1,0 +1,10 @@
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://bqtefxup2k8n6"]
+
+[ext_resource type="Texture2D" uid="uid://c7twpxiq65ml" path="res://image/black rect.png" id="1_yyh35"]
+
+[resource]
+texture = ExtResource("1_yyh35")
+expand_margin_left = 194.0
+expand_margin_top = 359.0
+expand_margin_right = 155.0
+expand_margin_bottom = 420.0

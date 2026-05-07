@@ -17,6 +17,8 @@ extends Camera2D
 @export var min_zoom: Vector2 = Vector2(0.8, 0.8)
 ## 允许放大的最大倍数 (视野最小)
 @export var max_zoom: Vector2 = Vector2(2.0, 2.0)
+## 是否允许鼠标滚轮缩放。局内收获阶段会临时关闭，但保留普通镜头移动。
+@export var zoom_input_enabled: bool = true
 
 # --- 内部变量 ---
 var _target_zoom: Vector2 = Vector2.ONE  # 记录目标缩放值，用于实现平滑过渡
@@ -41,10 +43,11 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	# 1. 处理鼠标滚轮缩放
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_change_zoom_target(1.0 + zoom_step)  # 向上滚：放大
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_change_zoom_target(1.0 / (1.0 + zoom_step))  # 向下滚：缩小
+		if zoom_input_enabled:
+			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				_change_zoom_target(1.0 + zoom_step)  # 向上滚：放大
+			elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				_change_zoom_target(1.0 / (1.0 + zoom_step))  # 向下滚：缩小
 
 		# 2. 处理鼠标按住拖动 (支持左键或中键)
 		if event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_MIDDLE:

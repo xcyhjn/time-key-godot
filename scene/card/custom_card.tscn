@@ -5,14 +5,13 @@
 
 [node name="Card" unique_id=445108488 instance=ExtResource("1_i008j")]
 script = ExtResource("2_a3le0")
-card_name = ""
-card_size = Vector2(150, 210)
-show_front = true
-moving_speed = 2000
-hover_distance = 10
+float_height = -80.0
+tilt_intensity = null
+card_size = null
+can_be_interacted_with = null
 hover_scale = 1.2
-float_height = -40.0
-tilt_intensity = 0.15
+hover_rotation = null
+hover_duration = null
 
 [node name="MarginContainer" type="MarginContainer" parent="FrontFace/TextureRect" index="0" unique_id=1043172175]
 layout_mode = 0

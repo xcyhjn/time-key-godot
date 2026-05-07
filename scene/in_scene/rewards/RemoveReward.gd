@@ -13,7 +13,7 @@ var CardManager = preload("res://addons/card-framework/card_manager.gd")
 ## ★ 节点引用 - 必须在场景中正确连接
 ## ==========================================
 
-@onready var background_mask: ColorRect = $BackgroundMask
+@onready var background_mask: Panel = $BackgroundMask
 @onready var title_label: Label = $TitleLabel
 @onready var deck_scroll_container: ScrollContainer = $DeckScrollContainer
 @onready var deck_grid: GridContainer = $DeckScrollContainer/DeckGrid
@@ -342,6 +342,17 @@ func _remove_card_from_deck(card_id: String):
 		if GlobalDB and GlobalDB.player_deck.has(card_id):
 			GlobalDB.player_deck.erase(card_id)
 			print("✅ 已从 GlobalDB.player_deck 移除卡牌: %s" % card_id)
+
+	var main = get_tree().get_first_node_in_group("MainBoard")
+	if (
+		deck_manager
+		and deck_manager.has_method("sync_runtime_deck_from_global")
+		and main
+		and main.deck_pile
+	):
+		deck_manager.sync_runtime_deck_from_global(main.deck_pile)
+		if main.has_method("update_counts_and_ui"):
+			main.update_counts_and_ui()
 
 ## 获取当前牌组卡牌ID列表 (需要对接你的牌组管理系统)
 func _get_current_deck_card_ids() -> Array[String]:

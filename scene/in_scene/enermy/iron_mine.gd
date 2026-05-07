@@ -31,6 +31,8 @@ func Behavior(Step, info_in, Other, beha, rng):
 	if beha != -1:
 		willing = beha
 	for neighbor in neighbors:
+		if not info_in.has(neighbor):
+			continue
 		if info_in[neighbor].keys().has("landform_in") and  info_in[neighbor]["landform_in"] != null:
 			if info_in[neighbor]["landform_in"].will:
 				info_in[neighbor]["landform_in"].willing_pool.values()[info_in[neighbor]["landform_in"].willing].call(info_in, rng)

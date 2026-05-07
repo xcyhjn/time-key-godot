@@ -13,7 +13,7 @@ var CardManager = preload("res://addons/card-framework/card_manager.gd")
 ## ★ 节点引用 - 必须在场景中正确连接
 ## ==========================================
 
-@onready var background_mask: ColorRect = $BackgroundMask
+@onready var background_mask: Panel = $BackgroundMask
 @onready var title_label: Label = $TitleLabe  # 注意: 场景中节点名为 TitleLabe
 @onready var card_container: HBoxContainer = $CardContainer
 @onready var btn_back: Button = $BtnBack
@@ -347,12 +347,21 @@ func _fly_to_deck_pile(card: Control):
 		trail.queue_free()
 		card.queue_free()
 		
-		# ★ 核心数据打通：让工厂真正生产这张牌进抽牌堆！
-		if deck_manager != null and deck_manager.card_factory != null:
-			var main = get_tree().get_first_node_in_group("MainBoard")
-			if main and main.deck_pile:
-				deck_manager.card_factory.create_card(card.card_id, main.deck_pile)
-				print("✅ 已成功将 %s 加入抽牌堆！" % card.card_id)
+		# ★ 核心数据打通：先写入全局牌组，再同步刷新当前局内抽牌堆。
+		if deck_manager != null and deck_manager.has_method("add_card_to_deck"):
+			deck_manager.add_card_to_deck(card.card_id)
+
+		var main = get_tree().get_first_node_in_group("MainBoard")
+		if (
+			deck_manager != null
+			and deck_manager.has_method("sync_runtime_deck_from_global")
+			and main
+			and main.deck_pile
+		):
+			deck_manager.sync_runtime_deck_from_global(main.deck_pile)
+			if main.has_method("update_counts_and_ui"):
+				main.update_counts_and_ui()
+			print("✅ 已成功将 %s 加入全局牌组并同步抽牌堆！" % card.card_id)
 		
 		# 只有确认并完成数据写入后，才标记本次建筑奖励已被领取。
 		set_meta("settlement_reward_committed", true)
