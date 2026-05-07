@@ -18,6 +18,10 @@ const TutorialSaveScript = preload("res://scene/tutorial/tutorial_save.gd")
 ## 开启后，每次点击进入新游戏前都会删除 user://tutorial_settings.cfg，方便反复测试首次教程弹窗。
 @export var debug_clear_tutorial_record_on_new_game: bool = false
 
+@export_group("Database Prompt")
+@export var database_unavailable_title: String = "提示"
+@export var database_unavailable_text: String = "该功能暂未开放"
+@export var database_unavailable_back_text: String = "返回"
 @onready var Set = $UI/MainSet
 @onready var Guide = $UI/MainGuide
 @onready var Quit = $UI/MainQuit
@@ -30,6 +34,8 @@ const TutorialSaveScript = preload("res://scene/tutorial/tutorial_save.gd")
 var progress: Array[float] = []
 # 用于暂存点击不同按钮时产生的参数
 var pending_data: String = ""
+var _database_unavailable_dialog: ConfirmationDialog = null
+var _database_unavailable_closing: bool = false
 var _tutorial_prompt_dialog: ConfirmationDialog = null
 var _tutorial_prompt_decision_made: bool = false
 var _tutorial_prompt_close_only: bool = false
@@ -50,6 +56,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _handle_escape() -> bool:
+	if _close_database_unavailable_from_escape():
+		return true
 	if _close_tutorial_prompt_from_escape():
 		return true
 	if _close_seed_input_from_escape():
@@ -63,6 +71,8 @@ func _handle_escape() -> bool:
 
 
 func _can_open_settings_from_escape() -> bool:
+	if _database_unavailable_is_open():
+		return false
 	if _tutorial_prompt_is_open():
 		return false
 	if _is_seed_input_open():
@@ -82,6 +92,13 @@ func _close_tutorial_prompt_from_escape() -> bool:
 	if not _tutorial_prompt_is_open():
 		return false
 	_on_tutorial_prompt_close_requested()
+	return true
+
+
+func _close_database_unavailable_from_escape() -> bool:
+	if not _database_unavailable_is_open():
+		return false
+	_close_database_unavailable_dialog()
 	return true
 
 
@@ -106,7 +123,6 @@ func _close_active_overlay_from_escape() -> bool:
 
 func _process(_delta: float) -> void:
 	var status = ResourceLoader.load_threaded_get_status(Scene_path, progress)
-	
 	if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 		$UI_Layer/ProgressBar.value = progress[0] * 100.0
 		
@@ -195,7 +211,7 @@ func _on_new_game_btn_button_down() -> void:
 func _start_normal_new_game() -> void:
 	_reset_run_state_for_new_game()
 	Scene_path = normal_scene_path
-	pending_data = "" 
+	pending_data = ""
 	Global.clock.emit(2)
 	await Mask.start_iris_in(1.0)
 	_start_async_load()
@@ -276,6 +292,44 @@ func _tutorial_prompt_is_open() -> bool:
 	return is_instance_valid(_tutorial_prompt_dialog) and _tutorial_prompt_dialog.visible
 
 
+func _database_unavailable_is_open() -> bool:
+	return is_instance_valid(_database_unavailable_dialog) and _database_unavailable_dialog.visible
+
+
+func _show_database_unavailable_dialog() -> void:
+	if not is_instance_valid(_database_unavailable_dialog):
+		_database_unavailable_dialog = ConfirmationDialog.new()
+		_database_unavailable_dialog.name = "DatabaseUnavailableDialog"
+		_database_unavailable_dialog.exclusive = true
+		_database_unavailable_dialog.unresizable = true
+		add_child(_database_unavailable_dialog)
+		if custom_theme:
+			_database_unavailable_dialog.theme = custom_theme
+		if tutorial_font:
+			_database_unavailable_dialog.add_theme_font_override("font", tutorial_font)
+			_database_unavailable_dialog.add_theme_font_override("title_font", tutorial_font)
+			_database_unavailable_dialog.get_ok_button().add_theme_font_override("font", tutorial_font)
+		_database_unavailable_dialog.get_cancel_button().hide()
+		_database_unavailable_dialog.get_ok_button().pressed.connect(_close_database_unavailable_dialog)
+		_database_unavailable_dialog.close_requested.connect(_close_database_unavailable_dialog)
+
+	_database_unavailable_closing = false
+	_database_unavailable_dialog.title = database_unavailable_title
+	_database_unavailable_dialog.dialog_text = database_unavailable_text
+	_database_unavailable_dialog.ok_button_text = database_unavailable_back_text
+	_database_unavailable_dialog.get_cancel_button().hide()
+	_database_unavailable_dialog.popup_centered(Vector2i(460, 220))
+
+
+func _close_database_unavailable_dialog() -> void:
+	if _database_unavailable_closing:
+		return
+	_database_unavailable_closing = true
+	if is_instance_valid(_database_unavailable_dialog):
+		_database_unavailable_dialog.hide()
+	_database_unavailable_closing = false
+
+
 func _is_seed_input_open() -> bool:
 	return is_instance_valid(seed_line_edit) and seed_line_edit.visible
 
@@ -305,13 +359,27 @@ func _on_new_game_btn_2_button_down() -> void:
 	_start_async_load()
 
 func _on_continue_btn_button_down() -> void:
-	pass # Replace with function body.
+	if not Saver.Has_save(0):
+		return
+
+	await _start_continue_game()
+
+
+func _start_continue_game() -> void:
+	Saver.Load_game(0)
+	
+	Scene_path = normal_scene_path
+	pending_data = ""
+	Global.clock.emit(2)
+	await Mask.start_iris_in(1.0)
+	_start_async_load()
+
 
 func _on_settings_btn_button_down() -> void:
 	Set.play_entrance()
 
 func _on_database_btn_button_down() -> void:
-	Guide.play_entrance()
+	_show_database_unavailable_dialog()
 
 func _on_quit_btn_button_down() -> void:
 	Quit.play_entrance()

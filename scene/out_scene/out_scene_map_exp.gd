@@ -1,3 +1,5 @@
+# 功能: 局外六边形路线地图控制器，负责地图生成、角色选路、房间跳转与章节层级解锁。
+# 核心逻辑: _ready() 根据 MapState 恢复或生成地图；_move_to() 处理玩家移动与进房；_advance_tier_from_boss_resolution() 在 boss 结算返回后解锁下一章并播放生成动画。
 extends Control
 
 # ==========================================
@@ -5,7 +7,7 @@ extends Control
 # ==========================================
 @export_group("系统配置")
 @export var map_seed: String = "HelloGodot"
-@export var step_x: float = 264.0
+@export var step_x: float = 272.0
 @export var step_y: float = 304.0
 @export var stagger_y: float = 152.0
 
@@ -14,6 +16,21 @@ extends Control
 @export var switch_delay: float = 0.5 
 @export var combat_scene: String = "res://scene/in_scene/in_scene.tscn" 
 @export var event_scene: String = "res://event.tscn"
+
+@export_group("章节生成动画")
+## boss 结算返回局外后，是否让新解锁章节的地块从下方升起。
+@export var enable_chapter_reveal_animation: bool = true
+## 生成动画开始前是否把镜头拉到地图中心，方便玩家看见新章节铺开。
+@export var chapter_reveal_focus_camera: bool = true
+@export var chapter_reveal_camera_zoom: Vector2 = Vector2(0.4, 0.4)
+@export_range(0.0, 3.0, 0.05, "or_greater") var chapter_reveal_camera_duration: float = 0.8
+@export_range(0.0, 3.0, 0.05, "or_greater") var chapter_reveal_rise_duration: float = 0.8
+@export_range(0.0, 2.0, 0.05, "or_greater") var chapter_reveal_settle_duration: float = 0.25
+@export_range(0.0, 1.0, 0.01, "or_greater") var chapter_reveal_delay_random: float = 0.2
+@export var chapter_reveal_fall_distance_min: float = 500.0
+@export var chapter_reveal_fall_distance_max: float = 700.0
+@export_range(0.1, 1.5, 0.05) var chapter_reveal_start_scale: float = 0.8
+@export var chapter_reveal_start_tint: Color = Color(0.1, 0.1, 0.1, 0.8)
 
 @onready var gen = $MapGenerator
 @onready var view = $MapRenderer
@@ -42,7 +59,14 @@ var chosen_char_index: int = -1
 ## 从其它场景切回来时注入的外部事件。
 ## 这里不直接在 apply_external_event() 里处理，是为了确保 OutScene 的节点树先 ready 完成。
 var pending_external_event: Variant = null
-
+const HEX_DIRS : Array[Vector2i] = [
+	Vector2i(-1, 0),
+	Vector2i(1, -1),
+	Vector2i(0, -1),
+	Vector2i(-1, 0),
+	Vector2i(-1, 1),
+	Vector2i(0, 1),
+]
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
 	if target == null:
@@ -59,10 +83,59 @@ func _ready():
 	_connect_global_clock_progress_signal()
 
 	# 检查是否有保存的状态
-	if MapState.is_initialized:
+	if MapState.loaded:
+		is_moving = true
 		dim.show()
 		_load_from_global()
-		dim.use(1,1)
+		await dim.use(1,1)
+		is_moving = false
+	elif MapState.is_initialized:
+		is_moving = true
+		_load_from_global()
+		var type = tile_data[player_hex]
+		_init_exist_map()
+		_update_visual_states()
+		mask._update_shader_screen_size(0.225)
+		Global.clock.emit(3)
+		await point.stopped
+		await mask.start_iris_out(0.23)
+		cartoon.move_clock_to_ui(clock)
+		await cartoon.finish
+		var to_delete_coords = []
+		for c in tile_data.keys():
+			if not gen.is_in_sector(c, HEX_DIRS[chosen_char_index - 1]):
+				to_delete_coords.append(c)
+			# 【步骤 B】镜头切远（全局中心）
+		var map_center = _get_map_center()
+		var s = Global.get_anim_speed()
+		await camera.focus_on_position(map_center, Vector2(0.4, 0.4), 0.8 * s)
+
+			# 【步骤 C】播放高性能崩坠动画
+		await _execute_shatter_animation_optimized(to_delete_coords, s)
+
+			# 正式移除
+		for c in to_delete_coords:
+			tile_data.erase(c)
+			tile_features.erase(c)
+			if view.tiles.has(c):
+				view.tiles[c].queue_free()
+				view.tiles.erase(c)
+		_map_center_dirty = true
+
+		_apply_sector_camera_limits(HEX_DIRS[chosen_char_index - 1])
+
+			# 恢复逻辑并解锁相机
+		set_process(true)
+		camera._is_locked = false
+		camera._target_zoom = camera.zoom
+		_update_visual_states()
+		MapState.ui_settled = true
+		is_moving = false
+		MapState.loaded = true
+		_update_visual_states()
+
+		if type >= 1 and type <= 4:
+			await _enter_room_logic(player_hex)
 	else:
 		is_moving = true
 		_init_new_map()
@@ -75,10 +148,11 @@ func _ready():
 		await cartoon.finish
 		MapState.ui_settled = true
 		is_moving = false
+		MapState.loaded = true
 	
 	_update_visual_states()
 	_refresh_global_progress_labels()
-	_consume_pending_room_resolution()
+	await _consume_pending_room_resolution()
 
 
 func _connect_global_clock_progress_signal() -> void:
@@ -97,11 +171,26 @@ func _init_new_map():
 	else:
 		map_seed = received_text
 		gen.rng.seed = map_seed.hash()
-	
+
 	tile_data = gen.generate_logical_map()
 	tile_features = gen.distribute_features(tile_data)
 	player_hex = Vector2i.ZERO # 初始位置
 	player_sprite.texture = view.tex_player_unknown
+	# 同步到渲染层
+	_refresh_view()
+	apply_tier_camera_limit(0)
+	MapState.is_initialized = true
+
+func _init_exist_map():
+	if received_text == "":
+		gen.rng.seed = map_seed.to_int()
+	else:
+		map_seed = received_text
+		gen.rng.seed = map_seed.hash()
+
+	tile_data = gen.generate_logical_map()
+	tile_features = gen.distribute_features(tile_data)
+	player_sprite.texture = view.tex_player_icons[chosen_char_index]
 	# 同步到渲染层
 	_refresh_view()
 	apply_tier_camera_limit(0)
@@ -209,16 +298,20 @@ func _consume_pending_room_resolution() -> void:
 	if resolution_payload.is_empty():
 		return
 
-	_handle_room_resolution_payload(resolution_payload)
+	await _handle_room_resolution_payload(resolution_payload)
 	pending_external_event = null
 
 
 ## 处理从局内返回的房间结算数据。
-## 当前先做两件事：
-## 1. 记录日志，方便你调试转场链是否打通
-## 2. 预留“房间结算落地”的接口位置，后续你可以在这里标记房间已完成、发奖励、改节点类型
+## 现在会额外识别 boss 房间结算：
+## - 普通/精英/事件房只刷新局外 UI。
+## - boss 房在确认来自当前章节边界后，推进 current_tier 并播放下一圈地块生成动画。
 func _handle_room_resolution_payload(payload: Dictionary) -> void:
 	print("[OutScene] 接收到房间结算结果: ", payload)
+
+	var did_advance_tier := false
+	if _should_advance_tier_from_boss_payload(payload):
+		did_advance_tier = await _advance_tier_from_boss_resolution(payload)
 
 	# 预留挂点：
 	# - 未来可在这里基于 payload["room_context"] 定位局外地图节点
@@ -228,6 +321,8 @@ func _handle_room_resolution_payload(payload: Dictionary) -> void:
 		MapState.clear_active_room_context()
 
 	_refresh_global_progress_labels()
+	if did_advance_tier:
+		_save_to_global()
 	
 func _refresh_view():
 	view.clear()
@@ -242,6 +337,177 @@ func _create_world():
 	view.draw_map(tile_data, {"x": step_x, "y": step_y, "stagger": stagger_y})
 	view.draw_features(tile_features)
 	_update_visual_states()
+
+
+func _should_advance_tier_from_boss_payload(payload: Dictionary) -> bool:
+	if str(payload.get("combat_result", "")) != "completed":
+		return false
+
+	var room_context: Dictionary = payload.get("room_context", {}) if payload.get("room_context", {}) is Dictionary else {}
+	var is_boss_room := str(payload.get("battle_tag", "")) == "boss_stage"
+	is_boss_room = is_boss_room or int(room_context.get("room_type", 0)) == MapGenerator.TileType.BOSS
+	is_boss_room = is_boss_room or str(room_context.get("room_data", "")).begins_with("boss_stage")
+	if not is_boss_room:
+		return false
+
+	var max_tier_index: int = int(gen.layer_boundaries.size()) - 1
+	if current_tier >= max_tier_index:
+		return false
+
+	var boss_hex: Vector2i = _get_room_hex_from_payload(payload)
+	if not tile_data.has(boss_hex) or int(tile_data.get(boss_hex, 0)) != MapGenerator.TileType.BOSS:
+		return false
+
+	# 只有玩家刚结算“当前可见边界”的 boss 时才推进章节。
+	# 这能避免读档或旧版本已提前推进过 current_tier 时重复开章。
+	var current_boundary: int = int(gen.layer_boundaries[clamp(current_tier, 0, max_tier_index)])
+	return _get_hex_distance_from_origin(boss_hex) == current_boundary
+
+
+func _advance_tier_from_boss_resolution(_payload: Dictionary) -> bool:
+	var max_tier_index: int = int(gen.layer_boundaries.size()) - 1
+	if current_tier >= max_tier_index:
+		return false
+
+	var previous_radius: int = int(gen.layer_boundaries[clamp(current_tier, 0, max_tier_index)])
+	var next_tier: int = current_tier + 1
+	var next_radius: int = int(gen.layer_boundaries[clamp(next_tier, 0, max_tier_index)])
+	var reveal_coords: Array = _get_reveal_coords_between_radii(previous_radius, next_radius)
+
+	current_tier = next_tier
+	MapState.current_tier = current_tier
+	apply_tier_camera_limit(current_tier)
+
+	if reveal_coords.is_empty() or not enable_chapter_reveal_animation:
+		_update_visual_states()
+		return true
+
+	is_moving = true
+	set_process(false)
+	_update_visual_states()
+	_prepare_chapter_reveal_tiles(reveal_coords)
+
+	var s: float = Global.get_anim_speed()
+	if chapter_reveal_focus_camera:
+		var target_center: Vector2 = _get_map_center_for_radius(next_radius)
+		await camera.focus_on_position(target_center, chapter_reveal_camera_zoom, chapter_reveal_camera_duration * s)
+
+	await _execute_chapter_reveal_animation(reveal_coords, s)
+
+	_update_visual_states()
+	set_process(true)
+	camera._is_locked = false
+	camera._target_zoom = camera.zoom
+	is_moving = false
+	return true
+
+
+func _get_room_hex_from_payload(payload: Dictionary) -> Vector2i:
+	var room_context: Dictionary = payload.get("room_context", {}) if payload.get("room_context", {}) is Dictionary else {}
+	var room_hex = room_context.get("room_hex", player_hex)
+	return _variant_to_vector2i(room_hex, player_hex)
+
+
+func _variant_to_vector2i(value: Variant, fallback: Vector2i = Vector2i.ZERO) -> Vector2i:
+	if value is Vector2i:
+		return value
+	if value is Vector2:
+		return Vector2i(int(value.x), int(value.y))
+	if value is Dictionary and value.has("x") and value.has("y"):
+		return Vector2i(int(value.x), int(value.y))
+	if value is String:
+		var stripped: String = value.strip_edges()
+		if stripped.begins_with("(") and stripped.ends_with(")"):
+			stripped = stripped.substr(1, stripped.length() - 2)
+		var parts: PackedStringArray = stripped.split(",", false)
+		if parts.size() >= 2:
+			return Vector2i(int(parts[0].strip_edges()), int(parts[1].strip_edges()))
+	return fallback
+
+
+func _get_reveal_coords_between_radii(previous_radius: int, next_radius: int) -> Array:
+	var coords: Array = []
+	for c in tile_data.keys():
+		if int(tile_data.get(c, 0)) == MapGenerator.TileType.VOID:
+			continue
+		var dist: int = _get_hex_distance_from_origin(c)
+		if dist > previous_radius and dist <= next_radius and view.tiles.has(c):
+			coords.append(c)
+
+	coords.sort_custom(func(a, b): return _get_hex_distance_from_origin(a) < _get_hex_distance_from_origin(b))
+	return coords
+
+
+func _prepare_chapter_reveal_tiles(coords_list: Array) -> void:
+	for c in coords_list:
+		if not view.tiles.has(c):
+			continue
+
+		var tile: Sprite2D = view.tiles[c]
+		var final_pos: Vector2 = _hex_to_pixel(c)
+		var fall_dist: float = randf_range(chapter_reveal_fall_distance_min, chapter_reveal_fall_distance_max)
+		tile.visible = true
+		tile.position = final_pos + Vector2(0.0, fall_dist)
+		tile.rotation = randf_range(-1.2, 1.2)
+		tile.scale = Vector2.ONE * chapter_reveal_start_scale
+		tile.modulate.a = 0.0
+		tile.self_modulate = chapter_reveal_start_tint
+
+
+func _execute_chapter_reveal_animation(coords_list: Array, s: float) -> void:
+	if coords_list.is_empty():
+		return
+
+	var rise_tween = create_tween().set_parallel(true)
+	for c in coords_list:
+		if not view.tiles.has(c):
+			continue
+
+		var tile: Sprite2D = view.tiles[c]
+		var delay: float = randf() * chapter_reveal_delay_random
+		rise_tween.tween_property(tile, "modulate:a", 1.0, chapter_reveal_rise_duration * s).set_delay(delay)
+		rise_tween.tween_property(tile, "position", _hex_to_pixel(c), chapter_reveal_rise_duration * s)\
+			.set_trans(Tween.TRANS_SINE)\
+			.set_ease(Tween.EASE_OUT)\
+			.set_delay(delay)
+		rise_tween.tween_property(tile, "rotation", 0.0, chapter_reveal_rise_duration * s).set_delay(delay)
+	await rise_tween.finished
+
+	var settle_tween = create_tween().set_parallel(true)
+	for c in coords_list:
+		if not view.tiles.has(c):
+			continue
+
+		var tile: Sprite2D = view.tiles[c]
+		var delay: float = randf() * min(chapter_reveal_delay_random, 0.12)
+		settle_tween.tween_property(tile, "scale", Vector2.ONE, chapter_reveal_settle_duration * s)\
+			.set_trans(Tween.TRANS_BACK)\
+			.set_ease(Tween.EASE_OUT)\
+			.set_delay(delay)
+		settle_tween.tween_property(tile, "self_modulate", Color(1, 1, 1, 1), chapter_reveal_settle_duration * s).set_delay(delay)
+	await settle_tween.finished
+
+
+func _get_hex_distance_from_origin(coords: Vector2i) -> int:
+	return (abs(coords.x) + abs(coords.y) + abs(coords.x + coords.y)) >> 1
+
+
+func _hex_to_pixel(coords: Vector2i) -> Vector2:
+	return Vector2(coords.x * step_x, coords.y * step_y + coords.x * stagger_y)
+
+
+func _get_map_center_for_radius(max_radius: int) -> Vector2:
+	var sum := Vector2.ZERO
+	var count := 0
+	for c in tile_data.keys():
+		if int(tile_data.get(c, 0)) == MapGenerator.TileType.VOID:
+			continue
+		if _get_hex_distance_from_origin(c) > max_radius:
+			continue
+		sum += _hex_to_pixel(c)
+		count += 1
+
+	return sum / count if count > 0 else _get_map_center()
 
 # ==========================================
 # 3. 核心交互时序
@@ -341,6 +607,7 @@ func _move_to(target):
 			_update_visual_states()
 			
 			player_hex = target
+			MapState.path_gone.append(target)
 		else:
 			# 【取消逻辑】
 			await camera.restore_camera(0.4 * s)
@@ -358,9 +625,6 @@ func _move_to(target):
 		cam_follow.tween_property(camera, "position", target_pos, 0.3 * s)
 
 	is_moving = false
-	if type == MapGenerator.TileType.BOSS: 
-		current_tier += 1
-		apply_tier_camera_limit(current_tier)
 	_update_visual_states()
 	
 	if type >= 1 and type <= 4:
@@ -487,6 +751,9 @@ func _save_to_global():
 	MapState.has_cut = has_cut
 	MapState.chosen_char_index = chosen_char_index
 	MapState.ui_settled = true
+	MapState.Call_Saver()
+
+
 
 func _switch_scene_with_data(path: String, data: String):
 	if path == "" or not FileAccess.file_exists(path): return

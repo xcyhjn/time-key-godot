@@ -36,6 +36,14 @@ func _ready():
 	if Global.has_signal("choose"):
 		Global.choose.connect(change)
 
+
+func _input(event: InputEvent) -> void:
+	if not visible or is_animating:
+		return
+	if event.is_action_pressed("ui_cancel"):
+		_on_quit_button_down()
+		get_viewport().set_input_as_handled()
+
 func change(type: int = 6):
 	if is_animating: return
 	if not self.visible:

@@ -1,3 +1,5 @@
+# 功能: 保存局外地图与跨场景进度快照，作为 OutScene、InScene 与存档系统之间的轻量状态中心。
+# 核心逻辑: reset() 清空本轮 run；active_room_context 记录当前进入房间；pending_room_resolution 暂存局内结算返回；progress_snapshot 兜底保存时代、阶段、时间币和牌组。
 extends Node
 
 # 需要保存的核心数据
@@ -10,6 +12,8 @@ var current_tier: int = 0
 var has_cut: bool = false
 var chosen_char_index: int = -1
 var ui_settled: bool = false
+var path_gone = []
+var loaded : bool = false
 
 ## 当前正在进入的房间上下文。
 ## 用途：
@@ -46,8 +50,10 @@ func reset():
 	has_cut = false
 	chosen_char_index = -1
 	ui_settled = false
+	loaded = false
 	active_room_context.clear()
 	pending_room_resolution.clear()
+	path_gone.clear()
 	progress_snapshot = {
 		"timecoins": 0,
 		"era": 1,
@@ -147,3 +153,14 @@ func set_saved_deck(deck_snapshot: Array) -> void:
 func get_saved_deck() -> Array:
 	var snapshot = progress_snapshot.get("deck_snapshot", [])
 	return snapshot.duplicate(true) if snapshot is Array else []
+
+func Call_Saver():
+	Saver.Buffer_call.emit("era", GlobalClock.era)
+	Saver.Buffer_call.emit("character", chosen_char_index)
+	Saver.Buffer_call.emit("rng", map_seed)
+	Saver.Buffer_call.emit("player_location", player_hex)
+	Saver.Buffer_call.emit("coin", GlobalTimecoin.current_timecoins)
+	Saver.Buffer_call.emit("player_deck", GlobalDB.player_deck)
+	Saver.Buffer_call.emit("path_gone", path_gone)
+	Saver.Buffer_call.emit("tier", current_tier)
+	Saver.Save_game(0)
