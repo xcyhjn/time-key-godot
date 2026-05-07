@@ -211,6 +211,11 @@ func _ready() -> void:
 	if is_instance_valid(hex_map) and hex_map.has_signal("settlement_reward_requested"):
 		if not hex_map.settlement_reward_requested.is_connected(_on_settlement_reward_requested):
 			hex_map.settlement_reward_requested.connect(_on_settlement_reward_requested)
+
+	# 局外传入的房间类型 / seed 必须继续转交给 HexMap。
+	# 否则 HexMap 会一直用默认空 payload 建图，后续关卡更容易出现初始化错位。
+	call_deferred("_apply_incoming_payload_to_hex_map")
+	call_deferred("_ensure_entry_dim_hidden")
 	
 
 func _connect_global_clock_progress_signal() -> void:
@@ -1298,6 +1303,34 @@ func apply_external_event(payload: String) -> void:
 	else:
 		incoming_battle_tag = payload_text.substr(0, first_space_index)
 		incoming_map_seed = payload_text.substr(first_space_index + 1).strip_edges()
+
+	# 如果 HexMap 已经 ready，则立刻同步一次；
+	# 如果还没 ready，_ready 里的 deferred 会再补一次。
+	_apply_incoming_payload_to_hex_map()
+
+
+func _apply_incoming_payload_to_hex_map() -> void:
+	if not is_instance_valid(hex_map):
+		return
+	if incoming_external_payload == null:
+		return
+
+	var payload_text := str(incoming_external_payload).strip_edges()
+	if payload_text == "":
+		return
+	if not hex_map.has_method("apply_external_event"):
+		return
+
+	hex_map.apply_external_event(payload_text)
+
+
+func _ensure_entry_dim_hidden() -> void:
+	if not is_instance_valid(dim):
+		return
+
+	var dim_rect := dim.get_node_or_null("ColorRect") as ColorRect
+	if is_instance_valid(dim_rect) and dim_rect.color.a <= 0.001:
+		dim.hide()
 
 ## 增强光标提示框，模仿卡牌文本框的样式
 func _enhance_cursor_tooltip() -> void:

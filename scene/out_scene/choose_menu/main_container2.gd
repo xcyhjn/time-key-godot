@@ -5,8 +5,7 @@ extends Control
 @onready var content = $MenuContainer
 @onready var name_label = $MenuContainer/SaveOptions/Name
 @onready var desc_label = $MenuContainer/SaveOptions/Description
-# 假设确认按钮的节点名为 SaveToTitle，请根据实际路径调整
-@onready var confirm_button = $MenuContainer/SaveOptions/SaveToTitle 
+@onready var confirm_button = $MenuContainer/SaveOptions/ButtonGroup/SaveToTitle
 
 # --- 角色资源配置 (Inspector 中配置) ---
 @export_group("角色内容配置")
