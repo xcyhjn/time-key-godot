@@ -7,6 +7,7 @@
 
 [node name="RemoveReward" type="CanvasLayer" unique_id=1170982480]
 script = ExtResource("1_5eqb1")
+title_offset = Vector2(-200, 0)
 
 [node name="BackgroundMask" type="Panel" parent="." unique_id=1891942639]
 anchors_preset = 15

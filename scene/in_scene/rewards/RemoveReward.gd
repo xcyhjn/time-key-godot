@@ -42,6 +42,9 @@ var original_deck_card_ids: Array[String] = []
 
 @export_group("场景配置")
 @export var deck_grid_columns: int = 4  # 牌网格列数
+## 标题相对场景里 TitleLabel 初始位置的偏移。
+## 如果导出版标题看起来偏右，可在检查器里把 x 调成负数，例如 Vector2(-80, 0)。
+@export var title_offset: Vector2 = Vector2(-80.0, 0.0)
 
 @export_group("卡牌排版配置")
 @export var card_display_size: Vector2 = Vector2(125, 175)  # 动态控制生成的卡牌大小
@@ -53,6 +56,7 @@ var original_deck_card_ids: Array[String] = []
 
 ## 删除卡牌奖励页使用通用 Tooltip presenter。
 var tooltip_presenter: CardTooltipPresenter = null
+var _title_base_position: Vector2 = Vector2.ZERO
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -68,6 +72,10 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 ## ==========================================
 
 func _ready():
+	if is_instance_valid(title_label):
+		_title_base_position = title_label.position
+		_apply_title_offset()
+
 	# 绑定按钮信号
 	btn_back.pressed.connect(_on_back_pressed)
 	btn_confirm.pressed.connect(_on_confirm_pressed)
@@ -86,6 +94,7 @@ func _ready():
 	# 设置标题
 	if title_label:
 		title_label.text = "选择一张卡牌从牌组中移除"
+		_apply_title_offset()
 	
 	# 配置牌网格
 	deck_grid.columns = deck_grid_columns
@@ -105,6 +114,7 @@ func open():
 	# 显示场景
 	self.show()
 	background_mask.show()
+	_apply_title_offset()
 	
 	# 重置状态
 	_clear_deck_display()
@@ -498,6 +508,14 @@ func _try_find_card_manager():
 		return
 	
 	print("⚠️ RemoveReward: 未能自动找到 CardManager，需要手动调用 set_deck_manager()")
+
+
+## 应用标题偏移。
+## 核心逻辑：保留场景文件中的初始位置作为基准，只叠加导出的 title_offset，方便导出版微调。
+func _apply_title_offset() -> void:
+	if not is_instance_valid(title_label):
+		return
+	title_label.position = _title_base_position + title_offset
 
 ## ==========================================
 ## ★ 外部接口

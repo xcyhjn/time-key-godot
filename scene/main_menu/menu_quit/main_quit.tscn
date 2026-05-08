@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://qug8qbpy3t1p" path="res://scene/main_menu/menu_quit/main_quit.gd" id="1_ocrjt"]
 [ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="3_6el3e"]
+[ext_resource type="Texture2D" uid="uid://c7twpxiq65ml" path="res://image/black rect.png" id="3_s8bc0"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="4_tvtaf"]
 
 [node name="MainQuit" type="CanvasLayer" unique_id=1881415037]
 script = ExtResource("1_ocrjt")
@@ -14,17 +16,15 @@ grow_horizontal = 2
 grow_vertical = 2
 metadata/_edit_use_anchors_ = true
 
-[node name="Tip" type="Button" parent="." unique_id=758138527]
-offset_left = 682.0
-offset_top = 264.0
-offset_right = 1253.0
-offset_bottom = 687.0
+[node name="Tip" type="TextureRect" parent="." unique_id=928002195]
+offset_left = 507.0
+offset_top = 177.0
+offset_right = 1439.0
+offset_bottom = 961.0
 size_flags_vertical = 3
 theme = ExtResource("3_6el3e")
-text = "你确认要退出游戏吗
-
-
-"
+texture = ExtResource("3_s8bc0")
+expand_mode = 1
 
 [node name="Back" type="Button" parent="." unique_id=177032908]
 offset_left = 702.0
@@ -43,6 +43,22 @@ offset_bottom = 672.0
 size_flags_vertical = 3
 theme = ExtResource("3_6el3e")
 text = "确认"
+
+[node name="Label" type="Label" parent="." unique_id=432357673]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -164.0
+offset_top = -83.0
+offset_right = 172.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("4_tvtaf")
+theme_override_font_sizes/font_size = 48
+text = "你确认要退出吗"
 
 [connection signal="button_down" from="Back" to="." method="_on_back_button_down"]
 [connection signal="button_down" from="Confirm" to="." method="_on_confirm_button_down"]
