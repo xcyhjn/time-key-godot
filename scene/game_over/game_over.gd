@@ -11,6 +11,7 @@ extends CanvasLayer
 @onready var dim = $UI_Layout/DimMenu
 
 var progress: Array[float] = []
+var _threaded_load_in_progress: bool = false
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -42,22 +43,37 @@ func _on_menu_btn_button_down() -> void:
 	_start_async_load()
 
 func _start_async_load():
-	ResourceLoader.load_threaded_request(main_menu_scene_path)
+	var err := ResourceLoader.load_threaded_request(main_menu_scene_path)
+	if err != OK:
+		if SceneLog:
+			SceneLog.error_event("GameOver", "threaded request failed", {"path": main_menu_scene_path, "err": err})
+		return
+	_threaded_load_in_progress = true
+	if SceneLog:
+		SceneLog.scene_event("GameOver", "threaded request started", {"path": main_menu_scene_path})
 	set_process(true)
 
 func _process(_delta: float) -> void:
+	if not _threaded_load_in_progress:
+		return
 	var status = ResourceLoader.load_threaded_get_status(main_menu_scene_path, progress)
 	if status == ResourceLoader.THREAD_LOAD_LOADED:
+		_threaded_load_in_progress = false
 		set_process(false)
 		var packed_scene = ResourceLoader.load_threaded_get(main_menu_scene_path)
 		var next_scene_instance = packed_scene.instantiate()
 		var old_scene = get_tree().current_scene
 		get_tree().root.add_child(next_scene_instance)
 		get_tree().current_scene = next_scene_instance
+		if SceneLog:
+			SceneLog.scene_event("GameOver", "switch to main menu success", {"path": main_menu_scene_path})
 		get_tree().paused = false
 		if old_scene:
 			old_scene.queue_free()
 		self.queue_free()
 	elif status == ResourceLoader.THREAD_LOAD_FAILED:
 		print("加载失败！")
+		if SceneLog:
+			SceneLog.error_event("GameOver", "threaded load failed", {"path": main_menu_scene_path})
 		set_process(false)
+		_threaded_load_in_progress = false

@@ -1,0 +1,232 @@
+[gd_scene format=3 uid="uid://s3vlsfr0df4x"]
+
+[ext_resource type="Texture2D" uid="uid://dbt2ay4xavfrn" path="res://image/key.png" id="1_bofgo"]
+[ext_resource type="Script" uid="uid://cxoa63o524edo" path="res://scene/game_start/game_start.gd" id="1_ur7lk"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="2_ni1m0"]
+
+[sub_resource type="Animation" id="Animation_ur7lk"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("TextureRect:self_modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("ColorRect:color")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0.9903156, 0.9286154, 0.674158, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("TextureRect/shi:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-50.5, 599.6666)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("TextureRect/zhi:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(144.5, 600)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("TextureRect/yao:position")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(330, 600)]
+}
+
+[sub_resource type="Animation" id="Animation_ni1m0"]
+resource_name = "logo_label"
+length = 3.0
+capture_included = true
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("TextureRect:self_modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.001, 1, 2, 3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("ColorRect:color")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1, 2, 3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(0, 0, 0, 1), Color(0.9903156, 0.9286154, 0.674158, 1), Color(0.99215686, 0.92941177, 0.6745098, 1), Color(0, 0, 0, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("TextureRect/shi:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 1, 2, 3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 2,
+"values": [Vector2(-50.5, 650), Vector2(-50.5, 600), Vector2(-50.5, 550), Vector2(-50.5, 600)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("TextureRect/zhi:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 1, 2.0333333, 3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 2,
+"values": [Vector2(144.5, 550), Vector2(144.5, 600), Vector2(144.5, 650), Vector2(144.5, 600)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("TextureRect/yao:position")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 1, 2, 3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(330, 650), Vector2(330, 600), Vector2(330, 550), Vector2(330, 600)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ur7lk"]
+_data = {
+&"RESET": SubResource("Animation_ur7lk"),
+&"logo_label": SubResource("Animation_ni1m0")
+}
+
+[node name="GameStart" type="Control" unique_id=1567683683]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ur7lk")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=854398258]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.9903156, 0.9286154, 0.674158, 1)
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=789345271]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -184.5
+offset_top = -472.0
+offset_right = 184.5
+offset_bottom = 129.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.6, 0.6)
+pivot_offset = Vector2(184.5, 300.5)
+texture = ExtResource("1_bofgo")
+expand_mode = 1
+
+[node name="shi" type="Label" parent="TextureRect" unique_id=825213365]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -235.0
+offset_top = 299.16663
+offset_right = -85.0
+offset_bottom = 500.16675
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.007843138, 0.007843138, 0.007843138, 1)
+theme_override_fonts/font = ExtResource("2_ni1m0")
+theme_override_font_sizes/font_size = 150
+text = "时"
+
+[node name="zhi" type="Label" parent="TextureRect" unique_id=2086861772]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -40.0
+offset_top = 299.5
+offset_right = 110.0
+offset_bottom = 500.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.007843138, 0.007843138, 0.007843138, 1)
+theme_override_fonts/font = ExtResource("2_ni1m0")
+theme_override_font_sizes/font_size = 150
+text = "之"
+
+[node name="yao" type="Label" parent="TextureRect" unique_id=1016321446]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 145.5
+offset_top = 299.5
+offset_right = 295.5
+offset_bottom = 500.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.008202022, 0.008202025, 0.008202025, 1)
+theme_override_fonts/font = ExtResource("2_ni1m0")
+theme_override_font_sizes/font_size = 150
+text = "钥"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=160813994]
+libraries/ = SubResource("AnimationLibrary_ur7lk")

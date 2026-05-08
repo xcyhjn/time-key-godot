@@ -9,8 +9,6 @@
 [ext_resource type="Script" uid="uid://bjwid4x1can0t" path="res://scene/in_scene/enermy/health_bar.gd" id="6_cmmty"]
 [ext_resource type="Script" uid="uid://istgpa5ab80k" path="res://scene/in_scene/camera_2d_inscene.gd" id="7_bbffy"]
 [ext_resource type="Texture2D" uid="uid://cnpf6ij61c6qg" path="res://image/card_pile.png" id="8_h0845"]
-[ext_resource type="Texture2D" uid="uid://dwkqtxwdvfuqx" path="res://image/PlayPause.png" id="10_c78qr"]
-[ext_resource type="Texture2D" uid="uid://b080xjkdaw1he" path="res://image/fc1084.png" id="11_oyewm"]
 [ext_resource type="Script" uid="uid://b57d8s2xwou05" path="res://scene/in_scene/timeline/TimelineManager.gd" id="13_4x367"]
 [ext_resource type="Script" uid="uid://cgstk6buif658" path="res://scene/in_scene/DragShapeController.gd" id="14_j0ayu"]
 [ext_resource type="Shader" uid="uid://dr2hh00drgq38" path="res://shaders/shape_drag_state.gdshader.gdshader" id="15_wk3vv"]
@@ -191,21 +189,24 @@ theme_override_fonts/font = ExtResource("5_6migj")
 theme_override_font_sizes/font_size = 64
 text = "1"
 
-[node name="EndTurnButton" type="TextureButton" parent="ui" unique_id=1176916968]
-offset_left = 1639.0
-offset_top = 407.00003
-offset_right = 1655.0
-offset_bottom = 423.00003
-scale = Vector2(10, 10)
-texture_normal = ExtResource("10_c78qr")
+[node name="EndTurnButton" type="Button" parent="ui" unique_id=1542672900]
+anchors_preset = -1
+offset_left = 1583.0
+offset_top = 452.0
+offset_right = 1839.0
+offset_bottom = 548.0
+theme = ExtResource("19_ej18f")
+theme_override_font_sizes/font_size = 48
+text = "结束回合"
 
-[node name="EndCombatButton" type="TextureButton" parent="ui" unique_id=1009921236]
-offset_left = 1637.0
+[node name="EndCombatButton" type="Button" parent="ui" unique_id=2123675013]
+offset_left = 1581.0
 offset_top = 578.0
-offset_right = 1712.0
-offset_bottom = 642.0
-scale = Vector2(3, 3)
-texture_normal = ExtResource("11_oyewm")
+offset_right = 1837.0
+offset_bottom = 674.0
+theme = ExtResource("19_ej18f")
+theme_override_font_sizes/font_size = 48
+text = "离开"
 
 [node name="TimelineUI" type="Control" parent="ui" unique_id=533792028]
 layout_mode = 3

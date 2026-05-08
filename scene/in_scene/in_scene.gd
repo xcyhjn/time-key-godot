@@ -131,6 +131,8 @@ var _first_turn_starting: bool = false
 
 func _ready() -> void:
 	_connect_global_clock_progress_signal()
+	if SceneLog:
+		SceneLog.scene_event("InSceneMain", "ready", {"incoming_payload": incoming_external_payload})
 
 	# 初始化游戏状态
 	_pull_era_from_global()
@@ -1114,6 +1116,8 @@ func _return_to_out_scene() -> void:
 	_push_era_to_global()
 
 	var return_payload := _build_combat_return_payload()
+	if SceneLog:
+		SceneLog.scene_event("InSceneMain", "return to out scene", return_payload)
 	if MapState and MapState.has_method("set_pending_room_resolution"):
 		MapState.set_pending_room_resolution(return_payload)
 
@@ -1164,25 +1168,63 @@ func _build_combat_return_payload() -> Dictionary:
 ## - 当前脚本挂在 ui/Main，而不是整张 in_scene 的根节点上
 ## - 因此不能简单地 queue_free(self)，而要释放 old_scene 根节点
 func _switch_scene_with_data(path: String, payload: Variant = null) -> void:
-	if path == "" or not FileAccess.file_exists(path):
-		push_error("返回局外失败：场景路径无效 -> %s" % path)
-		return
-
-	var packed_scene := load(path)
+	var packed_scene := _load_packed_scene_for_switch(path, "返回局外失败")
 	if packed_scene == null:
-		push_error("返回局外失败：无法加载场景 -> %s" % path)
+		_recover_dim_after_failed_switch()
 		return
 
+	if SceneLog:
+		SceneLog.scene_event("InSceneMain", "switch scene start", {"path": path, "payload": payload})
 	var next_scene = packed_scene.instantiate()
-	if payload != null and next_scene.has_method("apply_external_event"):
-		next_scene.apply_external_event(payload)
+	_apply_payload_to_new_scene_before_tree(next_scene, payload)
 
 	var old_scene := get_tree().current_scene
 	get_tree().root.add_child(next_scene)
 	get_tree().current_scene = next_scene
+	if SceneLog:
+		SceneLog.scene_event("InSceneMain", "switch scene success", {"path": path})
 
 	if is_instance_valid(old_scene):
 		old_scene.queue_free()
+
+
+## 用 ResourceLoader 加载 PackedScene，避免导出版 res:// 场景被 remap 后 FileAccess.file_exists() 误判。
+func _load_packed_scene_for_switch(path: String, fail_message: String) -> PackedScene:
+	if path.strip_edges() == "":
+		_log_scene_switch_error(fail_message + "：场景路径为空", {"path": path})
+		return null
+
+	var packed_scene := ResourceLoader.load(path, "PackedScene") as PackedScene
+	if packed_scene == null:
+		_log_scene_switch_error(fail_message + "：无法加载 PackedScene", {
+			"path": path,
+			"resource_exists": ResourceLoader.exists(path, "PackedScene"),
+		})
+		return null
+
+	return packed_scene
+
+
+## 切场失败时把当前黑幕退回去，避免玩家停在全黑过渡层。
+func _recover_dim_after_failed_switch() -> void:
+	if is_instance_valid(dim) and dim.has_method("use"):
+		dim.use(1, 1)
+
+
+## 统一记录切场错误，导出版可在 user://logs/scene_flow.log 里定位。
+func _log_scene_switch_error(message: String, extra: Dictionary = {}) -> void:
+	if SceneLog:
+		SceneLog.error_event("InSceneMain", message, extra)
+	push_error("[InSceneMain] %s %s" % [message, str(extra)])
+
+
+## 在新场景进入树之前写入返回 payload。
+## OutScene 会把 payload 暂存在 pending_external_event，等 _ready() 完成后再消费。
+func _apply_payload_to_new_scene_before_tree(next_scene: Node, payload: Variant) -> void:
+	if payload == null:
+		return
+	if next_scene.has_method("apply_external_event"):
+		next_scene.apply_external_event(payload)
 
 # 商店按钮回调
 func _on_shop_button_pressed():
@@ -1282,6 +1324,8 @@ func proceed_to_next_stage():
 # 接收来自关卡选择场景的数据
 func apply_external_event(payload: String) -> void:
 	print("[Project] 接收到外部事件数据: ", payload)
+	if SceneLog:
+		SceneLog.scene_event("InSceneMain", "apply_external_event", {"payload": payload})
 	incoming_external_payload = payload
 	incoming_battle_tag = ""
 	incoming_map_seed = ""
@@ -1304,13 +1348,16 @@ func apply_external_event(payload: String) -> void:
 		incoming_battle_tag = payload_text.substr(0, first_space_index)
 		incoming_map_seed = payload_text.substr(first_space_index + 1).strip_edges()
 
-	# 如果 HexMap 已经 ready，则立刻同步一次；
-	# 如果还没 ready，_ready 里的 deferred 会再补一次。
-	_apply_incoming_payload_to_hex_map()
+	# 如果 Main 已经进入节点树，则立刻同步一次；
+	# 如果切场时在 add_child() 前预注入，_ready 里的 deferred 会在 HexMap ready 后再补一次。
+	if is_inside_tree():
+		_apply_incoming_payload_to_hex_map()
 
 
 func _apply_incoming_payload_to_hex_map() -> void:
 	if not is_instance_valid(hex_map):
+		if SceneLog:
+			SceneLog.error_event("InSceneMain", "hex_map missing while applying payload")
 		return
 	if incoming_external_payload == null:
 		return
@@ -1319,8 +1366,12 @@ func _apply_incoming_payload_to_hex_map() -> void:
 	if payload_text == "":
 		return
 	if not hex_map.has_method("apply_external_event"):
+		if SceneLog:
+			SceneLog.error_event("InSceneMain", "hex_map has no apply_external_event")
 		return
 
+	if SceneLog:
+		SceneLog.scene_event("InSceneMain", "forward payload to hex_map", {"payload": payload_text})
 	hex_map.apply_external_event(payload_text)
 
 

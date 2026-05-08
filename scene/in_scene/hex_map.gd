@@ -273,9 +273,16 @@ var is_visuals_locked: bool = false  # ★ 新增：视觉状态锁，防止拖�
 # 外部事件处理系统（整合自 node_2d.gd）
 ## 外部事件设置器（整合自 node_2d.gd）
 func set_received_text(v: String) -> void:
-	received_text = v
+	received_text = v.strip_edges()
 	parts = received_text.split("|", false)
-	room_type = parts[0] if parts.size() > 0 else ""
+
+	# 局外正式流程传入格式是 "battle_elite <map_seed>"；
+	# 旧调试流程可能仍使用 "battle_elite|enhance,combine"。
+	# 这里先拆功能后缀，再拆空格 seed，保证 HexMap 在 _ready 建图前能拿到纯 room_type。
+	var room_and_seed := parts[0].strip_edges() if parts.size() > 0 else ""
+	var room_tokens := room_and_seed.split(" ", false)
+	room_type = room_tokens[0] if room_tokens.size() > 0 else ""
+	incoming_map_seed = room_tokens[1] if room_tokens.size() > 1 else ""
 
 	if parts.size() > 1 and parts[1] != "":
 		features = parts[1].split(",", false)
@@ -286,6 +293,7 @@ func set_received_text(v: String) -> void:
 var received_text: String = "" : set = set_received_text
 var parts: PackedStringArray = PackedStringArray()
 var room_type: String = ""
+var incoming_map_seed: String = ""
 var features: PackedStringArray = PackedStringArray()
 
 var map_root: Node2D
@@ -323,6 +331,8 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 func apply_external_event(payload: String) -> void:
 	# payload 示例："battle_elite|enhance,combine"
 	received_text = payload  # 会触发 setter，自动更新 room_type/features
+	if SceneLog:
+		SceneLog.scene_event("HexMap", "apply_external_event", {"payload": payload, "room_type": room_type})
 
 ## 处理事件逻辑（整合自 node_2d.gd）
 func handle_event_logic():
@@ -336,6 +346,8 @@ func handle_event_logic():
 			print(">> 准备：BOSS 战环境")
 
 func _ready():
+	if SceneLog:
+		SceneLog.scene_event("HexMap", "ready", {"received_text": received_text, "room_type": room_type})
 	y_sort_enabled = true
 	set_process(enable_smart_collision_interaction)
 	if enemy_intent_frame_tex == null:
@@ -386,6 +398,8 @@ func _ready():
 	handle_event_logic()
 
 	build_map_pipeline()
+	if SceneLog:
+		SceneLog.scene_event("HexMap", "build_map_pipeline finished", {"room_type": room_type, "map_tiles": map_data.size()})
 	# 绑定现有高度视图切换按钮
 	var height_view_button = get_node_or_null("../../ui/HeightViewToggleButton")
 	
@@ -486,7 +500,8 @@ func _get_circular_coords(radius: int) -> Array[Vector2i]:
 func _populate_map_data(coords: Array[Vector2i], shape_type: String, shape_params: Dictionary = {}) -> void:
 	# 初始化随机数生成器
 	if use_external_seed and received_text != "":
-		rng.seed = received_text.hash()
+		var seed_text := incoming_map_seed if incoming_map_seed != "" else received_text
+		rng.seed = seed_text.hash()
 	else:
 		rng.randomize()
 	

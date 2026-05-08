@@ -39,8 +39,11 @@ var _database_unavailable_closing: bool = false
 var _tutorial_prompt_dialog: ConfirmationDialog = null
 var _tutorial_prompt_decision_made: bool = false
 var _tutorial_prompt_close_only: bool = false
+var _threaded_load_in_progress: bool = false
 
 func _ready() -> void:
+	if SceneLog:
+		SceneLog.scene_event("MainMenu", "ready", {"scene_path": Scene_path})
 	await dim.use(1,1)
 	Global.clock.emit(1)
 	set_process(false)
@@ -122,12 +125,18 @@ func _close_active_overlay_from_escape() -> bool:
 	return false
 
 func _process(_delta: float) -> void:
+	if not _threaded_load_in_progress:
+		return
+
 	var status = ResourceLoader.load_threaded_get_status(Scene_path, progress)
 	if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 		$UI_Layer/ProgressBar.value = progress[0] * 100.0
 		
 	elif status == ResourceLoader.THREAD_LOAD_LOADED:
+		if SceneLog:
+			SceneLog.scene_event("MainMenu", "threaded load finished", {"scene_path": Scene_path, "pending_data": pending_data})
 		set_process(false)
+		_threaded_load_in_progress = false
 		$UI_Layer/ProgressBar.value = 100.0
 		
 		var packed_scene = ResourceLoader.load_threaded_get(Scene_path)
@@ -138,17 +147,29 @@ func _process(_delta: float) -> void:
 		
 		get_tree().root.add_child(next_scene_instance)
 		get_tree().current_scene = next_scene_instance
+		if SceneLog:
+			SceneLog.scene_event("MainMenu", "scene switched", {"target": Scene_path, "payload": pending_data})
 		
 		# 销毁当前菜单场景
 		queue_free()
 		
 	elif status == ResourceLoader.THREAD_LOAD_FAILED:
 		print("加载失败！")
+		if SceneLog:
+			SceneLog.error_event("MainMenu", "threaded load failed", {"scene_path": Scene_path})
 		set_process(false)
+		_threaded_load_in_progress = false
 
 # 通用启动加载函数
 func _start_async_load():
-	ResourceLoader.load_threaded_request(Scene_path)
+	var err := ResourceLoader.load_threaded_request(Scene_path)
+	if err != OK:
+		if SceneLog:
+			SceneLog.error_event("MainMenu", "threaded request failed", {"scene_path": Scene_path, "err": err})
+		return
+	_threaded_load_in_progress = true
+	if SceneLog:
+		SceneLog.scene_event("MainMenu", "threaded request started", {"scene_path": Scene_path, "payload": pending_data})
 	$UI_Layer/ProgressBar.show()
 	$UI_Layer/ProgressBar.value = 0
 	set_process(true)

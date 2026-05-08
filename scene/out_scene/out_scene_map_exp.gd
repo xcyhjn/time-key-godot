@@ -81,6 +81,12 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 # ==========================================
 func _ready():
 	_connect_global_clock_progress_signal()
+	if SceneLog:
+		SceneLog.scene_event("OutScene", "ready", {
+			"loaded": MapState.loaded,
+			"is_initialized": MapState.is_initialized,
+			"current_tier": MapState.current_tier
+		})
 
 	# 检查是否有保存的状态
 	if MapState.loaded:
@@ -262,6 +268,8 @@ func _load_from_global():
 ## 当前主要用于“局内结算结束 -> 返回局外”时携带战斗返回信息。
 func apply_external_event(payload: Variant) -> void:
 	pending_external_event = payload
+	if SceneLog:
+		SceneLog.scene_event("OutScene", "apply_external_event", {"payload": payload})
 
 
 ## 刷新局外主 UI 上的时代/阶段文字。
@@ -308,6 +316,8 @@ func _consume_pending_room_resolution() -> void:
 ## - boss 房在确认来自当前章节边界后，推进 current_tier 并播放下一圈地块生成动画。
 func _handle_room_resolution_payload(payload: Dictionary) -> void:
 	print("[OutScene] 接收到房间结算结果: ", payload)
+	if SceneLog:
+		SceneLog.scene_event("OutScene", "room resolution received", payload)
 
 	var did_advance_tier := false
 	if _should_advance_tier_from_boss_payload(payload):
@@ -726,6 +736,13 @@ func _enter_room_logic(target):
 			data_str = "event_stage"
 			target_scene = event_scene
 	data_str = data_str + " " + map_seed
+	if SceneLog:
+		SceneLog.scene_event("OutScene", "enter room", {
+			"target": target,
+			"type": type,
+			"payload": data_str,
+			"current_tier": current_tier
+		})
 
 	# 在切到局内前，先把“当前进入的房间”上下文记到全局。
 	# 这样局内战斗结束后返回局外时，仍然知道自己是从哪个局外格子进入的。
@@ -756,25 +773,80 @@ func _save_to_global():
 
 
 func _switch_scene_with_data(path: String, data: String):
-	if path == "" or not FileAccess.file_exists(path): return
-	_save_to_global()
-	var next_scene = load(path).instantiate()
+	var packed_scene := _load_packed_scene_for_switch(path, "进入局内失败")
+	if packed_scene == null:
+		_recover_dim_after_failed_switch()
+		return
 
-	# 优先走显式接口注入。
-	# 这样无论目标场景的脚本挂在根节点、ui/Main，还是未来换了新的结构，
-	# 只要实现 apply_external_event(payload) 就能稳定接收数据。
-	if next_scene.has_method("apply_external_event"):
-		next_scene.apply_external_event(data)
-	else:
-		var main_board = next_scene.get_node_or_null("ui/Main")
-		if main_board and main_board.has_method("apply_external_event"):
-			main_board.apply_external_event(data)
-		else:
-			# 兼容旧版节点路径写法。
-			var target_node = next_scene.get_node_or_null("Main/Node2D")
-			if target_node and _object_has_property(target_node, &"received_text"):
-				target_node.received_text = data
+	_save_to_global()
+	if SceneLog:
+		SceneLog.scene_event("OutScene", "switch scene start", {"path": path, "payload": data})
+	var next_scene = packed_scene.instantiate()
+
+	# 局内 HexMap 会在进入树时立刻 build_map_pipeline()。
+	# 因此 payload 必须在 add_child() 之前写入，否则导出/运行时可能先用空房间类型建图。
+	_apply_payload_before_scene_enters_tree(next_scene, data)
 
 	get_tree().root.add_child(next_scene)
 	get_tree().current_scene = next_scene
+	if SceneLog:
+		SceneLog.scene_event("OutScene", "switch scene success", {"path": path})
 	queue_free()
+
+
+## 用 ResourceLoader 加载 PackedScene，避免导出版 res:// 场景被 remap 后 FileAccess.file_exists() 误判。
+func _load_packed_scene_for_switch(path: String, fail_message: String) -> PackedScene:
+	if path.strip_edges() == "":
+		_log_scene_switch_error(fail_message + "：场景路径为空", {"path": path})
+		return null
+
+	var packed_scene := ResourceLoader.load(path, "PackedScene") as PackedScene
+	if packed_scene == null:
+		_log_scene_switch_error(fail_message + "：无法加载 PackedScene", {
+			"path": path,
+			"resource_exists": ResourceLoader.exists(path, "PackedScene"),
+		})
+		return null
+
+	return packed_scene
+
+
+## 切场失败时必须把刚刚保持的黑幕退掉，否则玩家会停在全黑画面。
+func _recover_dim_after_failed_switch() -> void:
+	if is_instance_valid(dim) and dim.has_method("use"):
+		dim.use(1, 1)
+
+
+## 统一记录切场错误，导出版可在 user://logs/scene_flow.log 里定位。
+func _log_scene_switch_error(message: String, extra: Dictionary = {}) -> void:
+	if SceneLog:
+		SceneLog.error_event("OutScene", message, extra)
+	push_error("[OutScene] %s %s" % [message, str(extra)])
+
+
+## 在新场景进入树之前写入外部 payload。
+## 核心逻辑:
+## - 先写 HexMap，保证它的 _ready() 建图时已经拿到房间类型与 seed。
+## - 再写 MainBoard，保留战斗返回时需要的 battle_tag / map_seed。
+## - 最后保留根节点和旧路径兜底，兼容教程场景与历史结构。
+func _apply_payload_before_scene_enters_tree(next_scene: Node, data: String) -> void:
+	var delivered := false
+
+	var hex_map = next_scene.get_node_or_null("map/HexMap")
+	if hex_map and hex_map.has_method("apply_external_event"):
+		hex_map.apply_external_event(data)
+		delivered = true
+
+	var main_board = next_scene.get_node_or_null("ui/Main")
+	if main_board and main_board.has_method("apply_external_event"):
+		main_board.apply_external_event(data)
+		delivered = true
+
+	if not delivered and next_scene.has_method("apply_external_event"):
+		next_scene.apply_external_event(data)
+		delivered = true
+
+	if not delivered:
+		var target_node = next_scene.get_node_or_null("Main/Node2D")
+		if target_node and _object_has_property(target_node, &"received_text"):
+			target_node.received_text = data

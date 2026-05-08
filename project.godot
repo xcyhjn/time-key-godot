@@ -15,8 +15,11 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="时之钥"
-run/main_scene="uid://378syxx0nj4d"
+run/main_scene="uid://s3vlsfr0df4x"
 config/features=PackedStringArray("4.6", "Forward Plus")
+boot_splash/show_image=false
+config/icon="uid://njwjl7o66tkq"
+config/windows_native_icon="res://image/icon/key(黄色背景)_110 (1)(1) - 副本.ico"
 
 [autoload]
 
@@ -29,6 +32,7 @@ GlobalTimecoin="*uid://ddrq5364kxv52"
 Dialogic="*uid://ds2q0uclmolvu"
 StatusDb="*uid://b27xf024l3mrg"
 Saver="*uid://bbq3jr1q7khoi"
+SceneLog="*res://scene/global/SceneLog.gd"
 
 [dialogic]
 
