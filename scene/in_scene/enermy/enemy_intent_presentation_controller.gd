@@ -110,6 +110,7 @@ func _resolve_references() -> void:
 	main_board = get_tree().get_first_node_in_group("MainBoard")
 	if not is_instance_valid(main_board):
 		return
+	_hide_intent_tooltip()
 
 	hex_map = main_board.get_node_or_null("../../map/HexMap")
 	timeline_manager = main_board.get_node_or_null("../TimelineSystem/TimelineManager")
@@ -142,7 +143,7 @@ func handle_map_stack_hover(stack: Area2D, is_entered: bool) -> void:
 
 	var source_node = stack.get_meta("occupant") if stack.has_meta("occupant") else null
 	if not _can_source_provide_intent(source_node):
-		if is_entered == false and current_hover_origin == "map":
+		if current_hover_origin == "map":
 			clear_intent_preview()
 		return
 
@@ -213,8 +214,7 @@ func clear_intent_preview(restore_card_hover: bool = true) -> void:
 	if is_instance_valid(timeline_ui) and timeline_ui.has_method("clear_enemy_intent_preview"):
 		timeline_ui.clear_enemy_intent_preview()
 
-	if is_instance_valid(main_board) and is_instance_valid(main_board.get("cursor_tooltip")):
-		main_board.cursor_tooltip.hide()
+	_hide_intent_tooltip()
 	_hide_status_keyword_tooltips()
 
 	current_intent_data = null
@@ -250,6 +250,20 @@ func _show_intent_tooltip(intent_data: EnemyIntentData) -> void:
 	main_board.cursor_tooltip.show()
 	_rebuild_status_keyword_tooltips(intent_data.source_node)
 	call_deferred("_position_intent_tooltip", intent_data.source_coord)
+
+
+## 敌人意图 tooltip 的唯一隐藏入口。
+## 核心逻辑：同时隐藏 RichTextLabel 和它运行时包出来的 PanelContainer，避免开局左上角出现空白框。
+func _hide_intent_tooltip() -> void:
+	if not is_instance_valid(main_board):
+		return
+	var tooltip: Variant = main_board.get("cursor_tooltip")
+	if is_instance_valid(tooltip):
+		tooltip.hide()
+
+	var panel := _get_cursor_tooltip_panel()
+	if is_instance_valid(panel):
+		panel.hide()
 
 
 func _position_intent_tooltip(source_coord: Vector2i) -> void:

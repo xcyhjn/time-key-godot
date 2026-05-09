@@ -21,6 +21,10 @@ boot_splash/show_image=false
 config/icon="uid://njwjl7o66tkq"
 config/windows_native_icon="res://image/icon/key(黄色背景)_110 (1)(1) - 副本.ico"
 
+[audio]
+
+buses/default_bus_layout="uid://dq7v75ea4lbtq"
+
 [autoload]
 
 Global="*uid://djir5bfcqufdj"
@@ -33,6 +37,7 @@ Dialogic="*uid://ds2q0uclmolvu"
 StatusDb="*uid://b27xf024l3mrg"
 Saver="*uid://bbq3jr1q7khoi"
 SceneLog="*res://scene/global/SceneLog.gd"
+SoundManager="*uid://pr6tsfbm9zk"
 
 [dialogic]
 

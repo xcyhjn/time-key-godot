@@ -1,4 +1,4 @@
-﻿extends Control
+extends Control
 
 # 预加载资源
 var hand_scene = load("res://addons/card-framework/hand.tscn")
@@ -112,6 +112,19 @@ var card_tooltip_presenter: CardTooltipPresenter = null
 ## 每次按下 9 获得的时间货币数量。
 @export_range(1, 999999, 1, "or_greater") var keyboard_timecoin_debug_amount: int = 1000
 
+@export_group("抽牌堆交互")
+## 是否允许左键点击抽牌堆直接抽牌。
+## 默认关闭：左键与右键都打开当前抽牌堆查看器，避免误抽牌。
+@export var enable_left_click_draw_from_deck: bool = false
+@export_range(1, 10, 1, "or_greater") var left_click_deck_draw_count: int = 3
+
+@export_group("光标提示框")
+## 光标 tooltip 会按文本内容自动收缩/扩展，但不会小于这个宽度；160px 约等于 10 个汉字。
+@export var cursor_tooltip_min_width: float = 160.0
+## 光标 tooltip 的最大文本宽度；超过后自动换行，避免长句飞出屏幕。
+@export var cursor_tooltip_max_width: float = 260.0
+@export var cursor_tooltip_min_height: float = 1.0
+
 ## 记录进入局内时携带的外部数据。
 ## 目前主要用于保留 battle_normal / battle_elite / boss_stage 这类来源标签，
 ## 让回到局外时仍然能带回基础上下文。
@@ -174,6 +187,8 @@ func _ready() -> void:
 	if is_instance_valid(timeline_manager):
 		if timeline_manager.has_signal("action_hovered_changed"):
 			timeline_manager.action_hovered_changed.connect(_on_timeline_action_hovered)
+			if timeline_manager.has_signal("action_executed") and not timeline_manager.action_executed.is_connected(_on_timeline_action_executed):
+				timeline_manager.action_executed.connect(_on_timeline_action_executed)
 		else:
 			push_warning("project.gd: timeline_manager 没有 action_hovered_changed 信号！")
 	else:
@@ -349,6 +364,10 @@ func _schedule_auto_first_turn() -> void:
 
 ## 普通局内首回合入口：时间轴隐藏时通常代表教程流程正在接管，先交给教程导演。
 func _start_first_turn_after_scene_ready() -> void:
+	if incoming_battle_tag == "boss_stage":
+		SoundManager.play_bgm("battle_boss")
+	else:
+		SoundManager.play_bgm_in_game()
 	await _start_first_turn_after_timeline_ready(false)
 
 
@@ -648,14 +667,14 @@ func _on_deck_button_gui_input(event: InputEvent):
 	if event is InputEventMouseButton and event.pressed:
 		# --- 左键点击：抽牌 ---
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			attempt_draw_cards(3)  # 这里填你想要的抽牌数量
+			if enable_left_click_draw_from_deck:
+				attempt_draw_cards(left_click_deck_draw_count)
+			else:
+				_open_deck_pile_viewer()
 
 		# --- 右键点击：查看抽牌堆 ---
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			if deck_pile._held_cards.size() > 0:
-				pile_viewer.open_pile_view(deck_pile, manager_instance)
-			else:
-				pass
+			_open_deck_pile_viewer()
 
 func _on_discard_button_pressed():
 	# 点击弃牌堆按钮 -> 查看弃牌堆
@@ -663,6 +682,11 @@ func _on_discard_button_pressed():
 		pile_viewer.open_pile_view(discard_pile, manager_instance)
 	else:
 		pass
+
+
+func _open_deck_pile_viewer() -> void:
+	if is_instance_valid(deck_pile) and deck_pile._held_cards.size() > 0:
+		pile_viewer.open_pile_view(deck_pile, manager_instance)
 
 # ==========================================
 # ★ 回合流程控制区
@@ -832,6 +856,7 @@ func attempt_draw_cards(count: int):
 		if deck_pile._held_cards.size() > 0:
 			var top_card = deck_pile._held_cards.back()
 			player_hand.move_cards([top_card])
+			Signal_Bus.emit_card_drawn(top_card, 1)
 
 			# 等待一帧，确保物理移动和数据更新
 			await get_tree().process_frame
@@ -918,6 +943,7 @@ func shuffle_card():
 	# 2. 逻辑洗牌：打乱数组顺序
 	# _held_cards 是 CardContainer 定义的存储卡牌引用的数组
 	deck_pile._held_cards.shuffle()
+	Signal_Bus.emit_deck_shuffled()
 
 	# 3. 视觉更新：确保所有牌盖着，并根据 Pile 逻辑重新堆叠
 	# 强制抽牌堆的所有牌背面向上
@@ -1123,6 +1149,9 @@ func _return_to_out_scene() -> void:
 
 	disable_player_inputs()
 	hide_ui_for_external_scene()
+	SoundManager.stop_looping_sfx()
+	SoundManager.stop_bgm()
+	SoundManager.play_bgm_main_menu()
 
 	if is_instance_valid(dim):
 		await dim.use(0, 0)
@@ -1387,6 +1416,7 @@ func _ensure_entry_dim_hidden() -> void:
 func _enhance_cursor_tooltip() -> void:
 	if not is_instance_valid(cursor_tooltip):
 		return
+	cursor_tooltip.hide()
 	
 	# 检查是否已经增强过（通过检查父节点是否为PanelContainer）
 	if cursor_tooltip.get_parent() is PanelContainer:
@@ -1435,10 +1465,14 @@ func _enhance_cursor_tooltip() -> void:
 	panel.global_position = original_position
 	
 	# 更新Panel大小以适应内容
-	panel.custom_minimum_size = Vector2(150, 40)
+	panel.custom_minimum_size = Vector2.ZERO
 	
 	# 隐藏原始标签的边框和背景（如果有）
 	original_label.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	original_label.fit_content = true
+	original_label.scroll_active = false
+	original_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	original_label.custom_minimum_size = Vector2.ZERO
 	
 	# 保存Panel引用
 	cursor_tooltip_panel = panel
@@ -1450,14 +1484,42 @@ func _enhance_cursor_tooltip() -> void:
 ## 当cursor_tooltip可见性变化时，同步Panel的可见性
 func _on_cursor_tooltip_visibility_changed() -> void:
 	if is_instance_valid(cursor_tooltip_panel) and is_instance_valid(cursor_tooltip):
+		_refresh_cursor_tooltip_size()
 		cursor_tooltip_panel.visible = cursor_tooltip.visible
 
 ## 设置光标提示框的位置（增强后使用Panel的位置）
 func set_cursor_tooltip_position(position: Vector2) -> void:
+	_refresh_cursor_tooltip_size()
 	if is_instance_valid(cursor_tooltip_panel):
 		cursor_tooltip_panel.global_position = position
 	elif is_instance_valid(cursor_tooltip):
 		cursor_tooltip.global_position = position
+
+
+## 刷新光标提示框尺寸。
+## 核心逻辑：先关闭自动换行测自然宽度，再按最小/最大宽度重排，避免中文被压成一字一行。
+func _refresh_cursor_tooltip_size() -> void:
+	if not is_instance_valid(cursor_tooltip):
+		return
+
+	var min_width: float = maxf(cursor_tooltip_min_width, 1.0)
+	var max_width: float = maxf(cursor_tooltip_max_width, min_width)
+	var original_autowrap: int = cursor_tooltip.autowrap_mode
+
+	cursor_tooltip.size = Vector2.ZERO
+	cursor_tooltip.custom_minimum_size = Vector2.ZERO
+	cursor_tooltip.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var content_width: float = float(cursor_tooltip.get_content_width())
+	cursor_tooltip.autowrap_mode = original_autowrap
+
+	var target_width: float = clampf(content_width, min_width, max_width)
+	cursor_tooltip.size = Vector2(target_width, 0.0)
+	var target_height: float = maxf(float(cursor_tooltip.get_content_height()), cursor_tooltip_min_height)
+	cursor_tooltip.custom_minimum_size = Vector2(target_width, target_height)
+
+	if is_instance_valid(cursor_tooltip_panel):
+		cursor_tooltip_panel.size = Vector2.ZERO
+		cursor_tooltip_panel.custom_minimum_size = Vector2.ZERO
 
 
 ## ==========================================
@@ -1735,6 +1797,7 @@ func _consume_settlement_reward_context(reward_context: Dictionary) -> void:
 
 # 信号响应：执行实际的动画转换逻辑
 func _on_defeat_triggered():
+	SoundManager.stop_bgm()
 	
 	_hide_debug_buttons_for_resolution()
 
@@ -1753,6 +1816,8 @@ func _on_defeat_triggered():
 	if is_instance_valid(game_over_ui):
 		game_over_ui.start_sequence(stats)
 
+	Saver.Delete_save(0)
+
 # 按钮点击：只负责发出全局信号
 func _on_lose_button_pressed():
 	Signal_Bus.emit_defeat_triggered()
@@ -1762,6 +1827,8 @@ func _on_combat_victory_debug_button_down() -> void:
 		Signal_Bus.emit_combat_victory_triggered()
 
 func _on_win_button_button_down() -> void:
+	SoundManager.stop_bgm()
+	SoundManager.play_looping_sfx("game_win")
 	_hide_debug_buttons_for_resolution()
 	if is_instance_valid(win) and win.has_method("_on_victory_triggered"):
 		win._on_victory_triggered()
@@ -1819,6 +1886,7 @@ func _on_combat_victory_triggered() -> void:
 		return
 
 	current_battle_state = BattleFlowState.SETTLEMENT
+	SoundManager.stop_bgm()
 	_hide_debug_buttons_for_resolution()
 
 	disable_player_inputs()
@@ -1845,3 +1913,6 @@ func _on_combat_victory_triggered() -> void:
 		await combat_victory_banner.play_banner("战斗胜利")
 
 	_show_settlement_buttons()
+
+func _on_timeline_action_executed(_action: TimelineAction) -> void:
+	SoundManager.play_sfx("tile_damage")

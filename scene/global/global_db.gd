@@ -32,6 +32,14 @@ const KEYWORDS: Dictionary = {
 		"color": "#750a99",
 		"desc": "使目标失去X点血量"
 	},
+	"恢复": {
+		"color": "#22c55e",
+		"desc": "使目标恢复X点血量"
+	},
+	"建造": {
+		"color": "#c8a26a",
+		"desc": "选定地块创造一个建筑"
+	},
 	"启蒙": {
 		"color": "#1b00cd",
 		"desc": "目标每回合结束增加一次特殊行动，推动时间轴一格"

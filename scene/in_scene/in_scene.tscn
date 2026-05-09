@@ -307,7 +307,6 @@ theme = ExtResource("19_ej18f")
 text = "视角切换"
 
 [node name="WinButton" type="Button" parent="ui" unique_id=1004531811]
-visible = false
 offset_left = 88.0
 offset_top = 599.0
 offset_right = 224.0

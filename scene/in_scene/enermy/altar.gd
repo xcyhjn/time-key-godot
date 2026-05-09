@@ -65,13 +65,15 @@ func Only_Done(tile_info : Dictionary):
 
 func forest_done(tile_info : Dictionary):
 	for neighbor in neighbors:
-		if tile_info[neighbor].keys().has("landform") and tile_info[neighbor]["landform"] != null:
-			tile_info[neighbor]["landform"].heal(tile_info[neighbor]["landform"].Max_Blood * 0.1)
+		if tile_info.keys().has(neighbor):
+			if tile_info[neighbor].keys().has("landform") and tile_info[neighbor]["landform"] != null:
+				tile_info[neighbor]["landform"].heal(tile_info[neighbor]["landform"].Max_Blood * 0.1)
 
 func snow_peak_done(tile_info : Dictionary):
 	for neighbor in neighbors:
-		if tile_info[neighbor].keys().has("landform") and tile_info[neighbor]["landform"] != null:
-			tile_info[neighbor]["landform"].State_Vice = tile_info[neighbor]["landform"].State_Vice | Vice_State_Pool.protected
+		if tile_info.keys().has(neighbor):
+			if tile_info[neighbor].keys().has("landform") and tile_info[neighbor]["landform"] != null:
+				tile_info[neighbor]["landform"].State_Vice = tile_info[neighbor]["landform"].State_Vice | Vice_State_Pool.protected
 			
 
 func Behavior(Step, info_in, Other, beha, rng):

@@ -8,27 +8,27 @@ var fade_tween: Tween
 var mouse_over: bool = false
 var is_dragging: bool = false
 
-@export var manual_grabber_width: int = 0 
+@export var manual_grabber_width: int = 0
 
 func _ready():
 	# --- 当滑条自身大小改变时（比如窗口拉伸），重新计算弹窗位置 ---
 	item_rect_changed.connect(_update_popup_position)
 	_on_value_changed(value)
-	
+
 	value_popup.modulate.a = 0.0
 	await get_tree().process_frame
-	
+
 	value_changed.connect(_on_value_changed)
-	
+
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
-	
+
 	drag_started.connect(_on_drag_started)
 	drag_ended.connect(_on_drag_ended)
-	
+
 	focus_entered.connect(_on_focus_entered)
 	focus_exited.connect(_on_focus_exited)
-	
+
 	_on_value_changed(value)
 
 # --- 核心逻辑 ---
@@ -36,7 +36,8 @@ func _ready():
 func _on_value_changed(new_value):
 	value_label.text = str(int(new_value * 100))
 	_update_popup_position()
-	
+	SoundManager.set_volume(SoundManager.Bus.SFX, new_value)
+
 	# 键盘操作唤醒：如果数值变了，且有焦点，且框是隐藏的 -> 显示
 	if has_focus() and value_popup.modulate.a < 0.1:
 		_show_popup()
@@ -80,8 +81,8 @@ func _input(event):
 
 func _show_popup():
 	# --- 显示前强制校准位置 ---
-	_update_popup_position() 
-	
+	_update_popup_position()
+
 	if value_popup.modulate.a > 0.9 and (fade_tween and fade_tween.is_running()):
 		return
 	if fade_tween: fade_tween.kill()
@@ -100,11 +101,11 @@ func _update_popup_position():
 	else:
 		var icon = get_theme_icon("grabber", "HSlider")
 		if icon: grabber_width = icon.get_width()
-		else: grabber_width = 20 
-	
+		else: grabber_width = 20
+
 	var available_width = size.x - grabber_width
 	var grabber_center_x = (grabber_width / 2.0) + (available_width * ratio)
 	var popup_x = grabber_center_x - (value_popup.size.x / 2.0)
 	var popup_y = -value_popup.size.y - 10
-	
+
 	value_popup.position = Vector2(popup_x, popup_y)

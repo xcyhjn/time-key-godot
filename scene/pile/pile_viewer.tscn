@@ -1,11 +1,13 @@
 [gd_scene format=3 uid="uid://ekidxpkdg1k6"]
 
 [ext_resource type="Script" uid="uid://bkaf0kmq0en4y" path="res://scene/pile/pile_viewer.gd" id="1_728hg"]
+[ext_resource type="Theme" uid="uid://dr1f72ftkx0ma" path="res://theme/MainMenu.theme" id="2_i0dis"]
+[ext_resource type="FontFile" uid="uid://dl3b53uhno64o" path="res://fonts/ark-pixel-12px-proportional-zh_cn.otf" id="3_m2upg"]
 
-[node name="PileViewer" type="CanvasLayer"]
+[node name="PileViewer" type="CanvasLayer" unique_id=1527424454]
 script = ExtResource("1_728hg")
 
-[node name="background" type="ColorRect" parent="."]
+[node name="background" type="ColorRect" parent="." unique_id=952443673]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -13,21 +15,21 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.5882353)
 
-[node name="ScrollContainer" type="ScrollContainer" parent="."]
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=135458065]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -558.0
-offset_top = -265.0
+offset_top = -423.0
 offset_right = 117.903564
-offset_bottom = 51.86743
+offset_bottom = 98.68671
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(1.66, 1.66)
 
-[node name="card" type="GridContainer" parent="ScrollContainer"]
+[node name="card" type="GridContainer" parent="ScrollContainer" unique_id=1645804782]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -35,10 +37,12 @@ theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 100
 columns = 5
 
-[node name="back" type="Button" parent="."]
-offset_left = 37.0
-offset_top = 30.0
-offset_right = 167.0
-offset_bottom = 122.0
-theme_override_font_sizes/font_size = 61
+[node name="back" type="Button" parent="." unique_id=491861342]
+offset_left = 97.0
+offset_top = 323.0
+offset_right = 227.0
+offset_bottom = 415.0
+theme = ExtResource("2_i0dis")
+theme_override_fonts/font = ExtResource("3_m2upg")
+theme_override_font_sizes/font_size = 48
 text = "返回"

@@ -38,6 +38,7 @@ func start_sequence(stats: Dictionary):
 			.set_ease(Tween.EASE_IN_OUT)
 
 func _on_menu_btn_button_down() -> void:
+	SoundManager.stop_looping_sfx()
 	await dim.use(0,0)
 	await get_tree().create_timer(0.5).timeout
 	_start_async_load()

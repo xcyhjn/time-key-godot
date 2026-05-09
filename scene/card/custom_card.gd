@@ -110,8 +110,8 @@ func enter_dragging_state() -> void:
 
 	card_current_state = CustomCardState.DRAGGING
 
-	# 保存当前状态（确保最新）
-	_save_original_state()
+	# 拖拽通常从“已选中放大”的状态进入；这里不再覆盖手牌原始状态，
+	# 否则右键取消时会把放大/竖直状态误当作回手牌基准。
 
 	# 应用拖拽视觉效果（由DragShapeController设置材质）
 	# 这里只更新状态，材质由外部控制器设置
@@ -119,57 +119,22 @@ func enter_dragging_state() -> void:
 
 ## 返回手牌状态
 func return_to_hand() -> void:
-	if card_current_state == CustomCardState.RETURNING or card_current_state == CustomCardState.IDLE:
+	if card_current_state == CustomCardState.RETURNING:
 		return
 
 	card_current_state = CustomCardState.RETURNING
 
-	# 清除拖拽视觉效果
-	material = original_material
-	if front_face_texture:
-		front_face_texture.material = original_material
-	set_card_transparency(1.0)
+	_restore_normal_visuals()
+	if _restore_hand_fan_layout():
+		card_current_state = CustomCardState.IDLE
+		return
 
-	# 重新父级化：将卡牌返回原始父节点（手牌容器）
-	var current_parent = get_parent()
-	if current_parent and is_instance_valid(original_parent) and current_parent != original_parent:
-
-		# 保存当前全局位置，以便动画平滑过渡
-		var current_global_pos = global_position
-		var current_global_scale = scale
-		var current_z_index = z_index
-
-		# 重新父级化
-		current_parent.remove_child(self)
-		original_parent.add_child(self)
-		set_as_top_level(false)
-
-		# 设置位置和缩放，保持视觉连续性
-		global_position = current_global_pos
-		scale = current_global_scale
-		z_index = current_z_index
-
-		# 启动返回动画 - 直接使用全局位置补间，避免坐标转换问题
-		var tw = create_tween().set_parallel(true)
-		tw.tween_property(self, "global_position", card_original_position, 0.3)
-		tw.tween_property(self, "scale", card_original_scale, 0.3)
-		tw.tween_property(self, "z_index", original_z_index, 0.1)
-
-		# 动画完成后恢复状态
-		await tw.finished
-
-		# 通知手牌容器重新布局（如果支持）
-		if original_parent.has_method("add_card"):
-			original_parent.add_card(self)
-	else:
-		# 如果已经在原始父节点中，直接执行动画
-		var tw = create_tween().set_parallel(true)
-		tw.tween_property(self, "global_position", card_original_position, 0.3)
-		tw.tween_property(self, "scale", card_original_scale, 0.3)
-		tw.tween_property(self, "z_index", original_z_index, 0.1)
-		await tw.finished
-
-	card_current_state = CustomCardState.IDLE
+	# 兜底：找不到 Hand 时才使用旧坐标返回，避免卡牌丢失。
+	var tw = create_tween().set_parallel(true)
+	tw.tween_property(self, "global_position", card_original_position, selected_exit_duration)
+	tw.tween_property(self, "scale", card_original_scale, selected_exit_duration)
+	tw.tween_property(self, "rotation", 0.0, selected_exit_duration)
+	tw.chain().tween_callback(func(): card_current_state = CustomCardState.IDLE)
 
 
 ## 更新拖拽位置（由DragShapeController调用）
@@ -197,10 +162,83 @@ func _find_player_hand() -> Node:
 		return main.player_hand
 	return null
 
+
+## 获取玩家手牌容器。回手牌必须交给 Hand 重新布局，不能只依赖卡牌保存的旧坐标。
+func _get_player_hand_container() -> Hand:
+	if card_container is Hand:
+		return card_container as Hand
+	var hand = _find_player_hand()
+	return hand as Hand
+
+
+## 当前是否已经有另一张卡处于选中状态；用于隔绝手牌区其它卡牌点击。
+func _is_another_card_selected() -> bool:
+	var cm = get_card_manager()
+	if cm == null:
+		return false
+	var selected_card = cm.get("current_selected_card")
+	return is_instance_valid(selected_card) and selected_card != self
+
+
+## 清掉选中/拖拽的临时视觉，让 Hand 的扇形布局接管最终位置与旋转。
+func _restore_normal_visuals() -> void:
+	if tween and tween.is_valid():
+		tween.kill()
+	if move_tween and move_tween.is_valid():
+		move_tween.kill()
+		move_tween = null
+	if hover_tween and hover_tween.is_valid():
+		hover_tween.kill()
+		hover_tween = null
+
+	current_state = DraggableState.IDLE
+	is_moving_to_destination = false
+	is_returning_to_original = false
+	is_selected = false
+	is_pressed = false
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	var current_global_pos = global_position
+	set_as_top_level(false)
+	global_position = current_global_pos
+	set_card_transparency(1.0)
+	scale = card_original_scale
+	material = original_material
+	if front_face_texture:
+		front_face_texture.material = original_material
+	if shadow:
+		shadow.position = selected_shadow_base_offset
+	_set_shader(false)
+	_request_tooltip(false)
+
+
+## 将卡牌放回 Hand/Cards 节点并刷新 Hand 的扇形排列，保证取消后不是竖直堆放。
+func _restore_hand_fan_layout() -> bool:
+	var hand = _get_player_hand_container()
+	if not is_instance_valid(hand):
+		return false
+
+	var current_global_pos = global_position
+	var current_parent = get_parent()
+	if is_instance_valid(hand.cards_node) and current_parent != hand.cards_node:
+		if current_parent:
+			current_parent.remove_child(self)
+		hand.cards_node.add_child(self)
+		global_position = current_global_pos
+
+	card_container = hand
+	if not hand.has_card(self):
+		hand.add_card(self)
+	else:
+		hand.update_card_ui()
+	return true
+
 # ==========================================
 # ★ 修改：使用动态获取的引用来操作选中状态
 # ==========================================
 func toggle_selection() -> void:
+	if _is_another_card_selected():
+		return
+
 	if is_selected:
 		force_deselect()
 	else:
@@ -212,10 +250,12 @@ func toggle_selection() -> void:
 			z_index = 100
 
 			# 卡牌升起动画 (替换 toggle_selection 里的 tw 动画部分)
-			var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD)
+			if tween and tween.is_valid():
+				tween.kill()
+			tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD)
 			# 强制构造一个完整的 Vector2，绝对不会报类型错！
-			tw.tween_property(self, "position", Vector2(card_original_position.x, card_original_position.y + float_height), selected_enter_duration)
-			tw.tween_property(self, "scale", card_original_scale * selected_scale_multiplier, selected_enter_duration)
+			tween.tween_property(self, "position", Vector2(card_original_position.x, card_original_position.y + float_height), selected_enter_duration)
+			tween.tween_property(self, "scale", card_original_scale * selected_scale_multiplier, selected_enter_duration)
 
 			set_card_transparency(1.0)
 
@@ -229,35 +269,24 @@ func toggle_selection() -> void:
 				call_deferred("_play_no_target_timeline_card")
 
 func force_deselect() -> void:
-	is_selected = false
-	card_current_state = CustomCardState.IDLE
 	var cm = get_card_manager()  
 	if cm:
 		cm.deselect_card()  
 
-	set_card_transparency(1.0)  # 恢复完全不透明
-	material = original_material
-	if front_face_texture:
-		front_face_texture.material = original_material
-	
+	card_current_state = CustomCardState.RETURNING
+	_restore_normal_visuals()
+	_update_map_conditional_effects()
+
+	if _restore_hand_fan_layout():
+		card_current_state = CustomCardState.IDLE
+		return
+
 	z_index = original_z_index
 	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(self, "position", card_original_position, selected_exit_duration)
 	tw.tween_property(self, "scale", card_original_scale, selected_exit_duration)
 	tw.tween_property(self, "rotation", 0.0, selected_exit_duration)
-
-	_update_map_conditional_effects()
-
-	var hand = _find_player_hand()
-	if hand:
-		if hand.has_method("add_card"):
-			hand.add_card(self)
-		else:
-			var current_parent = get_parent()
-			if current_parent != hand:
-				if current_parent:
-					current_parent.remove_child(self)
-				hand.add_child(self)
+	tw.chain().tween_callback(func(): card_current_state = CustomCardState.IDLE)
 				
 ## 更新地图地块的条件效果
 func _update_map_conditional_effects() -> void:
@@ -521,9 +550,14 @@ func force_reset_visuals() -> void:
 func _on_gui_input(event: InputEvent):
 	# ★ 核心修复 2：拖拽期间禁止卡牌响应任何鼠标点击！
 	if card_current_state == CustomCardState.DRAGGING:
+		get_viewport().set_input_as_handled()
 		return
 		
 	if event is InputEventMouseButton and event.pressed:
+		if _is_another_card_selected():
+			get_viewport().set_input_as_handled()
+			return
+
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			toggle_selection()
 		elif event.button_index == MOUSE_BUTTON_RIGHT:

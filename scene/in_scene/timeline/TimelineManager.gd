@@ -121,6 +121,8 @@ func place_action(action: TimelineAction, origin: Vector2i) -> bool:
 	for coord in abs_coords:
 		grid[coord] = action
 	action_placed.emit(action)
+	if action.type == TimelineAction.Type.PLAYER:
+		Signal_Bus.emit_timeline_action_added(action)
 	return true
 
 # ==========================================

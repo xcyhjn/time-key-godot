@@ -129,3 +129,19 @@ func _str_to_vector2i(s: String) -> Vector2i:
 	if parts.size() >= 2:
 		return Vector2i(int(parts[0].strip_edges()), int(parts[1].strip_edges()))
 	return Vector2i.ZERO
+
+func Delete_save(slot_id: int = 0) -> bool:
+	var path := SAVE_PATH_PREFIX + str(slot_id) + SAVE_EXTENSION
+
+	if not FileAccess.file_exists(path):
+		print("[Saver] 无需删除，存档不存在 slot=%d" % slot_id)
+		return true
+
+	var err := DirAccess.remove_absolute(path)
+
+	if err != OK:
+		push_error("[Saver] 删除存档失败 slot=%d err=%d" % [slot_id, err])
+		return false
+
+	print("[Saver] 删除存档成功 slot=%d" % slot_id)
+	return true

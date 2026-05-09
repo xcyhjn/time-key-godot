@@ -756,6 +756,7 @@ func _enter_room_logic(target):
 			"current_tier": current_tier,
 		})
 
+	Global.dim_in.emit()
 	await dim.use(0,0)
 	_switch_scene_with_data(target_scene, data_str)
 

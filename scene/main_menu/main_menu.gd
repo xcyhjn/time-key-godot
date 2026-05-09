@@ -45,6 +45,7 @@ func _ready() -> void:
 	if SceneLog:
 		SceneLog.scene_event("MainMenu", "ready", {"scene_path": Scene_path})
 	await dim.use(1,1)
+	SoundManager.play_bgm_main_menu()
 	Global.clock.emit(1)
 	set_process(false)
 	$UI_Layer/ProgressBar.hide()
@@ -233,6 +234,7 @@ func _start_normal_new_game() -> void:
 	_reset_run_state_for_new_game()
 	Scene_path = normal_scene_path
 	pending_data = ""
+	SoundManager.play_sfx("clock_tick")
 	Global.clock.emit(2)
 	await Mask.start_iris_in(1.0)
 	_start_async_load()
@@ -242,6 +244,7 @@ func _start_tutorial_new_game() -> void:
 	_reset_run_state_for_new_game()
 	Scene_path = tutorial_scene_path
 	pending_data = "tutorial"
+	SoundManager.play_sfx("clock_tick")
 	Global.clock.emit(2)
 	await Mask.start_iris_in(1.0)
 	_start_async_load()
@@ -391,6 +394,7 @@ func _start_continue_game() -> void:
 	
 	Scene_path = normal_scene_path
 	pending_data = ""
+	SoundManager.play_sfx("clock_tick")
 	Global.clock.emit(2)
 	await Mask.start_iris_in(1.0)
 	_start_async_load()
