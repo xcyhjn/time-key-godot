@@ -191,10 +191,10 @@ text = "1"
 
 [node name="EndTurnButton" type="Button" parent="ui" unique_id=1542672900]
 anchors_preset = -1
-offset_left = 1583.0
-offset_top = 452.0
-offset_right = 1839.0
-offset_bottom = 548.0
+offset_left = 1401.0
+offset_top = 924.0
+offset_right = 1657.0
+offset_bottom = 1020.0
 theme = ExtResource("19_ej18f")
 theme_override_font_sizes/font_size = 48
 text = "结束回合"

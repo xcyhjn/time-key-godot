@@ -73,8 +73,8 @@ const KEYWORD_TOOLTIP_PANEL_SCENE := preload("res://scene/shared/tooltip/keyword
 @export var target_invalid_color: Color = Color(0.45, 0.45, 0.45, 1.0)
 
 @export_group("Timeline Intent Colors")
-## 时间轴上的敌人意图格子在有效时的脉冲颜色。
-@export var timeline_valid_color: Color = Color(1.0, 0.25, 0.25, 1.0)
+## 时间轴上的敌人意图格子在有效时的脉冲颜色。地图目标范围仍保持原有红色，这里只让时间轴更醒目。
+@export var timeline_valid_color: Color = Color(1.0, 0.78, 0.18, 1.0)
 ## 时间轴上的敌人意图格子在无效时的脉冲颜色。
 @export var timeline_invalid_color: Color = Color(0.55, 0.55, 0.55, 1.0)
 

@@ -41,6 +41,16 @@ const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/Ti
 @export var enemy_intent_pulse_min_alpha: float = 0.15
 ## 时间轴敌人意图脉冲 shader 的最大透明度。
 @export var enemy_intent_pulse_max_alpha: float = 0.75
+## 时间轴敌人意图被 hover/选中时叠加的条纹颜色。
+@export var enemy_intent_stripe_color: Color = Color(1.0, 0.85, 0.12, 1.0)
+## 条纹移动速度。
+@export var enemy_intent_stripe_speed: float = 3.8
+## 条纹密度，越高条纹越密。
+@export var enemy_intent_stripe_density: float = 12.0
+## 条纹宽度，越高每条纹越粗。
+@export var enemy_intent_stripe_width: float = 0.12
+## 条纹混合强度。
+@export_range(0.0, 1.0, 0.01) var enemy_intent_stripe_strength: float = 0.75
 ## 时间占位方格因为丢失目标、意图失效等“非回合结算原因”被移除时的下落距离。
 ## 这个动画只播放在新生成的无 Shader 残影上，原占位节点会先解除材质和鼠标互动。
 @export var action_removal_drop_distance: float = 14.0
@@ -419,6 +429,7 @@ func _on_action_placed(action: TimelineAction):
 			overlay_material.set_shader_parameter("pulse_speed", enemy_intent_pulse_speed)
 			overlay_material.set_shader_parameter("min_alpha", enemy_intent_pulse_min_alpha)
 			overlay_material.set_shader_parameter("max_alpha", enemy_intent_pulse_max_alpha)
+			_configure_enemy_intent_timeline_material(overlay_material)
 			overlay.material = overlay_material
 		block.add_child(overlay)
 
@@ -716,6 +727,21 @@ func _set_enemy_intent_overlay_visible(container: Control, visible: bool, color:
 				overlay.visible = visible
 				if visible and overlay.material:
 					overlay.material.set_shader_parameter("pulse_color", color)
+					_configure_enemy_intent_timeline_material(overlay.material)
+
+
+## 将导出的时间轴意图条纹参数写入 shader。
+## 核心逻辑：每个敌人意图格子的 Overlay 都独立持有 ShaderMaterial，hover 时统一刷新参数即可。
+func _configure_enemy_intent_timeline_material(material: Material) -> void:
+	if not (material is ShaderMaterial):
+		return
+
+	var shader_material := material as ShaderMaterial
+	shader_material.set_shader_parameter("stripe_color", enemy_intent_stripe_color)
+	shader_material.set_shader_parameter("stripe_speed", enemy_intent_stripe_speed)
+	shader_material.set_shader_parameter("stripe_density", enemy_intent_stripe_density)
+	shader_material.set_shader_parameter("stripe_width", enemy_intent_stripe_width)
+	shader_material.set_shader_parameter("stripe_strength", enemy_intent_stripe_strength)
 
 
 # ==========================================
