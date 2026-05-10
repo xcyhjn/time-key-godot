@@ -128,11 +128,32 @@ func play_bgm(key: String) -> void:
 		return
 	_play_music_internal(stream)
 
-func stop_bgm() -> void:
+func stop_bgm(fade_duration: float = -1.0) -> void:
 	var current := music_players[current_music_player_index]
-	if current.playing:
-		_fade_out_and_stop(current)
+	if not current.playing:
+		return
+	if fade_duration < 0.0:
+		fade_duration = music_fade_duration
+	if fade_duration <= 0.0:
+		current.stop()
+		current.stream = null
+		current.volume_db = FADE_DB_MIN
 		current_music_player_index = 1 if current_music_player_index == 0 else 0
+		return
+	_fade_out_and_stop(current, fade_duration)
+	current_music_player_index = 1 if current_music_player_index == 0 else 0
+
+func stop_all() -> void:
+	for p in music_players:
+		if p.playing:
+			p.stop()
+		p.stream = null
+		p.volume_db = FADE_DB_MIN
+	stop_looping_sfx(0.0)
+	for p in sfx_players:
+		if p.playing:
+			p.stop()
+		p.stream = null
 
 func play_bgm_main_menu() -> void:
 	play_bgm("main_menu")
@@ -168,12 +189,14 @@ func _fade_in(player: AudioStreamPlayer) -> void:
 	var t := create_tween()
 	t.tween_property(player, "volume_db", BGM_DEFAULT_DB, music_fade_duration)
 
-func _fade_out_and_stop(player: AudioStreamPlayer) -> void:
+func _fade_out_and_stop(player: AudioStreamPlayer, fade_duration: float = -1.0) -> void:
 	if not player.playing:
 		player.stream = null
 		return
+	if fade_duration < 0.0:
+		fade_duration = music_fade_duration
 	var t := create_tween()
-	t.tween_property(player, "volume_db", FADE_DB_MIN, music_fade_duration)
+	t.tween_property(player, "volume_db", FADE_DB_MIN, fade_duration)
 	t.tween_callback(func():
 		player.stop()
 		player.stream = null
@@ -222,9 +245,14 @@ func play_looping_sfx(key: String) -> void:
 	t.tween_property(_looping_sfx_player, "volume_db", SFX_DEFAULT_DB, 0.3)
 
 func stop_looping_sfx(fade_duration: float = 0.5) -> void:
-	if not _looping_sfx_active:
+	if not _looping_sfx_active and not _looping_sfx_player.playing:
 		return
 	_looping_sfx_active = false
+	if fade_duration <= 0.0:
+		_looping_sfx_player.stop()
+		_looping_sfx_player.stream = null
+		_looping_sfx_player.volume_db = FADE_DB_MIN
+		return
 	var t := create_tween()
 	t.tween_property(_looping_sfx_player, "volume_db", FADE_DB_MIN, fade_duration)
 	t.tween_callback(func():

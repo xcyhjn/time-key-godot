@@ -8,10 +8,27 @@ const SETTINGS_FILE_NAME: String = "tutorial_settings.cfg"
 const SECTION: String = "tutorial"
 const KEY_PROMPT_SEEN: String = "prompt_seen"
 const KEY_TUTORIAL_CHOSEN: String = "tutorial_chosen"
+const KEY_TUTORIAL_DISABLED: String = "tutorial_disabled"
 
 
 static func should_show_prompt() -> bool:
-	return not has_seen_prompt()
+	return not is_tutorial_disabled() and not has_seen_prompt()
+
+
+static func is_tutorial_disabled() -> bool:
+	var config: ConfigFile = _load_config()
+	return bool(config.get_value(SECTION, KEY_TUTORIAL_DISABLED, false))
+
+
+static func set_tutorial_disabled(disabled: bool) -> void:
+	var config: ConfigFile = _load_config()
+	config.set_value(SECTION, KEY_TUTORIAL_DISABLED, disabled)
+	config.set_value(SECTION, KEY_PROMPT_SEEN, disabled)
+	if not disabled:
+		config.set_value(SECTION, KEY_TUTORIAL_CHOSEN, false)
+	var err: int = config.save(SETTINGS_PATH)
+	if err != OK:
+		push_warning("TutorialSave: 无法写入教程开关状态，错误码: %s" % err)
 
 
 static func has_seen_prompt() -> bool:
@@ -35,6 +52,9 @@ static func was_tutorial_chosen() -> bool:
 
 static func reset_prompt_record() -> void:
 	var config: ConfigFile = ConfigFile.new()
+	config.set_value(SECTION, KEY_TUTORIAL_DISABLED, false)
+	config.set_value(SECTION, KEY_PROMPT_SEEN, false)
+	config.set_value(SECTION, KEY_TUTORIAL_CHOSEN, false)
 	var err: int = config.save(SETTINGS_PATH)
 	if err != OK:
 		push_warning("TutorialSave: 无法重置教程本地记录，错误码: %s" % err)

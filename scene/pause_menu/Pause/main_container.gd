@@ -81,6 +81,7 @@ func set_shader_slant(value: float):
 		bg_rect.material.set_shader_parameter("slant_offset", value)
 
 func _on_save_to_title_button_down() -> void:
+	SoundManager.stop_all()
 	await close_menu()
 	_switch_scene_with_data(main)
 

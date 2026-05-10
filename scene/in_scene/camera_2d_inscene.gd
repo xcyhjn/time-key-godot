@@ -31,8 +31,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# 1. 允许键盘 (WASD或方向键) 平滑移动摄像机
-	_handle_camera_movement(delta)
+	## 1. 允许键盘 (WASD或方向键) 平滑移动摄像机
+	#_handle_camera_movement(delta)
 
 	# 2. 平滑缩放插值
 	# 直接使用 zoom 而不是 camera.zoom，因为脚本本身就是 Camera2D
@@ -48,16 +48,16 @@ func _unhandled_input(event: InputEvent) -> void:
 				_change_zoom_target(1.0 + zoom_step)  # 向上滚：放大
 			elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 				_change_zoom_target(1.0 / (1.0 + zoom_step))  # 向下滚：缩小
-
-		# 2. 处理鼠标按住拖动 (支持左键或中键)
-		if event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_MIDDLE:
-			# 简化写法：直接把按键的按下状态赋给变量
-			_is_dragging = event.pressed
-
-	# 3. 处理鼠标拖拽时的画面位移
-	if event is InputEventMouseMotion and _is_dragging:
-		# 移动量 = 鼠标相对移动 / 当前自身的缩放倍率
-		position -= event.relative * drag_sensitivity / zoom.x
+#
+		## 2. 处理鼠标按住拖动 (支持左键或中键)
+		#if event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_MIDDLE:
+			## 简化写法：直接把按键的按下状态赋给变量
+			#_is_dragging = event.pressed
+#
+	## 3. 处理鼠标拖拽时的画面位移
+	#if event is InputEventMouseMotion and _is_dragging:
+		## 移动量 = 鼠标相对移动 / 当前自身的缩放倍率
+		#position -= event.relative * drag_sensitivity / zoom.x
 
 # --- 辅助函数 ---
 
@@ -68,9 +68,9 @@ func _change_zoom_target(multiplier: float) -> void:
 	_target_zoom.x = clamp(_target_zoom.x, min_zoom.x, max_zoom.x)
 	_target_zoom.y = clamp(_target_zoom.y, min_zoom.y, max_zoom.y)
 
-
-# 键盘移动逻辑
-func _handle_camera_movement(delta: float) -> void:
-	var dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	if dir != Vector2.ZERO:
-		position += dir * camera_speed * delta
+#
+## 键盘移动逻辑
+#func _handle_camera_movement(delta: float) -> void:
+	#var dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	#if dir != Vector2.ZERO:
+		#position += dir * camera_speed * delta

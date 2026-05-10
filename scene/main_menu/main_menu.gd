@@ -30,6 +30,7 @@ const TutorialSaveScript = preload("res://scene/tutorial/tutorial_save.gd")
 @onready var point = $BG_Layer/Clock/Point
 @onready var dim = $UI/DimMenu
 @onready var seed_line_edit: LineEdit = $LineEdit
+@export var disable_tutorial_prompt: bool = true
 
 var progress: Array[float] = []
 # 用于暂存点击不同按钮时产生的参数
@@ -42,6 +43,7 @@ var _tutorial_prompt_close_only: bool = false
 var _threaded_load_in_progress: bool = false
 
 func _ready() -> void:
+	SoundManager.stop_all()
 	if SceneLog:
 		SceneLog.scene_event("MainMenu", "ready", {"scene_path": Scene_path})
 	await dim.use(1,1)
@@ -223,6 +225,7 @@ func _reset_run_state_for_new_game() -> void:
 # 按钮 1：传递空字符串
 func _on_new_game_btn_button_down() -> void:
 	_clear_tutorial_record_for_debug()
+	TutorialSaveScript.set_tutorial_disabled(disable_tutorial_prompt)
 	if TutorialSaveScript.should_show_prompt():
 		_show_tutorial_prompt()
 		return

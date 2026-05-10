@@ -16,6 +16,10 @@ func _init(location_in : Vector2i,battle_in):
 	location_in,
 	false,
 	battle_in)
+	# 矿井作为局外锻造奖励入口，需要被收获系统识别为敌方建筑，并在结算时打开 craft 奖励场景。
+	Attitude = Attitude_Pool.Enemy
+	settlement_reward_type = "craft"
+	settlement_reward_label = "锻造奖励"
 	willing_pool = {}
 	if location_in == Vector2i(-100, -100):
 		return

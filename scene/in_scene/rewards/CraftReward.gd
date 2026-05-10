@@ -12,7 +12,9 @@ const SLOT_1 := 1
 const SLOT_2 := 2
 
 const CRAFTING_RECIPES := {
-	"1_2": "3",
+	# _get_recipe_result() 会自动检查反向 key，因此这里写一条 wind + tower 配方即可。
+	"wind_tower": "tornado",
+	"lighting_earthquake": "poison",
 }
 
 @onready var background_mask: Panel = $BackgroundMask

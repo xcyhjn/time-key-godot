@@ -1609,8 +1609,22 @@ func _hide_debug_buttons_for_resolution() -> void:
 			(button as BaseButton).disabled = true
 	
 
+func _refresh_height_view_toggle_button_after_external_scene() -> void:
+	if not is_instance_valid(height_view_toggle_button):
+		return
+
+	if current_battle_state == BattleFlowState.SETTLEMENT:
+		height_view_toggle_button.show()
+		height_view_toggle_button.disabled = false
+	else:
+		height_view_toggle_button.hide()
+		height_view_toggle_button.disabled = true
+
+
 ## 退出局外场景后，恢复四个局外按钮
 func restore_ui_after_external_scene():
+	_refresh_height_view_toggle_button_after_external_scene()
+
 	if _resolution_hides_debug_buttons:
 		if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(end_combat_button):
 			end_combat_button.show()
