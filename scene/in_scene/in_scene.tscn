@@ -307,6 +307,7 @@ theme = ExtResource("19_ej18f")
 text = "视角切换"
 
 [node name="WinButton" type="Button" parent="ui" unique_id=1004531811]
+visible = false
 offset_left = 88.0
 offset_top = 599.0
 offset_right = 224.0
@@ -316,6 +317,7 @@ theme_override_font_sizes/font_size = 32
 text = "胜利结算"
 
 [node name="CombatVictoryDebugButton" type="Button" parent="ui" unique_id=1762035141]
+visible = false
 offset_left = 84.0
 offset_top = 515.0
 offset_right = 260.0
@@ -325,6 +327,7 @@ theme_override_font_sizes/font_size = 28
 text = "单局胜利"
 
 [node name="LoseButton" type="Button" parent="ui" unique_id=2120096589]
+visible = false
 offset_left = 103.0
 offset_top = 690.0
 offset_right = 239.0

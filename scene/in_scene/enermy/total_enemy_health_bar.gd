@@ -3,6 +3,9 @@
 class_name TotalEnemyHealthBar
 extends Node2D
 
+# 这个脚本采用“累计上限”模型：
+# 新敌人首次出现时把 Max_Blood 加进总上限；敌人死亡或节点消失只扣当前血量，不回退总上限。
+
 const HEALTHBAR_TEXTURE: Texture2D = preload("res://image/UI_Healthbar.png")
 const HEALTHBAR_SHADER: Shader = preload("res://shaders/health_bar.gdshader")
 const DEFAULT_FONT: Font = preload("res://fonts/ark-pixel-12px-proportional-zh_cn.otf")
@@ -15,6 +18,17 @@ const DEFAULT_FONT: Font = preload("res://fonts/ark-pixel-12px-proportional-zh_c
 
 @export_group("胜利阈值")
 @export var low_health_ratio: float = 0.1
+
+@export_group("血量登记")
+## 开启后，敌人首次登记进总血条后 Max_Blood 会永久计入本场上限。
+## 死亡、临时消失、地块高度超限删除都只会让当前血量归零，不会减少上限。
+@export var preserve_registered_max_health: bool = true
+## 开启后，战斗中途生成的新敌人也会加入总血量上限。
+@export var register_runtime_spawned_enemies: bool = true
+## 开启后，已登记敌人离开地图或节点释放时，按“已被击败”处理为 0 当前血量。
+@export var removed_enemy_counts_as_zero: bool = true
+## 开启后，若已登记敌人的 Max_Blood 后续变大，总血量上限会同步增加。
+@export var allow_registered_max_health_growth: bool = true
 
 @export_group("文案")
 @export var title_text: String = "敌方总血量"
@@ -35,12 +49,15 @@ const DEFAULT_FONT: Font = preload("res://fonts/ark-pixel-12px-proportional-zh_c
 @export var intro_ease_type: Tween.EaseType = Tween.EASE_OUT
 
 var hex_map: Node = null
+## key = enemy.get_instance_id()，value = { enemy, current_hp, max_hp, is_removed }。
+## 使用实例 ID 做 key，可以避免节点释放后 Dictionary 直接持有失效对象作为 key。
 var tracked_enemies: Dictionary = {}
 var max_total_health: int = 0
 var current_total_health: int = 0
 var has_triggered_combat_victory: bool = false
 var _intro_has_played: bool = false
 var _intro_in_progress: bool = false
+var _has_completed_initial_roster_sync: bool = false
 
 var panel: PanelContainer
 var title_label: Label
@@ -181,36 +198,39 @@ func _on_map_intro_reveal_finished() -> void:
 
 
 func rebuild_tracking() -> void:
-	tracked_enemies.clear()
-	max_total_health = 0
-	current_total_health = 0
+	var seen_enemy_ids: Dictionary = {}
 
 	if not is_instance_valid(hex_map):
+		_recalculate_current_total_health()
 		_update_display()
 		return
 	
 	var map_data = hex_map.get("map_data")
 	if typeof(map_data) != TYPE_DICTIONARY:
+		_recalculate_current_total_health()
 		_update_display()
 		return
 
 	for coord in map_data.keys():
 		var tile_data = map_data[coord]
+		if typeof(tile_data) != TYPE_DICTIONARY:
+			continue
+
 		var enemy = tile_data.get("landform", null)
 		if not _is_trackable_enemy(enemy):
 			continue
 
-		var hp = maxi(0, int(round(float(enemy.HP))))
-		var max_hp = maxi(0, int(round(float(enemy.Max_Blood))))
+		var enemy_id := _get_enemy_tracking_id(enemy)
+		seen_enemy_ids[enemy_id] = true
+		_register_or_refresh_enemy(enemy)
 
-		tracked_enemies[enemy] = hp
-		max_total_health += max_hp
-		current_total_health += hp
+	for enemy_id in tracked_enemies.keys():
+		if seen_enemy_ids.has(enemy_id):
+			continue
+		_mark_enemy_removed(enemy_id, false)
 
-		var callback = Callable(self, "_on_enemy_blood_changed").bind(enemy)
-		if not enemy.Blood_change.is_connected(callback):
-			enemy.Blood_change.connect(callback)
-
+	_has_completed_initial_roster_sync = true
+	_recalculate_current_total_health()
 	_update_display()
 	_check_combat_victory()
 
@@ -219,23 +239,154 @@ func _is_trackable_enemy(node: Variant) -> bool:
 	return is_instance_valid(node) and node is landform and node.Attitude == node.Attitude_Pool.Enemy
 
 
-func _on_enemy_blood_changed(new_hp: float, enemy: Node) -> void:
-	if not tracked_enemies.has(enemy):
-		rebuild_tracking()
+func _get_enemy_tracking_id(enemy: Node) -> int:
+	return int(enemy.get_instance_id())
+
+
+func _get_enemy_max_health(enemy: Node) -> int:
+	if not is_instance_valid(enemy):
+		return 0
+	return maxi(0, int(round(float(enemy.Max_Blood))))
+
+
+func _get_enemy_current_health(enemy: Node) -> int:
+	if not is_instance_valid(enemy):
+		return 0
+
+	var hp := maxi(0, int(round(float(enemy.HP))))
+	var max_hp := _get_enemy_max_health(enemy)
+	if max_hp > 0:
+		hp = mini(hp, max_hp)
+	return hp
+
+
+## 登记新敌人，或刷新已登记敌人的节点引用与当前血量。
+## 上限默认只增不减，避免死亡/消失导致胜利阈值的分母越来越小。
+func _register_or_refresh_enemy(enemy: Node) -> void:
+	if not _is_trackable_enemy(enemy):
 		return
 
-	var old_hp = tracked_enemies[enemy]
-	var next_hp = maxi(0, int(round(new_hp)))
-	tracked_enemies[enemy] = next_hp
+	var enemy_id := _get_enemy_tracking_id(enemy)
+	var observed_max_hp := _get_enemy_max_health(enemy)
+	var observed_hp := _get_enemy_current_health(enemy)
 
-	var delta = next_hp - old_hp
+	if not tracked_enemies.has(enemy_id):
+		if _has_completed_initial_roster_sync and not register_runtime_spawned_enemies:
+			return
+
+		tracked_enemies[enemy_id] = {
+			"enemy": enemy,
+			"max_hp": observed_max_hp,
+			"current_hp": observed_hp,
+			"is_removed": false,
+		}
+		max_total_health += observed_max_hp
+		current_total_health = clampi(current_total_health + observed_hp, 0, max_total_health)
+		_connect_enemy_health_signals(enemy, enemy_id)
+		return
+
+	var data: Dictionary = tracked_enemies[enemy_id]
+	var old_max_hp := int(data.get("max_hp", 0))
+	if observed_max_hp > old_max_hp and allow_registered_max_health_growth:
+		max_total_health += observed_max_hp - old_max_hp
+		data["max_hp"] = observed_max_hp
+	elif observed_max_hp < old_max_hp and not preserve_registered_max_health:
+		max_total_health = maxi(0, max_total_health - (old_max_hp - observed_max_hp))
+		data["max_hp"] = observed_max_hp
+
+	data["enemy"] = enemy
+	data["is_removed"] = false
+	tracked_enemies[enemy_id] = data
+	_connect_enemy_health_signals(enemy, enemy_id)
+	_set_tracked_enemy_current_hp(enemy_id, observed_hp, false)
+
+
+func _connect_enemy_health_signals(enemy: Node, enemy_id: int) -> void:
+	if not is_instance_valid(enemy):
+		return
+
+	var blood_callback = Callable(self, "_on_enemy_blood_changed").bind(enemy_id)
+	if enemy.has_signal("Blood_change") and not enemy.Blood_change.is_connected(blood_callback):
+		enemy.Blood_change.connect(blood_callback)
+
+	var exit_callback = Callable(self, "_on_enemy_tree_exited").bind(enemy_id)
+	if not enemy.tree_exited.is_connected(exit_callback):
+		enemy.tree_exited.connect(exit_callback)
+
+
+func _set_tracked_enemy_current_hp(enemy_id: int, next_hp: int, should_flash: bool) -> void:
+	if not tracked_enemies.has(enemy_id):
+		return
+
+	var data: Dictionary = tracked_enemies[enemy_id]
+	var old_hp := int(data.get("current_hp", 0))
+	var max_hp := int(data.get("max_hp", 0))
+	if max_hp > 0:
+		next_hp = clampi(next_hp, 0, max_hp)
+	else:
+		next_hp = maxi(0, next_hp)
+
+	if next_hp == old_hp:
+		return
+
+	var delta := next_hp - old_hp
+	data["current_hp"] = next_hp
+	tracked_enemies[enemy_id] = data
 	current_total_health = clampi(current_total_health + delta, 0, max_total_health)
 
 	_update_display()
 
-	if delta < 0:
+	if should_flash and delta < 0:
 		_flash_damage_feedback()
 
+	_check_combat_victory()
+
+
+func _mark_enemy_removed(enemy_id: int, should_flash: bool) -> void:
+	if not tracked_enemies.has(enemy_id):
+		return
+
+	var data: Dictionary = tracked_enemies[enemy_id]
+	data["is_removed"] = true
+	tracked_enemies[enemy_id] = data
+
+	if removed_enemy_counts_as_zero:
+		_set_tracked_enemy_current_hp(enemy_id, 0, should_flash)
+
+
+func _recalculate_current_total_health() -> void:
+	current_total_health = 0
+	for enemy_id in tracked_enemies.keys():
+		var data: Dictionary = tracked_enemies[enemy_id]
+		current_total_health += maxi(0, int(data.get("current_hp", 0)))
+	current_total_health = clampi(current_total_health, 0, max_total_health)
+
+
+func _on_enemy_blood_changed(new_hp: float, enemy_id: int) -> void:
+	if not tracked_enemies.has(enemy_id):
+		rebuild_tracking()
+		return
+
+	var next_hp = maxi(0, int(round(new_hp)))
+	_set_tracked_enemy_current_hp(enemy_id, next_hp, true)
+
+
+## tree_exited 也会在重挂父节点时短暂触发，所以延后一帧确认它是否真的离开战斗。
+func _on_enemy_tree_exited(enemy_id: int) -> void:
+	call_deferred("_resolve_enemy_tree_exit", enemy_id)
+
+
+func _resolve_enemy_tree_exit(enemy_id: int) -> void:
+	if not tracked_enemies.has(enemy_id):
+		return
+
+	var data: Dictionary = tracked_enemies[enemy_id]
+	var enemy = data.get("enemy", null)
+	if is_instance_valid(enemy) and enemy.is_inside_tree():
+		return
+
+	_mark_enemy_removed(enemy_id, false)
+	_update_display()
 	_check_combat_victory()
 
 
@@ -243,20 +394,19 @@ func _on_damage_dealt(target: Node, _amount: int) -> void:
 	if not _is_trackable_enemy(target):
 		return
 	
-	if not tracked_enemies.has(target):
-		rebuild_tracking()
+	var enemy_id := _get_enemy_tracking_id(target)
+	if not tracked_enemies.has(enemy_id):
+		_register_or_refresh_enemy(target)
+	if not tracked_enemies.has(enemy_id):
 		return
 	
-	var hp = maxi(0, int(round(float(target.HP))))
-	var old_hp = tracked_enemies[target]
+	var hp = _get_enemy_current_health(target)
+	var data: Dictionary = tracked_enemies[enemy_id]
+	var old_hp := int(data.get("current_hp", 0))
 	if hp == old_hp:
 		return
 	
-	tracked_enemies[target] = hp
-	current_total_health = clampi(current_total_health + (hp - old_hp), 0, max_total_health)
-	_update_display()
-	_flash_damage_feedback()
-	_check_combat_victory()
+	_set_tracked_enemy_current_hp(enemy_id, hp, hp < old_hp)
 
 
 func _update_display() -> void:

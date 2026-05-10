@@ -57,7 +57,7 @@ func open_menu(type: int):
 	var index = type - 6
 	
 	# --- 核心逻辑：判断是否为开放角色 (索引 1 和 3) ---
-	is_selectable = (index == 1 or index == 3)
+	is_selectable = (index == 1)
 	
 	# 控制确认按钮的显示与隐藏
 	if confirm_button:

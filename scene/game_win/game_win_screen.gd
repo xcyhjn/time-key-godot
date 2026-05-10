@@ -33,6 +33,7 @@ func _on_victory_triggered() -> void:
 	ui_manager.show()
 	ashes.show()
 	start_sequence({"因果": "断裂", "同步率": "0%", "观测": "终止"})
+	Saver.Delete_save(0)
 
 func start_sequence(stats: Dictionary):
 	get_tree().paused = true

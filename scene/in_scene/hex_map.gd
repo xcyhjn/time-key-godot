@@ -147,7 +147,16 @@ const REF_SCALE: float = 0.6
 @export var height_view_click_highlight_color: Color = Color(1.0, 1.0, 1.0, 0.3)  # 点击时白色高亮颜色
 @export var height_view_click_highlight_width: float = 4.0  # 点击时白色边框粗细
 
+enum SettlementRewardBindState {
+	DEAD,
+	ALIVE
+}
+
 @export_group("局外收获配置")
+## 收获入口绑定到哪类敌方建筑：
+## - DEAD: 只绑定已经被打成 Broken 的敌人。
+## - ALIVE: 保留旧逻辑，只绑定仍未损毁的敌人。
+@export var settlement_reward_bind_state: SettlementRewardBindState = SettlementRewardBindState.DEAD
 ## 常驻 tooltip 相对地块顶面的偏移。
 ## x 用来手动水平居中；y 越小 tooltip 越靠上，适合不同尺寸建筑分别微调。
 @export var settlement_reward_tooltip_offset: Vector2 = Vector2(-92.0, -230.0)
@@ -1419,9 +1428,27 @@ func _get_settlement_reward_landform(stack: Area2D, coord: Variant) -> Node:
 func _is_valid_settlement_reward_landform(candidate: Variant) -> bool:
 	if not is_instance_valid(candidate):
 		return false
+	if not (candidate is landform):
+		return false
+	if candidate.Attitude != candidate.Attitude_Pool.Enemy:
+		return false
 	if not candidate.has_method("has_settlement_reward"):
 		return false
-	return candidate.has_settlement_reward()
+	if not candidate.has_settlement_reward():
+		return false
+	return _matches_settlement_reward_bind_state(candidate)
+
+
+## 根据导出配置决定奖励入口绑定死亡敌人还是未死亡敌人。
+## 这个判断放在 HexMap，避免 landform 基类把奖励资格和战斗生死状态硬耦合。
+func _matches_settlement_reward_bind_state(candidate: landform) -> bool:
+	match settlement_reward_bind_state:
+		SettlementRewardBindState.DEAD:
+			return candidate.State_Main == candidate.Main_State_Pool.Broken
+		SettlementRewardBindState.ALIVE:
+			return candidate.State_Main != candidate.Main_State_Pool.Broken
+		_:
+			return false
 
 
 ## 把建筑实例整理成 Main 场景可直接消费的上下文。
@@ -1446,7 +1473,10 @@ func _is_settlement_reward_stack_available(stack: Area2D) -> bool:
 
 	var reward_info = settlement_reward_stack_data[stack]
 	var reward_landform = reward_info.get("landform")
-	return is_instance_valid(reward_landform) and not _is_settlement_reward_used(reward_landform)
+	return (
+		_is_valid_settlement_reward_landform(reward_landform)
+		and not _is_settlement_reward_used(reward_landform)
+	)
 
 
 func _is_settlement_reward_used(reward_landform: Node) -> bool:

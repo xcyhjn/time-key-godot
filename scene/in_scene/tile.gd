@@ -263,10 +263,10 @@ func random_damage() -> void:
 	take_damage(randi_range(0, Max_Blood * 0.3))
 
 
-## 当前建筑是否拥有局外收获奖励。
-## 这里额外排除 Broken 状态，避免已经损毁的建筑在胜利后仍然发放奖励。
+## 当前建筑是否配置了局外收获奖励。
+## 死亡/未死亡能否作为入口由 HexMap 的 settlement_reward_bind_state 统一决定。
 func has_settlement_reward() -> bool:
-	return settlement_reward_type != "" and settlement_reward_type != "none" and State_Main != Main_State_Pool.Broken
+	return settlement_reward_type != "" and settlement_reward_type != "none"
 
 
 ## 返回局外收获类型。
