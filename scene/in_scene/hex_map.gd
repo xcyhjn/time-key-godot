@@ -112,6 +112,11 @@ signal map_intro_reveal_finished
 ## 怪物/地貌实体内部贴图的额外偏移。
 ## 这个参数直接作用于 LandformSprite_*，用于微调真正看见的怪物/建筑图像位置；血条锚点会跟随该贴图。
 @export var landform_sprite_offset: Vector2 = Vector2(0.0, -10.0)
+## 运行期生成的地貌是否播放像素入场。
+## village 扩张、radar 召唤等都走 register_runtime_landform()，这里统一控制它们的出现表现。
+@export var runtime_landform_spawn_vfx_enabled: bool = true
+## 运行期地貌像素入场耗时。
+@export_range(0.01, 3.0, 0.01, "or_greater") var runtime_landform_spawn_vfx_duration: float = 0.45
 
 ## 六边形碰撞箱顶部横边相对于最大宽度的比例。
 ## 0.5 表示顶部横边宽度为整体最大宽度的一半。
@@ -194,12 +199,12 @@ enum LandformType { NONE, MINE, CAVE, VILLAGE, RUINS }  # 整合自 node_2d.gd�
 }
 @export var top_tex_by_terrain: Array[Texture2D]  # 下标用 TerrainType
 @export var side_tex_by_terrain: Array[Texture2D]
-@export var max_landform_ratio: float = 0.65  # 最多35%格子有地貌（可调）
+@export var max_landform_ratio: float = 0.8  # 最多35%格子有地貌（可调）
 
 @export_group("地块生成配额")
 #@export var Max_Start_landform = 10 ##初始地块数量
 @export var Max_Neutral_landform: int = 10
-@export var Max_Enemy_landform: int = 10
+@export var Max_Enemy_landform: int = 12
 # ==========================================
 # 地形升降动画配置
 # ==========================================
@@ -2146,9 +2151,21 @@ func register_runtime_landform(coord: Vector2i, entity: landform, landform_type:
 	_apply_landform_group(entity)
 	add_landform_visual_at(coord)
 	_sync_stack_to_current_view(coord, false)
+	_play_runtime_landform_spawn_vfx(entity)
 	_refresh_stack_interactivity()
 	tile_topology_changed.emit()
 	return true
+
+
+## 运行期地貌统一入场表现。
+## 核心逻辑: 等 add_landform_visual_at() 创建并赋予 shader 后，复用 VFXManager 的 dissolve_blend 反向消融。
+func _play_runtime_landform_spawn_vfx(entity: landform) -> void:
+	if not runtime_landform_spawn_vfx_enabled:
+		return
+	if not is_instance_valid(entity):
+		return
+
+	VFXManager.play_pixel_spawn_vfx(entity, get_tree(), runtime_landform_spawn_vfx_duration)
 
 
 ## 把逻辑实体挂到对应地块栈下，并重算它的 3D 基准坐标。
@@ -2437,10 +2454,12 @@ func add_landform_visual_at(coord: Vector2i) -> void:
 	# 调用地貌的 attach_visual 方法重新创建视觉精灵
 	landform_inst.attach_visual(stack_container, height, current_step_h, tile_scale)
 	
-	# 获取新创建的 landform 视觉精灵并应用shader
+	# attach_visual() 会把本次新建的 Sprite 写入 landform_inst.tex，优先使用这个引用可以避开同名旧节点残留。
 	var unique_name = "LandformSprite_%s_%s" % [coord.x, coord.y]
-	var landform_sprite = stack_container.get_node_or_null(unique_name)
-	if landform_sprite:
+	var landform_sprite := landform_inst.tex as Sprite2D
+	if not is_instance_valid(landform_sprite):
+		landform_sprite = stack_container.get_node_or_null(unique_name) as Sprite2D
+	if is_instance_valid(landform_sprite):
 		if block_material:
 			# 为新生成的建筑/虚影应用shader材质
 			landform_sprite.material = block_material.duplicate()

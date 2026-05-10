@@ -479,10 +479,11 @@ func attach_visual(parent: Node2D, height: int, current_step_h: float, tile_scal
 	if parent == null:
 		return
 
-	# 防止重复添加 - 使用新的命名模式
+	# 运行期重建贴图时先把旧节点移出树，避免 Godot 在同一帧给新节点自动改名。
 	var unique_name = "LandformSprite_%s_%s" % [location.x, location.y]
 	var old_node = parent.get_node_or_null(unique_name)
 	if old_node != null:
+		parent.remove_child(old_node)
 		old_node.queue_free()
 
 	_add_landform_sprite(parent, location, height, current_step_h, tile_scale)

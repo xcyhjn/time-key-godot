@@ -1,12 +1,12 @@
 class_name village
 extends landform
 
-static var Library : Array[Vector2]
+static var Library : Array[Vector2i]
 var possible_neighbor : Array[Vector2i]
 
 
 
-func _init(location_in : Vector2i,battle_in):
+func _init(location_in : Vector2i, battle_in, auto_attach_visual: bool = true):
 	damage_rate = 0.5
 	Max_Blood = 100
 	super._init(
@@ -31,7 +31,8 @@ func _init(location_in : Vector2i,battle_in):
 	willing_pool = {single_expand_unsure_will : single_expand_unsure_done,
 					single_expand_sure_will : single_expand_sure_done,
 					all_expand_will : all_expand_done}
-	if owner_battle != null:
+	# 初始生成沿用旧路径；运行期扩张会由 HexMap.register_runtime_landform() 统一接管视觉、shader 和血条。
+	if auto_attach_visual and owner_battle != null:
 		owner_battle.add_landform_visual_at(target)
 
 func get_possible_neighbor_coords(tile_info, rng: RandomNumberGenerator):
@@ -63,22 +64,22 @@ func check_can_expand(tile_data: Dictionary) -> bool:
 	return true
 
 
-func single_expand_unsure_will(tile_info : Dictionary, rng : RandomNumberGenerator) -> Vector2:
+func single_expand_unsure_will(tile_info : Dictionary, rng : RandomNumberGenerator) -> Vector2i:
 	if possible_neighbor.is_empty():
 		possible_neighbor = get_possible_neighbor_coords(tile_info,rng)
 	if possible_neighbor.is_empty():
-		target = Vector2(-1, -1)
-		return Vector2(-1, -1)
+		target = Vector2i(-1, -1)
+		return Vector2i(-1, -1)
 	var buffer : int = randi_range(0, possible_neighbor.size() - 1)
 	target = possible_neighbor[buffer]
 	return target
 
 func single_expand_unsure_done(tile_info : Dictionary, rng : RandomNumberGenerator) -> void:
-	if target == Vector2(-1, -1):
+	var target_key := Vector2i(target)
+	if target_key == Vector2i(-1, -1):
 		return
 	
 	# 安全检查：确保字典中存在该坐标的键
-	var target_key = Vector2(target)  # 转换为 Vector2 作为字典键
 	if not tile_info.has(target_key):
 		return
 	var tile_data = tile_info[target_key]
@@ -86,36 +87,33 @@ func single_expand_unsure_done(tile_info : Dictionary, rng : RandomNumberGenerat
 	if tile_data != null:
 		# ★ 修改：使用简化检查，无视地形高度和地形类型
 		if check_can_expand(tile_data):
-			var new_village = village.new(target,self.owner_battle)
-			# 同时设置两种键名以确保兼容性
-			tile_data["landform"] = new_village
-			tile_data["landform_in"] = new_village
-			owner_battle.add_landform_visual_at(target)
+			_spawn_village_at(target_key)
 			print("不确定扩张完毕！")
 		else:
-			if single_expand_unsure_will(tile_info, rng) == Vector2(-1, -1):
+			var next_target := single_expand_unsure_will(tile_info, rng)
+			if next_target == Vector2i(-1, -1):
 				return
 			else:
-				target = single_expand_unsure_will(tile_info, rng)
+				target = next_target
 				single_expand_unsure_done(tile_info, rng)
 	return
 
-func single_expand_sure_will(tile_info : Dictionary, rng : RandomNumberGenerator) -> Vector2:
+func single_expand_sure_will(tile_info : Dictionary, rng : RandomNumberGenerator) -> Vector2i:
 	if possible_neighbor.is_empty():
 		possible_neighbor = get_possible_neighbor_coords(tile_info,rng)
 	if possible_neighbor.is_empty():
-		target = Vector2(-1 , -1)
-		return Vector2(-1 , -1)
+		target = Vector2i(-1 , -1)
+		return Vector2i(-1 , -1)
 	var buffer : int = randi_range(0, possible_neighbor.size() - 1)
 	target = possible_neighbor[buffer]
 	return target
 
 func single_expand_sure_done( tile_info : Dictionary, rng : RandomNumberGenerator) -> void:
-	if target == Vector2(-1 , -1):
+	var target_key := Vector2i(target)
+	if target_key == Vector2i(-1 , -1):
 		return
 	
 	# 安全检查：确保字典中存在该坐标的键
-	var target_key = Vector2(target)  # 转换为 Vector2 作为字典键
 	if not tile_info.has(target_key):
 		return
 	var tile_data = tile_info[target_key]
@@ -123,11 +121,7 @@ func single_expand_sure_done( tile_info : Dictionary, rng : RandomNumberGenerato
 	if tile_data != null:
 		# ★ 修改：使用简化检查，无视地形高度和地形类型
 		if check_can_expand(tile_data):
-			var new_village = village.new(target,self.owner_battle)
-			# 同时设置两种键名以确保兼容性
-			tile_data["landform"] = new_village
-			tile_data["landform_in"] = new_village
-			owner_battle.add_landform_visual_at(target)
+			_spawn_village_at(target_key)
 			print("确定扩张完毕！")
 	return
 
@@ -139,20 +133,42 @@ func all_expand_done(tile_info : Dictionary, rng : RandomNumberGenerator) -> voi
 		return
 	for coord in possible_neighbor:
 		# 安全检查：确保字典中存在该坐标的键
-		var coord_key = Vector2(coord)  # 转换为 Vector2 作为字典键
+		var coord_key = Vector2i(coord)
 		if not tile_info.has(coord_key):
 			continue
 		var tile_data = tile_info[coord_key]
 		if tile_data != null:
 			# ★ 修改：使用简化检查，无视地形高度和地形类型
 			if check_can_expand(tile_data):
-				var new_village = village.new(coord,self.owner_battle)
-				# 同时设置两种键名以确保兼容性
-				tile_data["landform"] = new_village
-				tile_data["landform_in"] = new_village
-				owner_battle.add_landform_visual_at(coord)
+				_spawn_village_at(coord_key)
 				print("全体扩张完毕！")
 	return
+
+
+## 运行期扩张统一入口。
+## 核心逻辑: 新村庄创建后交给 HexMap.register_runtime_landform()，由地图统一写 map_data、挂 occupant、生成贴图/血条并刷新敌人名单。
+func _spawn_village_at(coord: Vector2i) -> bool:
+	if not is_instance_valid(owner_battle):
+		return false
+
+	var new_village = village.new(coord, owner_battle, false)
+	if owner_battle.has_method("register_runtime_landform"):
+		var registered := bool(owner_battle.register_runtime_landform(coord, new_village, new_village.landform_name))
+		if not registered and is_instance_valid(new_village):
+			new_village.queue_free()
+		return registered
+
+	if not owner_battle.map_data.has(coord):
+		new_village.queue_free()
+		return false
+
+	var tile_data: Dictionary = owner_battle.map_data[coord]
+	tile_data["landform"] = new_village
+	tile_data["landform_in"] = new_village
+	tile_data["landform_type"] = new_village.landform_name
+	owner_battle.map_data[coord] = tile_data
+	owner_battle.add_landform_visual_at(coord)
+	return true
 
 
 func Behavior(Step, info_in, Other, beha, rng):

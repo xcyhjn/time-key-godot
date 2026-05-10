@@ -36,7 +36,6 @@ func execute(tree: SceneTree) -> void:
 			continue
 
 		if _register_creation(tile, Vector2i(coord), entity):
-			VFXManager.play_pixel_spawn_vfx(entity, tree)
 			created_count += 1
 		else:
 			entity.queue_free()
