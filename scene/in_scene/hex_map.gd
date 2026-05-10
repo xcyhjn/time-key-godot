@@ -2767,9 +2767,10 @@ func set_visuals_locked(locked: bool) -> void:
 		# 进入时间占位放置阶段时，保留高亮，但必须释放防遮挡消融，避免地块“消失”。
 		_clear_occlusion_effects()
 		clear_enemy_intent_preview(false)
-		var main_board = get_tree().get_first_node_in_group("MainBoard")
-		if main_board and is_instance_valid(main_board.get("cursor_tooltip")):
-			main_board.cursor_tooltip.hide()
+		if get_tree() != null:
+			var main_board = get_tree().get_first_node_in_group("MainBoard")
+			if main_board and is_instance_valid(main_board.get("cursor_tooltip")):
+				main_board.cursor_tooltip.hide()
 	else:
 		# 解锁时同样主动释放消融，并强制刷新一次，防止鼠标不动导致 Shader 幽灵卡死。
 		_clear_occlusion_effects()

@@ -1,0 +1,12 @@
+{
+	"name": "tornado",
+	"front_image": "tornado.png",
+	"效果" : "清除一行的时间轴方格",
+    "effects": [
+	{ "type": "clear", "value": "111111111111" }
+  ],
+"effect_range": ["0,0"],
+	"shape": "0",
+	"时代" : "2",
+	"id" : "8"
+   }

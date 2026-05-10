@@ -4,6 +4,7 @@ extends Control
 @onready var bg_rect = $BackgroundShader
 @onready var content = $MenuContainer
 @onready var quit = $MainQuit
+var main : String = "res://scene/main_menu/main_menu.tscn"
 
 # 记录内容的原始位置
 var original_content_pos: Vector2
@@ -80,7 +81,8 @@ func set_shader_slant(value: float):
 		bg_rect.material.set_shader_parameter("slant_offset", value)
 
 func _on_save_to_title_button_down() -> void:
-	pass # Replace with function body.
+	await close_menu()
+	_switch_scene_with_data(main)
 
 func _on_quit_button_down() -> void:
 	quit.play_entrance()
@@ -95,3 +97,32 @@ func return_to_game() -> void:
 
 func _on_back_pressed() -> void:
 	await return_to_game()
+
+
+func _switch_scene_with_data(path: String):
+	var packed_scene := _load_packed_scene_for_switch(path, "进入局内失败")
+	if packed_scene == null:
+		return
+
+	if SceneLog:
+		SceneLog.scene_event("OutScene", "switch scene start", {"path": path})
+	var next_scene = packed_scene.instantiate()
+	var err := get_tree().change_scene_to_packed(packed_scene)
+	if err != OK:
+		push_error("切换场景失败: %s" % path)
+	if SceneLog:
+		SceneLog.scene_event("OutScene", "switch scene success", {"path": path})
+	MapState.loaded = false
+	close_menu()
+
+
+## 用 ResourceLoader 加载 PackedScene，避免导出版 res:// 场景被 remap 后 FileAccess.file_exists() 误判。
+func _load_packed_scene_for_switch(path: String, fail_message: String) -> PackedScene:
+	if path.strip_edges() == "":
+		return null
+
+	var packed_scene := ResourceLoader.load(path, "PackedScene") as PackedScene
+	if packed_scene == null:
+		return null
+
+	return packed_scene
