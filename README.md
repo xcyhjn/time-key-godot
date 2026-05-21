@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="image/titleBG.png" alt="时之钥" width="860">
 
   <h1>时之钥</h1>
   <p>局外六边形路线，局内 3 x 12 时间轴，卡牌不只造成效果，还会占用未来。</p>
