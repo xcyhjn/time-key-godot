@@ -27,6 +27,7 @@ const TARGET_HOVER_CONTROLLER := preload("res://scene/in_scene/hex_map_modules/i
 const TILE_STACK_FACTORY := preload("res://scene/in_scene/hex_map_modules/factory/TileStackFactory.gd")
 const TILE_LANDFORM_ATTACH_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileLandformAttachService.gd")
 const TILE_STACK_INITIALIZATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileStackInitializationService.gd")
+const CARD_MANAGER_LOCATOR := preload("res://scene/in_scene/hex_map_modules/bridges/CardManagerLocator.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -354,6 +355,7 @@ var _target_hover_controller := TARGET_HOVER_CONTROLLER.new()
 var _tile_stack_factory := TILE_STACK_FACTORY.new()
 var _tile_landform_attach_service := TILE_LANDFORM_ATTACH_SERVICE.new()
 var _tile_stack_initialization_service := TILE_STACK_INITIALIZATION_SERVICE.new()
+var _card_manager_locator := CARD_MANAGER_LOCATOR.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1132,41 +1134,8 @@ func refresh_tile_visual(coord: Vector2i) -> void:
 
 
 func get_card_manager() -> Node:
-	# CardManager 由 ui/Main(in_scene.gd) 在运行时创建，统一从 MainBoard 获取。
-	var main_board = get_tree().get_first_node_in_group("MainBoard")
-	if is_instance_valid(main_board):
-		var manager_from_main = main_board.get("manager_instance")
-		if is_instance_valid(manager_from_main):
-			return manager_from_main
-	
-	# 备用方案：通过元数据查找
-	var tree_root = get_tree().root
-	var manager_from_root := _get_valid_card_manager_from_meta(tree_root)
-	if is_instance_valid(manager_from_root):
-		return manager_from_root
-	
-	# 回退到当前场景元数据
-	var scene_root = get_tree().current_scene
-	var manager_from_scene := _get_valid_card_manager_from_meta(scene_root)
-	if is_instance_valid(manager_from_scene):
-		return manager_from_scene
-	
-	return null
-
-
-## 安全读取节点上缓存的 CardManager。
-## 第二次从局外进入局内时，树根上可能残留上一场战斗已经释放的 CardManager。
-## 这里遇到无效引用会主动移除元数据，避免 Godot 报 “Trying to return a previously freed instance”。
-func _get_valid_card_manager_from_meta(owner_node: Node) -> Node:
-	if not owner_node or not owner_node.has_meta("card_manager"):
-		return null
-
-	var cached_manager = owner_node.get_meta("card_manager")
-	if is_instance_valid(cached_manager):
-		return cached_manager
-
-	owner_node.remove_meta("card_manager")
-	return null
+	# CardManager 生命周期跨局内、奖励和局外返回；具体查找顺序统一交给 locator。
+	return _card_manager_locator.find(get_tree())
 
 
 # ==========================================

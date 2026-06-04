@@ -411,19 +411,21 @@ RuntimeLandformRegistrar.gd
 
 ## 后续维护优先级
 
-### 第一优先级：CardManagerLocator
+### 已落地第一步：CardManagerLocator
 
-目标：统一 `HexMap`、奖励脚本、商店脚本中的 CardManager 查找链。
+当前状态：`HexMap` 已经通过 `scene/in_scene/hex_map_modules/bridges/CardManagerLocator.gd` 统一查找 CardManager。
 
-预期收益：
+已完成：
 
-- 减少 root/current_scene metadata 兜底散落。
-- 让目标规则、奖励页和卡牌 UI 不再各自找 CardManager。
+- `HexMap.get_card_manager()` 保留公共入口，但内部已经委托 locator。
+- 查找顺序仍是 `MainBoard.manager_instance`、root meta、current_scene meta。
+- root/current_scene metadata 的失效清理已经集中到 locator。
 
-注意：
+仍待处理：
 
-- 不能一次性删除所有兜底。
-- 要保留失效 metadata 清理，避免二次进局内引用已释放实例。
+- 奖励脚本和商店脚本中仍可能存在重复 CardManager 查找链。
+- 后续如果要继续收敛，应逐个脚本迁移到 locator，不要一次性删除所有兜底。
+- 必须保留失效 metadata 清理，避免二次进局内引用已释放实例。
 
 ### 第二优先级：TileTurnBehaviorRunner
 
