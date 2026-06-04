@@ -12,6 +12,7 @@ const IN_SCENE_GLOBAL_CLOCK_BRIDGE := preload("res://scene/in_scene/in_scene_mod
 const CARD_PILE_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/cards/CardPileUiController.gd")
 const CARD_SYSTEM_BOOTSTRAP := preload("res://scene/in_scene/in_scene_modules/cards/CardSystemBootstrap.gd")
 const CARD_DRAW_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/cards/CardDrawFlowController.gd")
+const HAND_DISCARD_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/cards/HandDiscardFlowController.gd")
 const IN_SCENE_INPUT_LOCK_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneInputLockController.gd")
 const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/turn/FirstTurnIntroRunner.gd")
 const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd")
@@ -182,6 +183,7 @@ var _global_clock_bridge: RefCounted = IN_SCENE_GLOBAL_CLOCK_BRIDGE.new()
 var _card_pile_ui_controller: RefCounted = CARD_PILE_UI_CONTROLLER.new()
 var _card_system_bootstrap: RefCounted = CARD_SYSTEM_BOOTSTRAP.new()
 var _card_draw_flow_controller: RefCounted = CARD_DRAW_FLOW_CONTROLLER.new()
+var _hand_discard_flow_controller: RefCounted = HAND_DISCARD_FLOW_CONTROLLER.new()
 var _input_lock_controller: RefCounted = IN_SCENE_INPUT_LOCK_CONTROLLER.new()
 var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
 var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
@@ -638,30 +640,12 @@ func _build_input_lock_config() -> Dictionary:
 
 
 func discard_all_hand_cards():
-	if player_hand._held_cards.is_empty():
-		return
-
-
-	# ★ 核心安全机制：必须 duplicate() 复制一份数组！
-	# 因为 move_cards 会在底层动态修改 player_hand._held_cards，
-	# 边遍历边修改数组会导致严重的空指针报错。
-	var cards_to_discard = player_hand._held_cards.duplicate()
-
-	# 批量执行强行复位，防止有牌被玩家举在半空中强制结束回合，产生幽灵残影
-	for card in cards_to_discard:
-		if card.has_method("force_deselect"):
-			card.force_deselect()  # 放下卡牌
-		if card.has_method("change_state"):
-			card.change_state(0)  # 强制变为闲置状态
-
-	# 隐藏可能因为强制切走卡牌而残留在屏幕上的 Tooltip
-	hide_tooltip()
-
-	# 调用插件底层逻辑，将数组内所有卡牌一次性全移入弃牌堆！
-	discard_pile.move_cards(cards_to_discard)
-
-	# 挂起一帧，等待物理移动和底层字典结算完毕后更新数字 UI
-	await get_tree().process_frame
+	await _hand_discard_flow_controller.discard_all({
+		"player_hand": player_hand,
+		"discard_pile": discard_pile,
+		"hide_tooltip": Callable(self, "hide_tooltip"),
+		"tree": get_tree(),
+	})
 	update_counts_and_ui()
 
 

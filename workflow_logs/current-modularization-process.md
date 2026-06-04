@@ -1773,3 +1773,74 @@ ObjectDB / RID / resource 退出提示仍会出现。
 
 当前可以继续拆的点已经不再是低风险纯表现或桥接模块。
 下一步如果继续拆，建议先写专门测试或手动验证回合结束、胜利中断、教程首回合和奖励页返回，再拆 `TurnFlowController.gd`。
+
+## in_scene.gd 第十八批强制弃置手牌拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆“结束回合时把所有手牌强制丢入弃牌堆”的动作。
+不拆 `_on_end_turn_pressed()`，不拆 `_start_turn()`，不改时间轴结算和建筑行为触发顺序。
+
+目标函数范围：
+
+```text
+discard_all_hand_cards()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+player_hand._held_cards.duplicate()
+card.force_deselect()
+card.change_state(0)
+discard_pile.move_cards(cards_to_discard)
+get_tree().process_frame
+hide_tooltip()
+update_counts_and_ui()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/cards/HandDiscardFlowController.gd
+```
+
+模块边界：
+
+- `HandDiscardFlowController.gd` 只负责复制手牌数组、复位卡牌状态、隐藏 tooltip、移动到弃牌堆并等待一帧。
+- 它不推进回合、不解析时间轴、不发出建筑行为信号。
+- `in_scene.gd` 保留 `discard_all_hand_cards()` 旧入口，并在模块完成后刷新牌堆计数。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+强制弃置全部手牌的 duplicate 安全机制、卡牌状态复位和弃牌堆移动逻辑已经由 HandDiscardFlowController 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+如果继续拆，仍建议暂缓完整 `TurnFlowController.gd`，优先做更小的边界：
+
+1. `EnemyIntentTimelineRefresher.gd`：拆 `_refresh_enemy_intents_on_timeline()`，只负责清时间轴、取 Enemies 组、生成意图和 debug 输出。
+2. 或拆 `CombatCartoonUiController.gd`，收口 `_setup_combat_cartoon_ui()` / `_refresh_combat_cartoon_ui_progress()` 的顶部 UI 适配。
+3. 完整回合流仍建议等这些小块再瘦一轮后处理。
