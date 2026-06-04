@@ -28,6 +28,7 @@ const TILE_STACK_FACTORY := preload("res://scene/in_scene/hex_map_modules/factor
 const TILE_LANDFORM_ATTACH_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileLandformAttachService.gd")
 const TILE_STACK_INITIALIZATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileStackInitializationService.gd")
 const CARD_MANAGER_LOCATOR := preload("res://scene/in_scene/hex_map_modules/bridges/CardManagerLocator.gd")
+const TILE_TURN_BEHAVIOR_RUNNER := preload("res://scene/in_scene/hex_map_modules/turn/TileTurnBehaviorRunner.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -356,6 +357,7 @@ var _tile_stack_factory := TILE_STACK_FACTORY.new()
 var _tile_landform_attach_service := TILE_LANDFORM_ATTACH_SERVICE.new()
 var _tile_stack_initialization_service := TILE_STACK_INITIALIZATION_SERVICE.new()
 var _card_manager_locator := CARD_MANAGER_LOCATOR.new()
+var _tile_turn_behavior_runner := TILE_TURN_BEHAVIOR_RUNNER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1937,23 +1939,7 @@ func refresh_landform_visual(coord: Vector2i) -> void:
 
 ## 处理回合结束时的建筑行为
 func _on_step_next(step: int, behavior: int) -> void:
-	for coord_v2 in iron_mine.Library:
-		if not map_data.has(coord_v2):
-			continue
-		var data = map_data[coord_v2]
-		if data.has("landform") and is_instance_valid(data["landform"]) and data["landform"].landform_name == "iron_mine":
-			var landform_inst = data["landform"]
-			if landform_inst.has_method("Behavior"):
-				# 调用建筑的 Behavior 方法
-				landform_inst.Behavior(step, map_data, null, behavior, rng)
-	# 遍历所有地块，触发建筑的 Behavior 方法
-	for coord_v2 in map_data.keys():
-		var data = map_data[coord_v2]
-		if data.has("landform") and is_instance_valid(data["landform"]) and data["landform"].landform_name != "iron_mine":
-			var landform_inst = data["landform"]
-			if landform_inst.has_method("Behavior"):
-				# 调用建筑的 Behavior 方法
-				landform_inst.Behavior(step, map_data, null, behavior, rng)
+	_tile_turn_behavior_runner.run(step, behavior, map_data, rng)
 
 ## 未处理的输入事件（整合自 node_2d.gd）
 func _unhandled_input(event):

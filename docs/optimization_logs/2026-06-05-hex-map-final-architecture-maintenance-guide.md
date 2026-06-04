@@ -427,19 +427,21 @@ RuntimeLandformRegistrar.gd
 - 后续如果要继续收敛，应逐个脚本迁移到 locator，不要一次性删除所有兜底。
 - 必须保留失效 metadata 清理，避免二次进局内引用已释放实例。
 
-### 第二优先级：TileTurnBehaviorRunner
+### 已落地第一步：TileTurnBehaviorRunner
 
-目标：把 `_on_step_next()` 中旧建筑回合行为遍历拆出。
+当前状态：`_on_step_next()` 中旧建筑回合行为遍历已经拆到 `scene/in_scene/hex_map_modules/turn/TileTurnBehaviorRunner.gd`。
 
-预期收益：
+已完成：
 
-- `HexMap` 不再直接理解 `iron_mine.Library` 的特殊优先顺序。
-- 后续建筑行为可以逐步迁移到统一接口。
+- `HexMap` 继续连接 `Signal_Bus.step_next`，但只把 `step`、`behavior`、`map_data` 和 `rng` 转交给 runner。
+- runner 保留旧顺序：先处理 `iron_mine.Library`，再处理其他地貌。
+- 旧 `Behavior(step, map_data, null, behavior, rng)` 接口保持不变。
 
-注意：
+仍待处理：
 
-- 必须保留旧顺序：先 iron_mine，再其他地貌。
-- 必须回归回合推进、建筑行为、敌人意图和地块变化。
+- 建筑脚本仍使用 `Behavior()` 鸭子类型接口。
+- `has_method("Behavior")` 暂时保留，等所有建筑统一契约后再考虑清理。
+- 后续必须回归回合推进、建筑行为、敌人意图和地块变化。
 
 ### 第三优先级：SettlementRewardController
 
