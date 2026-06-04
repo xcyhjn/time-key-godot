@@ -1,39 +1,38 @@
-# Landing 4: hex terrain rules
+# 第 4 次落地：提取地形和高度规则
 
-Date: 2026-06-04
+日期：2026-06-04
 
-## Scope
+## 本次处理范围
 
-- Extract pure terrain and height rules from `hex_map.gd`.
-- Keep `hex_map.gd` wrapper functions so existing call sites remain unchanged.
+这次从 `hex_map.gd` 中提取纯地形和高度规则。`hex_map.gd` 继续保留原有包装函数，避免影响调用点。
 
-## Completed Modules
+## 已完成模块
 
-- `HexCoordRules`: fan/circular coordinate sampling and axial-to-pixel conversion.
-- `HexTerrainRules`: fan tier calculation, height rolls, circular room height range, height-to-terrain fallback, terrain/landform name mapping.
+- `HexCoordRules`：负责扇形和圆形坐标采样，以及轴坐标到像素坐标转换。
+- `HexTerrainRules`：负责扇形层级计算、高度随机、圆形房间高度范围、高度到地形的兜底映射，以及地形和地貌调试名称。
 
-## Code Changes
+## 代码改动
 
-- Added `scene/in_scene/HexTerrainRules.gd`.
-- Updated `scene/in_scene/hex_map.gd` to delegate:
-  - fan tier calculation
-  - tier height rolls
-  - circular room height rolls
-  - terrain lookup by height
-  - terrain and landform debug names
+- 新增 `scene/in_scene/HexTerrainRules.gd`。
+- `scene/in_scene/hex_map.gd` 改为委托以下逻辑：
+  - 扇形地图层级计算。
+  - 按层级随机高度。
+  - 圆形房间随机高度。
+  - 按高度查地形。
+  - 地形和地貌调试名称。
 
-## Still To Extract
+## 还需要继续提取
 
-- Target validation and card range checks.
-- Enemy intent preview presentation.
-- Settlement reward highlighting and tooltip behavior.
-- Height view visual state and pillar/label management.
-- Tile destruction queue and height-limit destruction batches.
-- Landform placement and runtime landform registration.
+- 目标校验和卡牌范围检查。
+- 敌人意图地图表现。
+- 结算奖励高亮和 tooltip。
+- 高度视图状态，以及 pillar 和 label 管理。
+- 地块销毁队列和高度超限批处理。
+- 地貌放置和运行时地貌注册。
 
-## Verification
+## 验证结果
 
-- `git diff --check`: passed.
-- `Godot --headless --path . --quit --no-header`: exit code 0.
-- `Godot --headless --path . --scene res://scene/in_scene/in_scene.tscn --quit-after 1 --no-header`: exit code 0.
-- Combat scene load still prints existing TileSet atlas errors and resource leak warnings; no terrain rules parse error was introduced.
+- `git diff --check` 通过。
+- `Godot --headless --path . --quit --no-header` 退出码为 0。
+- `Godot --headless --path . --scene res://scene/in_scene/in_scene.tscn --quit-after 1 --no-header` 退出码为 0。
+- 局内场景加载时仍会输出既有的 TileSet atlas 报错和资源释放提示，没有出现地形规则解析错误。

@@ -1,51 +1,43 @@
-# Landing 14: height view state synchronizer
+# 第 14 次落地：提取平铺和 3D 视角同步状态
 
-Date: 2026-06-04
+日期：2026-06-04
 
-## Scope
+## 本次处理范围
 
-- Extract flat/3D height-view cache and single-stack synchronization helpers from `hex_map.gd`.
-- Keep the global height-view toggle flow, full-map compress/restore animation loops, and elevation mutation logic in `hex_map.gd`.
-- Preserve runtime behavior for entities, health bars, collision nodes, settlement reward tooltip repositioning, and newly spawned landforms during flat view.
+这次把平铺和 3D 高度视图中的缓存辅助函数、单地块同步逻辑从 `hex_map.gd` 中拆出来。全局高度视图切换流程、全图压平和恢复动画循环，以及高度变更逻辑仍然留在 `hex_map.gd`。
 
-## New Module
+实体、血条、碰撞节点、结算奖励 tooltip，以及平铺视图中新增的运行时地貌，都保持原来的同步行为。
+
+## 新增模块
 
 ### `scene/in_scene/HeightViewStateSynchronizer.gd`
 
-Responsibility:
-- Calculate flat-view drop distance for a stack.
-- Build and update the 3D original-position cache.
-- Read positions from `Node2D` and `Control` nodes.
-- Sync node y positions directly or through HexMap's tween callback.
-- Sync one runtime-changed stack to the current flat/3D state.
-- Keep health-bar lookup and reward tooltip refresh decoupled through injected callbacks.
+这个模块负责：
 
-Functions:
-- `get_drop_delta(stack, config)`
-  Calculates flat-view y offset from height and spacing config.
-- `get_stack_height(stack)`
-  Reads safe stack height metadata.
-- `get_or_create_cache(stack, sprites, config)`
-  Builds or reuses the per-stack original-position cache.
-- `get_or_add_sprite_cache(cache, sprite)`
-  Adds runtime-created stack child sprites to cache.
-- `get_visual_node_position(node)`
-  Reads local position for `Node2D` or `Control`.
-- `sync_node_position_y(node, target_y, animate, config)`
-  Writes/tweens a node's y position.
-- `sync_cached_node_to_flat(cache, key, node, drop_delta, animate, config)`
-  Adds/updates cached node data and applies flat offset.
-- `sync_stack_to_current_view(coord, animate, config)`
-  Synchronizes a single stack after runtime visual changes.
-- `_build_health_bar_cache_data(occupant, config)`
-  Builds `health_bar_data` for landform occupants.
-- `_find_health_bar_for_occupant(occupant, config)`
-  Uses an injected callback to resolve health bars.
+- 计算某个地块在平铺视图中的下落距离。
+- 构建和更新 3D 原始位置缓存。
+- 从 `Node2D` 和 `Control` 节点读取当前位置。
+- 通过直接赋值或 HexMap 注入的 tween 回调同步节点 y 坐标。
+- 在运行时改变某个地块后，把这个地块同步到当前平铺或 3D 状态。
+- 通过注入回调解耦血条查找和奖励 tooltip 刷新。
 
-## HexMap Changes
+主要函数：
 
-- Added `HEIGHT_VIEW_STATE_SYNCHRONIZER` preload and `_height_view_state_synchronizer`.
-- Converted these helpers into wrappers:
+- `get_drop_delta(stack, config)`：根据高度和间距配置计算平铺视图 y 偏移。
+- `get_stack_height(stack)`：安全读取地块高度 metadata。
+- `get_or_create_cache(stack, sprites, config)`：构建或复用单地块原始位置缓存。
+- `get_or_add_sprite_cache(cache, sprite)`：把运行时创建的地块子 sprite 加入缓存。
+- `get_visual_node_position(node)`：读取 `Node2D` 或 `Control` 的本地位置。
+- `sync_node_position_y(node, target_y, animate, config)`：直接写入或 tween 到目标 y 坐标。
+- `sync_cached_node_to_flat(cache, key, node, drop_delta, animate, config)`：补充或更新缓存节点数据，并应用平铺偏移。
+- `sync_stack_to_current_view(coord, animate, config)`：运行时视觉变化后同步单个地块。
+- `_build_health_bar_cache_data(occupant, config)`：为地貌 occupant 构建 `health_bar_data`。
+- `_find_health_bar_for_occupant(occupant, config)`：通过注入回调解析血条节点。
+
+## HexMap 的变化
+
+- 新增 `HEIGHT_VIEW_STATE_SYNCHRONIZER` preload 和 `_height_view_state_synchronizer`。
+- 以下辅助函数改成包装 synchronizer：
   - `_get_height_view_drop_delta()`
   - `_get_or_create_height_view_cache()`
   - `_get_or_add_sprite_cache()`
@@ -53,14 +45,14 @@ Functions:
   - `_sync_node_position_y()`
   - `_sync_cached_node_to_flat()`
   - `_sync_stack_to_current_view()`
-- Added `_build_height_view_state_synchronizer_config()`.
-- Added `_update_settlement_reward_tooltip_position_for_stack()` as a callback bridge.
+- 新增 `_build_height_view_state_synchronizer_config()`。
+- 新增 `_update_settlement_reward_tooltip_position_for_stack()`，作为回调桥接奖励 tooltip 的位置刷新。
 
-## Exported Tuning Variables
+## 可调变量
 
-No new exported variables were added.
+本次没有新增导出变量。
 
-The synchronizer consumes existing runtime/export data through config:
+synchronizer 通过 config 使用这些既有运行时和导出数据：
 
 - `stack_nodes`
 - `height_view_original_materials`
@@ -73,17 +65,17 @@ The synchronizer consumes existing runtime/export data through config:
 - `_tween_position_y`
 - `_settlement_reward_presenter.update_tooltip_position`
 
-## Adjustment Notes
+## 调整说明
 
-- To tune flat-view vertical offset, continue adjusting `filler_block_spacing`, `tile_scale`, and `REF_SCALE` flow.
-- To change tween duration for sync wrapper calls, update `position_tween_duration` in `_build_height_view_state_synchronizer_config()`.
-- Do not move full-map `_compress_to_single_height_view()` and `_restore_original_height_view()` into this module until manual height-view regression is stable.
-- Do not mutate tile height or `map_data` inside this module; elevation changes remain in `hex_map.gd`.
-- Reward tooltip positioning is callback-driven so this module does not depend on `SettlementRewardPresenter`.
+- 想调整平铺视图的垂直偏移，继续调整 `filler_block_spacing`、`tile_scale` 和 `REF_SCALE` 这一套流程。
+- 想调整同步包装函数的 tween 时长，改 `_build_height_view_state_synchronizer_config()` 里的 `position_tween_duration`。
+- 在手动高度视图回归稳定前，不要把全图 `_compress_to_single_height_view()` 和 `_restore_original_height_view()` 搬进这个模块。
+- 不要在这个模块里修改地块高度或 `map_data`，升降高度仍然留在 `hex_map.gd`。
+- 奖励 tooltip 位置刷新通过回调完成，所以这个模块不直接依赖 `SettlementRewardPresenter`。
 
-## Verification
+## 验证方式
 
-Run after this landing:
+本次落地后运行：
 
 ```powershell
 git diff --check
@@ -91,9 +83,10 @@ git diff --check
 & 'D:\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe' --headless --path . --scene res://scene/in_scene/in_scene.tscn --quit-after 1 --no-header
 ```
 
-Manual regression focus:
-- Toggle into flat height view and confirm top sprites, occupants, collision nodes, and health bars drop together.
-- Spawn or build a runtime landform while flat view is active and confirm it immediately aligns to the flat plane.
-- Trigger settlement reward tooltip display and confirm tooltip position updates after flat/3D switch.
-- Toggle back to 3D and confirm cached original positions restore correctly.
-- Use elevation while flat view is active and confirm cached positions remain stable.
+## 手动回归重点
+
+- 切进平铺高度视图，确认顶部 sprite、occupant、碰撞节点和血条一起下落。
+- 在平铺视图中生成或建造运行时地貌，确认新地貌会立即对齐到平面。
+- 触发结算奖励 tooltip，确认平铺和 3D 切换后 tooltip 位置会更新。
+- 切回 3D 视图后，确认缓存的原始位置能正确恢复。
+- 在平铺视图中使用升降高度效果，确认缓存位置保持稳定。

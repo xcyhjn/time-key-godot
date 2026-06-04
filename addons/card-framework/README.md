@@ -1,35 +1,39 @@
-# Card Framework
+# Card Framework 插件说明
 
-Professional Godot 4.x addon for creating 2D card games.
+这是一个用于 Godot 4.x 的 2D 卡牌游戏插件。项目目前把它作为卡牌拖拽、牌堆和手牌容器等基础能力的依赖。
 
-## Overview
+## 插件能力
 
-Build Solitaire, TCG, or deck-building roguelikes with:
-- **Drag & Drop System** - Built-in card interactions
-- **Flexible Containers** - Pile (stacks) and Hand (fans)
-- **JSON Card Data** - Metadata-driven card creation
-- **Extensible Design** - Factory patterns and inheritance
+这个插件主要提供：
 
-## Quick Start
+- 拖拽系统：内置卡牌拖拽和基础交互。
+- 容器节点：支持牌堆 `Pile` 和手牌扇形 `Hand`。
+- JSON 卡牌数据：用配置数据创建卡牌。
+- 可扩展结构：通过工厂模式和继承扩展卡牌行为。
 
-1. Add `CardManager` node to your scene
-2. Configure `JsonCardFactory` with asset directories
-3. Create JSON card definitions
-4. Add `Pile` or `Hand` container nodes
+## 基本使用流程
 
-## Documentation & Examples
+1. 在场景中添加 `CardManager` 节点。
+2. 配置 `JsonCardFactory`，指定卡牌数据和资源目录。
+3. 编写 JSON 卡牌定义。
+4. 添加 `Pile` 或 `Hand` 容器节点。
 
-**Full Documentation:** https://github.com/chun92/card-framework
+## 原始文档和示例
 
-**Download Examples:** https://github.com/chun92/card-framework/releases/latest
-- Look for `card-framework-vX.X.X-full.zip`
-- Includes complete example projects (basic demo + FreeCell game)
-- Full API reference and tutorials included
+完整文档在插件原仓库：
 
-## Version
+https://github.com/chun92/card-framework
 
-1.3.1 - Godot 4.5+ compatible
+示例项目可以从 release 页面下载：
 
-## License
+https://github.com/chun92/card-framework/releases/latest
 
-MIT License - Copyright (c) 2025 Hyunjoon Park
+下载时查找 `card-framework-vX.X.X-full.zip`。这个包包含基础 demo、FreeCell 示例、API 说明和教程。
+
+## 版本
+
+当前插件版本是 1.3.1，兼容 Godot 4.5 及以上版本。
+
+## 许可证
+
+MIT License，Copyright (c) 2025 Hyunjoon Park。

@@ -1,40 +1,39 @@
-# Landing 5: tile destruction batch queue
+# 第 5 次落地：提取地块销毁批处理队列
 
-Date: 2026-06-04
+日期：2026-06-04
 
-## Scope
+## 本次处理范围
 
-- Extract height-limit tile destruction queue orchestration from `hex_map.gd`.
-- Keep the actual tile deletion, map data mutation, global height pool cleanup, and signals inside `hex_map.gd`.
+这次只把高度超限后的地块销毁队列编排从 `hex_map.gd` 中拆出来。真正删除地块、修改 `map_data`、清理全局高度池和发信号的逻辑仍然留在 `hex_map.gd`。
 
-## Completed Modules
+## 已完成模块
 
-- `HexCoordRules`: fan/circular coordinate sampling and axial-to-pixel conversion.
-- `HexTerrainRules`: fan tier calculation, height rolls, circular room height range, height-to-terrain fallback, terrain/landform name mapping.
-- `TileDestructionBatchQueue`: queue metadata, batch collection delay, batch sizing, inter-batch interval, and wait-until-destroyed coordination.
+- `HexCoordRules`：负责扇形和圆形坐标采样，以及轴坐标到像素坐标转换。
+- `HexTerrainRules`：负责扇形层级计算、高度随机、圆形房间高度范围、高度到地形的兜底映射，以及地形和地貌调试名称。
+- `TileDestructionBatchQueue`：负责队列元数据、批次收集延迟、批次大小、批次间隔，以及等待地块真正销毁完成。
 
-## Code Changes
+## 代码改动
 
-- Added `scene/in_scene/TileDestructionBatchQueue.gd`.
-- Replaced the old pending/running state in `hex_map.gd` with `_tile_destruction_queue`.
-- Reduced `_queue_tile_destruction_and_wait()` to a thin delegate that passes current tuning exports and `_perform_tile_destruction` as a callback.
-- Removed `hex_map.gd`'s private queue runner helpers:
+- 新增 `scene/in_scene/TileDestructionBatchQueue.gd`。
+- `hex_map.gd` 原来的 pending/running 状态由 `_tile_destruction_queue` 接管。
+- `_queue_tile_destruction_and_wait()` 缩减为薄包装，只传入当前调参值和 `_perform_tile_destruction` 回调。
+- 删除了 `hex_map.gd` 中旧的私有队列辅助函数：
   - `_run_height_limit_destruction_batches`
   - `_perform_queued_tile_destruction`
   - `_wait_for_height_limit_destruction_batch`
 
-## Still To Extract
+## 还需要继续提取
 
-- Target validation and card range checks.
-- Enemy intent preview presentation.
-- Settlement reward highlighting and tooltip behavior.
-- Height view visual state and pillar/label management.
-- Landform placement and runtime landform registration.
-- Tile destruction data mutation can be revisited later, but only after the queue behavior has been manually regression-tested in combat.
+- 目标校验和卡牌范围检查。
+- 敌人意图地图表现。
+- 结算奖励高亮和 tooltip。
+- 高度视图状态，以及 pillar 和 label 管理。
+- 地貌放置和运行时地貌注册。
+- 地块销毁时的数据变更可以之后再看，但要等当前队列行为完成手动战斗回归后再动。
 
-## Verification
+## 验证结果
 
-- `git diff --check`: passed.
-- `Godot --headless --path . --quit --no-header`: exit code 0.
-- `Godot --headless --path . --scene res://scene/in_scene/in_scene.tscn --quit-after 1 --no-header`: exit code 0.
-- Combat scene load still prints existing TileSet atlas errors and resource leak warnings; no queue script parse error was introduced.
+- `git diff --check` 通过。
+- `Godot --headless --path . --quit --no-header` 退出码为 0。
+- `Godot --headless --path . --scene res://scene/in_scene/in_scene.tscn --quit-after 1 --no-header` 退出码为 0。
+- 局内场景加载时仍会输出既有的 TileSet atlas 报错和资源释放提示，没有出现队列脚本解析错误。

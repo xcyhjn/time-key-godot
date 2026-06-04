@@ -1,49 +1,49 @@
-# Optimization Baseline
+# 优化基线
 
-This document is the working checklist for the balanced optimization pass. Keep each change tied to one row in the baseline or one acceptance path below.
+这份文档是平衡优化工作的共同检查表。后续每一次改动都要能对应到下面的固定验收路径，或者对应到某一项明确的基线观察。这样大家在拆模块、调参数和复测时，不需要重新猜这轮优化想解决什么。
 
-## Fixed Acceptance Paths
+## 固定验收路径
 
-| Path | Steps | Pass criteria |
+| 路径 | 操作步骤 | 通过标准 |
 | --- | --- | --- |
-| Startup | Launch `scene/game_start/game_start.tscn`, wait for or skip the intro, enter the main menu. | Main menu renders, buttons respond, settings/guide/quit overlays still open and close. |
-| Out Scene | Start or continue a run, generate the out-scene hex map, choose a character, move to a room. | Map state, character selection, camera limits, era display, and room entry payload stay correct. |
-| In Scene | Enter combat, draw cards, place at least one timeline action, resolve one full turn, trigger victory/settlement. | Timeline placement, enemy intents, tile damage/elevation, settlement UI, and return payload all behave as before. |
+| 启动路径 | 启动 `scene/game_start/game_start.tscn`，等待或跳过开场动画，然后进入主菜单。 | 主菜单能正常渲染，按钮可点击，设置、指南和退出弹窗都能正常打开和关闭。 |
+| 局外路径 | 开始或继续一局游戏，生成局外六边形地图，选择角色，并移动到一个房间。 | 地图状态、角色选择、相机边界、时代显示和进入房间时传递的 payload 都保持正确。 |
+| 局内路径 | 进入战斗，抽牌，至少放置一个时间轴行动，完整结算一回合，并触发胜利或结算流程。 | 时间轴放置、敌人意图、地块伤害和升降、结算界面，以及返回局外的 payload 都和改动前一致。 |
 
-## Static Baseline
+## 当前静态观察
 
-| Area | Current observation | Optimization focus |
+| 区域 | 当前情况 | 优化重点 |
 | --- | --- | --- |
-| Largest scripts | `hex_map.gd` (~2.6k lines), `in_scene.gd` (~1.5k+ lines), `DragShapeController.gd` (~1k lines), `timeline_ui.gd` (~800 lines). | Extract pure rules and UI presentation only after low-risk caching is stable. |
-| Largest scenes | `in_scene.tscn` (~51 nodes), `main_menu.tscn` (~37 nodes), `Out_Scene.tscn` (~28 nodes). | Keep scene split decisions behavior-preserving and verify node paths after each split. |
-| Runtime loading | Card framework scenes, reward scenes, status icons, and landform textures had repeat load sites. | Cache stable `PackedScene` and `Texture2D` resources before deeper refactors. |
-| Frequent instancing candidates | Timeline action visuals, tooltip panels, tile VFX, health bars, card visual copies. | Introduce pools only after profiler confirms churn on the fixed paths. |
-| Global state | `MapState`, `GlobalClock`, `Signal_Bus`, `GlobalDB`, and `GlobalTimecoin` share cross-scene responsibilities. | Keep `MapState` as snapshot data, `GlobalClock` as era/phase, and `Signal_Bus` as events. |
+| 大脚本 | `hex_map.gd` 约 2600 行，`in_scene.gd` 约 1500 行以上，`DragShapeController.gd` 约 1000 行，`timeline_ui.gd` 约 800 行。 | 先抽纯规则和表现层代码，等低风险缓存稳定后再继续拆更深的流程。 |
+| 大场景 | `in_scene.tscn` 约 51 个节点，`main_menu.tscn` 约 37 个节点，`Out_Scene.tscn` 约 28 个节点。 | 拆场景时必须保持行为不变，每次拆完都要检查节点路径。 |
+| 运行时加载 | 卡牌框架场景、奖励场景、状态图标和地貌贴图里有重复加载点。 | 先缓存稳定的 `PackedScene` 和 `Texture2D` 资源，再做更深层的结构调整。 |
+| 高频实例化候选 | 时间轴行动块、tooltip 面板、地块 VFX、血条和卡牌视觉副本。 | 只有在 profiler 证明这些对象确实造成抖动后，才逐类引入对象池。 |
+| 全局状态 | `MapState`、`GlobalClock`、`Signal_Bus`、`GlobalDB` 和 `GlobalTimecoin` 都承担跨场景职责。 | `MapState` 只保留快照数据，`GlobalClock` 只负责时代和阶段，`Signal_Bus` 只负责事件转发。 |
 
-## Runtime Metrics To Record
+## 需要记录的运行指标
 
-Record these in Godot Debugger > Monitors or Profiler for each fixed path:
+每条固定路径都要在 Godot Debugger 的 Monitors 或 Profiler 中记录这些数据：
 
-| Metric | Target note |
+| 指标 | 记录方式 |
 | --- | --- |
-| FPS / frame time | 60 FPS means a 16.6 ms frame budget. Capture worst visible spikes. |
-| Process time | Watch `_process()` cost during card drag, map hover, and menu idle. |
-| Draw calls | Compare main menu, out scene, and in scene separately. |
-| Object count | Check before and after scene switches; it should not grow across repeated cycles. |
-| Video RAM | Watch for steady growth after opening reward pages, pile viewer, and settlement UI. |
-| Scene switch time | Record out->in and in->out transitions, including dim animation and payload handoff. |
+| FPS 和帧耗时 | 60 FPS 对应 16.6 ms 帧预算，重点记录肉眼可见的尖峰。 |
+| Process 耗时 | 重点看拖拽卡牌、地图 hover 和菜单静止时 `_process()` 的成本。 |
+| Draw Calls | 主菜单、局外和局内要分开对比。 |
+| Object Count | 场景切换前后各记录一次，重复切换后不应该持续增长。 |
+| Video RAM | 打开奖励页、牌堆查看器和结算 UI 后观察是否持续增长。 |
+| 场景切换耗时 | 记录局外到局内、局内回局外的耗时，包含 dim 动画和 payload 交接。 |
 
-## First Landing Slice
+## 第一批落地点
 
-- Cache stable combat/card `PackedScene` references at class scope in `in_scene.gd`.
-- Cache settlement reward `PackedScene` instances by path after first load.
-- Cache status icon and landform textures by resource path.
-- Guard repeated signal connections in `in_scene.gd` and `sound_manager.gd`.
-- Leave gameplay rules, timeline resolution, map generation, and reward behavior unchanged.
+- 在 `in_scene.gd` 的类级别缓存稳定的战斗和卡牌 `PackedScene` 引用。
+- 奖励结算场景按路径做首次加载后的缓存。
+- 按资源路径缓存状态图标和地貌贴图。
+- 在 `in_scene.gd` 和 `sound_manager.gd` 中避免重复连接信号。
+- 不改玩法规则、时间轴结算、地图生成和奖励行为。
 
-## Next Slices
+## 后续拆分方向
 
-- Profile the three fixed paths and fill actual metric values in this file.
-- If object churn is confirmed, pool tooltip panels, timeline visuals, tile VFX, and health bars one type at a time.
-- Split `hex_map.gd` only along existing behavior boundaries: terrain/coordinates, highlighting, enemy intent preview, height view, destruction, settlement rewards.
-- Split `in_scene.gd` only after tests cover card setup, scene switching, reward entry, and combat settlement.
+- 先跑三条固定路径，把真实性能指标填回这份文档。
+- 如果确认对象数量抖动，再按 tooltip、时间轴视觉、地块 VFX、血条的顺序逐类做对象池。
+- `hex_map.gd` 只沿已有行为边界拆：地形和坐标、高亮、敌人意图预览、高度视图、地块销毁、结算奖励。
+- `in_scene.gd` 要等卡牌初始化、场景切换、奖励入口和战斗结算都有稳定回归后再继续拆。

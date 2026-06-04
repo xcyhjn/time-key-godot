@@ -1,116 +1,118 @@
-# Landing 11: card target restrictions
+# 第 11 次落地：集中卡牌目标限制
 
-Date: 2026-06-04
+日期：2026-06-04
 
-## Scope
+## 本次处理范围
 
-- Centralize card target restrictions in `HexTargetRules.gd`.
-- Make HexMap hover highlights and MainBoard target tooltip use the same rule module.
-- Block invalid map clicks before a card enters timeline placement.
-- Keep timeline command classes as the final execution-time safety layer.
+这次把卡牌目标限制集中到 `HexTargetRules.gd`。HexMap 的 hover 高亮和 MainBoard 的目标 tooltip 使用同一个规则模块，避免两边判断不一致。
 
-## Updated Module
+无效地图点击会在卡牌进入时间轴放置前被拦截。timeline command 仍然保留执行时的最后安全校验。
+
+## 更新后的模块
 
 ### `scene/in_scene/HexTargetRules.gd`
 
-Responsibility:
-- Decide whether a selected card can target a stack.
-- Expand card `effect_range` to real map stacks.
-- Validate build, damage, recover/heal, poison, elevation, and clear effects.
-- Keep unknown/experimental effects permissive so refactor work does not break old content.
+这个模块负责：
 
-Functions:
-- `is_stack_valid_target(stack, selected_card, context)`
-  Main entry used by HexMap and MainBoard.
-- `is_empty_build_target(stack, context)`
-  Checks stack `occupant` plus `map_data.landform/landform_in`.
-- `get_effect_range_stacks(card, center_coord, stack_nodes)`
-  Expands a card's existing `get_absolute_effect_range()` output into valid `Area2D` stacks.
-- `_get_card_info(card)`
-  Reads the card JSON dictionary from `card.card_info`.
-- `_get_effects(card_info)`
-  Reads `effects` safely.
-- `_get_stack_coord(stack, context)`
-  Resolves the selected stack coordinate from explicit context or `stack_nodes.find_key()`.
-- `_range_has_target_for_effect(card, center_stack, center_coord, stack_nodes, effect_type)`
-  For AOE effects, checks whether at least one affected stack has a valid recipient.
-- `_get_stack_occupant(stack)`
-  Reads a live occupant node from stack metadata.
-- `_can_damage_entity(entity)`
-  Matches `DamageCommand`: entity exists, supports `take_damage`, and is alive if HP exists.
-- `_can_recover_entity(entity)`
-  Matches `RecoverCommand`: entity exists, supports `heal`, and is not full HP when HP fields exist.
-- `_can_poison_entity(entity)`
-  Matches `PoisonCommand`: entity exists, supports `add_status`, and is alive if HP exists.
-- `_is_live_object(value)`
-  Shared object validity gate for dynamic values from CardManager and stack metadata.
+- 判断选中卡牌是否能以某个地块为目标。
+- 把卡牌的 `effect_range` 展开为地图上的真实地块。
+- 校验建造、伤害、恢复或治疗、中毒、升降高度和清除效果。
+- 对未知或实验性效果保持宽松，避免重构过程中误伤旧内容。
 
-## Rule Details
+主要函数：
 
-- `built` / `build`:
-  - Target stack must have no live `occupant`.
-  - Target map data must exist.
-  - `map_data[coord].landform` and `landform_in` must not be live objects.
-- `damage`:
-  - At least one stack in `effect_range` must contain a live entity with `take_damage()`.
-  - If the entity has `HP`, it must be greater than 0.
-- `recover` / `heal`:
-  - At least one stack in `effect_range` must contain a live entity with `heal()`.
-  - If `HP` and `Max_Blood` both exist, HP must be below Max_Blood.
-- `poison`:
-  - At least one stack in `effect_range` must contain a live entity with `add_status()`.
-  - If the entity has `HP`, it must be greater than 0.
-- `elevation`:
-  - Any valid stack remains a valid target.
-- `clear`:
-  - Remains valid because clear cards use the no-map-target timeline path.
-- Unknown effect types:
-  - Remain valid to avoid blocking existing prototype cards during refactor.
+- `is_stack_valid_target(stack, selected_card, context)`：HexMap 和 MainBoard 使用的主入口。
+- `is_empty_build_target(stack, context)`：检查地块 `occupant`，以及 `map_data.landform/landform_in`。
+- `get_effect_range_stacks(card, center_coord, stack_nodes)`：把卡牌已有 `get_absolute_effect_range()` 的结果转成有效 `Area2D` 地块。
+- `_get_card_info(card)`：从 `card.card_info` 读取卡牌 JSON 字典。
+- `_get_effects(card_info)`：安全读取 `effects`。
+- `_get_stack_coord(stack, context)`：从显式 context 或 `stack_nodes.find_key()` 中解析目标地块坐标。
+- `_range_has_target_for_effect(card, center_stack, center_coord, stack_nodes, effect_type)`：对 AOE 效果检查范围内至少有一个有效接收者。
+- `_get_stack_occupant(stack)`：从地块 metadata 中读取存活的 occupant 节点。
+- `_can_damage_entity(entity)`：与 `DamageCommand` 对齐，要求实体存在、支持 `take_damage()`，并且有 HP 时 HP 大于 0。
+- `_can_recover_entity(entity)`：与 `RecoverCommand` 对齐，要求实体存在、支持 `heal()`，并且有 HP 字段时不能满血。
+- `_can_poison_entity(entity)`：与 `PoisonCommand` 对齐，要求实体存在、支持 `add_status()`，并且有 HP 时 HP 大于 0。
+- `_is_live_object(value)`：统一处理来自 CardManager 和地块 metadata 的动态对象有效性。
 
-## HexMap Changes
+## 规则细节
 
-- `_is_stack_valid_target()` now passes `stack_nodes`, `map_data`, and center coordinate into `HexTargetRules`.
-- Added `_build_hex_target_rules_context(center_stack)`.
-- `_handle_tile_click()` now blocks invalid card targets before calling `active_card.play_card(stack)`.
-- Hover highlighting still uses `TileVisualState.HOVER_TARGET_VALID` / `HOVER_TARGET_INVALID`; only rule ownership changed.
+`built` / `build`：
 
-## MainBoard Changes
+- 目标地块不能有存活的 `occupant`。
+- 目标 `map_data` 必须存在。
+- `map_data[coord].landform` 和 `landform_in` 都不能是存活对象。
 
-- Added `HEX_TARGET_RULES` preload.
-- `is_valid_target()` now delegates to `HexTargetRules.is_stack_valid_target()`.
-- Removed duplicated local helpers:
+`damage`：
+
+- `effect_range` 内至少要有一个地块包含支持 `take_damage()` 的存活实体。
+- 如果实体有 `HP`，则 `HP` 必须大于 0。
+
+`recover` / `heal`：
+
+- `effect_range` 内至少要有一个地块包含支持 `heal()` 的实体。
+- 如果实体同时有 `HP` 和 `Max_Blood`，则 `HP` 必须小于 `Max_Blood`。
+
+`poison`：
+
+- `effect_range` 内至少要有一个地块包含支持 `add_status()` 的存活实体。
+- 如果实体有 `HP`，则 `HP` 必须大于 0。
+
+`elevation`：
+
+- 任意有效地形地块仍然可作为目标。
+
+`clear`：
+
+- 仍然视为有效，因为清除卡走的是无地图目标的时间轴路径。
+
+未知效果类型：
+
+- 保持有效，避免重构期间阻塞已有原型卡。
+
+## HexMap 的变化
+
+- `_is_stack_valid_target()` 现在会把 `stack_nodes`、`map_data` 和中心坐标传入 `HexTargetRules`。
+- 新增 `_build_hex_target_rules_context(center_stack)`。
+- `_handle_tile_click()` 会在调用 `active_card.play_card(stack)` 前拦截无效卡牌目标。
+- hover 高亮仍然使用 `TileVisualState.HOVER_TARGET_VALID` 和 `HOVER_TARGET_INVALID`，只是规则归属从 HexMap 移到了规则模块。
+
+## MainBoard 的变化
+
+- 新增 `HEX_TARGET_RULES` preload。
+- `is_valid_target()` 改为委托 `HexTargetRules.is_stack_valid_target()`。
+- 删除了重复的本地辅助函数：
   - `_is_empty_build_target()`
   - `_card_has_effect_type()`
-- Added `_build_hex_target_rules_context(center_stack)` so tooltip logic and map hover logic consume the same rule inputs.
+- 新增 `_build_hex_target_rules_context(center_stack)`，让 tooltip 判断和地图 hover 判断读取同一批输入。
 
-## Exported Tuning Variables
+## 可调变量
 
-No new exported variables were added.
+本次没有新增导出变量。
 
-Target validation depends on these existing runtime fields:
+目标校验依赖这些既有运行时字段：
 
 - `card.card_info.effects`
 - `card.get_absolute_effect_range(center_coord)`
 - `hex_map.stack_nodes`
 - `hex_map.map_data`
-- stack `occupant` metadata
-- entity methods/properties:
+- 地块 `occupant` metadata
+- 实体方法和属性：
   - `take_damage`
   - `heal`
   - `add_status`
   - `HP`
   - `Max_Blood`
 
-## Adjustment Notes
+## 调整说明
 
-- To add a new effect type, extend `HexTargetRules.is_stack_valid_target()` first.
-- If a new effect is AOE and needs an entity recipient, add a small `_can_*_entity()` helper and route it through `_range_has_target_for_effect()`.
-- If a new effect targets terrain instead of entities, keep it stack-based like `elevation`.
-- Do not put shader, tooltip text, or timeline placement code in `HexTargetRules`; those remain in HexMap, MainBoard, and DragShapeController.
+- 新增效果类型时，先扩展 `HexTargetRules.is_stack_valid_target()`。
+- 如果新效果是 AOE，并且需要实体接收者，就增加一个小的 `_can_*_entity()` 辅助函数，再通过 `_range_has_target_for_effect()` 接入。
+- 如果新效果作用于地形而不是实体，可以像 `elevation` 一样保持地块目标。
+- 不要把 shader、tooltip 文本或时间轴放置逻辑写进 `HexTargetRules`。这些仍然属于 HexMap、MainBoard 和 DragShapeController。
 
-## Verification
+## 验证方式
 
-Run after this landing:
+本次落地后运行：
 
 ```powershell
 git diff --check
@@ -118,10 +120,11 @@ git diff --check
 & 'D:\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe' --headless --path . --scene res://scene/in_scene/in_scene.tscn --quit-after 1 --no-header
 ```
 
-Manual regression focus:
-- Select `tower` and confirm occupied stacks show invalid target state and cannot enter timeline placement.
-- Select `lighting` and confirm an AOE center is valid only when the range contains a damageable live entity.
-- Select `recover` and confirm fully healed entities do not count as valid recover targets.
-- Select `poison` and confirm empty/dead targets are invalid.
-- Select `earthquake` and confirm terrain stacks remain valid.
-- Select `wind` or `tornado` and confirm the no-map-target timeline clear flow still starts from card selection.
+## 手动回归重点
+
+- 选择 `tower`，确认被占用地块显示无效目标状态，并且不能进入时间轴放置。
+- 选择 `lighting`，确认 AOE 中心只有在范围内包含可伤害存活实体时才有效。
+- 选择 `recover`，确认满血实体不会被当作有效恢复目标。
+- 选择 `poison`，确认空地块和死亡目标无效。
+- 选择 `earthquake`，确认地形地块仍然有效。
+- 选择 `wind` 或 `tornado`，确认无地图目标的时间轴清除流程仍然从选卡开始。
