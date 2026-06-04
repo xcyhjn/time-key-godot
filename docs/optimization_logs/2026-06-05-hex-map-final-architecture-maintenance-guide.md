@@ -443,19 +443,21 @@ RuntimeLandformRegistrar.gd
 - `has_method("Behavior")` 暂时保留，等所有建筑统一契约后再考虑清理。
 - 后续必须回归回合推进、建筑行为、敌人意图和地块变化。
 
-### 第三优先级：SettlementRewardController
+### 已落地第一步：SettlementRewardController
 
-目标：把奖励资格扫描、`reward_info` 构造、used 状态写入从 `HexMap` 中拆出。
+当前状态：奖励资格扫描、`reward_info` 构造、used 状态读取和写入已经拆到 `scene/in_scene/hex_map_modules/rewards/SettlementRewardController.gd`。
 
-预期收益：
+已完成：
 
-- `SettlementRewardPresenter.gd` 继续只管视觉。
-- 奖励状态和奖励 payload 有独立 controller 管理。
+- `SettlementRewardPresenter.gd` 继续只管视觉、tooltip 和 hover 动画。
+- `HexMap` 保留奖励模式切换、信号发出和 presenter 刷新。
+- `settlement_reward_requested` 信号 payload 保持旧 `reward_info` 结构。
 
-注意：
+仍待处理：
 
-- `HexMap` 可以继续发 `settlement_reward_requested` 信号。
-- 打开奖励页面仍应由 `in_scene.gd` 处理。
+- 建筑奖励接口仍是鸭子类型，`has_method()` 暂时保留。
+- 打开奖励页面仍由 `in_scene.gd` 处理。
+- 奖励页内部的 CardManager 查找链后续可以逐步迁移到 `CardManagerLocator.gd`。
 
 ### 第四优先级：MainBoard Tooltip 适配器
 

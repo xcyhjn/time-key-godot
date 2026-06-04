@@ -15,6 +15,7 @@ const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/hex_map_modul
 const HEX_MAP_COLLISION_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapCollisionPresenter.gd")
 const HEX_MAP_VISUAL_STATE_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapVisualStatePresenter.gd")
 const TARGET_AOE_HOVER_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/TargetAoeHoverPresenter.gd")
+const SETTLEMENT_REWARD_CONTROLLER := preload("res://scene/in_scene/hex_map_modules/rewards/SettlementRewardController.gd")
 const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd")
 const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/RuntimeLandformRegistrar.gd")
 const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/ExternalRenderNodeRegistrar.gd")
@@ -340,6 +341,7 @@ var selected_stack: Area2D = null  # 记录当前被点击选中的地块
 var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明湮灭状态的地块
 var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
 var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
+var _settlement_reward_controller := SETTLEMENT_REWARD_CONTROLLER.new()
 var _hex_map_collision_presenter := HEX_MAP_COLLISION_PRESENTER.new()
 var _hex_map_visual_state_presenter := HEX_MAP_VISUAL_STATE_PRESENTER.new()
 var _target_aoe_hover_presenter := TARGET_AOE_HOVER_PRESENTER.new()
@@ -1186,104 +1188,38 @@ func _collect_settlement_reward_stacks() -> void:
 	settlement_reward_stacks.clear()
 	settlement_reward_stack_data.clear()
 	var presenter_config := _build_settlement_reward_presenter_config()
+	var collection_result := _settlement_reward_controller.collect(
+		stack_nodes,
+		map_data,
+		_build_settlement_reward_controller_config()
+	)
 
-	for coord in stack_nodes.keys():
-		var stack = stack_nodes[coord]
-		if not is_instance_valid(stack):
-			continue
+	var next_stacks: Variant = collection_result.get("reward_stacks", [])
+	if next_stacks is Array:
+		for stack in next_stacks:
+			if stack is Area2D:
+				settlement_reward_stacks.append(stack)
 
-		var reward_landform = _get_settlement_reward_landform(stack, coord)
-		if not is_instance_valid(reward_landform):
+	var next_stack_data: Variant = collection_result.get("reward_stack_data", {})
+	if next_stack_data is Dictionary:
+		settlement_reward_stack_data = next_stack_data
+
+	for stack in collection_result.get("stacks_to_clear", []):
+		if is_instance_valid(stack):
 			_settlement_reward_presenter.clear_stack(stack, presenter_config)
-			continue
 
-		var reward_info = _build_settlement_reward_info(stack, coord, reward_landform)
-		settlement_reward_stacks.append(stack)
-		settlement_reward_stack_data[stack] = reward_info
-		_refresh_settlement_reward_stack(stack, presenter_config)
-
-
-## 从 stack / map_data 双通道读取建筑。
-## 这样运行期扩张、重绘、局部刷新后，只要任意一侧还保有引用，都能被收获系统识别。
-func _get_settlement_reward_landform(stack: Area2D, coord: Variant) -> Node:
-	var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
-	if _is_valid_settlement_reward_landform(occupant):
-		return occupant
-
-	if map_data.has(coord):
-		var tile_data = map_data[coord]
-		if typeof(tile_data) == TYPE_DICTIONARY:
-			var landform_inst = tile_data.get("landform")
-			if _is_valid_settlement_reward_landform(landform_inst):
-				return landform_inst
-
-	return null
-
-
-## 判定建筑是否拥有可展示的收获奖励。
-## 具体奖励归属由建筑脚本自己提供，HexMap 只消费统一接口。
-func _is_valid_settlement_reward_landform(candidate: Variant) -> bool:
-	if not is_instance_valid(candidate):
-		return false
-	if not (candidate is landform):
-		return false
-	if candidate.Attitude != candidate.Attitude_Pool.Enemy:
-		return false
-	if not candidate.has_method("has_settlement_reward"):
-		return false
-	if not candidate.has_settlement_reward():
-		return false
-	return _matches_settlement_reward_bind_state(candidate)
-
-
-## 根据导出配置决定奖励入口绑定死亡敌人还是未死亡敌人。
-## 这个判断放在 HexMap，避免 landform 基类把奖励资格和战斗生死状态硬耦合。
-func _matches_settlement_reward_bind_state(candidate: landform) -> bool:
-	match settlement_reward_bind_state:
-		SettlementRewardBindState.DEAD:
-			return candidate.State_Main == candidate.Main_State_Pool.Broken
-		SettlementRewardBindState.ALIVE:
-			return candidate.State_Main != candidate.Main_State_Pool.Broken
-		_:
-			return false
-
-
-## 把建筑实例整理成 Main 场景可直接消费的上下文。
-func _build_settlement_reward_info(stack: Area2D, coord: Variant, reward_landform: Node) -> Dictionary:
-	var reward_type = reward_landform.get_settlement_reward_type() if reward_landform.has_method("get_settlement_reward_type") else ""
-	var reward_label = reward_landform.get_settlement_reward_label() if reward_landform.has_method("get_settlement_reward_label") else reward_type
-	return {
-		"stack": stack,
-		"coord": coord,
-		"landform": reward_landform,
-		"reward_type": reward_type,
-		"reward_label": reward_label,
-	}
+	for stack in settlement_reward_stacks:
+		if is_instance_valid(stack):
+			_refresh_settlement_reward_stack(stack, presenter_config)
 
 
 ## 当前 stack 是否还能被点击进入奖励页。
 func _is_settlement_reward_stack_available(stack: Area2D) -> bool:
-	if current_settlement_reward_mode != SettlementRewardMode.AVAILABLE:
-		return false
-	if not settlement_reward_stack_data.has(stack):
-		return false
-
-	var reward_info = settlement_reward_stack_data[stack]
-	var reward_landform = reward_info.get("landform")
-	return (
-		_is_valid_settlement_reward_landform(reward_landform)
-		and not _is_settlement_reward_used(reward_landform)
+	return _settlement_reward_controller.is_stack_available(
+		stack,
+		settlement_reward_stack_data,
+		_build_settlement_reward_controller_config()
 	)
-
-
-## 判断奖励建筑是否已经消费过局外收获。
-## 这里只读取 landform 暴露的状态字段，不创建默认值，避免把奖励状态写入不支持该机制的建筑。
-func _is_settlement_reward_used(reward_landform: Node) -> bool:
-	if not is_instance_valid(reward_landform):
-		return true
-	if _object_has_property(reward_landform, &"settlement_reward_used"):
-		return bool(reward_landform.get("settlement_reward_used"))
-	return false
 
 
 ## 鼠标进入/离开奖励建筑时，叠加白色悬浮层并轻微放大 tooltip。
@@ -1319,11 +1255,7 @@ func mark_settlement_reward_used(stack: Area2D) -> void:
 		return
 
 	var reward_info = settlement_reward_stack_data[stack]
-	var reward_landform = reward_info.get("landform")
-	if is_instance_valid(reward_landform) and reward_landform.has_method("mark_settlement_reward_used"):
-		reward_landform.mark_settlement_reward_used()
-	elif is_instance_valid(reward_landform) and _object_has_property(reward_landform, &"settlement_reward_used"):
-		reward_landform.set("settlement_reward_used", true)
+	_settlement_reward_controller.mark_used(reward_info)
 
 	var presenter_config := _build_settlement_reward_presenter_config()
 	_settlement_reward_presenter.refresh_stack(stack, reward_info, false, presenter_config)
@@ -1342,6 +1274,17 @@ func _refresh_settlement_reward_stack(stack: Area2D, presenter_config: Dictionar
 
 	var config := presenter_config if not presenter_config.is_empty() else _build_settlement_reward_presenter_config()
 	_settlement_reward_presenter.refresh_stack(stack, reward_info, is_available, config)
+
+
+## 收集局外收获状态 controller 需要的规则配置。
+## Controller 只消费 enum 数值快照，不直接依赖 HexMap 的 enum 名称或成员变量。
+func _build_settlement_reward_controller_config() -> Dictionary:
+	return {
+		"is_mode_available": current_settlement_reward_mode == SettlementRewardMode.AVAILABLE,
+		"bind_state": int(settlement_reward_bind_state),
+		"bind_state_dead": int(SettlementRewardBindState.DEAD),
+		"bind_state_alive": int(SettlementRewardBindState.ALIVE),
+	}
 
 
 ## 收集局外收获地图表现调参。
