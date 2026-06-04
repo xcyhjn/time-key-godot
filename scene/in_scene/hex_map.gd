@@ -7,6 +7,7 @@ var rng := RandomNumberGenerator.new()
 
 const HEX_COORD_RULES := preload("res://scene/in_scene/HexCoordRules.gd")
 const HEX_TERRAIN_RULES := preload("res://scene/in_scene/HexTerrainRules.gd")
+const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/TileDestructionBatchQueue.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -331,8 +332,7 @@ var _has_played_map_intro_reveal: bool = false
 ## 入场动画期间暂存的单体血条生成请求，动画结束后统一交还给 BarManager。
 var _pending_intro_health_bar_requests: Array[Dictionary] = []
 var _pending_intro_health_bar_request_ids: Dictionary = {}
-var _pending_height_limit_destructions: Array[Dictionary] = []
-var _height_limit_destruction_batch_running: bool = false
+var _tile_destruction_queue := TILE_DESTRUCTION_BATCH_QUEUE.new()
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -3010,86 +3010,15 @@ func _remove_destroyed_coord_from_landform_libraries(coord: Vector2i) -> void:
 ## 将超限地块排入两两消失队列，并等待该地块真正完成销毁。
 ## 核心逻辑: 高度变化先在 animate_elevation_change() 中播完；这里只负责把销毁节奏统一交给批处理。
 func _queue_tile_destruction_and_wait(stack: Area2D, coord: Vector2i) -> void:
-	if not is_instance_valid(stack):
-		return
-
-	stack.set_meta("is_animating", false)
-	if not stack.has_meta("queued_for_height_limit_destruction"):
-		stack.set_meta("queued_for_height_limit_destruction", true)
-		_pending_height_limit_destructions.append({"stack": stack, "coord": coord})
-
-	if not _height_limit_destruction_batch_running:
-		_run_height_limit_destruction_batches()
-
-	while is_instance_valid(stack) and stack.has_meta("queued_for_height_limit_destruction"):
-		await get_tree().process_frame
-
-
-## 按批次处理超限销毁。默认每批两个地块，参数在“地块消失动画”分组里导出。
-func _run_height_limit_destruction_batches() -> void:
-	if _height_limit_destruction_batch_running:
-		return
-
-	_height_limit_destruction_batch_running = true
-	if tile_destruction_batch_collect_delay > 0.0:
-		await get_tree().create_timer(tile_destruction_batch_collect_delay).timeout
-	else:
-		await get_tree().process_frame
-	while not _pending_height_limit_destructions.is_empty():
-		var batch: Array[Dictionary] = []
-		var batch_size := maxi(1, tile_destruction_batch_size)
-		while batch.size() < batch_size and not _pending_height_limit_destructions.is_empty():
-			var entry: Dictionary = _pending_height_limit_destructions.pop_front()
-			var entry_stack: Variant = entry.get("stack", null)
-			if is_instance_valid(entry_stack):
-				batch.append(entry)
-
-		if batch.is_empty():
-			continue
-
-		for entry in batch:
-			_perform_queued_tile_destruction(entry)
-
-		await _wait_for_height_limit_destruction_batch(batch)
-		if tile_destruction_batch_interval > 0.0 and not _pending_height_limit_destructions.is_empty():
-			await get_tree().create_timer(tile_destruction_batch_interval).timeout
-
-	_height_limit_destruction_batch_running = false
-
-
-func _perform_queued_tile_destruction(entry: Dictionary) -> void:
-	var stack_value: Variant = entry.get("stack", null)
-	var coord: Vector2i = entry.get("coord", Vector2i.ZERO)
-	if not is_instance_valid(stack_value):
-		return
-
-	if not (stack_value is Area2D):
-		return
-
-	var stack = stack_value
-	await _perform_tile_destruction(stack, coord)
-	if is_instance_valid(stack):
-		stack.remove_meta("queued_for_height_limit_destruction")
-
-
-func _wait_for_height_limit_destruction_batch(batch: Array[Dictionary]) -> void:
-	var has_pending := true
-	while has_pending:
-		has_pending = false
-		for entry in batch:
-			var stack_value: Variant = entry.get("stack", null)
-			if not is_instance_valid(stack_value):
-				continue
-
-			if not (stack_value is Area2D):
-				continue
-
-			var stack = stack_value
-			if is_instance_valid(stack) and stack.has_meta("queued_for_height_limit_destruction"):
-				has_pending = true
-				break
-		if has_pending:
-			await get_tree().process_frame
+	await _tile_destruction_queue.queue_and_wait(
+		stack,
+		coord,
+		get_tree(),
+		tile_destruction_batch_size,
+		tile_destruction_batch_collect_delay,
+		tile_destruction_batch_interval,
+		Callable(self, "_perform_tile_destruction")
+	)
 
 # ==========================================
 # ★ 状态机 Shader 驱动引擎
