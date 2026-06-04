@@ -24,6 +24,7 @@ const IN_SCENE_RETURN_PAYLOAD_BUILDER := preload("res://scene/in_scene/in_scene_
 const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd")
 const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
 const IN_SCENE_SCENE_SWITCH_LOADER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneSceneSwitchLoader.gd")
+const IN_SCENE_SCENE_SWITCH_EXECUTOR := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneSceneSwitchExecutor.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -184,6 +185,7 @@ var _return_payload_builder: RefCounted = IN_SCENE_RETURN_PAYLOAD_BUILDER.new()
 var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new()
 var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
 var _scene_switch_loader: RefCounted = IN_SCENE_SCENE_SWITCH_LOADER.new()
+var _scene_switch_executor: RefCounted = IN_SCENE_SCENE_SWITCH_EXECUTOR.new()
 
 
 func _ready() -> void:
@@ -981,19 +983,14 @@ func _switch_scene_with_data(path: String, payload: Variant = null) -> void:
 		_recover_dim_after_failed_switch()
 		return
 
-	if SceneLog:
-		SceneLog.scene_event("InSceneMain", "switch scene start", {"path": path, "payload": payload})
-	var next_scene = packed_scene.instantiate()
-	_apply_payload_to_new_scene_before_tree(next_scene, payload)
-
-	var old_scene := get_tree().current_scene
-	get_tree().root.add_child(next_scene)
-	get_tree().current_scene = next_scene
-	if SceneLog:
-		SceneLog.scene_event("InSceneMain", "switch scene success", {"path": path})
-
-	if is_instance_valid(old_scene):
-		old_scene.queue_free()
+	_scene_switch_executor.switch_to_scene({
+		"tree": get_tree(),
+		"packed_scene": packed_scene,
+		"path": path,
+		"payload": payload,
+		"payload_bridge": _payload_bridge,
+		"scene_log": SceneLog,
+	})
 
 
 ## 用 ResourceLoader 加载 PackedScene，避免导出版 res:// 场景被 remap 后 FileAccess.file_exists() 误判。

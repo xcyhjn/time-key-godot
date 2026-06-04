@@ -1102,3 +1102,81 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `InSceneSceneSwitchExecutor.gd`：拆 `_switch_scene_with_data()` 的实例化、payload 注入、挂树、`current_scene` 替换和旧场景释放。payload 与 loader 已经独立，风险比之前低。
 2. 或 `SettlementRewardConsumer.gd`：拆 `_consume_settlement_reward_context()`，只负责把已确认使用的奖励建筑写回 HexMap；不要同时拆胜利/失败触发。
 3. 暂缓 `_on_defeat_triggered()` 和 `_on_combat_victory_triggered()`，这两个函数仍牵动声音、UI、存档和结算状态。
+
+## in_scene.gd 第九批切场执行器拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆已经加载好 `PackedScene` 之后的真实切场执行。
+前置的资源加载、失败恢复和 payload 解析已经在前面批次独立，本批不再扩大到 `_return_to_out_scene()`、胜负触发或奖励消费。
+
+目标函数范围：
+
+```text
+_switch_scene_with_data(path, payload)
+```
+
+当前触碰的外部节点和接口：
+
+```text
+PackedScene.instantiate()
+payload_bridge.apply_to_new_scene_before_tree(next_scene, payload)
+get_tree().root.add_child(next_scene)
+get_tree().current_scene = next_scene
+old_scene.queue_free()
+SceneLog.scene_event()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/scene_flow/InSceneSceneSwitchExecutor.gd
+```
+
+模块边界：
+
+- `InSceneSceneSwitchExecutor.gd` 只执行已经加载好的场景切换。
+- 它不加载 `PackedScene`、不恢复黑幕、不解析 payload。
+- 它接收 `payload_bridge` 来完成新场景入树前的 payload 注入，避免重复知道 `apply_external_event()` 协议细节。
+
+保留的旧公共入口：
+
+```text
+_switch_scene_with_data(path, payload)
+```
+
+`in_scene.gd` 仍保留这个入口，负责先调用 loader；如果加载失败，仍按旧逻辑恢复黑幕并返回。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+新场景实例化、payload 注入、root 挂载、current_scene 替换、旧场景释放已由 InSceneSceneSwitchExecutor 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批建议回到结算奖励消费或胜负流程，但仍保持单一风险面：
+
+1. `SettlementRewardConsumer.gd`：拆 `_consume_settlement_reward_context()`，只负责把已确认使用的奖励建筑写回 HexMap。
+2. 或 `CombatResultFlowController.gd`：先拆 `_on_combat_victory_triggered()` 中结算状态切换、隐藏战斗 UI、准备牌堆、清时间轴、显示结算按钮这一组。
+3. 继续暂缓 `_on_defeat_triggered()`，它还牵动声音、GameOver UI、存档删除，适合最后单独拆。
