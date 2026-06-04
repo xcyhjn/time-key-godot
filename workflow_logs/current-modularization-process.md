@@ -1027,3 +1027,78 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `SettlementRewardExitController.gd`：拆 `_on_external_scene_exit_pressed()` 中读取 meta、判断是否消费、隐藏/释放奖励页、清理 active context 的部分；`_consume_settlement_reward_context()` 仍先留在主脚本。
 2. `InSceneSceneSwitchExecutor.gd`：在 payload、loader 都拆完后，可以把 `_switch_scene_with_data()` 的实例化、挂树、`current_scene` 替换和旧场景释放整体搬出，但这批风险更高，建议单独做。
 3. 暂缓胜负触发函数 `_on_combat_victory_triggered()` 和 `_on_defeat_triggered()`，等奖励退出和切场 executor 稳定后再处理。
+
+## in_scene.gd 第八批结算奖励页退出拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆结算奖励页退出时的状态读取和页面关闭。
+刻意不拆 `_consume_settlement_reward_context()`，也不改 HexMap 的奖励状态写回。
+
+目标函数范围：
+
+```text
+_on_external_scene_exit_pressed(scene_instance)
+```
+
+当前读写的成员变量：
+
+```text
+active_settlement_reward_context
+```
+
+当前触碰的外部节点和接口：
+
+```text
+scene_instance.get_meta("settlement_reward_context")
+scene_instance.get_meta("settlement_reward_committed")
+scene_instance.get_meta("settlement_reward_consume_on_exit")
+scene_instance.hide()
+scene_instance.queue_free()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/settlement/SettlementRewardExitController.gd
+```
+
+模块边界：
+
+- `SettlementRewardExitController.gd` 只读取奖励页 meta，判断是否需要消费奖励建筑，并关闭奖励页实例。
+- 它不调用 `_consume_settlement_reward_context()`，不恢复主 UI，也不改变战斗阶段。
+- `in_scene.gd` 继续负责根据返回结果决定是否通知 HexMap、恢复局外按钮和清理 active context。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+奖励页退出 meta 读取、should_consume_settlement_reward 判断、奖励页 hide/queue_free 已由 SettlementRewardExitController 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批建议二选一：
+
+1. `InSceneSceneSwitchExecutor.gd`：拆 `_switch_scene_with_data()` 的实例化、payload 注入、挂树、`current_scene` 替换和旧场景释放。payload 与 loader 已经独立，风险比之前低。
+2. 或 `SettlementRewardConsumer.gd`：拆 `_consume_settlement_reward_context()`，只负责把已确认使用的奖励建筑写回 HexMap；不要同时拆胜利/失败触发。
+3. 暂缓 `_on_defeat_triggered()` 和 `_on_combat_victory_triggered()`，这两个函数仍牵动声音、UI、存档和结算状态。

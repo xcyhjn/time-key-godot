@@ -19,6 +19,7 @@ const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scen
 const SETTLEMENT_DECK_SNAPSHOT_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckSnapshotService.gd")
 const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd")
 const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardSceneController.gd")
+const SETTLEMENT_REWARD_EXIT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardExitController.gd")
 const IN_SCENE_RETURN_PAYLOAD_BUILDER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd")
 const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd")
 const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
@@ -178,6 +179,7 @@ var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.ne
 var _settlement_deck_snapshot_service: RefCounted = SETTLEMENT_DECK_SNAPSHOT_SERVICE.new()
 var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVICE.new()
 var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CONTROLLER.new()
+var _settlement_reward_exit_controller: RefCounted = SETTLEMENT_REWARD_EXIT_CONTROLLER.new()
 var _return_payload_builder: RefCounted = IN_SCENE_RETURN_PAYLOAD_BUILDER.new()
 var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new()
 var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
@@ -1258,31 +1260,15 @@ func restore_all_ui():
 
 ## 外部场景退出按钮回调
 func _on_external_scene_exit_pressed(scene_instance: Node):
-	var should_consume_settlement_reward := false
-	var reward_context: Dictionary = {}
-	if is_instance_valid(scene_instance) and scene_instance.has_meta("settlement_reward_context"):
-		var context_variant = scene_instance.get_meta("settlement_reward_context")
-		if typeof(context_variant) == TYPE_DICTIONARY:
-			reward_context = context_variant
-
-		var committed = bool(scene_instance.get_meta("settlement_reward_committed", false))
-		var consume_on_exit = bool(scene_instance.get_meta("settlement_reward_consume_on_exit", false))
-		should_consume_settlement_reward = committed or consume_on_exit
-	
-	# 0. 先隐藏场景实例，防止覆盖按钮
-	if is_instance_valid(scene_instance):
-		scene_instance.hide()
+	var exit_result: Dictionary = _settlement_reward_exit_controller.close_reward_scene(scene_instance)
 
 	# 1. 如果奖励页确认完成，则通知 HexMap 更新建筑状态。
-	if should_consume_settlement_reward:
+	if bool(exit_result.get("should_consume_settlement_reward", false)):
+		var reward_context: Dictionary = exit_result.get("reward_context", {})
 		_consume_settlement_reward_context(reward_context)
 
 	# 1. 恢复四个局外按钮
 	restore_ui_after_external_scene()
-
-	# 2. 移除场景实例
-	if is_instance_valid(scene_instance):
-		scene_instance.queue_free()
 
 	active_settlement_reward_context.clear()
 	
