@@ -41,3 +41,4 @@ logs/
 log/game.log
 log/game.log
 /log
+.claude/

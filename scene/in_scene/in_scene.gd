@@ -193,19 +193,8 @@ func _ready() -> void:
 		#push_warning("project.gd: reward_manager 或 manager_instance 无效，无法设置 deck_manager")
 
 	if is_instance_valid(timeline_manager):
-		if timeline_manager.has_signal("action_hovered_changed"):
-			_connect_signal_once(timeline_manager.action_hovered_changed, _on_timeline_action_hovered)
-			if timeline_manager.has_signal("action_executed") and not timeline_manager.action_executed.is_connected(_on_timeline_action_executed):
-				timeline_manager.action_executed.connect(_on_timeline_action_executed)
-		else:
-			push_warning("project.gd: timeline_manager 没有 action_hovered_changed 信号！")
-	else:
-		push_warning("project.gd: timeline_manager 无效！")
-		# ★ 新增：将结算信号直接转交给 EffectProcessor
-		var effect_processor = $TimelineSystem/EffectProcessor
-		if is_instance_valid(effect_processor):
-			if not timeline_manager.action_executed.is_connected(effect_processor.execute_action):
-				timeline_manager.action_executed.connect(effect_processor.execute_action)
+		_connect_signal_once(timeline_manager.action_hovered_changed, _on_timeline_action_hovered)
+		_connect_signal_once(timeline_manager.action_executed, _on_timeline_action_executed)
 	
 	# 局内开场不再提前生成一次敌方意图。
 	# 等地图与时间轴完成入场后，统一进入第一回合，再抽牌并生成敌方意图。
@@ -230,12 +219,10 @@ func _ready() -> void:
 	# 3. 监听全局失败信号
 	if Signal_Bus:
 		_connect_signal_once(Signal_Bus.defeat_triggered, _on_defeat_triggered)
-		if not Signal_Bus.combat_victory_triggered.is_connected(_on_combat_victory_triggered):
-			_connect_signal_once(Signal_Bus.combat_victory_triggered, _on_combat_victory_triggered)
+		_connect_signal_once(Signal_Bus.combat_victory_triggered, _on_combat_victory_triggered)
 
-	if is_instance_valid(hex_map) and hex_map.has_signal("settlement_reward_requested"):
-		if not hex_map.settlement_reward_requested.is_connected(_on_settlement_reward_requested):
-			hex_map.settlement_reward_requested.connect(_on_settlement_reward_requested)
+	if is_instance_valid(hex_map):
+		_connect_signal_once(hex_map.settlement_reward_requested, _on_settlement_reward_requested)
 
 	# 局外传入的房间类型 / seed 必须继续转交给 HexMap。
 	# 否则 HexMap 会一直用默认空 payload 建图，后续关卡更容易出现初始化错位。
@@ -244,9 +231,7 @@ func _ready() -> void:
 	
 
 func _connect_global_clock_progress_signal() -> void:
-	if GlobalClock and GlobalClock.has_signal("progress_changed"):
-		if not GlobalClock.progress_changed.is_connected(_on_global_clock_progress_changed):
-			GlobalClock.progress_changed.connect(_on_global_clock_progress_changed)
+	_connect_signal_once(GlobalClock.progress_changed, _on_global_clock_progress_changed)
 
 
 func _connect_signal_once(source_signal: Signal, callback: Callable) -> void:
@@ -262,15 +247,7 @@ func _on_global_clock_progress_changed(era_value: int, _phase_value: int) -> voi
 ## 从 GlobalClock 拉取当前时代值。
 ## UI 显示和回合推进都以 GlobalClock 为唯一来源。
 func _pull_era_from_global() -> void:
-	if GlobalClock:
-		if GlobalClock.has_method("get_current_era"):
-			current_era_value = int(GlobalClock.get_current_era())
-		elif _object_has_property(GlobalClock, &"era"):
-			current_era_value = int(GlobalClock.get("era"))
-	else:
-		current_era_value = 1
-
-	current_era_value = max(current_era_value, 1)
+	current_era_value = max(int(GlobalClock.get_current_era()), 1)
 	_push_era_to_global()
 
 
@@ -278,20 +255,8 @@ func _pull_era_from_global() -> void:
 ## 这是“局内战斗进度”与“局外全局进度”之间的同步桥。
 func _push_era_to_global() -> void:
 	current_era_value = max(current_era_value, 1)
-
-	if GlobalClock:
-		if GlobalClock.has_method("set_current_era"):
-			GlobalClock.set_current_era(current_era_value)
-		elif _object_has_property(GlobalClock, &"era"):
-			GlobalClock.set("era", current_era_value)
-
-	if MapState and MapState.has_method("set_saved_era_progress"):
-		var phase_value := 1
-		if GlobalClock and GlobalClock.has_method("get_current_phase"):
-			phase_value = int(GlobalClock.get_current_phase())
-		elif GlobalClock and _object_has_property(GlobalClock, &"phase"):
-			phase_value = int(GlobalClock.get("phase"))
-		MapState.set_saved_era_progress(current_era_value, phase_value)
+	GlobalClock.set_current_era(current_era_value)
+	MapState.set_saved_era_progress(current_era_value, int(GlobalClock.get_current_phase()))
 
 
 ## 初始化局内顶部 CartoonUI。
@@ -306,13 +271,12 @@ func _setup_combat_cartoon_ui() -> void:
 
 	_refresh_combat_cartoon_ui_progress()
 
-	if combat_cartoon_ui.has_method("set_character_index") and MapState:
+	if MapState:
 		combat_cartoon_ui.set_character_index(int(MapState.chosen_char_index))
 
-	if combat_cartoon_ui.has_method("apply_combat_layout"):
-		combat_cartoon_ui.apply_combat_layout()
+	combat_cartoon_ui.apply_combat_layout()
 
-	if is_instance_valid(timeline_ui) and timeline_ui.has_method("set_top_reserved_space") and combat_cartoon_ui.has_method("get_reserved_height"):
+	if is_instance_valid(timeline_ui):
 		timeline_ui.set_top_reserved_space(float(combat_cartoon_ui.get_reserved_height()))
 
 
@@ -320,43 +284,10 @@ func _setup_combat_cartoon_ui() -> void:
 func _refresh_combat_cartoon_ui_progress() -> void:
 	if not is_instance_valid(combat_cartoon_ui):
 		return
-	if not combat_cartoon_ui.has_method("set_progress_labels"):
-		return
 
-	var era_value := current_era_value
-	if GlobalClock and GlobalClock.has_method("get_current_era"):
-		era_value = int(GlobalClock.get_current_era())
-	elif GlobalClock and _object_has_property(GlobalClock, &"era"):
-		era_value = int(GlobalClock.get("era"))
-	current_era_value = max(era_value, 1)
-
-	var phase_value := 1
-	if GlobalClock and GlobalClock.has_method("get_current_phase"):
-		phase_value = int(GlobalClock.get_current_phase())
-	elif GlobalClock and _object_has_property(GlobalClock, &"phase"):
-		phase_value = int(GlobalClock.get("phase"))
-
+	current_era_value = max(int(GlobalClock.get_current_era()), 1)
+	var phase_value := int(GlobalClock.get_current_phase())
 	combat_cartoon_ui.set_progress_labels(current_era_value, phase_value)
-
-
-## 安全判断对象是否声明了当前场景会读取的全局进度属性。
-## 注意：这里不要再调用 get_property_list()。
-## GlobalClock 是一个带 UI/Shader 子节点的自动加载场景，Godot 在枚举完整属性列表时可能会顺带触碰
-## ShaderMaterial 的内部版本数据，进而触发 “Parameter version is null” 的渲染层报错。
-## 局内时代同步只需要 era / phase 两个字段，所以改成白名单判断，既更轻，也不会扫描无关资源。
-func _object_has_property(target: Object, property_name: StringName) -> bool:
-	if target == null:
-		return false
-	if property_name != &"era" and property_name != &"phase":
-		return false
-	if target == GlobalClock or target == Global:
-		return true
-
-	var target_script = target.get_script()
-	if target_script == null:
-		return false
-	var script_path = target_script.resource_path
-	return script_path == "res://scene/global/global_clock.gd" or script_path == "res://scene/global/global.gd"
 
 
 ## 安排局内自动进入第一回合。
@@ -364,8 +295,6 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 func _schedule_auto_first_turn() -> void:
 	if (
 		is_instance_valid(hex_map)
-		and hex_map.has_signal("map_intro_reveal_finished")
-		and hex_map.has_method("is_map_intro_reveal_active")
 		and hex_map.is_map_intro_reveal_active()
 	):
 		if not hex_map.map_intro_reveal_finished.is_connected(_start_first_turn_after_scene_ready):
@@ -460,22 +389,15 @@ func _refresh_enemy_intents_on_timeline() -> void:
 	if not is_instance_valid(timeline_manager):
 		return
 
-	# 清除任何可能的残留占用
-	if timeline_manager.has_method("clear_grid"):
-		timeline_manager.clear_grid()
+	timeline_manager.clear_grid()
 	
 	var all_enemies = get_tree().get_nodes_in_group("Enemies")
 	
 	if all_enemies.is_empty():
 		return
 	
-	if timeline_manager.has_method("generate_enemy_intents"):
-		timeline_manager.generate_enemy_intents(all_enemies)
-		# 调试：打印网格状态
-		if timeline_manager.has_method("debug_print_grid"):
-			timeline_manager.debug_print_grid()
-	else:
-		pass
+	timeline_manager.generate_enemy_intents(all_enemies)
+	timeline_manager.debug_print_grid()
 
 
 func _on_timeline_action_hovered(action: TimelineAction, is_hovering: bool):
@@ -748,7 +670,7 @@ func _start_turn(advance_phase: bool = true) -> void:
 
 	# 回合开始先结算建筑状态。
 	# HexMap 会先创建状态快照，再逐个处理，避免中毒扩散在同一回合无限连锁。
-	if is_instance_valid(hex_map) and hex_map.has_method("process_turn_start_statuses"):
+	if is_instance_valid(hex_map):
 		hex_map.process_turn_start_statuses()
 
 	# 首回合进入局内时不额外推进阶段；后续回合开始才推进全局阶段。
@@ -761,7 +683,7 @@ func _start_turn(advance_phase: bool = true) -> void:
 
 	_refresh_enemy_intents_on_timeline()
 
-	if Signal_Bus and Signal_Bus.has_method("emit_turn_started"):
+	if Signal_Bus:
 		Signal_Bus.emit_turn_started(current_era_value)
 
 	# 恢复 UI
@@ -769,38 +691,9 @@ func _start_turn(advance_phase: bool = true) -> void:
 
 
 func _advance_global_phase() -> void:
-	if GlobalClock:
-		if GlobalClock.has_method("advance_phase"):
-			GlobalClock.advance_phase()
-		else:
-			var next_phase := 1
-			if GlobalClock.has_method("get_current_phase"):
-				next_phase = int(GlobalClock.get_current_phase()) + 1
-			elif _object_has_property(GlobalClock, &"phase"):
-				next_phase = int(GlobalClock.get("phase")) + 1
-
-			if GlobalClock.has_method("set_current_phase"):
-				GlobalClock.set_current_phase(next_phase)
-			elif _object_has_property(GlobalClock, &"phase"):
-				GlobalClock.set("phase", next_phase)
-
-			if GlobalClock.has_method("time_detect"):
-				GlobalClock.time_detect()
-
-		if GlobalClock.has_method("get_current_era"):
-			current_era_value = int(GlobalClock.get_current_era())
-		elif _object_has_property(GlobalClock, &"era"):
-			current_era_value = int(GlobalClock.get("era"))
-	else:
-		current_era_value = max(current_era_value, 1)
-
-	if MapState and MapState.has_method("set_saved_era_progress"):
-		var phase_value := 1
-		if GlobalClock and GlobalClock.has_method("get_current_phase"):
-			phase_value = int(GlobalClock.get_current_phase())
-		elif GlobalClock and _object_has_property(GlobalClock, &"phase"):
-			phase_value = int(GlobalClock.get("phase"))
-		MapState.set_saved_era_progress(current_era_value, phase_value)
+	GlobalClock.advance_phase()
+	current_era_value = max(int(GlobalClock.get_current_era()), 1)
+	MapState.set_saved_era_progress(current_era_value, int(GlobalClock.get_current_phase()))
 
 
 # ==========================================
@@ -896,7 +789,7 @@ func _input(event):
 		and not event.echo
 		and event.keycode == KEY_9
 	):
-		if GlobalTimecoin and GlobalTimecoin.has_method("add_timecoins"):
+		if GlobalTimecoin:
 			GlobalTimecoin.add_timecoins(keyboard_timecoin_debug_amount)
 			get_viewport().set_input_as_handled()
 			return
@@ -1145,7 +1038,7 @@ func _on_end_combat_pressed():
 		return
 
 	end_combat_button.disabled = true
-	if Signal_Bus and Signal_Bus.has_method("emit_combat_ended"):
+	if Signal_Bus:
 		Signal_Bus.emit_combat_ended()
 
 	await _return_to_out_scene()
@@ -1163,7 +1056,7 @@ func _return_to_out_scene() -> void:
 	var return_payload := _build_combat_return_payload()
 	if SceneLog:
 		SceneLog.scene_event("InSceneMain", "return to out scene", return_payload)
-	if MapState and MapState.has_method("set_pending_room_resolution"):
+	if MapState:
 		MapState.set_pending_room_resolution(return_payload)
 
 	disable_player_inputs()
@@ -1193,7 +1086,7 @@ func _return_to_out_scene() -> void:
 ## 都有足够的上下文字段可用。
 func _build_combat_return_payload() -> Dictionary:
 	var room_context: Dictionary = {}
-	if MapState and MapState.has_method("get_active_room_context"):
+	if MapState:
 		room_context = MapState.get_active_room_context()
 
 	return {
@@ -1203,7 +1096,7 @@ func _build_combat_return_payload() -> Dictionary:
 		"battle_tag": incoming_battle_tag,
 		"map_seed": incoming_map_seed,
 		"era": current_era_value,
-		"timecoins": GlobalTimecoin.get_timecoins() if GlobalTimecoin and GlobalTimecoin.has_method("get_timecoins") else 0,
+		"timecoins": GlobalTimecoin.get_timecoins() if GlobalTimecoin else 0,
 		"deck_snapshot": GlobalDB.player_deck.duplicate() if GlobalDB else [],
 		"deck_size": GlobalDB.player_deck.size() if GlobalDB else 0,
 		"room_context": room_context,
@@ -1364,11 +1257,9 @@ func proceed_to_next_stage():
 	if is_instance_valid(end_turn_button): end_turn_button.show()
 	if is_instance_valid(timeline_ui): timeline_ui.show()
 	if is_instance_valid(player_hand): player_hand.show()
-	if is_instance_valid(hex_map) and hex_map.has_method("set_tiles_interactive"):
+	if is_instance_valid(hex_map):
 		hex_map.set_tiles_interactive(true)
-	if is_instance_valid(hex_map) and hex_map.has_method("set_visuals_locked"):
 		hex_map.set_visuals_locked(false)
-	if is_instance_valid(hex_map) and hex_map.has_method("exit_settlement_reward_mode"):
 		hex_map.exit_settlement_reward_mode()
 	_hide_settlement_buttons()
 	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
@@ -1423,11 +1314,6 @@ func _apply_incoming_payload_to_hex_map() -> void:
 	var payload_text := str(incoming_external_payload).strip_edges()
 	if payload_text == "":
 		return
-	if not hex_map.has_method("apply_external_event"):
-		if SceneLog:
-			SceneLog.error_event("InSceneMain", "hex_map has no apply_external_event")
-		return
-
 	if SceneLog:
 		SceneLog.scene_event("InSceneMain", "forward payload to hex_map", {"payload": payload_text})
 	hex_map.apply_external_event(payload_text)
@@ -1831,7 +1717,7 @@ func _on_external_scene_exit_pressed(scene_instance: Node):
 func _consume_settlement_reward_context(reward_context: Dictionary) -> void:
 	if reward_context.is_empty():
 		return
-	if not is_instance_valid(hex_map) or not hex_map.has_method("mark_settlement_reward_used"):
+	if not is_instance_valid(hex_map):
 		return
 
 	var reward_stack = reward_context.get("stack")
@@ -1868,7 +1754,7 @@ func _on_lose_button_pressed():
 	Signal_Bus.emit_defeat_triggered()
 	
 func _on_combat_victory_debug_button_down() -> void:
-	if Signal_Bus and Signal_Bus.has_method("emit_combat_victory_triggered"):
+	if Signal_Bus:
 		Signal_Bus.emit_combat_victory_triggered()
 
 func _on_win_button_button_down() -> void:
@@ -1943,7 +1829,7 @@ func _snapshot_current_deck_for_settlement() -> void:
 	if not GlobalDB:
 		return
 
-	if MapState and MapState.has_method("set_saved_deck"):
+	if MapState:
 		MapState.set_saved_deck(GlobalDB.player_deck)
 
 
@@ -2108,18 +1994,14 @@ func _on_combat_victory_triggered() -> void:
 	_hide_combat_phase_ui_for_settlement()
 	_prepare_deck_button_for_settlement(true)
 
-	if is_instance_valid(timeline_manager) and timeline_manager.has_method("clear_grid"):
+	if is_instance_valid(timeline_manager):
 		timeline_manager.clear_grid()
 
 	if is_instance_valid(hex_map):
-		if hex_map.has_method("set_tiles_interactive"):
-			hex_map.set_tiles_interactive(false)
-		if hex_map.has_method("set_visuals_locked"):
-			hex_map.set_visuals_locked(true)
-		if hex_map.has_method("update_all_stack_conditional_effects"):
-			hex_map.update_all_stack_conditional_effects()
-		if hex_map.has_method("enter_settlement_reward_mode"):
-			hex_map.enter_settlement_reward_mode(self)
+		hex_map.set_tiles_interactive(false)
+		hex_map.set_visuals_locked(true)
+		hex_map.update_all_stack_conditional_effects()
+		hex_map.enter_settlement_reward_mode(self)
 
 	if is_instance_valid(total_enemy_health_bar):
 		total_enemy_health_bar.hide()

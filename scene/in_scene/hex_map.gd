@@ -634,49 +634,6 @@ func get_terrain_from_height(h: int) -> TerrainType:
 # 2. 配额抽取逻辑
 # ==========================================
 
-#用_place_from_pool代替
-
-## 假设你在开头定义了 var Max_Start_landform = 10 等变量
-#func pick_landform():
-	#var landform_in
-	#var coord
-	#var number = 0
-	#
-	## 阶段 1：先处理特殊属性池 (确保 property_pool 定义过，这里假定它是一个数组)
-	## 你的代码里写了 property_pool，如果不报错说明你定义了。
-	#if "property_pool" in self and typeof(self.property_pool) == TYPE_ARRAY and not self.property_pool.is_empty():
-		#var max_prop = randi_range(1, max(1, Max_Start_landform - 1))
-		#for i in range(max_prop):
-			#landform_in = self.property_pool.pick_random()
-			#coord = landform_pick(landform_in)
-			#if coord != Vector2i(-100, -100):
-				#var inst = landform_in.new(coord, self)
-				#map_data[coord]["landform"] = inst
-				#map_data[coord]["landform_type"] = inst.landform_name # 【修复 3】
-				#number += 1
-#
-	## 阶段 2：保证基础池里的每个地貌至少生成一个（保底机制）
-	#for landform_script in landform_pool:
-		#coord = landform_pick(landform_script)
-		#if coord == Vector2i(-100, -100):
-			#continue
-			#
-		#var inst = landform_script.new(coord, self)
-		#map_data[coord]["landform"] = inst
-		#map_data[coord]["landform_type"] = inst.landform_name # 【修复 3】
-		#number += 1
-#
-	## 阶段 3：用随机地貌填满剩下的配额
-	#var remain = Max_Start_landform - number
-	#if remain > 0 and landform_pool.size() > 0:
-		#for i in range(remain):
-			#landform_in = landform_pool.pick_random()
-			#coord = landform_pick(landform_in)
-			#if coord == Vector2i(-100, -100):
-				#continue
-			#var inst = landform_in.new(coord, self)
-			#map_data[coord]["landform"] = inst
-			#map_data[coord]["landform_type"] = inst.landform_name # 【修复 3】
 # ==========================================
 # 1. 核心分配逻辑 (严格遵循 35% 密度限制)
 # ==========================================
@@ -684,9 +641,8 @@ func _assign_terrains_and_enemies():
 	rng.randomize()
 	
 	# 【修复1】：清空上一局残留的高度池，并增加安全性校验
-	if GlobalClock and _object_has_property(GlobalClock, &"tile_h_pool"):
-		for h_key in GlobalClock.tile_h_pool.keys():
-			GlobalClock.tile_h_pool[h_key].clear()
+	for h_key in GlobalClock.tile_h_pool.keys():
+		GlobalClock.tile_h_pool[h_key].clear()
 
 	var coords_list = map_data.keys()
 	coords_list.shuffle()  # 随机打乱顺序，保证生成位置随机
@@ -710,10 +666,9 @@ func _assign_terrains_and_enemies():
 			data["terrain_type"] = terrain_type
 			
 		# 填入全局高度池（防报错：如果键不存在则动态创建）
-		if GlobalClock and _object_has_property(GlobalClock, &"tile_h_pool"):
-			if not GlobalClock.tile_h_pool.has(height):
-				GlobalClock.tile_h_pool[height] = []
-			GlobalClock.tile_h_pool[height].append(coord)
+		if not GlobalClock.tile_h_pool.has(height):
+			GlobalClock.tile_h_pool[height] = []
+		GlobalClock.tile_h_pool[height].append(coord)
 
 	# 【核心机制】：应用 max_landform_ratio (0.35) 全局密度上限
 	var absolute_max_landforms = int(valid_tile_count * max_landform_ratio)
@@ -787,7 +742,7 @@ func landform_pick(landform_script: Script) -> Vector2i:
 		var valid_heights = buffer.landform_rules["require_height"]
 		# 从允许的高度中随机挑一个高度层
 		var target_h = valid_heights[randi() % valid_heights.size()]
-		if GlobalClock and _object_has_property(GlobalClock, &"tile_h_pool") and GlobalClock.tile_h_pool.has(target_h):
+		if GlobalClock.tile_h_pool.has(target_h):
 			buffer_pool = GlobalClock.tile_h_pool[target_h].duplicate()
 	else:
 		# 没有高度限制，全图可放
@@ -2868,10 +2823,9 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 	# --- 统一数据更新 ---
 	stack.set_meta("height", visual_height)
 	map_data[coord]["height"] = visual_height
-	if GlobalClock and "tile_h_pool" in GlobalClock:
-		if GlobalClock.tile_h_pool.has(old_height): GlobalClock.tile_h_pool[old_height].erase(coord)
-		if not GlobalClock.tile_h_pool.has(visual_height): GlobalClock.tile_h_pool[visual_height] = []
-		GlobalClock.tile_h_pool[visual_height].append(coord)
+	if GlobalClock.tile_h_pool.has(old_height): GlobalClock.tile_h_pool[old_height].erase(coord)
+	if not GlobalClock.tile_h_pool.has(visual_height): GlobalClock.tile_h_pool[visual_height] = []
+	GlobalClock.tile_h_pool[visual_height].append(coord)
 
 	var sprites = stack.get_meta("sprites") as Array
 	var terrain_type = map_data[coord]["terrain_type"]
@@ -3059,8 +3013,7 @@ func process_turn_start_statuses() -> void:
 		if is_instance_valid(entity) and entity.has_method("process_turn_start_statuses"):
 			entity.process_turn_start_statuses(entry.get("snapshot", {}), get_tree())
 
-	if has_signal("tile_topology_changed"):
-		tile_topology_changed.emit()
+	tile_topology_changed.emit()
 
 ## 检查实体是否存活/有效
 func is_entity_alive(entity: Node) -> bool:
@@ -3095,7 +3048,7 @@ func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
 	var destroyed_height := 0
 	if map_data.has(coord) and typeof(map_data[coord]) == TYPE_DICTIONARY:
 		destroyed_height = int(map_data[coord].get("height", 0))
-	if GlobalClock and "tile_h_pool" in GlobalClock and GlobalClock.tile_h_pool.has(destroyed_height):
+	if GlobalClock.tile_h_pool.has(destroyed_height):
 		GlobalClock.tile_h_pool[destroyed_height].erase(coord)
 
 	stack_nodes.erase(coord)
