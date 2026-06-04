@@ -563,6 +563,60 @@
 - `map_intro_reveal_lock_interaction` 的交互锁仍由 `hex_map.gd::_refresh_stack_interactivity()` 执行，runner 只维护状态。
 - 如果以后要加新入场样式，优先在 runner 中新增播放分支，并继续让可调参数从 HexMap 导出组传入。
 
+### `scene/in_scene/hex_map_modules/elevation/TileElevationService.gd`
+
+这个模块负责单个地块的高度升降编排：
+
+- 等待同一地块上一个升降流程结束。
+- 计算真实目标高度、视觉展示高度，以及是否需要在表现结束后销毁地块。
+- 同步写入地块 `height` metadata、`map_data[coord].height` 和 `GlobalClock.tile_h_pool`。
+- 在 3D 视图下移动地块贴图、碰撞箱、地貌实体和必要的外部血条。
+- 在 3D 视图升降动画结束后，补充或移除底部侧面块，并刷新 shader 高度下标。
+- 在平铺高度视图下，只更新后台 3D 位置缓存、侧面块队列和高度数字反馈，不播放整柱 3D 移动。
+- 高度超过上下限时，调用 HexMap 注入的销毁队列入口，不直接删除地块。
+
+主要调用方：
+
+- `hex_map.gd::animate_elevation_change()`
+- `scene/in_scene/timeline/commands/ElevationCommand.gd`
+
+相关导出变量仍然在 `hex_map.gd` 中调整：
+
+- `ele_anim_duration`
+- `ele_shake_intensity`
+- `ele_shake_duration`
+- `ele_trans_type`
+- `ele_ease_type`
+- `elevation_move_distance`
+- `filler_block_spacing`
+- `elevation_resolution_padding`
+- `max_height`
+- `min_height`
+- `tile_destruction_batch_size`
+- `tile_destruction_batch_collect_delay`
+- `tile_destruction_batch_interval`
+- `tile_destruction_shake_count`
+- `tile_destruction_shake_step_duration`
+- `tile_destruction_shake_distance`
+- `tile_destruction_dissolve_duration`
+
+运行时会读取：
+
+- `stack_nodes`
+- `map_data`
+- `GlobalClock.tile_h_pool`
+- `height_view_original_materials`
+- 地块 `height`、`sprites`、`collision_node` 和 `occupant` metadata
+- HexMap 注入的侧面贴图、Tween 创建、血条查找、高度数字动画、销毁队列和拓扑变化信号回调
+
+调整时注意：
+
+- `TileElevationService.gd` 只管升降过程，不直接调用 BarManager 路径、不直接发奖励、不直接改敌人列表。
+- 超限地块的真实删除仍然在 `hex_map.gd::_perform_tile_destruction()` 中，队列仍然在 `TileDestructionBatchQueue.gd` 中。
+- 平铺视图下的高度变化必须同时维护 `height_view_original_materials`，否则切回 3D 后地貌、碰撞箱和血条会错位。
+- 新增侧面块时必须刷新 `block_idx` 和 `total_height`，否则 hover、遮挡和平铺 shader 会读到旧层数。
+- 如果以后继续拆销毁流程，优先把 `_perform_tile_destruction()` 和 `_remove_destroyed_coord_from_landform_libraries()` 拆成单独 mutation service，不要放进升降服务。
+
 ## 修改后的验证清单
 
 改动任意已提取模块后，先运行：
@@ -596,4 +650,6 @@ git diff --check
 - 手动高度视图回归稳定后，再考虑把高度视图切换状态机本身拆成更薄的 controller。
 - 地图开场血条延迟队列已经拆到 `MapIntroRevealRunner.gd`。下一步如果继续拆 BarManager 耦合，应优先看血条创建接口和总血量刷新接口。
 - 碰撞和 input_pickable 已拆到 `HexMapCollisionPresenter.gd`。
-- 普通 hover、AOE 和遮挡高亮已拆到 `HexMapVisualStatePresenter.gd`。下一步可以继续拆 `_on_stack_hover()` 的输入编排，或开始拆 tile elevation / destruction mutation。
+- 普通 hover、AOE 和遮挡高亮已拆到 `HexMapVisualStatePresenter.gd`。
+- 地块升降编排已拆到 `TileElevationService.gd`。下一步如果继续拆地块生命周期，优先拆 `_perform_tile_destruction()` 的真实删除和静态库清理。
+- `_on_stack_hover()` 和 `_on_stack_input()` 仍然是输入编排耦合点，可以在销毁 mutation 稳定后继续拆。

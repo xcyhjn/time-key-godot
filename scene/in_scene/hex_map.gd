@@ -19,6 +19,7 @@ const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/hex_map_mo
 const HEIGHT_VIEW_STATE_SYNCHRONIZER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewStateSynchronizer.gd")
 const HEIGHT_VIEW_MAP_TRANSITION_RUNNER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewMapTransitionRunner.gd")
 const MAP_INTRO_REVEAL_RUNNER := preload("res://scene/in_scene/hex_map_modules/runners/MapIntroRevealRunner.gd")
+const TILE_ELEVATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/elevation/TileElevationService.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -338,6 +339,7 @@ var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
 var _height_view_state_synchronizer := HEIGHT_VIEW_STATE_SYNCHRONIZER.new()
 var _height_view_map_transition_runner := HEIGHT_VIEW_MAP_TRANSITION_RUNNER.new()
 var _map_intro_reveal_runner := MAP_INTRO_REVEAL_RUNNER.new()
+var _tile_elevation_service := TILE_ELEVATION_SERVICE.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -2103,181 +2105,82 @@ func _build_external_render_node_registrar_context() -> Dictionary:
 		"stack_nodes": stack_nodes,
 	}
 
-## 增强版：处理地块升降（融合了安全偏移逻辑）
+## 增强版：处理地块升降（融合了安全偏移逻辑）。
+## 旧入口名继续保留给时间轴命令和卡牌效果调用；真实编排已经拆到 TileElevationService。
 func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
-	if delta_height == 0 or not is_instance_valid(stack): return
-	
-	while is_instance_valid(stack) and stack.has_meta("is_animating") and stack.get_meta("is_animating"):
-		await get_tree().process_frame 
-		
-	if not is_instance_valid(stack): return
-	stack.set_meta("is_animating", true)
-
-	var old_height: int = int(stack.get_meta("height"))
-	var new_height: int = old_height + delta_height
-	var coord = stack_nodes.find_key(stack)
-	if coord == null: 
-		stack.set_meta("is_animating", false)
-		return
-		
-	var should_destroy_after_elevation := new_height > max_height or new_height <= min_height
-	var visual_height: int = new_height
-	if should_destroy_after_elevation and new_height <= min_height:
-		visual_height = 1
-	else:
-		visual_height = clampi(visual_height, 1, 99)
-
-	var actual_delta = visual_height - old_height
-	if actual_delta == 0: 
-		stack.set_meta("is_animating", false)
-		if should_destroy_after_elevation:
-			await _queue_tile_destruction_and_wait(stack, coord)
-		return
-
-	# --- 统一数据更新 ---
-	stack.set_meta("height", visual_height)
-	map_data[coord]["height"] = visual_height
-	if GlobalClock.tile_h_pool.has(old_height): GlobalClock.tile_h_pool[old_height].erase(coord)
-	if not GlobalClock.tile_h_pool.has(visual_height): GlobalClock.tile_h_pool[visual_height] = []
-	GlobalClock.tile_h_pool[visual_height].append(coord)
-
-	var sprites = stack.get_meta("sprites") as Array
-	var terrain_type = map_data[coord]["terrain_type"]
-	var side_tex = get_side_tex(terrain_type)
-	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
-
-	# ==========================================
-	# ★ 平铺视图分支：拦截 3D 动画，采用纯数字反馈，并精准更新后台 3D 缓存！
-	# ==========================================
-	if current_view_state == MapViewState.VIEW_FLAT:
-		var cached_data = height_view_original_materials.get(stack)
-		
-		# ★ 核心修复：更新现有组件的3D坐标缓存，完美保留UI和地貌的局部相对偏移
-		var delta_y = -(actual_delta * elevation_move_distance)
-		if cached_data:
-			for s_data in cached_data["sprites_data"]:
-				s_data["original_position"].y += delta_y
-			if cached_data["occupant_data"]: cached_data["occupant_data"]["original_position"].y += delta_y
-			if cached_data["collision_data"]: cached_data["collision_data"]["original_position"].y += delta_y
-			if cached_data["health_bar_data"]: cached_data["health_bar_data"]["original_position"].y += delta_y
-
-		if actual_delta > 0:
-			var orig_bottom_y = 0.0
-			if cached_data and not cached_data["sprites_data"].is_empty():
-				# 逆向推导出移动前的最底层 3D 坐标
-				orig_bottom_y = cached_data["sprites_data"][0]["original_position"].y - delta_y
-
-			for k in range(actual_delta):
-				var new_sprite = Sprite2D.new()
-				new_sprite.texture = side_tex
-				new_sprite.centered = false
-				new_sprite.offset = Vector2(-256, -400)
-				
-				new_sprite.visible = false 
-				new_sprite.modulate.a = 0.0 
-				new_sprite.position.y = 0.0 
-				new_sprite.scale = Vector2(tile_scale, tile_scale)
-				
-				if block_material:
-					new_sprite.material = block_material.duplicate()
-					new_sprite.material.set_shader_parameter("is_flat_view", 1.0)
-					
-				stack.add_child(new_sprite)
-				stack.move_child(new_sprite, k) 
-				sprites.insert(k, new_sprite)
-				
-				# ★ 暗中存入字典：为切回 3D 预留数据
-				if cached_data:
-					var new_3d_y = orig_bottom_y - (k * current_step_h)
-					cached_data["sprites_data"].insert(k, {"sprite": new_sprite, "original_material": new_sprite.material, "original_position": Vector2(new_sprite.position.x, new_3d_y)})
-					
-		elif actual_delta < 0:
-			for i in range(abs(actual_delta)):
-				if sprites.size() > 1: 
-					var bottom_sprite = sprites[0]
-					sprites.pop_front()
-					bottom_sprite.queue_free()
-					if cached_data: cached_data["sprites_data"].pop_front()
-
-		for i in range(sprites.size()):
-			if is_instance_valid(sprites[i]) and sprites[i].material:
-				sprites[i].set_instance_shader_parameter("block_idx", float(i))
-				sprites[i].set_instance_shader_parameter("total_height", float(visual_height))
-
-		await _height_view_indicator_presenter.animate_label_height(
-			stack,
-			visual_height,
-			_build_height_view_indicator_presenter_config()
-		)
-
-		stack.set_meta("is_animating", false)
-		if should_destroy_after_elevation:
-			await _queue_tile_destruction_and_wait(stack, coord)
-		return
-	# ==========================================
-	# ★ 3D 视图分支：安全相对移动
-	# ==========================================
-	var moving_parts = []
-	moving_parts.append_array(sprites)
-	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-	if is_instance_valid(collision): moving_parts.append(collision)
-	
-	var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
-	if is_instance_valid(occupant): 
-		moving_parts.append(occupant)
-		var bar_manager = get_node_or_null("BarManager")
-		if bar_manager:
-			var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
-			# ★ 防二次移动：血条父级不是 stack_nodes 时才能独立移动
-			if is_instance_valid(hb_node) and hb_node.get_parent() not in moving_parts: 
-				moving_parts.append(hb_node)
-
-	var y_offset_movement = -(actual_delta * current_step_h)
-	var original_positions = {}
-	for part in moving_parts:
-		if is_instance_valid(part): original_positions[part.get_instance_id()] = part.position
-
-	var tw = create_tween().set_parallel(true).set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	for part in moving_parts:
-		if is_instance_valid(part) and part.get_parent() not in moving_parts:
-			var p_id = part.get_instance_id()
-			var target_pos = original_positions[p_id] + Vector2(0, y_offset_movement)
-			tw.tween_property(part, "position:x", original_positions[p_id].x + randf_range(-ele_shake_intensity, ele_shake_intensity), ele_shake_duration)
-			tw.chain().tween_property(part, "position", target_pos, ele_anim_duration).set_trans(ele_trans_type).set_ease(ele_ease_type)
-
-	tw.chain().tween_callback(func():
-		if actual_delta > 0:
-			for k in range(actual_delta):
-				var new_sprite = Sprite2D.new()
-				new_sprite.texture = side_tex
-				new_sprite.centered = false
-				new_sprite.offset = Vector2(-256, -400)
-				# 新泥块总是插在底部，坐标依序为 0, -48, -96
-				new_sprite.position.y = -(k) * current_step_h
-				new_sprite.scale = Vector2(tile_scale, tile_scale)
-				new_sprite.modulate = Color(1.0, 1.0, 1.0)
-				if block_material: new_sprite.material = block_material.duplicate()
-				stack.add_child(new_sprite)
-				stack.move_child(new_sprite, k) 
-				sprites.insert(k, new_sprite)
-		elif actual_delta < 0:
-			for i in range(abs(actual_delta)):
-				if sprites.size() > 1: 
-					var bottom_sprite = sprites[0]
-					sprites.pop_front()
-					bottom_sprite.queue_free()
-
-		for i in range(sprites.size()):
-			if is_instance_valid(sprites[i]) and sprites[i].material:
-				sprites[i].set_instance_shader_parameter("block_idx", float(i))
-				sprites[i].set_instance_shader_parameter("total_height", float(visual_height))
+	await _tile_elevation_service.animate(
+		stack,
+		delta_height,
+		_build_tile_elevation_service_config()
 	)
-	
-	await tw.finished
-	if is_instance_valid(stack): stack.set_meta("is_animating", false)
-	if should_destroy_after_elevation:
-		await _queue_tile_destruction_and_wait(stack, coord)
-		return
+
+
+## 收集地块升降服务需要的运行时上下文。
+## Inspector 可调项仍全部留在 HexMap；服务只消费快照和回调，避免直接查找 BarManager、GlobalClock 或高度视图 presenter。
+func _build_tile_elevation_service_config() -> Dictionary:
+	return {
+		"tree": get_tree(),
+		"stack_nodes": stack_nodes,
+		"map_data": map_data,
+		"tile_h_pool": GlobalClock.tile_h_pool,
+		"height_view_original_materials": height_view_original_materials,
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+		"max_height": max_height,
+		"min_height": min_height,
+		"filler_block_spacing": filler_block_spacing,
+		"tile_scale": tile_scale,
+		"ref_scale": REF_SCALE,
+		"elevation_move_distance": elevation_move_distance,
+		"block_material": block_material,
+		"ele_shake_intensity": ele_shake_intensity,
+		"ele_shake_duration": ele_shake_duration,
+		"ele_anim_duration": ele_anim_duration,
+		"ele_trans_type": ele_trans_type,
+		"ele_ease_type": ele_ease_type,
+		"get_side_tex": Callable(self, "get_side_tex"),
+		"create_elevation_tween": Callable(self, "_create_tile_elevation_tween"),
+		"get_health_bar_for_occupant": Callable(self, "_get_elevation_health_bar_for_occupant"),
+		"animate_label_height": Callable(self, "_animate_elevation_height_label"),
+		"queue_tile_destruction": Callable(self, "_queue_tile_destruction_and_wait"),
+		"emit_tile_topology_changed": Callable(self, "_emit_tile_topology_changed"),
+	}
+
+
+## 创建地块升降 Tween。
+## Tween 仍挂在 HexMap 节点下，保持原来的暂停策略和并行动画行为。
+func _create_tile_elevation_tween() -> Tween:
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	return tw
+
+
+## 给升降服务查找需要独立移动的外部血条。
+## 如果血条已经是地块或其子节点的一部分，就不单独返回，避免同一视觉节点被父级和自身各移动一次。
+func _get_elevation_health_bar_for_occupant(occupant: Variant, moving_parts: Array) -> Node:
+	var bar_manager = get_node_or_null("BarManager")
+	if not is_instance_valid(bar_manager) or not is_instance_valid(occupant):
+		return null
+
+	var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
+	if is_instance_valid(hb_node) and hb_node.get_parent() not in moving_parts:
+		return hb_node
+	return null
+
+
+## 播放平铺高度视图里的数字变化反馈。
+## 样式、字号和弹跳时长继续从 `_build_height_view_indicator_presenter_config()` 读取。
+func _animate_elevation_height_label(stack: Area2D, visual_height: int) -> void:
+	await _height_view_indicator_presenter.animate_label_height(
+		stack,
+		visual_height,
+		_build_height_view_indicator_presenter_config()
+	)
+
+
+## 给拆出的服务统一发出地图拓扑变化信号。
+## 当前主要服务 3D 视图下非销毁升降；销毁流程仍由 `_perform_tile_destruction()` 自己发信号。
+func _emit_tile_topology_changed() -> void:
 	tile_topology_changed.emit()
 	
 ## 安全获取地块上的占位实体（地貌或敌人）
