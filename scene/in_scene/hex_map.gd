@@ -21,6 +21,7 @@ const HEIGHT_VIEW_STATE_SYNCHRONIZER := preload("res://scene/in_scene/hex_map_mo
 const HEIGHT_VIEW_MAP_TRANSITION_RUNNER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewMapTransitionRunner.gd")
 const MAP_INTRO_REVEAL_RUNNER := preload("res://scene/in_scene/hex_map_modules/runners/MapIntroRevealRunner.gd")
 const TILE_ELEVATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/elevation/TileElevationService.gd")
+const HEX_MAP_INPUT_COORDINATOR := preload("res://scene/in_scene/hex_map_modules/input/HexMapInputCoordinator.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -342,6 +343,7 @@ var _height_view_map_transition_runner := HEIGHT_VIEW_MAP_TRANSITION_RUNNER.new(
 var _map_intro_reveal_runner := MAP_INTRO_REVEAL_RUNNER.new()
 var _tile_elevation_service := TILE_ELEVATION_SERVICE.new()
 var _tile_destruction_mutation_service := TILE_DESTRUCTION_MUTATION_SERVICE.new()
+var _hex_map_input_coordinator := HEX_MAP_INPUT_COORDINATOR.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1396,71 +1398,97 @@ func _build_settlement_reward_presenter_config() -> Dictionary:
 # ==========================================
 # ★ 统一的点击输入处理 (支持 3D & 平铺视图)
 # ==========================================
+## 地块 input_event 的旧连接入口。
+## 真实分发已经拆到 HexMapInputCoordinator；这里负责把返回状态写回 HexMap。
 func _on_stack_input(viewport: Node, event: InputEvent, shape_idx: int, stack: Area2D):
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if current_settlement_reward_mode == SettlementRewardMode.AVAILABLE:
-				_handle_settlement_reward_click(stack)
-				return
-			_handle_tile_click(stack)
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			_cancel_card_selection()
+	_apply_input_coordinator_result(
+		_hex_map_input_coordinator.handle_stack_input(
+			viewport,
+			event,
+			shape_idx,
+			stack,
+			_build_hex_map_input_coordinator_config()
+		)
+	)
 
-## 处理地块左键点击：无论何种视图，逻辑统一下沉
+
+## 处理地块左键点击：无论何种视图，逻辑统一下沉。
+## 这个入口保留给调试或旧脚本调用，内部委托输入协调器。
 func _handle_tile_click(stack: Area2D) -> void:
-	if not is_instance_valid(stack): return
-	
-	var cm = get_card_manager()
-	if not cm: return
-	
-	var active_card = cm.get("current_selected_card")
-	
-	# 如果手中有卡牌，尝试打出卡牌
-	if is_instance_valid(active_card):
-		# 非法目标只保留灰色 hover 提示，不进入时间轴放置流程。
-		if not _is_stack_valid_target(stack):
-			return
-		if active_card.has_method("play_card"):
-			active_card.play_card(stack)
-			_clear_all_aoe_highlights()
-			selected_stack = null
-	else:
-		# 如果手中没有卡牌，无论平铺还是3D，统一使用状态机高亮
-		if is_instance_valid(selected_stack) and selected_stack != stack:
-			change_tile_state(selected_stack, TileVisualState.IDLE)
-		selected_stack = stack
-		change_tile_state(selected_stack, TileVisualState.HOVER_TARGET_VALID)
+	_apply_input_coordinator_result(
+		_hex_map_input_coordinator.handle_tile_click(
+			stack,
+			_build_hex_map_input_coordinator_config()
+		)
+	)
+
+
+## 收集地块输入协调器需要的运行时上下文。
+## Coordinator 只负责编排输入流程；目标规则、奖励点击、视觉状态和敌人意图都继续由 HexMap 旧入口处理。
+func _build_hex_map_input_coordinator_config() -> Dictionary:
+	return {
+		"settlement_reward_available": current_settlement_reward_mode == SettlementRewardMode.AVAILABLE,
+		"visuals_locked": is_visuals_locked,
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+		"hovered_stacks": hovered_stacks,
+		"selected_stack": selected_stack,
+		"height_view_hovered_stack": height_view_hovered_stack,
+		"tile_state_idle": int(TileVisualState.IDLE),
+		"tile_state_hover_target_valid": int(TileVisualState.HOVER_TARGET_VALID),
+		"get_card_manager": Callable(self, "get_card_manager"),
+		"is_stack_valid_target": Callable(self, "_is_stack_valid_target"),
+		"change_tile_state": Callable(self, "_change_tile_state_from_input_coordinator"),
+		"clear_all_aoe_highlights": Callable(self, "_clear_all_aoe_highlights"),
+		"cancel_card_selection": Callable(self, "_cancel_card_selection"),
+		"handle_settlement_reward_click": Callable(self, "_handle_settlement_reward_click"),
+		"handle_settlement_reward_hover": Callable(self, "_handle_settlement_reward_hover"),
+		"start_pillar_floating": Callable(self, "_start_pillar_floating_animation"),
+		"stop_pillar_floating": Callable(self, "_stop_pillar_floating_animation"),
+		"update_highlight": Callable(self, "_update_highlight"),
+		"handle_enemy_intent_stack_hover": Callable(self, "_handle_enemy_intent_stack_hover"),
+	}
+
+
+## 回写输入协调器返回的状态。
+## 目前只回写普通选中地块、hover 列表和平铺高度视图 hover 地块。
+func _apply_input_coordinator_result(result: Dictionary) -> void:
+	if result.has("selected_stack"):
+		selected_stack = result.get("selected_stack", null)
+	if result.has("hovered_stacks"):
+		var next_hovered: Variant = result.get("hovered_stacks", [])
+		if next_hovered is Array:
+			hovered_stacks = next_hovered
+	if result.has("height_view_hovered_stack"):
+		height_view_hovered_stack = result.get("height_view_hovered_stack", null)
+
+
+## 输入协调器使用的状态切换适配器。
+## GDScript enum 本质是 int；这里直接传递状态值，避免输入模块依赖 HexMap enum 名称。
+func _change_tile_state_from_input_coordinator(stack: Area2D, state: int) -> void:
+	change_tile_state(stack, state)
 # ==========================================
 # ★ 悬浮与多地块 AOE 遮罩检测
 # ==========================================
+## 地块 hover 的旧连接入口。
+## 真实分发已经拆到 HexMapInputCoordinator；这里只回写 hover 相关状态。
 func _on_stack_hover(stack: Area2D, is_entered: bool):
-	if current_settlement_reward_mode == SettlementRewardMode.AVAILABLE:
-		_handle_settlement_reward_hover(stack, is_entered)
-		return
+	_apply_input_coordinator_result(
+		_hex_map_input_coordinator.handle_stack_hover(
+			stack,
+			is_entered,
+			_build_hex_map_input_coordinator_config()
+		)
+	)
 
-	if is_visuals_locked: return
-	
-	# 高度平铺视图的光柱动画保留
-	if current_view_state == MapViewState.VIEW_FLAT:
-		if is_entered:
-			height_view_hovered_stack = stack
-			_start_pillar_floating_animation(stack)
-		else:
-			if height_view_hovered_stack == stack:
-				height_view_hovered_stack = null
-			_stop_pillar_floating_animation(stack)
-			
-	# 不管是哪种视图，我们都要处理卡牌范围的高亮
-	if is_entered:
-		if not hovered_stacks.has(stack): hovered_stacks.append(stack)
-	else:
-		hovered_stacks.erase(stack)
-		
-	_update_highlight()
-	
+
+## 转发地块 hover 给敌人意图系统。
+## 路径查找暂时保留在 HexMap，后续如果拆 TimelineSystem 依赖，可以把它改成初始化时注入。
+func _handle_enemy_intent_stack_hover(stack: Area2D, is_entered: bool) -> void:
 	var intent_controller = get_node_or_null("../../ui/TimelineSystem/EnemyIntentManager")
 	if intent_controller and intent_controller.has_method("handle_map_stack_hover"):
 		intent_controller.handle_map_stack_hover(stack, is_entered)
+
+
 func _update_highlight():
 	hovered_stacks = hovered_stacks.filter(func(s): return is_instance_valid(s))
 	

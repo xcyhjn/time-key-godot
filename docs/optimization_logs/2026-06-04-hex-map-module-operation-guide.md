@@ -659,6 +659,42 @@
 - 如果新增会缓存坐标的旧建筑脚本，需要把它加入 HexMap 传入的 `landform_library_holders`。
 - 如果后续要清理更多跨系统状态，例如奖励模式缓存或敌人意图缓存，优先通过 HexMap 提供明确回调，不要让服务直接查找其他 controller。
 
+### `scene/in_scene/hex_map_modules/input/HexMapInputCoordinator.gd`
+
+这个模块负责战斗地图地块鼠标输入的流程分发：
+
+- 处理 `Area2D.input_event` 传入的鼠标点击。
+- 左键根据当前模式转发到结算奖励点击或普通地块点击。
+- 右键转发到取消卡牌选择。
+- 普通地块点击时，有选中卡牌就尝试打出卡牌，没有选中卡牌就切换地块选中高亮。
+- 鼠标进入或离开地块时，优先处理结算奖励 hover。
+- 普通 hover 下继续处理平铺高度光柱、hovered stack 列表、AOE 刷新和敌人意图 hover 转发。
+
+主要调用方：
+
+- `hex_map.gd::_on_stack_input()`
+- `hex_map.gd::_handle_tile_click()`
+- `hex_map.gd::_on_stack_hover()`
+
+目前没有新增导出变量。
+
+运行时会读取：
+
+- `current_settlement_reward_mode`
+- `is_visuals_locked`
+- `current_view_state`
+- `hovered_stacks`
+- `selected_stack`
+- `height_view_hovered_stack`
+- HexMap 注入的 CardManager 查询、目标合法性检查、状态切换、奖励点击/hover、光柱动画、AOE 刷新和敌人意图 hover 回调
+
+调整时注意：
+
+- 这个模块只负责编排输入，不直接判断卡牌范围，不直接写 shader，也不直接查找奖励 UI 或 TimelineSystem。
+- `HexMapInputCoordinator.gd` 返回需要回写的状态，`hex_map.gd::_apply_input_coordinator_result()` 负责写回 HexMap 成员变量。
+- 敌人意图管理器路径暂时还留在 `hex_map.gd::_handle_enemy_intent_stack_hover()`，后续拆 TimelineSystem 依赖时再处理。
+- 如果要删除 `active_card.has_method("play_card")` 兜底，应先确认战斗内所有可选卡牌都继承或实现同一出牌接口。
+
 ## 修改后的验证清单
 
 改动任意已提取模块后，先运行：
@@ -695,5 +731,6 @@ git diff --check
 - 普通 hover、AOE 和遮挡高亮已拆到 `HexMapVisualStatePresenter.gd`。
 - 地块升降编排已拆到 `TileElevationService.gd`。
 - 地块真实删除和旧静态库清理已拆到 `TileDestructionMutationService.gd`。
-- `_on_stack_hover()` 和 `_on_stack_input()` 仍然是输入编排耦合点，可以作为下一批拆分目标。
+- 地块输入编排已拆到 `HexMapInputCoordinator.gd`。
+- `_update_highlight()` 仍然混合了 CardManager 查询、MainBoard tooltip、hover 中心选择、AOE 刷新和遮挡刷新，可以继续拆成 target hover presenter/controller。
 - `_create_stack_at()` 和 `refresh_tile_visual()` 仍然混合了地块节点创建、地貌挂接、shader 初始化和碰撞创建，适合后续拆成 tile stack factory。
