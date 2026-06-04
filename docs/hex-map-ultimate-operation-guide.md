@@ -30,13 +30,14 @@ scene/in_scene/hex_map.gd
 scene/in_scene/hex_map_modules/
 ```
 
-最终架构说明：
+接力与流程归档：
 
 ```text
-docs/optimization_logs/2026-06-05-hex-map-final-architecture-maintenance-guide.md
+docs/ai-handoff-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
 ```
 
-本文件是更偏操作的手册。需要做具体改动时，优先看本文件；需要理解历史拆分和设计边界时，再看最终架构说明和每批 landing log。
+本文件是更偏操作的手册。需要做具体改动时，优先看本文件；需要理解历史拆分和后续接力方式时，再看接力说明与流程归档。`docs/` 目录不再保留每批 landing log。
 
 ## 一句话职责
 
