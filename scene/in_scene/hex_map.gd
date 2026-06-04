@@ -12,6 +12,7 @@ const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/hex_map_modu
 const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/EnemyIntentMapPresenter.gd")
 const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/SettlementRewardPresenter.gd")
 const HEX_MAP_COLLISION_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapCollisionPresenter.gd")
+const HEX_MAP_VISUAL_STATE_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapVisualStatePresenter.gd")
 const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd")
 const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/RuntimeLandformRegistrar.gd")
 const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/ExternalRenderNodeRegistrar.gd")
@@ -330,6 +331,7 @@ var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明�
 var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
 var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
 var _hex_map_collision_presenter := HEX_MAP_COLLISION_PRESENTER.new()
+var _hex_map_visual_state_presenter := HEX_MAP_VISUAL_STATE_PRESENTER.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
@@ -1493,42 +1495,34 @@ func _update_highlight():
 			_clear_all_aoe_highlights()
 			
 func _clear_all_aoe_highlights() -> void:
-	# ★ 核心修复 2：极其严格地清理所有被状态机接管的高亮残留
-	for stack in current_aoe_stacks:
-		change_tile_state(stack, TileVisualState.IDLE)
-	current_aoe_stacks.clear()
-	
-	if is_instance_valid(selected_stack):
-		change_tile_state(selected_stack, TileVisualState.IDLE)
-		selected_stack = null
-		
-	if is_instance_valid(active_stack):
-		change_tile_state(active_stack, TileVisualState.IDLE)
-		active_stack = null
+	var result := _hex_map_visual_state_presenter.clear_aoe_highlights(
+		current_aoe_stacks,
+		selected_stack,
+		active_stack,
+		_build_visual_state_presenter_config()
+	)
+	current_aoe_stacks = result.get("current_aoe_stacks", [])
+	selected_stack = result.get("selected_stack", null)
+	active_stack = result.get("active_stack", null)
 		
 ## 计算范围并驱动状态机 (所有范围内地块享受同等高亮)
 func _update_aoe_display(card: Control, center_stack: Area2D, main_board: Node) -> void:
 	var new_aoe_stacks: Array[Area2D] = []
 	var center_coord = stack_nodes.find_key(center_stack)
 	new_aoe_stacks = HEX_TARGET_RULES.get_effect_range_stacks(card, center_coord, stack_nodes)
-	
-	# 1. 状态卸载：旧的范围内有，但新范围内没有的地块，恢复平静
-	for stack in current_aoe_stacks:
-		if not new_aoe_stacks.has(stack):
-			change_tile_state(stack, TileVisualState.IDLE)
 			
-	# 2. 状态加载：判断中心点是否合法，决定全境是亮金边还是亮灰边
+	# 判断中心点是否合法，决定全境是亮金边还是亮灰边。
 	var is_valid = _is_stack_valid_target(center_stack)
 	var target_state = TileVisualState.HOVER_TARGET_VALID if is_valid else TileVisualState.HOVER_TARGET_INVALID
 	
-	for stack in new_aoe_stacks:
-		# ★ 核心改动：不再区分 center_stack，范围内的地块全部赋予相同的最高级高亮
-		change_tile_state(stack, target_state)
-			
-	# 3. 记录当前列表
-	current_aoe_stacks = new_aoe_stacks
+	current_aoe_stacks = _hex_map_visual_state_presenter.apply_aoe_state(
+		current_aoe_stacks,
+		new_aoe_stacks,
+		int(target_state),
+		_build_visual_state_presenter_config()
+	)
 	
-	# 4. 更新 Tooltip 文本位置
+	# 更新 Tooltip 文本位置
 	if main_board and main_board.has_method("update_target_selection_hover"):
 		main_board.update_target_selection_hover(center_stack, card)
 # ==========================================
@@ -1587,10 +1581,11 @@ func update_all_stack_conditional_effects() -> void:
 # ★ 核心：动态湮灭遮挡物
 # ==========================================
 func _clear_occlusion_effects() -> void:
-	for stack in stack_nodes.values():
-		if is_instance_valid(stack):
-			_tween_shader_param(stack, "dissolve_blend", 0.0, 0.12)
-	currently_occluding_stacks.clear()
+	currently_occluding_stacks = _hex_map_visual_state_presenter.clear_occlusion_effects(
+		stack_nodes,
+		currently_occluding_stacks,
+		_build_visual_state_presenter_config()
+	)
 
 
 ## 敌人意图地图预览入口
@@ -1645,58 +1640,39 @@ func _build_enemy_intent_map_presenter_config() -> Dictionary:
 
 
 func _update_occlusion(target_stack: Area2D):
-	# ★ 核心修复 1：在平铺视角下，彻底禁用防遮挡机制！
-	if current_view_state == MapViewState.VIEW_FLAT: 
-		return
-
-	# 1. 恢复之前被湮灭的柱子 (倒放)
-	_clear_occlusion_effects()
-
-	if not is_instance_valid(target_stack): return
-
-	var t_pos = target_stack.position
-	var t_h = target_stack.get_meta("height")
-	var current_step_h = step_height * (tile_scale / REF_SCALE)
-	var t_top_y = t_pos.y - (t_h - 1) * current_step_h
-
-	# 2. 遍历判断谁挡在前面
-	for stack in stack_nodes.values():
-		if stack == target_stack: continue
-		var s_pos = stack.position
-
-		if s_pos.y > t_pos.y:
-			if abs(s_pos.x - t_pos.x) < hitbox_width * 0.8:
-				var s_h = stack.get_meta("height")
-				var s_top_y = s_pos.y - (s_h - 1) * current_step_h
-
-				if s_top_y < t_pos.y:
-					currently_occluding_stacks.append(stack)
-					_tween_shader_param(stack, "dissolve_blend", 0.8, 0.25)
+	currently_occluding_stacks = _hex_map_visual_state_presenter.update_occlusion(
+		target_stack,
+		stack_nodes,
+		currently_occluding_stacks,
+		_build_visual_state_presenter_config()
+	)
 # ==========================================
 # 通用 Shader Tween 控制器
 # ==========================================
 func _tween_shader_param(stack: Area2D, param_name: String, target_val: float, duration: float):
-	if not is_instance_valid(stack): return
-	var sprites = stack.get_meta("sprites") as Array
-	if sprites.is_empty() or not sprites[0].material: return
+	_hex_map_visual_state_presenter.tween_shader_param(
+		stack,
+		param_name,
+		target_val,
+		duration,
+		_build_visual_state_presenter_config()
+	)
 
-	# 杀掉旧的动画防止冲突
-	var meta_key = "tween_" + param_name
-	if stack.has_meta(meta_key):
-		var old_tw = stack.get_meta(meta_key)
-		if is_instance_valid(old_tw) and old_tw.is_valid(): old_tw.kill()
 
-	var tw = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	stack.set_meta(meta_key, tw)
-
-	var current_val = sprites[0].get_instance_shader_parameter(param_name)
-	if current_val == null: current_val = 0.0
-
-	tw.tween_method(func(val: float):
-		for s in sprites:
-			if is_instance_valid(s) and s.material:
-				s.set_instance_shader_parameter(param_name, val)
-	, current_val, target_val, duration)
+## 收集普通地图视觉状态表现需要的运行时配置。
+## HexMap 继续负责导出变量、视图状态和 Tween 创建；HexMapVisualStatePresenter 只消费这份快照。
+func _build_visual_state_presenter_config() -> Dictionary:
+	return {
+		"create_tween": Callable(self, "_create_map_intro_reveal_tween"),
+		"tile_state_tween_duration": 0.15,
+		"current_step_h": step_height * (tile_scale / REF_SCALE),
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+		"hitbox_width": hitbox_width,
+		"occlusion_x_factor": 0.8,
+		"occlusion_clear_duration": 0.12,
+		"occlusion_fade_duration": 0.25,
+		"occlusion_dissolve_blend": 0.8,
+	}
 
 
 ## 运行期实体统一注册入口。
@@ -2423,61 +2399,11 @@ func _queue_tile_destruction_and_wait(stack: Area2D, coord: Vector2i) -> void:
 # ★ 状态机 Shader 驱动引擎
 # ==========================================
 func change_tile_state(stack: Area2D, new_state: TileVisualState) -> void:
-	if not is_instance_valid(stack): return
-	
-	var current_state = stack.get_meta("visual_state") if stack.has_meta("visual_state") else TileVisualState.IDLE
-	if current_state == new_state: return
-	
-	stack.set_meta("visual_state", new_state)
-	
-	# 定义各种状态的 Shader 参数目标值
-	var target_highlight_blend = 0.0
-	var target_selected_blend = 0.0
-	var highlight_color = Color(1, 1, 1, 1)
-	
-	match new_state:
-		TileVisualState.IDLE:
-			target_highlight_blend = 0.0
-			target_selected_blend = 0.0
-			
-		TileVisualState.HOVER_TARGET_VALID:
-			target_highlight_blend = 1.0
-			target_selected_blend = 1.0  # 开启白描边
-			highlight_color = Color(1.0, 0.8, 0.0, 1.0) # 金色核心
-			
-		TileVisualState.HOVER_TARGET_INVALID:
-			target_highlight_blend = 1.0
-			target_selected_blend = 1.0
-			highlight_color = Color(0.5, 0.5, 0.5, 1.0) # 灰色无效
-			
-		TileVisualState.AOE_RANGE:
-			target_highlight_blend = 0.7  # 范围边缘不升起那么高，或者用0.7表示波及
-			target_selected_blend = 0.0   # 边缘不加描边
-			highlight_color = Color(0.6, 0.8, 1.0, 1.0) # 淡蓝色波及范围
-
-	# 将状态压入 Tween
-	var meta_key = "tween_state_machine"
-	if stack.has_meta(meta_key):
-		var old_tw = stack.get_meta(meta_key)
-		if is_instance_valid(old_tw) and old_tw.is_valid(): old_tw.kill()
-		
-	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	stack.set_meta(meta_key, tw)
-	
-	var sprites = stack.get_meta("sprites") as Array
-	for s in sprites:
-		if is_instance_valid(s) and s.material:
-			# 颜色可以直接赋值，无需渐变（节省性能且更干脆）
-			s.set_instance_shader_parameter("highlight_color", highlight_color)
-			
-			# 只有 blend 值使用 Tween 过渡，确保丝滑
-			var cur_h_blend = s.get_instance_shader_parameter("highlight_blend")
-			var cur_s_blend = s.get_instance_shader_parameter("is_selected_blend")
-			if cur_h_blend == null: cur_h_blend = 0.0
-			if cur_s_blend == null: cur_s_blend = 0.0
-			
-			tw.tween_method(func(val: float): if is_instance_valid(s): s.set_instance_shader_parameter("highlight_blend", val), cur_h_blend, target_highlight_blend, 0.15)
-			tw.tween_method(func(val: float): if is_instance_valid(s): s.set_instance_shader_parameter("is_selected_blend", val), cur_s_blend, target_selected_blend, 0.15)
+	_hex_map_visual_state_presenter.change_tile_state(
+		stack,
+		int(new_state),
+		_build_visual_state_presenter_config()
+	)
 
 ## 压缩为平铺视图 (利用缓存精准归位)
 func _compress_to_single_height_view() -> void:

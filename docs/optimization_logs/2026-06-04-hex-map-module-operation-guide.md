@@ -260,6 +260,54 @@
 - `rebuild_all_collision_shapes()` 仍然保留在 HexMap 上，外部工具或调试脚本可以继续调用旧入口。
 - 如果修改 hitbox 形状，必须同时检查 3D 视图和平铺视图下的点击区域是否贴合顶部地块。
 
+### `scene/in_scene/hex_map_modules/presenters/HexMapVisualStatePresenter.gd`
+
+这个模块负责普通地图视觉状态写入：
+
+- 清理 AOE、选中地块和当前活动地块的高亮。
+- 把新的 AOE 范围写入有效或无效 hover 状态。
+- 清理动态遮挡的 `dissolve_blend`。
+- 在 3D 视图下计算目标地块前方需要半透明处理的遮挡柱。
+- 按 TileVisualState 数字写入地块 shader 高亮颜色和 blend。
+- 提供通用 shader 参数 Tween，供取消选中和遮挡恢复复用。
+
+主要调用方：
+
+- `hex_map.gd::_clear_all_aoe_highlights()`
+- `hex_map.gd::_update_aoe_display()`
+- `hex_map.gd::_clear_occlusion_effects()`
+- `hex_map.gd::_update_occlusion()`
+- `hex_map.gd::_tween_shader_param()`
+- `hex_map.gd::change_tile_state()`
+
+目前没有新增导出变量。旧视觉参数仍然是代码常量：
+
+- tile state tween 时长：`0.15`
+- 遮挡清理时长：`0.12`
+- 遮挡淡入时长：`0.25`
+- 遮挡 dissolve 强度：`0.8`
+- 遮挡横向判断系数：`0.8`
+
+运行时会读取：
+
+- `stack_nodes`
+- 地块 `sprites` 和 `height` metadata
+- `current_aoe_stacks`
+- `selected_stack`
+- `active_stack`
+- `currently_occluding_stacks`
+- 当前是否为平铺视图
+- `hitbox_width`
+- `step_height`、`tile_scale` 和 `REF_SCALE`
+
+调整时注意：
+
+- 这个模块只负责视觉写入，不判断卡牌目标是否合法。
+- AOE 范围收集仍由 `HexTargetRules` 提供，HexMap 只把结果交给 presenter。
+- MainBoard tooltip 更新仍留在 `hex_map.gd::_update_aoe_display()`。
+- 敌人意图 overlay 仍归 `EnemyIntentMapPresenter.gd`。
+- 结算奖励高亮和 tooltip 仍归 `SettlementRewardPresenter.gd`。
+
 ### `scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd`
 
 这个模块负责高度视图的光柱和数字：
@@ -547,4 +595,5 @@ git diff --check
 - 等目标限制稳定后，再清理敌人和结算 tooltip 的边界情况。
 - 手动高度视图回归稳定后，再考虑把高度视图切换状态机本身拆成更薄的 controller。
 - 地图开场血条延迟队列已经拆到 `MapIntroRevealRunner.gd`。下一步如果继续拆 BarManager 耦合，应优先看血条创建接口和总血量刷新接口。
-- 碰撞和 input_pickable 已拆到 `HexMapCollisionPresenter.gd`。下一步可以继续拆普通 hover、AOE 和遮挡高亮到 `HexMapVisualStatePresenter.gd`。
+- 碰撞和 input_pickable 已拆到 `HexMapCollisionPresenter.gd`。
+- 普通 hover、AOE 和遮挡高亮已拆到 `HexMapVisualStatePresenter.gd`。下一步可以继续拆 `_on_stack_hover()` 的输入编排，或开始拆 tile elevation / destruction mutation。
