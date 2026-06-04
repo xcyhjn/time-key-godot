@@ -11,6 +11,7 @@ const HEX_TARGET_RULES := preload("res://scene/in_scene/hex_map_modules/rules/He
 const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/hex_map_modules/destruction/TileDestructionBatchQueue.gd")
 const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/EnemyIntentMapPresenter.gd")
 const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/SettlementRewardPresenter.gd")
+const HEX_MAP_COLLISION_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapCollisionPresenter.gd")
 const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd")
 const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/RuntimeLandformRegistrar.gd")
 const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/ExternalRenderNodeRegistrar.gd")
@@ -328,6 +329,7 @@ var selected_stack: Area2D = null  # 记录当前被点击选中的地块
 var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明湮灭状态的地块
 var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
 var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
+var _hex_map_collision_presenter := HEX_MAP_COLLISION_PRESENTER.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
@@ -933,16 +935,7 @@ func _is_target_selection_active() -> bool:
 ## 判断某个格子上当前是否存在敌人建筑。
 ## 这里优先依赖 Enemies 分组判断，因为敌方地貌在创建时已经统一入组。
 func _stack_has_enemy_building(stack: Area2D) -> bool:
-	if not is_instance_valid(stack):
-		return false
-	if not stack.has_meta("occupant"):
-		return false
-
-	var occupant = stack.get_meta("occupant")
-	if not is_instance_valid(occupant):
-		return false
-
-	return occupant.is_in_group("Enemies")
+	return _hex_map_collision_presenter.stack_has_enemy_building(stack)
 
 
 ## 根据当前状态刷新所有格子的 input_pickable：
@@ -951,89 +944,57 @@ func _stack_has_enemy_building(stack: Area2D) -> bool:
 ## 3. 地块选择态时，全部启用
 ## 4. 闲置态时，仅启用敌人建筑格
 func _refresh_stack_interactivity() -> void:
-	if is_map_intro_reveal_active() and map_intro_reveal_lock_interaction:
-		for stack in stack_nodes.values():
-			if is_instance_valid(stack) and stack is Area2D:
-				stack.input_pickable = false
-		return
-
-	if current_settlement_reward_mode == SettlementRewardMode.AVAILABLE:
-		for stack in stack_nodes.values():
-			if not is_instance_valid(stack) or not (stack is Area2D):
-				continue
-			stack.input_pickable = _is_settlement_reward_stack_available(stack)
-		return
-
-	var allow_all = false
-
-	if not _tiles_interactive_master_enabled:
-		allow_all = false
-	elif not enable_smart_collision_interaction:
-		allow_all = true
-	else:
-		allow_all = _is_target_selection_active()
-
-	for stack in stack_nodes.values():
-		if not is_instance_valid(stack) or not (stack is Area2D):
-			continue
-
-		if not _tiles_interactive_master_enabled:
-			stack.input_pickable = false
-		elif allow_all:
-			stack.input_pickable = true
-		else:
-			stack.input_pickable = _stack_has_enemy_building(stack)
+	_hex_map_collision_presenter.refresh_stack_interactivity(_build_collision_presenter_config())
 
 
 ## 根据当前导出的碰撞参数，构建标准六边形碰撞多边形。
 ## 调整 hitbox_width / hitbox_base_height / hitbox_top_width_ratio 时，
 ## 最终都会通过这一个函数反映到真实碰撞形状上。
 func _build_hitbox_polygon() -> PackedVector2Array:
-	var half_w := hitbox_width * 0.5
-	var half_h := hitbox_base_height * 0.5
-	var top_half_w := half_w * hitbox_top_width_ratio
-
-	return PackedVector2Array([
-		Vector2(-top_half_w, -half_h),
-		Vector2(top_half_w, -half_h),
-		Vector2(half_w, 0.0),
-		Vector2(top_half_w, half_h),
-		Vector2(-top_half_w, half_h),
-		Vector2(-half_w, 0.0)
-	])
+	return _hex_map_collision_presenter.build_hitbox_polygon(_build_collision_presenter_config())
 
 
 func _get_safe_hitbox_z_index() -> int:
 	# CanvasItem 的安全范围通常是 [-4096, 4096]。
 	# 这里统一夹紧，避免检查器里被手动改成更大的值时再次刷报错。
-	return clampi(hitbox_z_index, -4096, 4096)
+	return _hex_map_collision_presenter.get_safe_hitbox_z_index(_build_collision_presenter_config())
 
 
 ## 重新应用单个地块的碰撞箱形状与位置。
 func _refresh_collision_for_stack(stack: Area2D) -> void:
-	if not is_instance_valid(stack):
-		return
-
-	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-	if not is_instance_valid(collision) or not (collision is CollisionPolygon2D):
-		return
-
-	var height = stack.get_meta("height") if stack.has_meta("height") else 1
-	var current_step_h = step_height * (tile_scale / REF_SCALE)
-	var top_block_y = 0.0 if current_view_state == MapViewState.VIEW_FLAT else -(int(height) - 1) * current_step_h
-
-	collision.polygon = _build_hitbox_polygon()
-	collision.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y)
-	collision.z_as_relative = false
-	collision.z_index = _get_safe_hitbox_z_index()
+	_hex_map_collision_presenter.refresh_collision_for_stack(stack, _build_collision_presenter_config())
 
 
 ## 对当前地图中的所有碰撞箱执行一次重建。
 ## 调整 hitbox 参数后调用它，就不需要重新生成整张地图。
 func rebuild_all_collision_shapes() -> void:
-	for stack in stack_nodes.values():
-		if is_instance_valid(stack) and stack is Area2D:
-			_refresh_collision_for_stack(stack)
+	_hex_map_collision_presenter.rebuild_all_collision_shapes(_build_collision_presenter_config())
+
+
+## 构造碰撞/输入 presenter 需要的上下文。
+## 所有可调项仍在 HexMap Inspector 上导出；presenter 只消费快照，不保存 HexMap 引用。
+func _build_collision_presenter_config() -> Dictionary:
+	return {
+		"stack_nodes": stack_nodes,
+		"hitbox_width": hitbox_width,
+		"hitbox_base_height": hitbox_base_height,
+		"hitbox_top_width_ratio": hitbox_top_width_ratio,
+		"hitbox_offset_x": hitbox_offset_x,
+		"hitbox_offset_y": hitbox_offset_y,
+		"hitbox_z_index": hitbox_z_index,
+		"step_height": step_height,
+		"tile_scale": tile_scale,
+		"ref_scale": REF_SCALE,
+		"current_view_state": current_view_state,
+		"view_state_flat": MapViewState.VIEW_FLAT,
+		"intro_reveal_active": is_map_intro_reveal_active(),
+		"intro_lock_interaction": map_intro_reveal_lock_interaction,
+		"settlement_reward_available": current_settlement_reward_mode == SettlementRewardMode.AVAILABLE,
+		"is_settlement_reward_stack_available": Callable(self, "_is_settlement_reward_stack_available"),
+		"tiles_interactive_master_enabled": _tiles_interactive_master_enabled,
+		"smart_collision_enabled": enable_smart_collision_interaction,
+		"target_selection_active": _is_target_selection_active(),
+	}
 
 
 func _get_hex_pixel_pos(hex_coord: Vector2) -> Vector2:

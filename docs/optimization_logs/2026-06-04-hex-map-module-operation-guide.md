@@ -209,6 +209,57 @@
 - 想调整奖励视觉强度，改 `settlement_reward_highlight_blend` 和 `settlement_reward_hover_blend`。
 - tooltip 定位还会读取 `step_height`、`tile_scale`、`REF_SCALE` 和 `current_view_state`。
 
+### `scene/in_scene/hex_map_modules/presenters/HexMapCollisionPresenter.gd`
+
+这个模块负责战斗地图的碰撞箱和鼠标输入开关：
+
+- 根据 hitbox 导出变量构建六边形 `CollisionPolygon2D` 点集。
+- 重新应用单个地块的碰撞箱位置、形状和 z-index。
+- 批量重建当前地图里的所有碰撞箱。
+- 根据当前阶段刷新所有地块的 `input_pickable`。
+- 入场动画锁定时禁用所有地块输入。
+- 结算奖励阶段只允许可领奖励地块接收输入。
+- 普通闲置阶段在智能碰撞开启时只允许敌方建筑地块接收输入。
+
+主要调用方：
+
+- `hex_map.gd::_build_hitbox_polygon()`
+- `hex_map.gd::_get_safe_hitbox_z_index()`
+- `hex_map.gd::_refresh_collision_for_stack()`
+- `hex_map.gd::rebuild_all_collision_shapes()`
+- `hex_map.gd::_refresh_stack_interactivity()`
+- `hex_map.gd::_stack_has_enemy_building()`
+
+相关导出变量仍然在 `hex_map.gd` 中调整：
+
+- `enable_smart_collision_interaction`
+- `hitbox_width`
+- `hitbox_base_height`
+- `hitbox_offset_x`
+- `hitbox_offset_y`
+- `hitbox_top_width_ratio`
+- `hitbox_z_index`
+- `map_intro_reveal_lock_interaction`
+- `step_height`
+- `tile_scale`
+
+运行时会读取：
+
+- `stack_nodes`
+- 地块 `height`、`occupant` 和 `collision_node` metadata
+- `_tiles_interactive_master_enabled`
+- 当前视图状态
+- 当前是否处于入场动画
+- 当前是否处于结算奖励模式
+- HexMap 注入的奖励资格回调
+
+调整时注意：
+
+- 这个模块只负责碰撞和 `input_pickable`，不要把 hover shader、AOE 高亮、敌人意图或奖励 tooltip 写进来。
+- 奖励资格仍由 HexMap 判断，presenter 只消费回调结果。
+- `rebuild_all_collision_shapes()` 仍然保留在 HexMap 上，外部工具或调试脚本可以继续调用旧入口。
+- 如果修改 hitbox 形状，必须同时检查 3D 视图和平铺视图下的点击区域是否贴合顶部地块。
+
 ### `scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd`
 
 这个模块负责高度视图的光柱和数字：
@@ -496,3 +547,4 @@ git diff --check
 - 等目标限制稳定后，再清理敌人和结算 tooltip 的边界情况。
 - 手动高度视图回归稳定后，再考虑把高度视图切换状态机本身拆成更薄的 controller。
 - 地图开场血条延迟队列已经拆到 `MapIntroRevealRunner.gd`。下一步如果继续拆 BarManager 耦合，应优先看血条创建接口和总血量刷新接口。
+- 碰撞和 input_pickable 已拆到 `HexMapCollisionPresenter.gd`。下一步可以继续拆普通 hover、AOE 和遮挡高亮到 `HexMapVisualStatePresenter.gd`。
