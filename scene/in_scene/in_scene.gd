@@ -16,6 +16,8 @@ const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/
 const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd")
 const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/CursorTooltipController.gd")
 const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd")
+const SETTLEMENT_DECK_SNAPSHOT_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckSnapshotService.gd")
+const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -168,6 +170,8 @@ var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
 var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
 var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
 var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.new()
+var _settlement_deck_snapshot_service: RefCounted = SETTLEMENT_DECK_SNAPSHOT_SERVICE.new()
+var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVICE.new()
 
 
 func _ready() -> void:
@@ -1421,160 +1425,20 @@ func _prepare_deck_button_for_settlement(reclaim_runtime_cards: bool = false) ->
 
 
 func _snapshot_current_deck_for_settlement() -> void:
-	if not GlobalDB:
-		return
-
-	if MapState:
-		MapState.set_saved_deck(GlobalDB.player_deck)
+	_settlement_deck_snapshot_service.snapshot_current_deck(GlobalDB, MapState)
 
 
 func _reclaim_all_runtime_cards_to_deck() -> void:
-	if not is_instance_valid(deck_pile):
-		return
-	if is_instance_valid(manager_instance) and manager_instance.has_method("deselect_card"):
-		manager_instance.deselect_card()
-	_reset_drag_controller_for_settlement()
-
-	# 收获阶段只整理真实运行时牌堆状态，不走 move_cards/update_card_ui，避免播放任何卡牌移动动画。
-	_move_cards_to_deck_without_animation(_collect_cards_for_settlement_reclaim())
-
-	deck_pile._held_cards.shuffle()
-	deck_pile.card_face_up = false
-	_sync_deck_cards_after_silent_reclaim()
-
-
-func _collect_cards_for_settlement_reclaim() -> Array[Card]:
-	var cards: Array[Card] = []
-	var seen_cards := {}
-
-	for container in _get_runtime_card_containers():
-		if container == deck_pile:
-			continue
-		for card in container._held_cards.duplicate():
-			_append_reclaim_card(cards, seen_cards, card)
-
-	for card in _collect_loose_runtime_cards(seen_cards):
-		_append_reclaim_card(cards, seen_cards, card)
-	return cards
-
-
-func _get_runtime_card_containers() -> Array[CardContainer]:
-	var containers: Array[CardContainer] = []
-	for container in [player_hand, discard_pile, deck_pile]:
-		_append_runtime_container(containers, container)
-
-	if is_instance_valid(manager_instance):
-		for container in manager_instance.card_container_dict.values():
-			_append_runtime_container(containers, container)
-	return containers
-
-
-func _append_runtime_container(containers: Array[CardContainer], candidate: Variant) -> void:
-	if is_instance_valid(candidate) and candidate is CardContainer and not containers.has(candidate):
-		containers.append(candidate)
-
-
-func _append_reclaim_card(cards: Array[Card], seen_cards: Dictionary, candidate: Variant) -> void:
-	if is_instance_valid(candidate) and candidate is Card and not seen_cards.has(candidate):
-		cards.append(candidate)
-		seen_cards[candidate] = true
-
-
-func _collect_loose_runtime_cards(seen_cards: Dictionary) -> Array[Card]:
-	var loose_cards: Array[Card] = []
 	var search_root: Node = get_tree().current_scene if is_instance_valid(get_tree().current_scene) else self
-
-	for card in search_root.find_children("*", "Card", true, false):
-		if is_instance_valid(card) and not seen_cards.has(card):
-			loose_cards.append(card)
-			seen_cards[card] = true
-	return loose_cards
-
-
-func _move_cards_to_deck_without_animation(cards: Array[Card]) -> void:
-	for card in cards:
-		if is_instance_valid(card):
-			_prepare_card_for_silent_deck_reclaim(card)
-			_silent_add_card_to_deck(card)
-
-
-func _silent_add_card_to_deck(card: Card) -> void:
-	if not is_instance_valid(card):
-		return
-
-	var previous_container: CardContainer = card.card_container
-	if is_instance_valid(previous_container):
-		previous_container._held_cards.erase(card)
-
-	var parent: Node = card.get_parent()
-	if parent:
-		parent.remove_child(card)
-
-	var cards_node: Node = deck_pile.cards_node if is_instance_valid(deck_pile.cards_node) else deck_pile.get_node_or_null("Cards")
-	if is_instance_valid(cards_node):
-		cards_node.add_child(card)
-	else:
-		deck_pile.add_child(card)
-
-	card.card_container = deck_pile
-	if not deck_pile._held_cards.has(card):
-		deck_pile._held_cards.append(card)
-	card.global_position = deck_pile.global_position
-
-
-func _prepare_card_for_silent_deck_reclaim(card: Card) -> void:
-	if not is_instance_valid(card):
-		return
-
-	if card.has_method("_restore_normal_visuals"):
-		card.call("_restore_normal_visuals")
-	if _has_runtime_property(card, &"card_current_state"):
-		card.set("card_current_state", 0)
-
-	card.set_as_top_level(false)
-	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.can_be_interacted_with = false
-	card.modulate = Color.WHITE
-	card.rotation = 0.0
-	card.scale = Vector2.ONE
-	card.show()
-
-
-func _sync_deck_cards_after_silent_reclaim() -> void:
-	var cards_node: Node = deck_pile.cards_node if is_instance_valid(deck_pile.cards_node) else deck_pile.get_node_or_null("Cards")
-	for i in range(deck_pile._held_cards.size()):
-		var card: Card = deck_pile._held_cards[i]
-		if not is_instance_valid(card):
-			continue
-		card.show_front = false
-		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card.can_be_interacted_with = false
-		if is_instance_valid(cards_node) and card.get_parent() == cards_node:
-			cards_node.move_child(card, i)
-
-
-func _reset_drag_controller_for_settlement() -> void:
-	var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
-	if not is_instance_valid(drag_controller):
-		return
-
-	if _has_runtime_property(drag_controller, &"is_dragging"):
-		drag_controller.set("is_dragging", false)
-	if _has_runtime_property(drag_controller, &"is_placing"):
-		drag_controller.set("is_placing", false)
-	if _has_runtime_property(drag_controller, &"current_card"):
-		drag_controller.set("current_card", null)
-	if _has_runtime_property(drag_controller, &"current_target_tile"):
-		drag_controller.set("current_target_tile", null)
-
-
-func _has_runtime_property(target: Object, property_name: StringName) -> bool:
-	if target == null:
-		return false
-	for property_info in target.get_property_list():
-		if property_info.get("name", &"") == property_name:
-			return true
-	return false
+	var drag_controller: Node = get_tree().get_first_node_in_group("DragShapeController")
+	_settlement_deck_reclaim_service.reclaim({
+		"manager_instance": manager_instance,
+		"player_hand": player_hand,
+		"discard_pile": discard_pile,
+		"deck_pile": deck_pile,
+		"search_root": search_root,
+		"drag_controller": drag_controller,
+	})
 
 
 func _on_combat_victory_triggered() -> void:

@@ -656,3 +656,107 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `SettlementDeckReclaimService.gd`：拆 `_prepare_deck_button_for_settlement()`、`_snapshot_current_deck_for_settlement()`、`_reclaim_all_runtime_cards_to_deck()` 这一组，但只做卡牌回收到牌堆，不碰胜负触发。
 2. 或 `InSceneSceneReturnController.gd`：拆 `_build_combat_return_payload()` 与 `_push_era_to_global()` 周边的 payload 组装，但暂缓真正 `_switch_scene_with_data()`。
 3. 继续暂缓 `_on_combat_victory_triggered()`、`_on_defeat_triggered()`、`_open_settlement_reward_scene()`，这些会同时牵动奖励消费、状态迁移和外部场景生命周期。
+
+## in_scene.gd 第四批结算牌堆回收拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批一次拆 3 个结算牌堆相关模块，只处理“进入结算时把运行时卡牌无动画整理回抽牌堆”这一条链路。
+刻意不触碰胜负触发、奖励页打开、奖励消费、局外返回和场景切换。
+
+目标函数范围：
+
+```text
+_snapshot_current_deck_for_settlement()
+_reclaim_all_runtime_cards_to_deck()
+_collect_cards_for_settlement_reclaim()
+_get_runtime_card_containers()
+_append_runtime_container()
+_append_reclaim_card()
+_collect_loose_runtime_cards()
+_move_cards_to_deck_without_animation()
+_silent_add_card_to_deck()
+_prepare_card_for_silent_deck_reclaim()
+_sync_deck_cards_after_silent_reclaim()
+_reset_drag_controller_for_settlement()
+_has_runtime_property()
+```
+
+当前读写的成员变量：
+
+```text
+manager_instance / player_hand / discard_pile / deck_pile
+is_processing_deck
+deck_button / discard_button
+```
+
+当前触碰的外部节点和接口：
+
+```text
+GlobalDB.player_deck
+MapState.set_saved_deck()
+CardManager.deselect_card()
+CardContainer._held_cards
+Card.card_container / show_front / can_be_interacted_with
+DragShapeController 运行时属性
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/settlement/SettlementDeckSnapshotService.gd
+scene/in_scene/in_scene_modules/settlement/SettlementRuntimeCardCollector.gd
+scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd
+```
+
+模块边界：
+
+- `SettlementDeckSnapshotService.gd` 只保存当前 `GlobalDB.player_deck` 到 `MapState`，不移动卡牌、不刷新 UI。
+- `SettlementRuntimeCardCollector.gd` 只从手牌、弃牌堆、抽牌堆、CardManager 容器和当前场景散落卡牌中收集需要回收的运行时卡牌。
+- `SettlementDeckReclaimService.gd` 只执行无动画回收、卡牌视觉复位、抽牌堆洗牌和拖拽状态清理，不处理胜负、奖励页或按钮显示。
+
+保留的旧公共入口：
+
+```text
+_prepare_deck_button_for_settlement(reclaim_runtime_cards)
+_snapshot_current_deck_for_settlement()
+_reclaim_all_runtime_cards_to_deck()
+```
+
+这些函数仍由 `in_scene.gd` 暴露，内部转发给结算模块。`in_scene.gd` 继续负责 `is_processing_deck`、按钮显隐和 `update_counts_and_ui()`，避免结算服务反向接管主控 UI 状态。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+运行时卡牌收集逻辑已由 SettlementRuntimeCardCollector 统一维护。
+无动画移动、卡牌视觉复位、抽牌堆同步和拖拽状态清理已由 SettlementDeckReclaimService 统一维护。
+当前牌组快照写入已由 SettlementDeckSnapshotService 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批建议转向场景返回链路，但继续避免一次性搬完整切场景生命周期：
+
+1. `InSceneReturnPayloadBuilder.gd`：先拆 `_build_combat_return_payload()`，只组装时代、时间币、牌组快照和房间上下文。
+2. `InScenePayloadApplier.gd`：可拆 `_apply_payload_to_new_scene_before_tree()` 与 `apply_external_event()` 的 payload 写入/解析，但不要同时改 HexMap。
+3. 暂缓 `_switch_scene_with_data()` 整体搬迁，等 payload 和日志/失败恢复先拆干净后再动 current_scene 生命周期。
