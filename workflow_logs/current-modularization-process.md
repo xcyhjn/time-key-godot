@@ -1625,3 +1625,80 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `TimelineActionHoverUiController.gd`：拆 `_on_timeline_action_hovered()` 中玩家行动 tooltip 和 pulse shader 表现。
 2. `TurnFlowController.gd`：抽牌流已独立后，可以开始拆 `_on_end_turn_pressed()` / `_start_turn()` 的回合编排，但仍要保守处理胜利中断。
 3. `_input(event)` 可以进一步拆键盘调试、右键取消选牌、空地弃牌三个小 handler；这会降低主脚本输入职责，但要逐个拆。
+
+## in_scene.gd 第十六批时间轴行动 hover UI 拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆时间轴行动 hover 的旧 UI 表现。
+敌方意图 hover 已经由 `EnemyIntentPresentationController` 接管，因此继续保持 ENEMY 行动在 `in_scene.gd` 入口早退。
+
+目标函数范围：
+
+```text
+_on_timeline_action_hovered(action, is_hovering)
+_apply_pulse_shader(target_node, color)
+_clear_pulse_shader(target_node)
+```
+
+当前触碰的外部节点和接口：
+
+```text
+TimelineAction.Type.ENEMY
+TimelineAction.Type.PLAYER
+action.target_tile
+action.source_node
+action.action_data["效果"]
+pulse_shader.duplicate()
+Sprite2D.material
+cursor_tooltip.text
+cursor_tooltip.add_theme_color_override()
+set_cursor_tooltip_position()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/ui/TimelineActionHoverUiController.gd
+```
+
+模块边界：
+
+- `TimelineActionHoverUiController.gd` 只处理玩家时间轴行动 hover 的 pulse shader、tooltip 文案、颜色、定位和隐藏。
+- 它不处理敌方意图 hover，不生成敌人意图，不修改时间轴数据。
+- `in_scene.gd` 继续保留 `_on_timeline_action_hovered()` 作为信号入口，并保留 ENEMY 早退逻辑。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+玩家时间轴行动 hover 的金色高亮、tooltip 文案和材质清理已经由 TimelineActionHoverUiController 统一维护。
+in_scene.gd 不再直接持有 pulse shader 挂载和卸载 helper。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+继续评估后再决定是否拆：
+
+1. `TurnFlowController.gd` 可以拆回合结束和新回合开始编排，但它同时牵动时间轴 resolve、建筑行为、抽牌、敌方意图和胜利中断，风险高于前面几批。
+2. `_input(event)` 可以按键盘调试、右键取消选牌、空地弃牌拆成小 handler，收益中等，风险低于回合流。
+3. 如果不继续拆，`in_scene.gd` 已经更接近 composition root，剩余很多函数只是旧公共入口和跨模块编排。

@@ -18,6 +18,7 @@ const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/
 const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/CursorTooltipController.gd")
 const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd")
 const TARGET_SELECTION_HOVER_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/TargetSelectionHoverUiController.gd")
+const TIMELINE_ACTION_HOVER_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/TimelineActionHoverUiController.gd")
 const SETTLEMENT_DECK_SNAPSHOT_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckSnapshotService.gd")
 const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd")
 const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardSceneController.gd")
@@ -186,6 +187,7 @@ var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
 var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
 var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.new()
 var _target_selection_hover_ui_controller: RefCounted = TARGET_SELECTION_HOVER_UI_CONTROLLER.new()
+var _timeline_action_hover_ui_controller: RefCounted = TIMELINE_ACTION_HOVER_UI_CONTROLLER.new()
 var _settlement_deck_snapshot_service: RefCounted = SETTLEMENT_DECK_SNAPSHOT_SERVICE.new()
 var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVICE.new()
 var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CONTROLLER.new()
@@ -462,61 +464,14 @@ func _on_timeline_action_hovered(action: TimelineAction, is_hovering: bool):
 	if action and action.type == TimelineAction.Type.ENEMY:
 		return
 
-	if is_hovering:
-		# ★ 修复：读取你 JSON 里设定的 "效果" 字段
-		var effect_text = action.action_data.get("效果", "发动未知技能！")
-
-		# 鼠标进入方格
-		if action.type == TimelineAction.Type.ENEMY:
-			# 敌人行动：红色高亮敌人本身和目标地块
-			_apply_pulse_shader(action.source_node, Color(1.0, 0.0, 0.0, 1.0))
-			_apply_pulse_shader(action.target_tile, Color(1.0, 0.0, 0.0, 1.0))
-
-			cursor_tooltip.text = "敌方意图: " + effect_text
-			cursor_tooltip.add_theme_color_override("font_color", Color.RED)
-
-		elif action.type == TimelineAction.Type.PLAYER:
-			# 玩家卡牌：金色高亮目标地块
-			_apply_pulse_shader(action.target_tile, Color(1.0, 0.8, 0.0, 1.0))
-
-			# ★ 新增修复：完成 TODO，显示玩家卡牌即将造成的效果
-			cursor_tooltip.text = "卡牌效果: " + effect_text
-			cursor_tooltip.add_theme_color_override("font_color", Color.GOLD)
-
-		# ★ 修复：设置提示框位置为鼠标位置 + 偏移
-		set_cursor_tooltip_position(get_global_mouse_position() + Vector2(20, -30))
-		cursor_tooltip.show()
-	else:
-		# 鼠标离开方格，清除高亮并隐藏浮窗
-		_clear_pulse_shader(action.source_node)
-		_clear_pulse_shader(action.target_tile)
-		cursor_tooltip.hide()
-
-
-# ==========================================
-# 辅助函数：安全地挂载和卸载材质
-# ==========================================
-func _apply_pulse_shader(target_node: Node, color: Color):
-	if not is_instance_valid(target_node): return
-	if not is_instance_valid(pulse_shader): return
-
-	# 假设你的地块/敌人有一个名叫 Sprite2D 的主要视觉节点
-	var sprite = target_node.get_node_or_null("Sprite2D")
-	if sprite:
-		# 使用 Duplicate 防止一亮全亮
-		sprite.material = pulse_shader.duplicate()
-		# 传入颜色参数给 Shader
-		sprite.material.set_shader_parameter("pulse_color", color)
-
-
-func _clear_pulse_shader(target_node: Node):
-	if not is_instance_valid(target_node): return
-
-	var sprite = target_node.get_node_or_null("Sprite2D")
-	if sprite:
-		# 恢复为普通状态（如果是地块，记得恢复成原有的悬浮 Shader，而不是直接清空为 null）
-		# sprite.material = original_hex_material
-		sprite.material = null
+	_timeline_action_hover_ui_controller.handle_hover({
+		"action": action,
+		"is_hovering": is_hovering,
+		"pulse_shader": pulse_shader,
+		"cursor_tooltip": cursor_tooltip,
+		"mouse_position": get_global_mouse_position(),
+		"set_cursor_tooltip_position": Callable(self, "set_cursor_tooltip_position"),
+	})
 
 
 func setup_card_system():
