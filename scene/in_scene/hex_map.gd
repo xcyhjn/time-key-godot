@@ -22,6 +22,7 @@ const HEIGHT_VIEW_MAP_TRANSITION_RUNNER := preload("res://scene/in_scene/hex_map
 const MAP_INTRO_REVEAL_RUNNER := preload("res://scene/in_scene/hex_map_modules/runners/MapIntroRevealRunner.gd")
 const TILE_ELEVATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/elevation/TileElevationService.gd")
 const HEX_MAP_INPUT_COORDINATOR := preload("res://scene/in_scene/hex_map_modules/input/HexMapInputCoordinator.gd")
+const TARGET_HOVER_CONTROLLER := preload("res://scene/in_scene/hex_map_modules/input/TargetHoverController.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -344,6 +345,7 @@ var _map_intro_reveal_runner := MAP_INTRO_REVEAL_RUNNER.new()
 var _tile_elevation_service := TILE_ELEVATION_SERVICE.new()
 var _tile_destruction_mutation_service := TILE_DESTRUCTION_MUTATION_SERVICE.new()
 var _hex_map_input_coordinator := HEX_MAP_INPUT_COORDINATOR.new()
+var _target_hover_controller := TARGET_HOVER_CONTROLLER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1489,42 +1491,56 @@ func _handle_enemy_intent_stack_hover(stack: Area2D, is_entered: bool) -> void:
 		intent_controller.handle_map_stack_hover(stack, is_entered)
 
 
-func _update_highlight():
-	hovered_stacks = hovered_stacks.filter(func(s): return is_instance_valid(s))
-	
-	var cm = get_card_manager()
-	var active_card = cm.get("current_selected_card") if cm else null
-	
-	# 获取主场景的引用，用于操作 UI
-	var main_board = get_tree().get_first_node_in_group("MainBoard")
-	
-	# ★ 需求：未选中卡牌前，绝不触发高亮和Shader
-	if not is_instance_valid(active_card):
-		_clear_all_aoe_highlights()
-		_clear_occlusion_effects()
-		active_stack = null
-		# 安全隐藏 UI
-		if main_board and is_instance_valid(main_board.get("cursor_tooltip")):
-			main_board.cursor_tooltip.hide()
-		return
+## 刷新卡牌目标 hover 状态。
+## 目标中心选择、无卡牌时的清理，以及 AOE/遮挡刷新触发已经拆到 TargetHoverController；
+## HexMap 只负责提供旧回调和回写 hovered_stacks、active_stack。
+func _update_highlight() -> void:
+	_apply_target_hover_controller_result(
+		_target_hover_controller.update(
+			hovered_stacks,
+			active_stack,
+			_build_target_hover_controller_config()
+		)
+	)
 
-	# 寻找最高处的堆叠地块作为中心点
-	var front_stack: Area2D = null
-	var max_y = -INF
-	for stack in hovered_stacks:
-		if stack.global_position.y > max_y:
-			max_y = stack.global_position.y
-			front_stack = stack
 
-	# 如果悬停中心发生了变化，更新整片 AOE 区域
-	if active_stack != front_stack:
-		active_stack = front_stack
-		if is_instance_valid(active_stack):
-			_update_aoe_display(active_card, active_stack, main_board)
-			# 触发动态遮挡
-			_update_occlusion(active_stack)
-		else:
-			_clear_all_aoe_highlights()
+## 收集 TargetHoverController 需要的回调。
+## 控制器不直接查找 CardManager、MainBoard 或视觉 presenter，所有场景路径仍由 HexMap 统一管理。
+func _build_target_hover_controller_config() -> Dictionary:
+	return {
+		"get_active_card": Callable(self, "_get_current_selected_card_for_hover"),
+		"get_main_board": Callable(self, "_get_main_board_for_hover"),
+		"clear_all_aoe_highlights": Callable(self, "_clear_all_aoe_highlights"),
+		"clear_occlusion_effects": Callable(self, "_clear_occlusion_effects"),
+		"update_aoe_display": Callable(self, "_update_aoe_display"),
+		"update_occlusion": Callable(self, "_update_occlusion"),
+	}
+
+
+## 给目标 hover 控制器读取当前选中卡牌。
+## CardManager 的多路径查找仍保留在 get_card_manager()，后续统一 CardManagerLocator 时再收敛。
+func _get_current_selected_card_for_hover() -> Variant:
+	var cm := get_card_manager()
+	if cm == null:
+		return null
+	return cm.get("current_selected_card")
+
+
+## 给目标 hover 控制器读取 MainBoard。
+## 这里保留旧 group 查询方式，避免本次拆分改变 UI 生命周期依赖。
+func _get_main_board_for_hover() -> Node:
+	return get_tree().get_first_node_in_group("MainBoard")
+
+
+## 回写 TargetHoverController 返回的 hover 状态。
+## 控制器只返回状态快照，真正的成员变量仍归 HexMap 持有。
+func _apply_target_hover_controller_result(result: Dictionary) -> void:
+	if result.has("hovered_stacks"):
+		var next_hovered: Variant = result.get("hovered_stacks", [])
+		if next_hovered is Array:
+			hovered_stacks = next_hovered
+	if result.has("active_stack"):
+		active_stack = result.get("active_stack", null)
 			
 func _clear_all_aoe_highlights() -> void:
 	var result := _hex_map_visual_state_presenter.clear_aoe_highlights(

@@ -695,6 +695,39 @@
 - 敌人意图管理器路径暂时还留在 `hex_map.gd::_handle_enemy_intent_stack_hover()`，后续拆 TimelineSystem 依赖时再处理。
 - 如果要删除 `active_card.has_method("play_card")` 兜底，应先确认战斗内所有可选卡牌都继承或实现同一出牌接口。
 
+### `scene/in_scene/hex_map_modules/input/TargetHoverController.gd`
+
+这个模块负责卡牌选中后的目标 hover 编排：
+
+- 清理 `hovered_stacks` 中已经释放的地块。
+- 按旧规则从当前 hover 地块里选择屏幕 y 值最大的前景地块。
+- 没有选中卡牌时，触发 AOE 清理、遮挡清理，并隐藏 MainBoard 的 `cursor_tooltip`。
+- 当前前景地块变化时，触发 AOE 更新和动态遮挡更新。
+- 把需要回写的 `hovered_stacks` 和 `active_stack` 返回给 HexMap。
+
+主要调用方：
+
+- `hex_map.gd::_update_highlight()`
+- `HexMapInputCoordinator.gd` 通过 HexMap 注入的 `update_highlight` 回调间接触发它
+- `clear_enemy_intent_preview(true)` 重新恢复卡牌 hover 时也会经过旧 `_update_highlight()` 入口
+
+目前没有新增导出变量。
+
+运行时会读取：
+
+- `hovered_stacks`
+- `active_stack`
+- HexMap 注入的当前选中卡牌读取回调
+- HexMap 注入的 MainBoard 读取回调
+- HexMap 注入的 AOE 清理、遮挡清理、AOE 更新和遮挡更新回调
+
+调整时注意：
+
+- 这个模块只决定“当前 hover 中心是谁”和“中心变化时调哪些旧入口”，不要在这里计算卡牌范围。
+- `_update_aoe_display()` 仍留在 `hex_map.gd`，因为它还同时依赖 `HexTargetRules`、`stack_nodes`、目标合法性和 MainBoard tooltip。
+- CardManager 查找仍保留在 `hex_map.gd::get_card_manager()`，后续统一 `CardManagerLocator.gd` 时再收敛。
+- Tooltip 的具体文案和位置更新仍由 MainBoard 负责，这里只保留无卡牌时隐藏旧 tooltip 的行为。
+
 ## 修改后的验证清单
 
 改动任意已提取模块后，先运行：
@@ -732,5 +765,6 @@ git diff --check
 - 地块升降编排已拆到 `TileElevationService.gd`。
 - 地块真实删除和旧静态库清理已拆到 `TileDestructionMutationService.gd`。
 - 地块输入编排已拆到 `HexMapInputCoordinator.gd`。
-- `_update_highlight()` 仍然混合了 CardManager 查询、MainBoard tooltip、hover 中心选择、AOE 刷新和遮挡刷新，可以继续拆成 target hover presenter/controller。
+- `_update_highlight()` 的 hover 中心选择和刷新触发已拆到 `TargetHoverController.gd`。
+- `_update_aoe_display()` 仍然混合了卡牌范围收集、目标合法性判断、视觉状态应用和 MainBoard tooltip 更新，适合下一步拆成 AOE hover presenter 或目标 hover view model。
 - `_create_stack_at()` 和 `refresh_tile_visual()` 仍然混合了地块节点创建、地貌挂接、shader 初始化和碰撞创建，适合后续拆成 tile stack factory。
