@@ -10,7 +10,7 @@
 
 ## 新增模块
 
-### `scene/in_scene/SettlementRewardPresenter.gd`
+### `scene/in_scene/hex_map_modules/presenters/SettlementRewardPresenter.gd`
 
 这个模块负责：
 

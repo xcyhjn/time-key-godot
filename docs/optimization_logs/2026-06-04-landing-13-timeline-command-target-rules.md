@@ -10,7 +10,7 @@
 
 ## 新增模块
 
-### `scene/in_scene/timeline/commands/TimelineCommandTargetRules.gd`
+### `scene/in_scene/hex_map_modules/timeline/commands/rules/TimelineCommandTargetRules.gd`
 
 这个模块负责：
 

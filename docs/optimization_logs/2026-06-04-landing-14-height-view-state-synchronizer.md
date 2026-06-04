@@ -10,7 +10,7 @@
 
 ## 新增模块
 
-### `scene/in_scene/HeightViewStateSynchronizer.gd`
+### `scene/in_scene/hex_map_modules/height_view/HeightViewStateSynchronizer.gd`
 
 这个模块负责：
 

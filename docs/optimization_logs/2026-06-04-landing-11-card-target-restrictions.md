@@ -10,7 +10,7 @@
 
 ## 更新后的模块
 
-### `scene/in_scene/HexTargetRules.gd`
+### `scene/in_scene/hex_map_modules/rules/HexTargetRules.gd`
 
 这个模块负责：
 

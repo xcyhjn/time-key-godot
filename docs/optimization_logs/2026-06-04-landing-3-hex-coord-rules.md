@@ -8,7 +8,7 @@
 
 ## 代码改动
 
-- 新增 `scene/in_scene/HexCoordRules.gd`。
+- 新增 `scene/in_scene/hex_map_modules/rules/HexCoordRules.gd`。
 - 把扇形地图坐标采样、圆形地图坐标采样、轴坐标距离计算和轴坐标到像素坐标转换移到静态规则函数中。
 - `scene/in_scene/hex_map.gd` 通过 preload 使用 `HexCoordRules`，并继续通过 `_get_fan_coords()`、`_get_circular_coords()` 和 `_get_hex_pixel_pos()` 这些旧入口对外工作。
 

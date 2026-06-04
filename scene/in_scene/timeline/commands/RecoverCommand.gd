@@ -3,7 +3,7 @@
 class_name RecoverCommand
 extends EffectCommand
 
-const TARGET_RULES := preload("res://scene/in_scene/timeline/commands/TimelineCommandTargetRules.gd")
+const TARGET_RULES := preload("res://scene/in_scene/hex_map_modules/timeline/commands/rules/TimelineCommandTargetRules.gd")
 
 var amount: int
 

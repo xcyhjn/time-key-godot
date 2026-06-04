@@ -10,7 +10,7 @@
 
 ## 已提取模块
 
-### `scene/in_scene/HexCoordRules.gd`
+### `scene/in_scene/hex_map_modules/rules/HexCoordRules.gd`
 
 这个模块负责战斗地图的纯坐标计算：
 
@@ -39,7 +39,7 @@
 - 想加宽或收窄扇形战斗地图，调 `fan_angle_span`。
 - `spacing_x`、`spacing_y` 和 `tile_scale` 最好一起看，因为它们同时影响视觉布局和 hitbox 对齐。
 
-### `scene/in_scene/HexTerrainRules.gd`
+### `scene/in_scene/hex_map_modules/rules/HexTerrainRules.gd`
 
 这个模块负责地形和高度的纯规则：
 
@@ -72,7 +72,7 @@
 - 想调整圆形房间的危险曲线，改 `base_h_min`、`base_h_max` 和 `elite_h_bonus`。
 - 扇形地图的层级概率现在还是代码常量。只有策划需要频繁迭代时，才建议改成导出变量。
 
-### `scene/in_scene/TileDestructionBatchQueue.gd`
+### `scene/in_scene/hex_map_modules/destruction/TileDestructionBatchQueue.gd`
 
 这个模块负责高度超限地块销毁的队列编排：
 
@@ -101,7 +101,7 @@
 - `tile_destruction_batch_collect_delay` 应保持较小，它只是把同一波地形变化收集到一起。
 - VFX 时间参数仍然通过 `_perform_tile_destruction()` 传给 `VFXManager`，不是队列模块自己播放。
 
-### `scene/in_scene/HexTargetRules.gd`
+### `scene/in_scene/hex_map_modules/rules/HexTargetRules.gd`
 
 这个模块负责卡牌放置前的地图目标规则：
 
@@ -129,7 +129,7 @@
 - 不要把 shader、tooltip 或 `CardManager` 查找逻辑写进这个模块。
 - timeline command 仍然负责执行时的最终校验；这里是给玩家反馈和点击拦截用的预检规则。
 
-### `scene/in_scene/EnemyIntentMapPresenter.gd`
+### `scene/in_scene/hex_map_modules/presenters/EnemyIntentMapPresenter.gd`
 
 这个模块负责敌人意图在地图上的表现：
 
@@ -170,7 +170,7 @@
 - 想调整来源地块在有效、自身包含、无效状态下的高亮强度，改 `enemy_intent_source_*_blend`。
 - `enemy_intent_source_highlight_width` 仍保留给旧的来源覆盖层实验，但当前 presenter 不使用它。
 
-### `scene/in_scene/SettlementRewardPresenter.gd`
+### `scene/in_scene/hex_map_modules/presenters/SettlementRewardPresenter.gd`
 
 这个模块负责结算奖励的地图表现：
 
@@ -209,7 +209,7 @@
 - 想调整奖励视觉强度，改 `settlement_reward_highlight_blend` 和 `settlement_reward_hover_blend`。
 - tooltip 定位还会读取 `step_height`、`tile_scale`、`REF_SCALE` 和 `current_view_state`。
 
-### `scene/in_scene/HeightViewIndicatorPresenter.gd`
+### `scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd`
 
 这个模块负责高度视图的光柱和数字：
 
@@ -252,7 +252,7 @@
 - `height_view_hover_speed` 和 `height_view_hover_amplitude` 控制 hover 浮动。
 - presenter 不修改地块高度数据；升降高度仍然留在 `hex_map.gd`。
 
-### `scene/in_scene/RuntimeLandformRegistrar.gd`
+### `scene/in_scene/hex_map_modules/registrars/RuntimeLandformRegistrar.gd`
 
 这个模块负责运行时地貌注册：
 
@@ -288,7 +288,7 @@
 - 实体锚点通过 `hitbox_offset_x`、`hitbox_offset_y` 和 `landform_instance_offset` 调整。
 - 运行时生成 VFX 通过 `runtime_landform_spawn_vfx_enabled` 和 `runtime_landform_spawn_vfx_duration` 调整。
 
-### `scene/in_scene/ExternalRenderNodeRegistrar.gd`
+### `scene/in_scene/hex_map_modules/registrars/ExternalRenderNodeRegistrar.gd`
 
 这个模块负责血条和外部渲染节点注册：
 
@@ -317,7 +317,7 @@
 - 血条创建和删除仍然归 BarManager；这个模块只负责让血条加入地图共享视觉效果。
 - 平铺和 3D 视图下的位置同步仍然归 HexMap 的视图同步流程。
 
-### `scene/in_scene/timeline/commands/TimelineCommandTargetRules.gd`
+### `scene/in_scene/hex_map_modules/timeline/commands/rules/TimelineCommandTargetRules.gd`
 
 这个模块负责 timeline command 执行时的最终目标校验：
 
@@ -349,7 +349,7 @@
 - 不要把 VFX、等待逻辑、卡牌 JSON 解析或实体创建写进这个辅助模块。
 - 新 timeline command 需要目标检查时，在这里加一个小 helper，让 command 继续只关心副作用。
 
-### `scene/in_scene/HeightViewStateSynchronizer.gd`
+### `scene/in_scene/hex_map_modules/height_view/HeightViewStateSynchronizer.gd`
 
 这个模块负责平铺和 3D 视图之间的单地块同步辅助：
 
@@ -382,7 +382,7 @@
 - 生成地貌、重建视觉或注册外部渲染节点后，可以使用这个模块做运行时单地块同步。
 - 不要在这里修改地块高度或 `map_data`，这个模块只处理缓存和视觉 y 坐标。
 
-### `scene/in_scene/HeightViewMapTransitionRunner.gd`
+### `scene/in_scene/hex_map_modules/height_view/HeightViewMapTransitionRunner.gd`
 
 这个模块负责整张地图进入平铺高度视图和恢复 3D 视图的循环：
 

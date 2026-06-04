@@ -6,7 +6,7 @@ const CARD_SCENE_REF: PackedScene = preload("res://scene/card/custom_card.tscn")
 const PILE_VIEWER_SCENE: PackedScene = preload("res://scene/pile/pile_viewer.tscn")
 const CARD_MANAGER_SCENE: PackedScene = preload("res://addons/card-framework/card_manager.tscn")
 const CARD_FACTORY_SCENE: PackedScene = preload("res://addons/card-framework/card_factory.tscn")
-const HEX_TARGET_RULES := preload("res://scene/in_scene/HexTargetRules.gd")
+const HEX_TARGET_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexTargetRules.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE

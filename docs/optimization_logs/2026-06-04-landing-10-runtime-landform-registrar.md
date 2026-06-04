@@ -10,7 +10,7 @@
 
 ## 新增模块
 
-### `scene/in_scene/RuntimeLandformRegistrar.gd`
+### `scene/in_scene/hex_map_modules/registrars/RuntimeLandformRegistrar.gd`
 
 这个模块负责：
 

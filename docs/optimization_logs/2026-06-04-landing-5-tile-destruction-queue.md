@@ -14,7 +14,7 @@
 
 ## 代码改动
 
-- 新增 `scene/in_scene/TileDestructionBatchQueue.gd`。
+- 新增 `scene/in_scene/hex_map_modules/destruction/TileDestructionBatchQueue.gd`。
 - `hex_map.gd` 原来的 pending/running 状态由 `_tile_destruction_queue` 接管。
 - `_queue_tile_destruction_and_wait()` 缩减为薄包装，只传入当前调参值和 `_perform_tile_destruction` 回调。
 - 删除了 `hex_map.gd` 中旧的私有队列辅助函数：

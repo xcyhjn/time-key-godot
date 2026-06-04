@@ -10,7 +10,7 @@
 
 ## 新增模块
 
-### `scene/in_scene/EnemyIntentMapPresenter.gd`
+### `scene/in_scene/hex_map_modules/presenters/EnemyIntentMapPresenter.gd`
 
 这个模块负责：
 

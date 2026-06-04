@@ -10,7 +10,7 @@
 
 ## 新增模块
 
-### `scene/in_scene/HeightViewMapTransitionRunner.gd`
+### `scene/in_scene/hex_map_modules/height_view/HeightViewMapTransitionRunner.gd`
 
 这个模块负责：
 

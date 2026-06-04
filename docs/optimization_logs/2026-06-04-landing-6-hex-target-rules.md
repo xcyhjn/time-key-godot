@@ -15,7 +15,7 @@
 
 ## 代码改动
 
-- 新增 `scene/in_scene/HexTargetRules.gd`。
+- 新增 `scene/in_scene/hex_map_modules/rules/HexTargetRules.gd`。
 - `hex_map.gd` 委托了以下逻辑：
   - `_is_stack_valid_target()`
   - `_update_aoe_display()` 中的 AOE 效果范围地块收集。

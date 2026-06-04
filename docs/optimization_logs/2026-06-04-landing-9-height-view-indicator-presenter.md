@@ -10,7 +10,7 @@
 
 ## 新增模块
 
-### `scene/in_scene/HeightViewIndicatorPresenter.gd`
+### `scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd`
 
 这个模块负责：
 

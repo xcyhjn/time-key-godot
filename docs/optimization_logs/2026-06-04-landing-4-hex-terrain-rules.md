@@ -13,7 +13,7 @@
 
 ## 代码改动
 
-- 新增 `scene/in_scene/HexTerrainRules.gd`。
+- 新增 `scene/in_scene/hex_map_modules/rules/HexTerrainRules.gd`。
 - `scene/in_scene/hex_map.gd` 改为委托以下逻辑：
   - 扇形地图层级计算。
   - 按层级随机高度。
