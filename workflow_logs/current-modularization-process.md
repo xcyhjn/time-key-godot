@@ -1336,3 +1336,69 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `CombatDefeatFlowController.gd`：拆 `_on_defeat_triggered()` 中失败 UI、统计数据和删档动作，但需要特别确认 `Saver.Delete_save(0)` 的触发时机。
 2. `GameWinFlowController.gd`：拆 `_on_win_button_button_down()` 中最终胜利页触发和音效，不要和战斗胜利结算混在一起。
 3. `_return_to_out_scene()` 可以继续瘦身，但它已经由 payload / loader / executor 分担，优先级低于失败流。
+
+## in_scene.gd 第十二批失败流和最终胜利页拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批拆两个相邻但互不混合的结算入口：
+
+```text
+_on_defeat_triggered()
+_on_win_button_button_down()
+```
+
+它们都在结算按钮和全局信号附近，但职责不同：
+
+- 失败流负责 GameOver UI、失败统计和删档。
+- 最终胜利页负责最终胜利音效和胜利页触发。
+
+本批不修改战斗胜利进入结算期的流程，不切换局外场景，也不修改奖励页。
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/settlement/CombatDefeatFlowController.gd
+scene/in_scene/in_scene_modules/settlement/GameWinFlowController.gd
+```
+
+模块边界：
+
+- `CombatDefeatFlowController.gd` 只编排失败后的 BGM 停止、调试按钮隐藏、战斗 UI 隐藏、失败统计生成、GameOver UI 启动和 `Saver.Delete_save(0)`。
+- `GameWinFlowController.gd` 只编排最终胜利页的 BGM 停止、`game_win` 循环音效和 `win._on_victory_triggered()`。
+- `in_scene.gd` 继续保留 `_on_defeat_triggered()`、`_on_win_button_button_down()` 和按钮/信号连接入口。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+失败统计字典、GameOver 启动、删档和最终胜利页触发不再直接散落在 in_scene.gd 里。
+主脚本只负责把当前节点、autoload 和回调交给对应 flow controller。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批建议处理 `_return_to_out_scene()` 的剩余编排：
+
+1. 新增 `InSceneReturnFlowController.gd`，只负责返回局外前的 dim 显示、入场动画等待、payload 构造调用和 `_switch_scene_with_data()` 调用。
+2. 继续保留 `_build_combat_return_payload()` 和 `_switch_scene_with_data()` 旧入口，避免同批触碰 payload、loader、executor 三层。
+3. 如果优先更低风险，可以先拆 `_on_external_scene_exit_pressed()` 的退出后恢复编排，但收益比返回局外小。

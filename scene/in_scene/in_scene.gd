@@ -22,6 +22,8 @@ const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_sce
 const SETTLEMENT_REWARD_EXIT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardExitController.gd")
 const SETTLEMENT_REWARD_CONSUMER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardConsumer.gd")
 const COMBAT_VICTORY_SETTLEMENT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/CombatVictorySettlementController.gd")
+const COMBAT_DEFEAT_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/CombatDefeatFlowController.gd")
+const GAME_WIN_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/GameWinFlowController.gd")
 const IN_SCENE_RETURN_PAYLOAD_BUILDER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd")
 const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd")
 const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
@@ -185,6 +187,8 @@ var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CO
 var _settlement_reward_exit_controller: RefCounted = SETTLEMENT_REWARD_EXIT_CONTROLLER.new()
 var _settlement_reward_consumer: RefCounted = SETTLEMENT_REWARD_CONSUMER.new()
 var _combat_victory_settlement_controller: RefCounted = COMBAT_VICTORY_SETTLEMENT_CONTROLLER.new()
+var _combat_defeat_flow_controller: RefCounted = COMBAT_DEFEAT_FLOW_CONTROLLER.new()
+var _game_win_flow_controller: RefCounted = GAME_WIN_FLOW_CONTROLLER.new()
 var _return_payload_builder: RefCounted = IN_SCENE_RETURN_PAYLOAD_BUILDER.new()
 var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new()
 var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
@@ -1286,26 +1290,16 @@ func _consume_settlement_reward_context(reward_context: Dictionary) -> void:
 
 # 信号响应：执行实际的动画转换逻辑
 func _on_defeat_triggered():
-	SoundManager.stop_bgm()
-	
-	_hide_debug_buttons_for_resolution()
-
-	# 隐藏所有战斗 UI
-	hide_ui_for_external_scene()
-	
-	# 准备结算数据
-	var stats = {
-		"所处时代": str(current_era_value),
-		"因果状态": "彻底断裂",
-		"时间资产": str(GlobalTimecoin.get_timecoins() if GlobalTimecoin else 0),
-		"同步率": "0%"
-	}
-	
-	# 启动动画序列
-	if is_instance_valid(game_over_ui):
-		game_over_ui.start_sequence(stats)
-
-	Saver.Delete_save(0)
+	_combat_defeat_flow_controller.run_defeat_flow({
+		"sound_manager": SoundManager,
+		"hide_debug_buttons": Callable(self, "_hide_debug_buttons_for_resolution"),
+		"hide_ui_for_external_scene": Callable(self, "hide_ui_for_external_scene"),
+		"current_era_value": current_era_value,
+		"global_timecoin": GlobalTimecoin,
+		"game_over_ui": game_over_ui,
+		"saver": Saver,
+		"save_slot": 0,
+	})
 
 # 按钮点击：只负责发出全局信号
 func _on_lose_button_pressed():
@@ -1316,11 +1310,12 @@ func _on_combat_victory_debug_button_down() -> void:
 		Signal_Bus.emit_combat_victory_triggered()
 
 func _on_win_button_button_down() -> void:
-	SoundManager.stop_bgm()
-	SoundManager.play_looping_sfx("game_win")
-	_hide_debug_buttons_for_resolution()
-	if is_instance_valid(win) and win.has_method("_on_victory_triggered"):
-		win._on_victory_triggered()
+	_game_win_flow_controller.run_win_flow({
+		"sound_manager": SoundManager,
+		"hide_debug_buttons": Callable(self, "_hide_debug_buttons_for_resolution"),
+		"win_screen": win,
+		"sfx_name": "game_win",
+	})
 
 
 func _hide_settlement_buttons() -> void:
