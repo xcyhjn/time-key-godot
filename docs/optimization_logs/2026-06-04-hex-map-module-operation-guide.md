@@ -351,7 +351,7 @@
 
 ### `scene/in_scene/HeightViewStateSynchronizer.gd`
 
-这个模块负责平铺和 3D 视图之间的状态同步辅助：
+这个模块负责平铺和 3D 视图之间的单地块同步辅助：
 
 - 管理平铺和 3D 视图的原始位置缓存。
 - 计算单个地块在平铺视图中的下落距离。
@@ -379,9 +379,42 @@
 
 调整时注意：
 
-- 全图 `_compress_to_single_height_view()` 和 `_restore_original_height_view()` 仍然在 `hex_map.gd`。
 - 生成地貌、重建视觉或注册外部渲染节点后，可以使用这个模块做运行时单地块同步。
 - 不要在这里修改地块高度或 `map_data`，这个模块只处理缓存和视觉 y 坐标。
+
+### `scene/in_scene/HeightViewMapTransitionRunner.gd`
+
+这个模块负责整张地图进入平铺高度视图和恢复 3D 视图的循环：
+
+- 遍历 `stack_nodes`，对每个地块执行平铺或恢复。
+- 进入平铺视图前写入恢复缓存。
+- 给地块 sprite 写入 `is_flat_view` shader instance 参数。
+- 侧面块进入平铺视图时淡出并隐藏，恢复 3D 时重新显示并淡入。
+- 顶部块、occupant、collision 和 health_bar 按旧公式下落或恢复。
+- 通过 HexMap 注入回调创建和移除高度指示器。
+
+主要调用方：
+
+- `hex_map.gd::_compress_to_single_height_view()`
+- `hex_map.gd::_restore_original_height_view()`
+
+目前没有新增导出变量。
+
+运行时会读取：
+
+- `stack_nodes`
+- `height_view_original_materials`
+- `filler_block_spacing`
+- `tile_scale`
+- `REF_SCALE`
+- 地块 `height`、`sprites`、`occupant` 和 `collision_node` metadata
+
+调整时注意：
+
+- 这个模块只管全图切换动画，不管运行时单格新增。运行时单格新增仍然看 `HeightViewStateSynchronizer.gd`。
+- 血条查找、Tween 创建和高度指示器创建都通过 HexMap 回调注入，不要在 runner 里直接依赖场景节点路径。
+- 切换后的奖励 tooltip 全量刷新仍然在 `toggle_height_view()` 中。
+- 不要在这里修改地块高度或 `map_data`。
 
 ## 修改后的验证清单
 
@@ -413,5 +446,5 @@ git diff --check
 建议按这个优先级继续：
 
 - 等目标限制稳定后，再清理敌人和结算 tooltip 的边界情况。
-- 手动高度视图回归稳定后，再考虑迁移全图平铺和 3D 压缩、恢复循环。
+- 手动高度视图回归稳定后，再考虑把高度视图切换状态机本身拆成更薄的 controller。
 - 如果 BarManager 耦合继续变重，再单独拆地图开场血条延迟队列。

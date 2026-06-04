@@ -15,6 +15,7 @@ const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/HeightVie
 const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/RuntimeLandformRegistrar.gd")
 const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/ExternalRenderNodeRegistrar.gd")
 const HEIGHT_VIEW_STATE_SYNCHRONIZER := preload("res://scene/in_scene/HeightViewStateSynchronizer.gd")
+const HEIGHT_VIEW_MAP_TRANSITION_RUNNER := preload("res://scene/in_scene/HeightViewMapTransitionRunner.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -330,6 +331,7 @@ var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
 var _height_view_state_synchronizer := HEIGHT_VIEW_STATE_SYNCHRONIZER.new()
+var _height_view_map_transition_runner := HEIGHT_VIEW_MAP_TRANSITION_RUNNER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1876,6 +1878,15 @@ func _find_health_bar_for_landform(entity: landform) -> Node:
 	return _external_render_node_registrar.find_health_bar_for_landform(entity, bar_manager)
 
 
+## 按 occupant 实例查找高度视图缓存需要的血条。
+## 全图平铺/3D 过渡沿用旧命名规则 `HealthBar_<instance_id>`，并把 BarManager 路径留在 HexMap 内部。
+func _find_height_view_health_bar_for_occupant(occupant: Variant) -> Node:
+	var bar_manager := get_node_or_null("BarManager")
+	if not is_instance_valid(bar_manager) or not is_instance_valid(occupant):
+		return null
+	return bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
+
+
 func _get_or_create_height_view_cache(stack: Area2D) -> Dictionary:
 	return _height_view_state_synchronizer.get_or_create_cache(
 		stack,
@@ -1937,6 +1948,27 @@ func _build_height_view_state_synchronizer_config() -> Dictionary:
 		"tween_position_y": Callable(self, "_tween_position_y"),
 		"position_tween_duration": 0.3,
 		"update_reward_tooltip": Callable(self, "_update_settlement_reward_tooltip_position_for_stack"),
+	}
+
+
+## 收集全图平铺/3D 过渡需要的上下文。
+## 过渡执行器只负责编排整张地图的动画循环；状态切换、调参来源和具体 presenter 仍由 HexMap 管理。
+func _build_height_view_map_transition_runner_config() -> Dictionary:
+	return {
+		"stack_nodes": stack_nodes,
+		"height_view_original_materials": height_view_original_materials,
+		"filler_block_spacing": filler_block_spacing,
+		"tile_scale": tile_scale,
+		"ref_scale": REF_SCALE,
+		"cleanup_stack_sprites": Callable(self, "_cleanup_stack_sprites"),
+		"get_stack_height": Callable(self, "_get_stack_height"),
+		"find_health_bar_for_occupant": Callable(self, "_find_height_view_health_bar_for_occupant"),
+		"tween_position_y": Callable(self, "_tween_position_y"),
+		"create_tween": Callable(self, "create_tween"),
+		"create_height_indicator": Callable(self, "_create_height_indicator"),
+		"remove_height_indicator": Callable(self, "_remove_height_indicator"),
+		"position_tween_duration": 0.3,
+		"side_fade_duration": 0.3,
 	}
 
 
@@ -2542,101 +2574,12 @@ func change_tile_state(stack: Area2D, new_state: TileVisualState) -> void:
 
 ## 压缩为平铺视图 (利用缓存精准归位)
 func _compress_to_single_height_view() -> void:
-	var current_step_h = filler_block_spacing * (tile_scale / REF_SCALE)
-	height_view_original_materials.clear()
-	
-	for coord in stack_nodes.keys():
-		var stack = stack_nodes[coord]
-		if not is_instance_valid(stack): continue
-		
-		var sprites = _cleanup_stack_sprites(stack)
-		var height = _get_stack_height(stack)
-		
-		# 1. 精确记录所有原始位置，用于恢复
-		var stack_sprites_data = []
-		for s in sprites:
-			if is_instance_valid(s):
-				stack_sprites_data.append({"sprite": s, "original_position": _get_visual_node_position(s)})
-				if s.material: s.set_instance_shader_parameter("is_flat_view", 1.0)
-
-		var occupant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
-		var occ_data = {"node": occupant, "original_position": _get_visual_node_position(occupant)} if is_instance_valid(occupant) else null
-		
-		var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-		var col_data = {"node": collision, "original_position": _get_visual_node_position(collision)} if is_instance_valid(collision) else null
-		
-		var hb_data = null
-		var bar_manager = get_node_or_null("BarManager")
-		if bar_manager and is_instance_valid(occupant):
-			var hb = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
-			if is_instance_valid(hb): hb_data = {"node": hb, "original_position": _get_visual_node_position(hb)}
-
-		# 写入缓存字典
-		height_view_original_materials[stack] = {
-			"sprites_data": stack_sprites_data,
-			"occupant_data": occ_data,
-			"collision_data": col_data,
-			"health_bar_data": hb_data
-		}
-
-		# 2. 执行下落压平动画 (计算需要下落的高度差)
-		var drop_delta = (height - 1) * current_step_h
-		
-		for i in range(sprites.size()):
-			var s = sprites[i]
-			if not is_instance_valid(s): continue
-			if i < height - 1:
-				# 侧面土块：渐隐，随后关闭渲染
-				var tw = create_tween()
-				tw.tween_property(s, "modulate:a", 0.0, 0.3)
-				tw.tween_callback(func(): s.visible = false)
-			else:
-				# 顶部方块和建筑贴图：一起落到平铺地表
-				if s.get_parent() == stack:
-					_tween_position_y(s, s.position.y + drop_delta, 0.3)
-
-		if is_instance_valid(occupant): _tween_position_y(occupant, occupant.position.y + drop_delta, 0.3)
-		if is_instance_valid(collision): _tween_position_y(collision, collision.position.y + drop_delta, 0.3)
-		if hb_data and is_instance_valid(hb_data["node"]): _tween_position_y(hb_data["node"], hb_data["node"].position.y + drop_delta, 0.3)
-
-		_create_height_indicator(stack, height)
+	_height_view_map_transition_runner.compress_to_flat(
+		_build_height_view_map_transition_runner_config()
+	)
 
 ## 恢复 3D 视图 (直接从字典中精准读取坐标)
 func _restore_original_height_view() -> void:
-	
-	for coord in stack_nodes.keys():
-		var stack = stack_nodes[coord]
-		if not is_instance_valid(stack): continue
-		
-		if height_view_original_materials.has(stack):
-			var cached = height_view_original_materials[stack]
-			
-			# 1. 恢复地形方块
-			for s_data in cached["sprites_data"]:
-				var s = s_data["sprite"]
-				if is_instance_valid(s):
-					if s.material: s.set_instance_shader_parameter("is_flat_view", 0.0)
-					if s.get_parent() == stack:
-						_tween_position_y(s, s_data["original_position"].y, 0.3)
-			
-			# 2. 恢复外挂组件
-			if cached["occupant_data"] and is_instance_valid(cached["occupant_data"]["node"]):
-				_tween_position_y(cached["occupant_data"]["node"], cached["occupant_data"]["original_position"].y, 0.3)
-			if cached["collision_data"] and is_instance_valid(cached["collision_data"]["node"]):
-				_tween_position_y(cached["collision_data"]["node"], cached["collision_data"]["original_position"].y, 0.3)
-			if cached["health_bar_data"] and is_instance_valid(cached["health_bar_data"]["node"]):
-				_tween_position_y(cached["health_bar_data"]["node"], cached["health_bar_data"]["original_position"].y, 0.3)
-
-		# 3. 侧边方块恢复可见
-		var sprites = _cleanup_stack_sprites(stack)
-		var height = _get_stack_height(stack)
-		for i in range(sprites.size()):
-			var s = sprites[i]
-			if is_instance_valid(s) and i < height - 1:
-				s.visible = true
-				var tw = create_tween()
-				tw.tween_property(s, "modulate:a", 1.0, 0.3)
-
-		_remove_height_indicator(stack)
-		
-	height_view_original_materials.clear()
+	_height_view_map_transition_runner.restore_to_3d(
+		_build_height_view_map_transition_runner_config()
+	)
