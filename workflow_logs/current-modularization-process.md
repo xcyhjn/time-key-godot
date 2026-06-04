@@ -1402,3 +1402,79 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. 新增 `InSceneReturnFlowController.gd`，只负责返回局外前的 dim 显示、入场动画等待、payload 构造调用和 `_switch_scene_with_data()` 调用。
 2. 继续保留 `_build_combat_return_payload()` 和 `_switch_scene_with_data()` 旧入口，避免同批触碰 payload、loader、executor 三层。
 3. 如果优先更低风险，可以先拆 `_on_external_scene_exit_pressed()` 的退出后恢复编排，但收益比返回局外小。
+
+## in_scene.gd 第十三批返回局外流程编排拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆“结算结束后返回局外地图”的顺序编排。
+不改返回 payload 的字段，不改 PackedScene 加载和实际切场执行，也不改局外场景消费 payload 的协议。
+
+目标函数范围：
+
+```text
+_return_to_out_scene()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+_push_era_to_global()
+_build_combat_return_payload()
+SceneLog.scene_event()
+MapState.set_pending_room_resolution()
+disable_player_inputs()
+hide_ui_for_external_scene()
+SoundManager.stop_looping_sfx()
+SoundManager.stop_bgm()
+SoundManager.play_bgm_main_menu()
+dim.use(0, 0)
+_switch_scene_with_data(out_scene_path, return_payload)
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/scene_flow/InSceneReturnFlowController.gd
+```
+
+模块边界：
+
+- `InSceneReturnFlowController.gd` 只编排返回局外的动作顺序。
+- 它通过 `Callable` 调用主脚本已有的时代同步、payload 构造、输入锁、UI 隐藏和切场入口。
+- 它不直接构造 payload，不加载 `PackedScene`，不处理切场失败恢复。
+- `_build_combat_return_payload()`、`_switch_scene_with_data()`、`InSceneSceneSwitchLoader.gd` 和 `InSceneSceneSwitchExecutor.gd` 的职责保持不变。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+返回局外前的同步、记录、MapState pending resolution、输入/UI 收口、音频切换、黑幕等待和切场调用，已经由 InSceneReturnFlowController 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+`in_scene.gd` 仍有可拆点，暂时不退出流程：
+
+1. `CardDrawFlowController.gd`：拆 `attempt_draw_cards()` 和 `shuffle_card()`，但要小心 `is_processing_deck`、输入锁和 `process_frame`。
+2. `TurnFlowController.gd`：拆 `_on_end_turn_pressed()` / `_start_turn()` 的回合推进编排，但牵动时间轴、敌意图和抽牌，应等抽牌流先稳定。
+3. `TargetHoverUiController.gd`：拆 `update_target_selection_hover()` 的 tooltip 文案和定位，风险比回合流低。

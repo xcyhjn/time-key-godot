@@ -29,6 +29,7 @@ const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene
 const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
 const IN_SCENE_SCENE_SWITCH_LOADER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneSceneSwitchLoader.gd")
 const IN_SCENE_SCENE_SWITCH_EXECUTOR := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneSceneSwitchExecutor.gd")
+const IN_SCENE_RETURN_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneReturnFlowController.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -194,6 +195,7 @@ var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new(
 var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
 var _scene_switch_loader: RefCounted = IN_SCENE_SCENE_SWITCH_LOADER.new()
 var _scene_switch_executor: RefCounted = IN_SCENE_SCENE_SWITCH_EXECUTOR.new()
+var _return_flow_controller: RefCounted = IN_SCENE_RETURN_FLOW_CONTROLLER.new()
 
 
 func _ready() -> void:
@@ -937,24 +939,18 @@ func _on_end_combat_pressed():
 ## 3. 调用 DimMenu 做黑幕过渡
 ## 4. 以“实例化并切 current_scene”的方式回到 OutScene
 func _return_to_out_scene() -> void:
-	_push_era_to_global()
-
-	var return_payload := _build_combat_return_payload()
-	if SceneLog:
-		SceneLog.scene_event("InSceneMain", "return to out scene", return_payload)
-	if MapState:
-		MapState.set_pending_room_resolution(return_payload)
-
-	disable_player_inputs()
-	hide_ui_for_external_scene()
-	SoundManager.stop_looping_sfx()
-	SoundManager.stop_bgm()
-	SoundManager.play_bgm_main_menu()
-
-	if is_instance_valid(dim):
-		await dim.use(0, 0)
-
-	_switch_scene_with_data(out_scene_path, return_payload)
+	await _return_flow_controller.return_to_out_scene({
+		"push_era_to_global": Callable(self, "_push_era_to_global"),
+		"build_return_payload": Callable(self, "_build_combat_return_payload"),
+		"scene_log": SceneLog,
+		"map_state": MapState,
+		"disable_player_inputs": Callable(self, "disable_player_inputs"),
+		"hide_ui_for_external_scene": Callable(self, "hide_ui_for_external_scene"),
+		"sound_manager": SoundManager,
+		"dim": dim,
+		"switch_scene_with_data": Callable(self, "_switch_scene_with_data"),
+		"out_scene_path": out_scene_path,
+	})
 
 
 ## 组装“局内 -> 局外”的战斗返回数据。
