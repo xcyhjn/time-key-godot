@@ -27,6 +27,7 @@ const SETTLEMENT_DECK_SNAPSHOT_SERVICE := preload("res://scene/in_scene/in_scene
 const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd")
 const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardSceneController.gd")
 const SETTLEMENT_REWARD_EXIT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardExitController.gd")
+const SETTLEMENT_REWARD_EXIT_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardExitFlowController.gd")
 const SETTLEMENT_REWARD_CONSUMER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardConsumer.gd")
 const COMBAT_VICTORY_SETTLEMENT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/CombatVictorySettlementController.gd")
 const COMBAT_DEFEAT_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/CombatDefeatFlowController.gd")
@@ -200,6 +201,7 @@ var _settlement_deck_snapshot_service: RefCounted = SETTLEMENT_DECK_SNAPSHOT_SER
 var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVICE.new()
 var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CONTROLLER.new()
 var _settlement_reward_exit_controller: RefCounted = SETTLEMENT_REWARD_EXIT_CONTROLLER.new()
+var _settlement_reward_exit_flow_controller: RefCounted = SETTLEMENT_REWARD_EXIT_FLOW_CONTROLLER.new()
 var _settlement_reward_consumer: RefCounted = SETTLEMENT_REWARD_CONSUMER.new()
 var _combat_victory_settlement_controller: RefCounted = COMBAT_VICTORY_SETTLEMENT_CONTROLLER.new()
 var _combat_defeat_flow_controller: RefCounted = COMBAT_DEFEAT_FLOW_CONTROLLER.new()
@@ -1129,27 +1131,13 @@ func restore_all_ui():
 
 ## 外部场景退出按钮回调
 func _on_external_scene_exit_pressed(scene_instance: Node):
-	var exit_result: Dictionary = _settlement_reward_exit_controller.close_reward_scene(scene_instance)
-
-	# 1. 如果奖励页确认完成，则通知 HexMap 更新建筑状态。
-	if bool(exit_result.get("should_consume_settlement_reward", false)):
-		var reward_context: Dictionary = exit_result.get("reward_context", {})
-		_consume_settlement_reward_context(reward_context)
-
-	# 1. 恢复四个局外按钮
-	restore_ui_after_external_scene()
-
-	active_settlement_reward_context.clear()
-	
-	# 3. 可选：如果需要完全恢复所有UI，可以调用 restore_all_ui()
-	# 但根据需求，只恢复四个局外按钮，其他UI保持隐藏
-
-
-## 消耗一个建筑绑定的收获奖励。
-## Main 只负责把“这个奖励已经被确认使用”的事实传回 HexMap；
-## 具体高亮、tooltip 文案、碰撞关闭都由 HexMap 统一处理。
-func _consume_settlement_reward_context(reward_context: Dictionary) -> void:
-	_settlement_reward_consumer.consume(reward_context, hex_map)
+	_settlement_reward_exit_flow_controller.handle_exit({
+		"scene_instance": scene_instance,
+		"exit_controller": _settlement_reward_exit_controller,
+		"reward_consumer": _settlement_reward_consumer,
+		"hex_map": hex_map,
+		"restore_ui_after_external_scene": Callable(self, "restore_ui_after_external_scene"),
+	})
 	active_settlement_reward_context.clear()
 
 # 信号响应：执行实际的动画转换逻辑

@@ -1988,3 +1988,73 @@ ObjectDB / RID / resource 退出提示仍会出现。
 - `_switch_scene_with_data()` 及其辅助函数：场景切换底层入口，已经由 loader、executor、payload bridge 分担。
 
 这些剩余点不再属于“低风险小模块”。如果继续拆，需要先为回合结束、胜利中断、结算页返回和场景切换准备更完整的手动或自动回归路径；否则本轮 `in_scene.gd` 拆解可以在这里退出。
+
+## in_scene.gd 第二十一批结算奖励退出收尾拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆“奖励外部场景退出后的收尾编排”。
+不打开奖励页，不修改奖励页提交规则，不改变战斗阶段，也不触碰回合推进。
+
+目标函数范围：
+
+```text
+_on_external_scene_exit_pressed(scene_instance)
+_consume_settlement_reward_context(reward_context)
+```
+
+当前触碰的外部节点和接口：
+
+```text
+SettlementRewardExitController.close_reward_scene(scene_instance)
+SettlementRewardConsumer.consume(reward_context, hex_map)
+restore_ui_after_external_scene()
+active_settlement_reward_context.clear()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/settlement/SettlementRewardExitFlowController.gd
+```
+
+模块边界：
+
+- `SettlementRewardExitFlowController.gd` 只负责关闭奖励页、按退出结果消费奖励建筑、恢复局内 UI。
+- 它不打开奖励页，不设置奖励页 meta，也不决定当前战斗阶段。
+- 它不直接知道奖励建筑表现如何刷新；消费事实仍由 `SettlementRewardConsumer.gd` 写回 HexMap。
+- `in_scene.gd` 保留 `_on_external_scene_exit_pressed()` 旧入口，并负责清空 `active_settlement_reward_context`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+奖励页退出后的 close、consume、restore 三步已经由 SettlementRewardExitFlowController 统一编排。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 退出判断
+
+本批后，`in_scene.gd` 里还能看到的较大入口主要是回合推进、场景切换底层 wrapper、composition root 配置组装，以及奖励页打开的错误提示入口。
+这些入口都已经有下层模块承接主要职责，剩余部分多是旧公共 API、信号回调和跨模块串联。
+
+如果继续拆，需要优先建立更完整的回合结束、胜利中断、奖励页返回和场景切换回归路径。
+在没有这类回归保护前，不建议继续从 `in_scene.gd` 里机械抽函数。
