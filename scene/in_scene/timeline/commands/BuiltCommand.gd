@@ -3,6 +3,7 @@
 class_name BuiltCommand
 extends EffectCommand
 
+const TARGET_RULES := preload("res://scene/in_scene/timeline/commands/TimelineCommandTargetRules.gd")
 const CREATION_SCRIPT_BY_ID := {
 	"tower": preload("res://scene/in_scene/enermy/tower.gd"),
 }
@@ -11,11 +12,15 @@ var creation_id: StringName = &""
 var build_count: int = 1
 
 
+## 初始化建造命令。
+## `creation_id` 对应 CREATION_SCRIPT_BY_ID，`build_count` 限制一次结算最多创建几个实体。
 func _init(new_creation_id: StringName, new_build_count: int = 1) -> void:
 	creation_id = new_creation_id
 	build_count = maxi(1, new_build_count)
 
 
+## 执行建造效果。
+## 目标地块在这里再次通过 TimelineCommandTargetRules 校验，防止放牌后到结算前地块被占用。
 func execute(tree: SceneTree) -> void:
 	if not is_instance_valid(hex_map) or target_tiles.is_empty() or creation_id == &"":
 		return
@@ -24,10 +29,10 @@ func execute(tree: SceneTree) -> void:
 	for tile in target_tiles:
 		if created_count >= build_count:
 			break
-		if not _can_build_on_tile(tile):
+		if not TARGET_RULES.can_build_on_tile(tile, hex_map):
 			continue
 
-		var coord: Variant = _get_tile_coord(tile)
+		var coord: Variant = TARGET_RULES.get_tile_coord(tile, hex_map)
 		if coord == null:
 			continue
 
@@ -44,47 +49,8 @@ func execute(tree: SceneTree) -> void:
 		_notify_map_changed()
 
 
-func _can_build_on_tile(tile: Area2D) -> bool:
-	if not is_instance_valid(tile):
-		return false
-
-	if tile.has_meta("occupant"):
-		var occupant: Variant = tile.get_meta("occupant")
-		if is_instance_valid(occupant):
-			return false
-
-	var coord: Variant = _get_tile_coord(tile)
-	if coord == null:
-		return false
-
-	if not _is_map_data_empty_at(Vector2i(coord)):
-		return false
-
-	return true
-
-
-func _get_tile_coord(tile: Area2D) -> Variant:
-	if not is_instance_valid(hex_map) or not _object_has_property(hex_map, &"stack_nodes"):
-		return null
-	return hex_map.stack_nodes.find_key(tile)
-
-
-func _is_map_data_empty_at(coord: Vector2i) -> bool:
-	if not _object_has_property(hex_map, &"map_data") or not hex_map.map_data.has(coord):
-		return false
-
-	var tile_data: Variant = hex_map.map_data[coord]
-	if typeof(tile_data) != TYPE_DICTIONARY:
-		return false
-
-	if tile_data.has("landform") and is_instance_valid(tile_data["landform"]):
-		return false
-	if tile_data.has("landform_in") and is_instance_valid(tile_data["landform_in"]):
-		return false
-
-	return true
-
-
+## 根据 creation_id 创建对应的 landform 实体。
+## 创建失败时返回 null，不在命令层做地图写入。
 func _create_creation(coord: Vector2i) -> landform:
 	var script: Script = CREATION_SCRIPT_BY_ID.get(String(creation_id), null)
 	if script == null:
@@ -100,6 +66,8 @@ func _create_creation(coord: Vector2i) -> landform:
 	return entity as landform
 
 
+## 把新建实体交给 HexMap 的运行期注册入口。
+## 地图数据、节点挂接、贴图生成和当前视角同步都由 HexMap 统一处理。
 func _register_creation(_tile: Area2D, coord: Vector2i, entity: landform) -> bool:
 	# 建造效果只负责提交实体；地图数据、节点挂载、贴图生成和视角同步统一交给 HexMap。
 	if hex_map.has_method("register_runtime_landform"):
@@ -107,6 +75,8 @@ func _register_creation(_tile: Area2D, coord: Vector2i, entity: landform) -> boo
 	return false
 
 
+## 通知地图相关系统刷新。
+## 保留旧行为：建造成功后刷新拓扑、敌人 roster 和交互状态。
 func _notify_map_changed() -> void:
 	if hex_map.has_signal("tile_topology_changed"):
 		hex_map.tile_topology_changed.emit()
@@ -114,12 +84,3 @@ func _notify_map_changed() -> void:
 		hex_map.enemy_roster_changed.emit()
 	if hex_map.has_method("_refresh_stack_interactivity"):
 		hex_map.call("_refresh_stack_interactivity")
-
-
-func _object_has_property(target: Object, property_name: StringName) -> bool:
-	if target == null:
-		return false
-	for property_info in target.get_property_list():
-		if property_info.get("name", &"") == property_name:
-			return true
-	return false

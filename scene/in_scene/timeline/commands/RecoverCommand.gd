@@ -3,13 +3,19 @@
 class_name RecoverCommand
 extends EffectCommand
 
+const TARGET_RULES := preload("res://scene/in_scene/timeline/commands/TimelineCommandTargetRules.gd")
+
 var amount: int
 
 
+## 初始化回复命令。
+## 负数回复量会被压到 0，避免结算阶段反向扣血。
 func _init(amt: int) -> void:
 	amount = maxi(0, amt)
 
 
+## 执行回复效果。
+## 目标必须通过 TimelineCommandTargetRules 的 heal/HP 校验，命令本身只负责 VFX 和调用 heal()。
 func execute(tree: SceneTree) -> void:
 	if amount <= 0 or not is_instance_valid(hex_map) or target_tiles.is_empty():
 		return
@@ -19,8 +25,8 @@ func execute(tree: SceneTree) -> void:
 		if not is_instance_valid(tile):
 			continue
 
-		var entity: Node = tile.get_meta("occupant") if tile.has_meta("occupant") else null
-		if not _can_recover_entity(entity):
+		var entity := TARGET_RULES.get_occupant(tile)
+		if not TARGET_RULES.can_recover_entity(entity):
 			continue
 
 		VFXManager.play_tile_vfx(&"recover", tile, tree)
@@ -29,15 +35,3 @@ func execute(tree: SceneTree) -> void:
 
 	if recovered_anyone:
 		await tree.create_timer(0.3).timeout
-
-
-func _can_recover_entity(entity: Node) -> bool:
-	if not is_instance_valid(entity) or not entity.has_method("heal"):
-		return false
-
-	var hp: Variant = entity.get("HP")
-	var max_hp: Variant = entity.get("Max_Blood")
-	if hp != null and max_hp != null:
-		return float(hp) < float(max_hp)
-
-	return true

@@ -4,10 +4,17 @@
 # ==========================================
 class_name ElevationCommand extends EffectCommand
 
+const TARGET_RULES := preload("res://scene/in_scene/timeline/commands/TimelineCommandTargetRules.gd")
+
 var elevation_value: int
 
+## 初始化地形升降命令。
+## elevation_value 是对每个目标地块应用的高度变化量。
 func _init(amt: int):
 	self.elevation_value = amt
+
+## 执行地形升降效果。
+## 地形命令不需要 occupant 校验，只把目标地块交给 HexMap 的高度动画入口。
 func execute(tree: SceneTree) -> void:
 	if not is_instance_valid(hex_map) or target_tiles.is_empty():
 		return
@@ -26,6 +33,8 @@ func execute(tree: SceneTree) -> void:
 		pass
 
 
+## 等待所有目标地块完成升降动画或超限销毁队列。
+## 这个等待保证时间轴结算不会在地形还未稳定时进入下一条命令。
 func _wait_for_tiles_to_finish(tree: SceneTree) -> void:
 	var has_pending := true
 	while has_pending:
@@ -43,16 +52,7 @@ func _wait_for_tiles_to_finish(tree: SceneTree) -> void:
 
 	if is_instance_valid(hex_map):
 		var padding := 0.0
-		if _object_has_property(hex_map, &"elevation_resolution_padding"):
+		if TARGET_RULES.object_has_property(hex_map, &"elevation_resolution_padding"):
 			padding = maxf(0.0, float(hex_map.get("elevation_resolution_padding")))
 		if padding > 0.0:
 			await tree.create_timer(padding).timeout
-
-
-func _object_has_property(target: Object, property_name: StringName) -> bool:
-	if target == null:
-		return false
-	for property_info in target.get_property_list():
-		if property_info.get("name", &"") == property_name:
-			return true
-	return false

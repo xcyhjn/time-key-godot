@@ -284,6 +284,36 @@ Adjustment notes:
 - Keep health bar creation and deletion in BarManager; this module only registers visuals for shared map effects.
 - Keep flat/3D positioning in HexMap view synchronization; this module only updates render membership and shader parameters.
 
+### `scene/in_scene/timeline/commands/TimelineCommandTargetRules.gd`
+
+Responsibility:
+- Provide timeline command final target validation.
+- Resolve stack occupants and coordinates at execution time.
+- Keep build, damage, recover/heal, and poison recipient checks in one pure helper.
+- Provide shared dynamic property checks for command scripts.
+
+Main callers:
+- `BuiltCommand.gd`
+- `DamageCommand.gd`
+- `RecoverCommand.gd`
+- `PoisonCommand.gd`
+- `ElevationCommand.gd`
+
+Related exported tuning variables:
+- None.
+
+Runtime data consumed:
+- `EffectCommand.target_tiles`
+- `EffectCommand.hex_map`
+- stack `occupant` metadata
+- `hex_map.stack_nodes`
+- `hex_map.map_data`
+
+Adjustment notes:
+- Treat `HexTargetRules.gd` as pre-placement validation and `TimelineCommandTargetRules.gd` as execution-time validation.
+- Do not add VFX, waits, card JSON parsing, or entity creation to this helper.
+- When a new timeline command needs target checks, add a small helper here and keep the command focused on side effects.
+
 ## Verification Checklist
 
 Run after changing any extracted module:
@@ -312,4 +342,4 @@ Use these in the editor after parser checks:
 Priority order:
 - Enemy/settlement tooltip edge-case cleanup after target restrictions are stable.
 - Flat/3D view synchronization state extraction.
-- Optional: move shared target checks from timeline command classes into a pure rule helper if command duplication grows.
+- Optional: split map intro health-bar defer queue if BarManager coupling grows.

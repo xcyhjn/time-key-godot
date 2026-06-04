@@ -15,11 +15,17 @@
 # ==========================================
 class_name DamageCommand extends EffectCommand
 
+const TARGET_RULES := preload("res://scene/in_scene/timeline/commands/TimelineCommandTargetRules.gd")
+
 var amount: int
 
+## 初始化伤害命令。
+## amount 由 EffectProcessor 从卡牌 effects.value 中传入。
 func _init(amt: int):
 	self.amount = amt
 
+## 执行伤害效果。
+## 每个目标地块先通过 TimelineCommandTargetRules 获取并校验 occupant，再播放受击 VFX 和扣血。
 func execute(tree: SceneTree) -> void:
 	if not is_instance_valid(hex_map) or target_tiles.is_empty():
 		return
@@ -28,16 +34,15 @@ func execute(tree: SceneTree) -> void:
 	var hit_anyone = false
 	for tile in target_tiles:
 		if not is_instance_valid(tile): continue
-		var entity = tile.get_meta("occupant") if tile.has_meta("occupant") else null
+		var entity := TARGET_RULES.get_occupant(tile)
 		
-		if is_instance_valid(entity) and entity.has_method("take_damage"):
-			if entity.get("HP") != null and entity.HP > 0:
-				VFXManager.play_hurt_vfx(entity, tree)
-				entity.take_damage(amount)
-				if Signal_Bus and Signal_Bus.has_method("emit_damage_dealt"):
-					Signal_Bus.emit_damage_dealt(entity, amount)
-				
-				hit_anyone = true
+		if TARGET_RULES.can_damage_entity(entity):
+			VFXManager.play_hurt_vfx(entity, tree)
+			entity.take_damage(amount)
+			if Signal_Bus and Signal_Bus.has_method("emit_damage_dealt"):
+				Signal_Bus.emit_damage_dealt(entity, amount)
+
+			hit_anyone = true
 	
 	# 如果范围内有敌人挨打了，稍微顿帧一下增加打击感
 	if hit_anyone:
