@@ -11,6 +11,7 @@ const IN_SCENE_NODE_BRIDGE := preload("res://scene/in_scene/in_scene_modules/bri
 const IN_SCENE_GLOBAL_CLOCK_BRIDGE := preload("res://scene/in_scene/in_scene_modules/bridges/InSceneGlobalClockBridge.gd")
 const CARD_PILE_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/cards/CardPileUiController.gd")
 const CARD_SYSTEM_BOOTSTRAP := preload("res://scene/in_scene/in_scene_modules/cards/CardSystemBootstrap.gd")
+const CARD_DRAW_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/cards/CardDrawFlowController.gd")
 const IN_SCENE_INPUT_LOCK_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneInputLockController.gd")
 const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/turn/FirstTurnIntroRunner.gd")
 const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd")
@@ -178,6 +179,7 @@ var _node_bridge: RefCounted = IN_SCENE_NODE_BRIDGE.new()
 var _global_clock_bridge: RefCounted = IN_SCENE_GLOBAL_CLOCK_BRIDGE.new()
 var _card_pile_ui_controller: RefCounted = CARD_PILE_UI_CONTROLLER.new()
 var _card_system_bootstrap: RefCounted = CARD_SYSTEM_BOOTSTRAP.new()
+var _card_draw_flow_controller: RefCounted = CARD_DRAW_FLOW_CONTROLLER.new()
 var _input_lock_controller: RefCounted = IN_SCENE_INPUT_LOCK_CONTROLLER.new()
 var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
 var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
@@ -711,38 +713,11 @@ func attempt_draw_cards(count: int):
 	# ★ 拦截：如果锁正在开启，说明前一次抽牌/洗牌 await 还没结束，直接无视请求
 	if is_processing_deck:
 		return
-		
-	if player_hand._held_cards.size() >= 7:
-		return
 
 	# ★ 上锁
 	is_processing_deck = true
-	# ★ 禁用所有卡牌相关交互，防止抽牌途中玩家强行拖走刚抽一半的卡
-	disable_player_inputs()
-
-	for i in range(count):
-		# --- 步骤 1: 检查牌堆是否为空，如果是则尝试洗牌 ---
-		if deck_pile._held_cards.size() == 0:
-			if discard_pile._held_cards.size() > 0:
-				await shuffle_card()  # 等待洗牌动画和逻辑完成
-			else:
-				break  # 真的没牌了，只能停止
-
-		# --- 步骤 2: 再次检查牌堆 ---
-		if deck_pile._held_cards.size() > 0:
-			var top_card = deck_pile._held_cards.back()
-			player_hand.move_cards([top_card])
-			Signal_Bus.emit_card_drawn(top_card, 1)
-
-			# 等待一帧，确保物理移动和数据更新
-			await get_tree().process_frame
-			update_counts_and_ui()
-			# 抽卡间隔动画
-			await get_tree().create_timer(0.1).timeout
-
-	# ★ 解锁并恢复输入
+	await _card_draw_flow_controller.draw_cards(_build_card_draw_flow_config(count))
 	is_processing_deck = false
-	enable_player_inputs()
 
 # --- 弃牌判定逻辑 (拖拽松手) ---
 func _input(event):
@@ -807,27 +782,24 @@ func _input(event):
 
 # 洗牌逻辑
 func shuffle_card():
-	if discard_pile._held_cards.is_empty():
-		return
+	await _card_draw_flow_controller.shuffle_cards(_build_card_draw_flow_config(0))
 
 
-	# 1. 批量移动卡牌：从 discard_pile 移到 deck_pile
-	# 注意：move_cards 会自动处理节点父子关系的切换
-	var cards_to_move = discard_pile._held_cards.duplicate()
-	deck_pile.move_cards(cards_to_move)
-
-	# 2. 逻辑洗牌：打乱数组顺序
-	# _held_cards 是 CardContainer 定义的存储卡牌引用的数组
-	deck_pile._held_cards.shuffle()
-	Signal_Bus.emit_deck_shuffled()
-
-	# 3. 视觉更新：确保所有牌盖着，并根据 Pile 逻辑重新堆叠
-	# 强制抽牌堆的所有牌背面向上
-	deck_pile.card_face_up = false
-	await get_tree().create_timer(0.6).timeout
-	deck_pile.update_card_ui()
-
-	update_counts_and_ui()
+func _build_card_draw_flow_config(count: int) -> Dictionary:
+	return {
+		"count": count,
+		"hand_limit": 7,
+		"player_hand": player_hand,
+		"deck_pile": deck_pile,
+		"discard_pile": discard_pile,
+		"tree": get_tree(),
+		"signal_bus": Signal_Bus,
+		"disable_player_inputs": Callable(self, "disable_player_inputs"),
+		"enable_player_inputs": Callable(self, "enable_player_inputs"),
+		"update_counts_and_ui": Callable(self, "update_counts_and_ui"),
+		"draw_interval": 0.1,
+		"shuffle_delay": 0.6,
+	}
 
 
 # --- 辅助逻辑 ---

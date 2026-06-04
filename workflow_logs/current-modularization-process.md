@@ -1547,3 +1547,81 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `CardDrawFlowController.gd`：拆 `attempt_draw_cards()` 和 `shuffle_card()`，需要把 `is_processing_deck` 的读写结果回传给主脚本。
 2. `TimelineActionHoverUiController.gd`：拆 `_on_timeline_action_hovered()` 中玩家行动 tooltip 和 pulse shader 表现；敌方意图已由 EnemyIntentPresentationController 接管，拆时要继续保持 ENEMY 早退。
 3. `TurnFlowController.gd` 继续暂缓，等抽牌流和时间轴 hover 更薄后再处理。
+
+## in_scene.gd 第十五批抽牌和洗牌流程拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆抽牌和洗牌的异步动作。
+战斗状态判断、抽牌并发锁 `is_processing_deck` 和旧公共入口仍由 `in_scene.gd` 保留。
+
+目标函数范围：
+
+```text
+attempt_draw_cards(count)
+shuffle_card()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+player_hand.move_cards()
+deck_pile.move_cards()
+deck_pile._held_cards.shuffle()
+deck_pile.card_face_up = false
+deck_pile.update_card_ui()
+Signal_Bus.emit_card_drawn()
+Signal_Bus.emit_deck_shuffled()
+get_tree().process_frame
+get_tree().create_timer()
+update_counts_and_ui()
+disable_player_inputs()
+enable_player_inputs()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/cards/CardDrawFlowController.gd
+```
+
+模块边界：
+
+- `CardDrawFlowController.gd` 负责抽牌、必要时洗牌、等待帧、等待抽牌间隔、刷新计数和发出抽牌/洗牌信号。
+- 它不判断当前是否处于战斗期，不持有 `is_processing_deck`，不处理牌堆按钮输入。
+- `in_scene.gd` 继续保留 `attempt_draw_cards()` 和 `shuffle_card()`，并在调用 controller 前后维护并发锁。
+- 洗牌仍复刻旧行为：复制弃牌堆数组后由 `deck_pile.move_cards(cards_to_move)` 统一从旧容器转移到抽牌堆。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+抽牌循环、空抽牌堆时洗牌、抽牌/洗牌信号、抽牌间隔和洗牌延迟已经由 CardDrawFlowController 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+`in_scene.gd` 仍有可拆点，暂时不退出流程：
+
+1. `TimelineActionHoverUiController.gd`：拆 `_on_timeline_action_hovered()` 中玩家行动 tooltip 和 pulse shader 表现。
+2. `TurnFlowController.gd`：抽牌流已独立后，可以开始拆 `_on_end_turn_pressed()` / `_start_turn()` 的回合编排，但仍要保守处理胜利中断。
+3. `_input(event)` 可以进一步拆键盘调试、右键取消选牌、空地弃牌三个小 handler；这会降低主脚本输入职责，但要逐个拆。
