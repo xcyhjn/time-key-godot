@@ -9,6 +9,7 @@ const HEX_COORD_RULES := preload("res://scene/in_scene/HexCoordRules.gd")
 const HEX_TERRAIN_RULES := preload("res://scene/in_scene/HexTerrainRules.gd")
 const HEX_TARGET_RULES := preload("res://scene/in_scene/HexTargetRules.gd")
 const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/TileDestructionBatchQueue.gd")
+const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/EnemyIntentMapPresenter.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -319,9 +320,7 @@ var hovered_stacks: Array[Area2D] = []
 var active_stack: Area2D = null
 var selected_stack: Area2D = null  # 记录当前被点击选中的地块
 var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明湮灭状态的地块
-var current_enemy_intent_source_stack: Area2D = null
-var current_enemy_intent_target_stacks: Array[Area2D] = []
-var current_enemy_intent_source_restore_state: Dictionary = {}
+var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1767,37 +1766,13 @@ func _clear_occlusion_effects() -> void:
 ##   2. 目标格波纹高亮
 ## - 这里不做 tooltip，tooltip 由 EnemyIntentPresentationController 统一处理。
 func show_enemy_intent_preview(intent_data: EnemyIntentData, source_color: Color, target_color: Color) -> void:
-	clear_enemy_intent_preview(false)
-
-	if intent_data == null:
-		return
-
-	if stack_nodes.has(intent_data.source_coord):
-		var source_stack = stack_nodes[intent_data.source_coord]
-		if is_instance_valid(source_stack):
-			current_enemy_intent_source_stack = source_stack
-			var source_highlight_blend = enemy_intent_source_valid_highlight_blend
-			var source_selected_blend = enemy_intent_source_valid_selected_blend
-			if not intent_data.is_valid:
-				source_highlight_blend = enemy_intent_source_invalid_highlight_blend
-				source_selected_blend = enemy_intent_source_invalid_selected_blend
-			elif intent_data.includes_self:
-				source_highlight_blend = enemy_intent_source_self_highlight_blend
-				source_selected_blend = enemy_intent_source_self_selected_blend
-			_show_source_intent_highlight(source_stack, source_color, source_highlight_blend, source_selected_blend)
-
-	var seen_targets: Dictionary = {}
-	for coord in intent_data.target_coords:
-		if seen_targets.has(coord):
-			continue
-		seen_targets[coord] = true
-		if not stack_nodes.has(coord):
-			continue
-		var target_stack = stack_nodes[coord]
-		if not is_instance_valid(target_stack):
-			continue
-		current_enemy_intent_target_stacks.append(target_stack)
-		_show_target_intent_overlay(target_stack, target_color)
+	_enemy_intent_map_presenter.show(
+		intent_data,
+		stack_nodes,
+		source_color,
+		target_color,
+		_build_enemy_intent_map_presenter_config()
+	)
 
 
 ## 清除当前地图上的敌人意图预览
@@ -1805,155 +1780,34 @@ func show_enemy_intent_preview(intent_data: EnemyIntentData, source_color: Color
 ## - true: 清完之后重新刷新卡牌选中高亮
 ## - false: 只清理敌人意图，不打断当前其他流程
 func clear_enemy_intent_preview(restore_card_hover: bool = true) -> void:
-	if is_instance_valid(current_enemy_intent_source_stack):
-		_restore_source_intent_highlight(current_enemy_intent_source_stack)
-
-	for stack in current_enemy_intent_target_stacks:
-		if is_instance_valid(stack):
-			_hide_intent_overlay(stack, "EnemyIntentTargetOverlay")
-
-	current_enemy_intent_source_stack = null
-	current_enemy_intent_target_stacks.clear()
-
+	_enemy_intent_map_presenter.clear()
 	if restore_card_hover:
 		_update_highlight()
 
 
-## 显示“施法者”专用高亮 overlay
-## 施法者意图高亮（直接复用地块原本的高亮 shader 逻辑）
-## 说明:
-## - 按你的要求，这里不再额外挂一张外框贴图。
-## - 而是直接修改当前地块 stack 中已有 sprite 的 instance shader 参数，
-##   使用和原地块高亮同一套思路：
-##   - highlight_color
-##   - highlight_blend
-##   - is_selected_blend
-func _show_source_intent_highlight(stack: Area2D, color: Color, highlight_blend: float, selected_blend: float) -> void:
-	if not is_instance_valid(stack):
-		return
-
-	var sprites = stack.get_meta("sprites") as Array
-	if sprites == null or sprites.is_empty():
-		return
-
-	current_enemy_intent_source_restore_state.clear()
-	current_enemy_intent_source_restore_state["stack"] = stack
-	current_enemy_intent_source_restore_state["values"] = []
-
-	for sprite in sprites:
-		if not is_instance_valid(sprite) or not sprite.material:
-			continue
-		current_enemy_intent_source_restore_state["values"].append({
-			"sprite": sprite,
-			"highlight_color": sprite.get_instance_shader_parameter("highlight_color"),
-			"highlight_blend": sprite.get_instance_shader_parameter("highlight_blend"),
-			"is_selected_blend": sprite.get_instance_shader_parameter("is_selected_blend")
-		})
-		sprite.set_instance_shader_parameter("highlight_color", color)
-		sprite.set_instance_shader_parameter("highlight_blend", highlight_blend)
-		sprite.set_instance_shader_parameter("is_selected_blend", selected_blend)
-
-
-## 显示“目标地块”专用波纹 overlay
-func _show_target_intent_overlay(stack: Area2D, color: Color) -> void:
-	var overlay = _ensure_intent_overlay(stack, "EnemyIntentTargetOverlay", enemy_intent_target_shader)
-	if overlay == null:
-		return
-	_update_intent_overlay_transform(stack, overlay)
-	overlay.visible = true
-	if overlay.material:
-		overlay.material.set_shader_parameter("ripple_color", color)
-
-
-## 隐藏指定类型的敌人意图 overlay
-func _hide_intent_overlay(stack: Area2D, overlay_name: String) -> void:
-	if not is_instance_valid(stack):
-		return
-	var overlay = stack.get_node_or_null(overlay_name)
-	if overlay and overlay is Sprite2D:
-		overlay.visible = false
-
-
-func _restore_source_intent_highlight(stack: Area2D) -> void:
-	if not is_instance_valid(stack):
-		return
-	if current_enemy_intent_source_restore_state.is_empty():
-		return
-	if current_enemy_intent_source_restore_state.get("stack") != stack:
-		return
-
-	var restore_values = current_enemy_intent_source_restore_state.get("values", [])
-	for item in restore_values:
-		var sprite = item["sprite"]
-		if not is_instance_valid(sprite) or not sprite.material:
-			continue
-		sprite.set_instance_shader_parameter("highlight_color", item["highlight_color"])
-		sprite.set_instance_shader_parameter("highlight_blend", item["highlight_blend"])
-		sprite.set_instance_shader_parameter("is_selected_blend", item["is_selected_blend"])
-
-	current_enemy_intent_source_restore_state.clear()
-
-
-## 确保某个地块拥有指定名称的敌人意图 overlay。
-## 如果不存在则动态创建，并挂载独立 shader material。
-func _ensure_intent_overlay(stack: Area2D, overlay_name: String, shader: Shader) -> Sprite2D:
-	if not is_instance_valid(stack):
-		return null
-
-	var overlay = stack.get_node_or_null(overlay_name) as Sprite2D
-	if overlay == null:
-		overlay = Sprite2D.new()
-		overlay.name = overlay_name
-		overlay.texture = enemy_intent_frame_tex
-		overlay.centered = true
-		overlay.z_index = enemy_intent_overlay_z_index
-		overlay.visible = false
-
-		var material = ShaderMaterial.new()
-		material.shader = shader
-		overlay.material = material
-		stack.add_child(overlay)
-
-	_update_intent_overlay_transform(stack, overlay)
-	_configure_intent_overlay_material(overlay_name, overlay.material)
-	return overlay
-
-
-## 根据当前地块 hitbox 和视角状态，更新 overlay 的位置和缩放。
-## 说明:
-## - overlay 总是贴着当前地块顶部碰撞区域，而不是直接贴着最底层 sprite。
-func _update_intent_overlay_transform(stack: Area2D, overlay: Sprite2D) -> void:
-	var collision = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-	if is_instance_valid(collision):
-		overlay.position = collision.position
-	else:
-		overlay.position = Vector2(hitbox_offset_x, hitbox_offset_y)
-
-	var tex_size = enemy_intent_frame_tex.get_size() if enemy_intent_frame_tex != null else Vector2.ONE
-	if tex_size.x > 0 and tex_size.y > 0:
-		overlay.scale = Vector2(
-			(hitbox_width / tex_size.x) * enemy_intent_overlay_scale,
-			(hitbox_base_height / tex_size.y) * enemy_intent_overlay_scale
-		)
-
-
-## 将导出的敌人意图地图表现参数写入对应的 shader material。
-## 说明:
-## - SourceOverlay 和 TargetOverlay 使用不同 shader，因此参数不同。
-func _configure_intent_overlay_material(overlay_name: String, material: Material) -> void:
-	if not (material is ShaderMaterial):
-		return
-
-	var shader_material = material as ShaderMaterial
-	if overlay_name == "EnemyIntentSourceOverlay":
-		shader_material.set_shader_parameter("highlight_blend", 1.0)
-		shader_material.set_shader_parameter("is_selected_blend", 1.0)
-		shader_material.set_shader_parameter("highlight_width", enemy_intent_source_highlight_width)
-	elif overlay_name == "EnemyIntentTargetOverlay":
-		shader_material.set_shader_parameter("ripple_speed", enemy_intent_target_ripple_speed)
-		shader_material.set_shader_parameter("ripple_density", enemy_intent_target_ripple_density)
-		shader_material.set_shader_parameter("min_alpha", enemy_intent_target_min_alpha)
-		shader_material.set_shader_parameter("max_alpha", enemy_intent_target_max_alpha)
+## 收集敌人意图地图表现调参。
+## 所有值仍通过 HexMap 导出变量调整；EnemyIntentMapPresenter 只消费这份配置，不持有场景导出项。
+func _build_enemy_intent_map_presenter_config() -> Dictionary:
+	return {
+		"frame_texture": enemy_intent_frame_tex,
+		"target_shader": enemy_intent_target_shader,
+		"overlay_scale": enemy_intent_overlay_scale,
+		"overlay_z_index": enemy_intent_overlay_z_index,
+		"source_valid_highlight_blend": enemy_intent_source_valid_highlight_blend,
+		"source_valid_selected_blend": enemy_intent_source_valid_selected_blend,
+		"source_self_highlight_blend": enemy_intent_source_self_highlight_blend,
+		"source_self_selected_blend": enemy_intent_source_self_selected_blend,
+		"source_invalid_highlight_blend": enemy_intent_source_invalid_highlight_blend,
+		"source_invalid_selected_blend": enemy_intent_source_invalid_selected_blend,
+		"target_ripple_speed": enemy_intent_target_ripple_speed,
+		"target_ripple_density": enemy_intent_target_ripple_density,
+		"target_min_alpha": enemy_intent_target_min_alpha,
+		"target_max_alpha": enemy_intent_target_max_alpha,
+		"hitbox_width": hitbox_width,
+		"hitbox_base_height": hitbox_base_height,
+		"hitbox_offset_x": hitbox_offset_x,
+		"hitbox_offset_y": hitbox_offset_y,
+	}
 
 
 func _update_occlusion(target_stack: Area2D):
