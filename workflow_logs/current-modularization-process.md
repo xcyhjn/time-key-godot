@@ -856,3 +856,96 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `InSceneSceneSwitchLoader.gd`：拆 `_load_packed_scene_for_switch()`、`_log_scene_switch_error()`、`_recover_dim_after_failed_switch()`，只处理加载失败和错误记录。
 2. 或 `SettlementRewardSceneController.gd`：拆 `_open_settlement_reward_scene()`、`_get_settlement_reward_scene()`、四个奖励按钮入口，但不要同时拆 `_on_external_scene_exit_pressed()` 的奖励消费。
 3. 暂缓 `_return_to_out_scene()` 和 `_switch_scene_with_data()` 整体搬迁，等 loader / payload / reward 打开链路都独立后再处理。
+
+## in_scene.gd 第六批结算奖励页打开拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆结算奖励页“打开”链路，不拆退出回调里的奖励消费。
+刻意不触碰 `_on_external_scene_exit_pressed()`、`_consume_settlement_reward_context()`、胜负触发和局外返回。
+
+目标函数范围：
+
+```text
+_open_settlement_reward_scene(reward_type, reward_context)
+_get_settlement_reward_scene(scene_path)
+_on_shop_button_pressed()
+_on_acquire_reward_button_pressed()
+_on_remove_reward_button_pressed()
+_on_craft_reward_button_pressed()
+_on_settlement_reward_requested(reward_info)
+```
+
+当前读写的成员变量：
+
+```text
+_settlement_reward_scene_cache
+active_settlement_reward_context
+manager_instance
+```
+
+当前触碰的外部节点和接口：
+
+```text
+reward_scene_close_requested
+set_deck_manager(manager_instance)
+open_shop()
+open()
+settlement_reward_context / settlement_reward_committed / settlement_reward_consume_on_exit meta
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/settlement/SettlementRewardSceneController.gd
+```
+
+模块边界：
+
+- `SettlementRewardSceneController.gd` 只负责加载、缓存、实例化和打开奖励页。
+- 它会连接奖励页关闭信号、写入奖励上下文 meta、注入 `deck_manager`，并调用 `open_shop()` 或 `open()`。
+- 它不判断战斗阶段、不隐藏主 UI、不保存 `active_settlement_reward_context`、不消费奖励建筑。
+
+保留的旧公共入口：
+
+```text
+_open_settlement_reward_scene(reward_type, reward_context)
+_get_settlement_reward_scene(scene_path)
+```
+
+这些函数仍由 `in_scene.gd` 暴露。主脚本继续负责阶段检查、未知类型/加载失败提前返回、隐藏 UI 和记录 active context，保证失败时不提前隐藏 UI。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+奖励场景加载缓存已由 SettlementRewardSceneController.get_reward_scene() 统一维护。
+奖励页实例化、关闭信号连接、meta 写入、deck_manager 注入和 open/open_shop 调用已由 SettlementRewardSceneController.open_reward_scene() 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批建议继续沿着场景切换链路拆 loader/错误恢复，或者拆奖励页退出链路，但不要混在一起：
+
+1. `InSceneSceneSwitchLoader.gd`：拆 `_load_packed_scene_for_switch()`、`_log_scene_switch_error()`、`_recover_dim_after_failed_switch()`。
+2. 或 `SettlementRewardExitController.gd`：拆 `_on_external_scene_exit_pressed()` 中“读取奖励页 meta、判断是否消费、queue_free、清 active context”的部分，但先不要改 HexMap 的奖励写回。
+3. 暂缓 `_switch_scene_with_data()` 完整迁移，等 loader、payload、reward 打开和退出都独立后再处理。

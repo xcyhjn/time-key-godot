@@ -18,6 +18,7 @@ const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_module
 const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd")
 const SETTLEMENT_DECK_SNAPSHOT_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckSnapshotService.gd")
 const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd")
+const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardSceneController.gd")
 const IN_SCENE_RETURN_PAYLOAD_BUILDER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd")
 const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd")
 const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
@@ -175,6 +176,7 @@ var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
 var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.new()
 var _settlement_deck_snapshot_service: RefCounted = SETTLEMENT_DECK_SNAPSHOT_SERVICE.new()
 var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVICE.new()
+var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CONTROLLER.new()
 var _return_payload_builder: RefCounted = IN_SCENE_RETURN_PAYLOAD_BUILDER.new()
 var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new()
 var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
@@ -1061,47 +1063,37 @@ func _open_settlement_reward_scene(reward_type: String, reward_context: Dictiona
 		push_warning("未知的局外收获类型：%s" % reward_type)
 		return
 
-	var scene_path := str(SETTLEMENT_REWARD_SCENE_PATHS[reward_type])
-	var packed_scene := _get_settlement_reward_scene(scene_path)
-	if packed_scene == null:
+	var scene_path: String = str(SETTLEMENT_REWARD_SCENE_PATHS[reward_type])
+	if _get_settlement_reward_scene(scene_path) == null:
 		push_error("无法加载局外收获场景：%s" % scene_path)
 		return
 
 	hide_ui_for_external_scene()
 	active_settlement_reward_context = reward_context.duplicate()
 
-	var reward_instance = packed_scene.instantiate()
-	add_child(reward_instance)
-	reward_instance.show()
-	_connect_signal_once(reward_instance.reward_scene_close_requested, _on_external_scene_exit_pressed)
+	var result: Dictionary = _settlement_reward_scene_controller.open_reward_scene({
+		"owner": self,
+		"reward_type": reward_type,
+		"reward_context": reward_context,
+		"reward_scene_paths": SETTLEMENT_REWARD_SCENE_PATHS,
+		"scene_cache": _settlement_reward_scene_cache,
+		"manager_instance": manager_instance,
+		"connect_close_callback": Callable(self, "_on_external_scene_exit_pressed"),
+	})
+	if bool(result.get("opened", false)):
+		return
 
-	if not reward_context.is_empty():
-		reward_instance.set_meta("settlement_reward_context", reward_context)
-		# 商店只有退出按钮，按下退出即视为已经使用该建筑。
-		if reward_type == "shop":
-			reward_instance.set_meta("settlement_reward_consume_on_exit", true)
-		else:
-			reward_instance.set_meta("settlement_reward_committed", false)
-
-	if reward_instance.has_method("set_deck_manager") and is_instance_valid(manager_instance):
-		reward_instance.set_deck_manager(manager_instance)
-
-	if reward_instance.has_method("open_shop"):
-		reward_instance.open_shop()
-	elif reward_instance.has_method("open"):
-		reward_instance.open()
-	else:
-		reward_instance.show()
+	match str(result.get("reason", "")):
+		"unknown_reward_type":
+			push_warning("未知的局外收获类型：%s" % reward_type)
+		"scene_load_failed":
+			push_error("无法加载局外收获场景：%s" % str(result.get("scene_path", "")))
+		_:
+			push_error("无法打开局外收获场景：%s" % str(result))
 
 # 当局外界面点击离开/下一关时调用这个函数
 func _get_settlement_reward_scene(scene_path: String) -> PackedScene:
-	if _settlement_reward_scene_cache.has(scene_path):
-		return _settlement_reward_scene_cache[scene_path] as PackedScene
-
-	var packed_scene := ResourceLoader.load(scene_path, "PackedScene") as PackedScene
-	if packed_scene != null:
-		_settlement_reward_scene_cache[scene_path] = packed_scene
-	return packed_scene
+	return _settlement_reward_scene_controller.get_reward_scene(scene_path, _settlement_reward_scene_cache)
 
 
 func proceed_to_next_stage():
