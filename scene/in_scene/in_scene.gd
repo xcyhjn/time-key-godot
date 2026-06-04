@@ -17,6 +17,7 @@ const IN_SCENE_INPUT_LOCK_CONTROLLER := preload("res://scene/in_scene/in_scene_m
 const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/turn/FirstTurnIntroRunner.gd")
 const ENEMY_INTENT_TIMELINE_REFRESHER := preload("res://scene/in_scene/in_scene_modules/turn/EnemyIntentTimelineRefresher.gd")
 const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd")
+const COMBAT_CARTOON_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/CombatCartoonUiController.gd")
 const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/CursorTooltipController.gd")
 const IN_SCENE_INPUT_EVENT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneInputEventController.gd")
 const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd")
@@ -189,6 +190,7 @@ var _input_lock_controller: RefCounted = IN_SCENE_INPUT_LOCK_CONTROLLER.new()
 var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
 var _enemy_intent_timeline_refresher: RefCounted = ENEMY_INTENT_TIMELINE_REFRESHER.new()
 var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
+var _combat_cartoon_ui_controller: RefCounted = COMBAT_CARTOON_UI_CONTROLLER.new()
 var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
 var _input_event_controller: RefCounted = IN_SCENE_INPUT_EVENT_CONTROLLER.new()
 var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.new()
@@ -354,28 +356,22 @@ func _push_era_to_global() -> void:
 ## - 刷新顶部时代/阶段文本
 ## - 把时间轴整体向下让位，避免与顶部 UI 重叠
 func _setup_combat_cartoon_ui() -> void:
-	if not is_instance_valid(combat_cartoon_ui):
-		return
-
-	_refresh_combat_cartoon_ui_progress()
-
-	if MapState:
-		combat_cartoon_ui.set_character_index(int(MapState.chosen_char_index))
-
-	combat_cartoon_ui.apply_combat_layout()
-
-	if is_instance_valid(timeline_ui):
-		timeline_ui.set_top_reserved_space(float(combat_cartoon_ui.get_reserved_height()))
+	var result: Dictionary = _combat_cartoon_ui_controller.setup({
+		"combat_cartoon_ui": combat_cartoon_ui,
+		"timeline_ui": timeline_ui,
+		"map_state": MapState,
+		"global_clock_bridge": _global_clock_bridge,
+	})
+	current_era_value = int(result.get("current_era_value", current_era_value))
 
 
 ## 刷新局内顶部 CartoonUI 的时代/阶段文字。
 func _refresh_combat_cartoon_ui_progress() -> void:
-	if not is_instance_valid(combat_cartoon_ui):
-		return
-
-	current_era_value = _global_clock_bridge.pull_era()
-	var phase_value: int = _global_clock_bridge.get_phase()
-	combat_cartoon_ui.set_progress_labels(current_era_value, phase_value)
+	var result: Dictionary = _combat_cartoon_ui_controller.refresh_progress({
+		"combat_cartoon_ui": combat_cartoon_ui,
+		"global_clock_bridge": _global_clock_bridge,
+	})
+	current_era_value = int(result.get("current_era_value", current_era_value))
 
 
 ## 安排局内自动进入第一回合。

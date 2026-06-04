@@ -1912,3 +1912,79 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `CombatCartoonUiController.gd`：拆 `_setup_combat_cartoon_ui()` / `_refresh_combat_cartoon_ui_progress()`，只处理顶部战斗 CartoonUI 与时间轴 reserved space。
 2. 完整 `TurnFlowController.gd` 仍暂缓，因为胜利中断、建筑行为、抽牌和敌方意图都在同一条链路里。
 3. 如果拆完 CartoonUI 后没有新的低风险小块，就可以退出 `in_scene.gd` 本轮拆解。
+
+## in_scene.gd 第二十批顶部战斗 CartoonUI 拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆局内顶部 `CombatCartoonUI` 的适配流程。
+不拆回合推进，不修改 GlobalClock 推进规则，也不调整时间轴意图生成。
+
+目标函数范围：
+
+```text
+_setup_combat_cartoon_ui()
+_refresh_combat_cartoon_ui_progress()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+combat_cartoon_ui.set_progress_labels(current_era_value, phase_value)
+combat_cartoon_ui.set_character_index(MapState.chosen_char_index)
+combat_cartoon_ui.apply_combat_layout()
+combat_cartoon_ui.get_reserved_height()
+timeline_ui.set_top_reserved_space(...)
+_global_clock_bridge.pull_era()
+_global_clock_bridge.get_phase()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/ui/CombatCartoonUiController.gd
+```
+
+模块边界：
+
+- `CombatCartoonUiController.gd` 只负责顶部战斗 CartoonUI 的进度文字、角色索引、战斗布局和时间轴预留高度。
+- 它只读取 GlobalClock bridge 的当前时代和阶段，不推进 GlobalClock。
+- 它不决定战斗阶段、不生成敌人意图、不触发抽牌或弃牌。
+- `in_scene.gd` 保留 `_setup_combat_cartoon_ui()` 和 `_refresh_combat_cartoon_ui_progress()` 旧入口，并只负责把返回的 `current_era_value` 写回主状态。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+顶部 CartoonUI 的进度刷新、角色索引设置、布局应用和时间轴让位已经由 CombatCartoonUiController 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 退出判断
+
+本批后，`in_scene.gd` 剩余较明显的逻辑主要是：
+
+- `_ready()` 和多个 `_build_*_config()`：局内场景 composition root 的组装职责。
+- `_on_end_turn_pressed()` / `_start_turn()` / `_advance_global_phase()`：回合推进链路，牵动时间轴 resolve、建筑回合行为、抽牌、敌方意图和胜利中断。
+- `_open_settlement_reward_scene()` / `_on_external_scene_exit_pressed()`：奖励外部场景入口和退出编排，已有多个 settlement 模块分担，剩余主要是跨模块串联。
+- `_switch_scene_with_data()` 及其辅助函数：场景切换底层入口，已经由 loader、executor、payload bridge 分担。
+
+这些剩余点不再属于“低风险小模块”。如果继续拆，需要先为回合结束、胜利中断、结算页返回和场景切换准备更完整的手动或自动回归路径；否则本轮 `in_scene.gd` 拆解可以在这里退出。
