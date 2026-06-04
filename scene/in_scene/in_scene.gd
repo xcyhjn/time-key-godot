@@ -1,11 +1,18 @@
 extends Control
 
+const HAND_SCENE: PackedScene = preload("res://addons/card-framework/hand.tscn")
+const PILE_SCENE: PackedScene = preload("res://addons/card-framework/pile.tscn")
+const CARD_SCENE_REF: PackedScene = preload("res://scene/card/custom_card.tscn")
+const PILE_VIEWER_SCENE: PackedScene = preload("res://scene/pile/pile_viewer.tscn")
+const CARD_MANAGER_SCENE: PackedScene = preload("res://addons/card-framework/card_manager.tscn")
+const CARD_FACTORY_SCENE: PackedScene = preload("res://addons/card-framework/card_factory.tscn")
+
 # 预加载资源
-var hand_scene = load("res://addons/card-framework/hand.tscn")
-var pile_scene = load("res://addons/card-framework/pile.tscn")
+var hand_scene: PackedScene = HAND_SCENE
+var pile_scene: PackedScene = PILE_SCENE
 # 请确保这里路径正确，必须指向你真实的卡牌场景
-var card_scene_ref = load("res://scene/card/custom_card.tscn")
-var pile_viewer_scene = preload("res://scene/pile/pile_viewer.tscn")
+var card_scene_ref: PackedScene = CARD_SCENE_REF
+var pile_viewer_scene: PackedScene = PILE_VIEWER_SCENE
 
 const SETTLEMENT_REWARD_SCENE_PATHS := {
 	"shop": "res://scene/in_scene/rewards/shop.tscn",
@@ -13,6 +20,7 @@ const SETTLEMENT_REWARD_SCENE_PATHS := {
 	"remove": "res://scene/in_scene/rewards/remove_reward.tscn",
 	"craft": "res://scene/in_scene/rewards/craft_reward.tscn",
 }
+var _settlement_reward_scene_cache: Dictionary = {}
 
 # 弃牌堆显示
 var player_hand: Hand
@@ -174,7 +182,7 @@ func _ready() -> void:
 	# 3. 初始化卡牌系统
 	setup_card_system()
 	if is_instance_valid(end_combat_button):
-		end_combat_button.pressed.connect(_on_end_combat_pressed)
+		_connect_signal_once(end_combat_button.pressed, _on_end_combat_pressed)
 	
 	_hide_settlement_buttons()
 
@@ -186,7 +194,7 @@ func _ready() -> void:
 
 	if is_instance_valid(timeline_manager):
 		if timeline_manager.has_signal("action_hovered_changed"):
-			timeline_manager.action_hovered_changed.connect(_on_timeline_action_hovered)
+			_connect_signal_once(timeline_manager.action_hovered_changed, _on_timeline_action_hovered)
 			if timeline_manager.has_signal("action_executed") and not timeline_manager.action_executed.is_connected(_on_timeline_action_executed):
 				timeline_manager.action_executed.connect(_on_timeline_action_executed)
 		else:
@@ -217,13 +225,13 @@ func _ready() -> void:
 	
 	# 2. 连接失败按钮点击信号
 	if is_instance_valid(lose_button):
-		lose_button.pressed.connect(_on_lose_button_pressed)
+		_connect_signal_once(lose_button.pressed, _on_lose_button_pressed)
 	
 	# 3. 监听全局失败信号
 	if Signal_Bus:
-		Signal_Bus.defeat_triggered.connect(_on_defeat_triggered)
+		_connect_signal_once(Signal_Bus.defeat_triggered, _on_defeat_triggered)
 		if not Signal_Bus.combat_victory_triggered.is_connected(_on_combat_victory_triggered):
-			Signal_Bus.combat_victory_triggered.connect(_on_combat_victory_triggered)
+			_connect_signal_once(Signal_Bus.combat_victory_triggered, _on_combat_victory_triggered)
 
 	if is_instance_valid(hex_map) and hex_map.has_signal("settlement_reward_requested"):
 		if not hex_map.settlement_reward_requested.is_connected(_on_settlement_reward_requested):
@@ -239,6 +247,11 @@ func _connect_global_clock_progress_signal() -> void:
 	if GlobalClock and GlobalClock.has_signal("progress_changed"):
 		if not GlobalClock.progress_changed.is_connected(_on_global_clock_progress_changed):
 			GlobalClock.progress_changed.connect(_on_global_clock_progress_changed)
+
+
+func _connect_signal_once(source_signal: Signal, callback: Callable) -> void:
+	if not source_signal.is_connected(callback):
+		source_signal.connect(callback)
 
 
 func _on_global_clock_progress_changed(era_value: int, _phase_value: int) -> void:
@@ -532,7 +545,7 @@ func setup_card_system():
 	var screen_size = get_viewport_rect().size
 
 	# 验证场景是否加载成功
-	var manager_scene = load("res://addons/card-framework/card_manager.tscn")
+	var manager_scene := CARD_MANAGER_SCENE
 	if not is_instance_valid(manager_scene):
 		push_error("project.gd: 无法加载 card_manager.tscn！")
 		return
@@ -542,7 +555,7 @@ func setup_card_system():
 		push_error("project.gd: 无法实例化 CardManager！")
 		return
 
-	var card_factory_scene = load("res://addons/card-framework/card_factory.tscn")
+	var card_factory_scene := CARD_FACTORY_SCENE
 	if is_instance_valid(card_factory_scene):
 		manager_instance.card_factory_scene = card_factory_scene
 	else:
@@ -622,17 +635,17 @@ func setup_card_system():
 		deck_button.gui_input.connect(_on_deck_button_gui_input)
 
 	if is_instance_valid(end_turn_button):
-		end_turn_button.pressed.connect(_on_end_turn_pressed)
+		_connect_signal_once(end_turn_button.pressed, _on_end_turn_pressed)
 	
 	# ★ 新增：绑定局外收获按钮
 	if is_instance_valid(shop_button):
-		shop_button.pressed.connect(_on_shop_button_pressed)
+		_connect_signal_once(shop_button.pressed, _on_shop_button_pressed)
 	if is_instance_valid(acquire_reward_button):
-		acquire_reward_button.pressed.connect(_on_acquire_reward_button_pressed)
+		_connect_signal_once(acquire_reward_button.pressed, _on_acquire_reward_button_pressed)
 	if is_instance_valid(remove_reward_button):
-		remove_reward_button.pressed.connect(_on_remove_reward_button_pressed)
+		_connect_signal_once(remove_reward_button.pressed, _on_remove_reward_button_pressed)
 	if is_instance_valid(craft_reward_button):
-		craft_reward_button.pressed.connect(_on_craft_reward_button_pressed)
+		_connect_signal_once(craft_reward_button.pressed, _on_craft_reward_button_pressed)
 
 	_card_system_ready = true
 
@@ -665,6 +678,11 @@ func _on_deck_button_gui_input(event: InputEvent):
 		
 	# 检查是否是鼠标按键事件
 	if event is InputEventMouseButton and event.pressed:
+		if current_battle_state == BattleFlowState.SETTLEMENT:
+			_open_deck_pile_viewer()
+			get_viewport().set_input_as_handled()
+			return
+
 		# --- 左键点击：抽牌 ---
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if enable_left_click_draw_from_deck:
@@ -686,7 +704,8 @@ func _on_discard_button_pressed():
 
 func _open_deck_pile_viewer() -> void:
 	if is_instance_valid(deck_pile) and deck_pile._held_cards.size() > 0:
-		pile_viewer.open_pile_view(deck_pile, manager_instance)
+		var is_settlement := current_battle_state == BattleFlowState.SETTLEMENT
+		pile_viewer.open_pile_view(deck_pile, manager_instance, is_settlement, is_settlement)
 
 # ==========================================
 # ★ 回合流程控制区
@@ -1292,7 +1311,7 @@ func _open_settlement_reward_scene(reward_type: String, reward_context: Dictiona
 		return
 
 	var scene_path := str(SETTLEMENT_REWARD_SCENE_PATHS[reward_type])
-	var packed_scene = load(scene_path)
+	var packed_scene := _get_settlement_reward_scene(scene_path)
 	if packed_scene == null:
 		push_error("无法加载局外收获场景：%s" % scene_path)
 		return
@@ -1326,6 +1345,16 @@ func _open_settlement_reward_scene(reward_type: String, reward_context: Dictiona
 
 
 # 当局外界面点击离开/下一关时调用这个函数
+func _get_settlement_reward_scene(scene_path: String) -> PackedScene:
+	if _settlement_reward_scene_cache.has(scene_path):
+		return _settlement_reward_scene_cache[scene_path] as PackedScene
+
+	var packed_scene := ResourceLoader.load(scene_path, "PackedScene") as PackedScene
+	if packed_scene != null:
+		_settlement_reward_scene_cache[scene_path] = packed_scene
+	return packed_scene
+
+
 func proceed_to_next_stage():
 	current_battle_state = BattleFlowState.COMBAT
 
@@ -1630,6 +1659,7 @@ func restore_ui_after_external_scene():
 			end_combat_button.show()
 			end_combat_button.disabled = false
 		if current_battle_state == BattleFlowState.SETTLEMENT:
+			_prepare_deck_button_for_settlement()
 			if is_instance_valid(total_enemy_health_bar):
 				total_enemy_health_bar.hide()
 			_set_single_health_bars_visible(false)
@@ -1667,6 +1697,7 @@ func restore_ui_after_external_scene():
 		end_combat_button.disabled = false
 	
 	if current_battle_state == BattleFlowState.SETTLEMENT:
+		_prepare_deck_button_for_settlement()
 		if is_instance_valid(total_enemy_health_bar):
 			total_enemy_health_bar.hide()
 		_set_single_health_bars_visible(false)
@@ -1884,7 +1915,6 @@ func _hide_combat_phase_ui_for_settlement() -> void:
 	if is_instance_valid(player_hand): player_hand.hide()
 	if is_instance_valid(deck_pile): deck_pile.hide()
 	if is_instance_valid(discard_pile): discard_pile.hide()
-	if is_instance_valid(deck_button): deck_button.hide()
 	if is_instance_valid(discard_button): discard_button.hide()
 	if is_instance_valid(end_turn_button): end_turn_button.hide()
 	if is_instance_valid(timeline_ui):
@@ -1893,6 +1923,177 @@ func _hide_combat_phase_ui_for_settlement() -> void:
 		timeline_ui.hide()
 	if is_instance_valid(cursor_tooltip): cursor_tooltip.hide()
 	if is_instance_valid(cursor_tooltip_panel): cursor_tooltip_panel.hide()
+
+
+func _prepare_deck_button_for_settlement(reclaim_runtime_cards: bool = false) -> void:
+	_snapshot_current_deck_for_settlement()
+	is_processing_deck = false
+	if reclaim_runtime_cards:
+		_reclaim_all_runtime_cards_to_deck()
+	update_counts_and_ui()
+
+	if is_instance_valid(deck_button):
+		deck_button.show()
+		deck_button.mouse_filter = Control.MOUSE_FILTER_PASS
+	if is_instance_valid(discard_button):
+		discard_button.hide()
+
+
+func _snapshot_current_deck_for_settlement() -> void:
+	if not GlobalDB:
+		return
+
+	if MapState and MapState.has_method("set_saved_deck"):
+		MapState.set_saved_deck(GlobalDB.player_deck)
+
+
+func _reclaim_all_runtime_cards_to_deck() -> void:
+	if not is_instance_valid(deck_pile):
+		return
+	if is_instance_valid(manager_instance) and manager_instance.has_method("deselect_card"):
+		manager_instance.deselect_card()
+	_reset_drag_controller_for_settlement()
+
+	# 收获阶段只整理真实运行时牌堆状态，不走 move_cards/update_card_ui，避免播放任何卡牌移动动画。
+	_move_cards_to_deck_without_animation(_collect_cards_for_settlement_reclaim())
+
+	deck_pile._held_cards.shuffle()
+	deck_pile.card_face_up = false
+	_sync_deck_cards_after_silent_reclaim()
+
+
+func _collect_cards_for_settlement_reclaim() -> Array[Card]:
+	var cards: Array[Card] = []
+	var seen_cards := {}
+
+	for container in _get_runtime_card_containers():
+		if container == deck_pile:
+			continue
+		for card in container._held_cards.duplicate():
+			_append_reclaim_card(cards, seen_cards, card)
+
+	for card in _collect_loose_runtime_cards(seen_cards):
+		_append_reclaim_card(cards, seen_cards, card)
+	return cards
+
+
+func _get_runtime_card_containers() -> Array[CardContainer]:
+	var containers: Array[CardContainer] = []
+	for container in [player_hand, discard_pile, deck_pile]:
+		_append_runtime_container(containers, container)
+
+	if is_instance_valid(manager_instance):
+		for container in manager_instance.card_container_dict.values():
+			_append_runtime_container(containers, container)
+	return containers
+
+
+func _append_runtime_container(containers: Array[CardContainer], candidate: Variant) -> void:
+	if is_instance_valid(candidate) and candidate is CardContainer and not containers.has(candidate):
+		containers.append(candidate)
+
+
+func _append_reclaim_card(cards: Array[Card], seen_cards: Dictionary, candidate: Variant) -> void:
+	if is_instance_valid(candidate) and candidate is Card and not seen_cards.has(candidate):
+		cards.append(candidate)
+		seen_cards[candidate] = true
+
+
+func _collect_loose_runtime_cards(seen_cards: Dictionary) -> Array[Card]:
+	var loose_cards: Array[Card] = []
+	var search_root: Node = get_tree().current_scene if is_instance_valid(get_tree().current_scene) else self
+
+	for card in search_root.find_children("*", "Card", true, false):
+		if is_instance_valid(card) and not seen_cards.has(card):
+			loose_cards.append(card)
+			seen_cards[card] = true
+	return loose_cards
+
+
+func _move_cards_to_deck_without_animation(cards: Array[Card]) -> void:
+	for card in cards:
+		if is_instance_valid(card):
+			_prepare_card_for_silent_deck_reclaim(card)
+			_silent_add_card_to_deck(card)
+
+
+func _silent_add_card_to_deck(card: Card) -> void:
+	if not is_instance_valid(card):
+		return
+
+	var previous_container: CardContainer = card.card_container
+	if is_instance_valid(previous_container):
+		previous_container._held_cards.erase(card)
+
+	var parent: Node = card.get_parent()
+	if parent:
+		parent.remove_child(card)
+
+	var cards_node: Node = deck_pile.cards_node if is_instance_valid(deck_pile.cards_node) else deck_pile.get_node_or_null("Cards")
+	if is_instance_valid(cards_node):
+		cards_node.add_child(card)
+	else:
+		deck_pile.add_child(card)
+
+	card.card_container = deck_pile
+	if not deck_pile._held_cards.has(card):
+		deck_pile._held_cards.append(card)
+	card.global_position = deck_pile.global_position
+
+
+func _prepare_card_for_silent_deck_reclaim(card: Card) -> void:
+	if not is_instance_valid(card):
+		return
+
+	if card.has_method("_restore_normal_visuals"):
+		card.call("_restore_normal_visuals")
+	if _has_runtime_property(card, &"card_current_state"):
+		card.set("card_current_state", 0)
+
+	card.set_as_top_level(false)
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.can_be_interacted_with = false
+	card.modulate = Color.WHITE
+	card.rotation = 0.0
+	card.scale = Vector2.ONE
+	card.show()
+
+
+func _sync_deck_cards_after_silent_reclaim() -> void:
+	var cards_node: Node = deck_pile.cards_node if is_instance_valid(deck_pile.cards_node) else deck_pile.get_node_or_null("Cards")
+	for i in range(deck_pile._held_cards.size()):
+		var card: Card = deck_pile._held_cards[i]
+		if not is_instance_valid(card):
+			continue
+		card.show_front = false
+		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.can_be_interacted_with = false
+		if is_instance_valid(cards_node) and card.get_parent() == cards_node:
+			cards_node.move_child(card, i)
+
+
+func _reset_drag_controller_for_settlement() -> void:
+	var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
+	if not is_instance_valid(drag_controller):
+		return
+
+	if _has_runtime_property(drag_controller, &"is_dragging"):
+		drag_controller.set("is_dragging", false)
+	if _has_runtime_property(drag_controller, &"is_placing"):
+		drag_controller.set("is_placing", false)
+	if _has_runtime_property(drag_controller, &"current_card"):
+		drag_controller.set("current_card", null)
+	if _has_runtime_property(drag_controller, &"current_target_tile"):
+		drag_controller.set("current_target_tile", null)
+
+
+func _has_runtime_property(target: Object, property_name: StringName) -> bool:
+	if target == null:
+		return false
+	for property_info in target.get_property_list():
+		if property_info.get("name", &"") == property_name:
+			return true
+	return false
 
 
 func _on_combat_victory_triggered() -> void:
@@ -1905,6 +2106,7 @@ func _on_combat_victory_triggered() -> void:
 
 	disable_player_inputs()
 	_hide_combat_phase_ui_for_settlement()
+	_prepare_deck_button_for_settlement(true)
 
 	if is_instance_valid(timeline_manager) and timeline_manager.has_method("clear_grid"):
 		timeline_manager.clear_grid()

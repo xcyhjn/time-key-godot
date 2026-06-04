@@ -2,6 +2,7 @@
 extends  Node2D
 
 const StatusComponentScript = preload("res://scene/in_scene/status/status_component.gd")
+static var _texture_cache: Dictionary = {}
 
 signal Blood_change(Blood)
 signal HealthBar_free
@@ -116,9 +117,9 @@ func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[Stri
 		return
 		
 	for tex in tex_in:
-		landform_tex.append(ResourceLoader.load(tex, "Texture2D"))
+		landform_tex.append(_get_cached_texture(tex))
 	for damaged_tex in damaged_tex_in:
-		landform_damaged_tex.append(ResourceLoader.load(damaged_tex, "Texture2D"))
+		landform_damaged_tex.append(_get_cached_texture(damaged_tex))
 	self.landform_name = name_in
 	self.location = location_in
 	self.landform_rules = rules_in
@@ -131,6 +132,16 @@ func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[Stri
 
 ## 确保每个建筑都有独立状态组件。
 ## 状态组件挂在 landform 自身，后续刷新建筑视觉或移动建筑时状态跟着实体走。
+static func _get_cached_texture(path: String) -> Texture2D:
+	if _texture_cache.has(path):
+		return _texture_cache[path] as Texture2D
+
+	var texture := ResourceLoader.load(path, "Texture2D") as Texture2D
+	if texture != null:
+		_texture_cache[path] = texture
+	return texture
+
+
 func _ensure_status_component() -> StatusComponent:
 	if is_instance_valid(status_component):
 		return status_component

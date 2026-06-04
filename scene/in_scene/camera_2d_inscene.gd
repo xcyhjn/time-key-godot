@@ -14,7 +14,7 @@ extends Camera2D
 
 @export_group("边界限制 (Limits)")
 ## 允许缩小的最小倍数 (视野最大)
-@export var min_zoom: Vector2 = Vector2(0.8, 0.8)
+@export var min_zoom: Vector2 = Vector2(0.7, 0.7)
 ## 允许放大的最大倍数 (视野最小)
 @export var max_zoom: Vector2 = Vector2(2.0, 2.0)
 ## 是否允许鼠标滚轮缩放。局内收获阶段会临时关闭，但保留普通镜头移动。

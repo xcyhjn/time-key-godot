@@ -107,21 +107,26 @@ func _init_looping_sfx_player() -> void:
 # ==========================================
 func _connect_signals() -> void:
 	if Global.has_signal("choose"):
-		Global.choose.connect(_on_choose_layer)
+		_connect_signal_once(Global.choose, _on_choose_layer)
 	if Global.has_signal("dim_in"):
-		Global.dim_in.connect(_on_dim_in)
+		_connect_signal_once(Global.dim_in, _on_dim_in)
 
 	# Signal_Bus 信号
-	Signal_Bus.card_drawn.connect(_on_card_drawn)
-	Signal_Bus.deck_shuffled.connect(_on_deck_shuffled)
-	Signal_Bus.timeline_action_added.connect(_on_timeline_action_added)
-	Signal_Bus.combat_victory_triggered.connect(_on_combat_victory)
-	Signal_Bus.defeat_triggered.connect(_on_game_over)
-	Signal_Bus.tile_selected.connect(_on_tile_selected)
+	_connect_signal_once(Signal_Bus.card_drawn, _on_card_drawn)
+	_connect_signal_once(Signal_Bus.deck_shuffled, _on_deck_shuffled)
+	_connect_signal_once(Signal_Bus.timeline_action_added, _on_timeline_action_added)
+	_connect_signal_once(Signal_Bus.combat_victory_triggered, _on_combat_victory)
+	_connect_signal_once(Signal_Bus.defeat_triggered, _on_game_over)
+	_connect_signal_once(Signal_Bus.tile_selected, _on_tile_selected)
 
 # ==========================================
 # BGM 控制
 # ==========================================
+func _connect_signal_once(source_signal: Signal, callback: Callable) -> void:
+	if not source_signal.is_connected(callback):
+		source_signal.connect(callback)
+
+
 func play_bgm(key: String) -> void:
 	var stream := _get_bgm(key)
 	if stream == null:

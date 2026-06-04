@@ -8,6 +8,7 @@ class_name StatusComponent
 extends Node2D
 
 const STATUS_ICON_META: StringName = &"_status_icon_nodes"
+static var _texture_cache: Dictionary = {}
 
 @export_group("状态图标布局")
 ## icon 统一挂在建筑节点内，使用本地坐标偏移。y 越小越靠近建筑上方。
@@ -135,7 +136,7 @@ func refresh_status_icons() -> void:
 		if icon_path == "":
 			continue
 
-		var texture: Texture2D = load(icon_path) as Texture2D
+		var texture: Texture2D = _get_status_icon_texture(icon_path)
 		if texture == null:
 			continue
 
@@ -153,6 +154,16 @@ func refresh_status_icons() -> void:
 			_play_icon_refresh_animation(icon)
 
 	set_meta(STATUS_ICON_META, _collect_icon_nodes())
+
+
+static func _get_status_icon_texture(icon_path: String) -> Texture2D:
+	if _texture_cache.has(icon_path):
+		return _texture_cache[icon_path] as Texture2D
+
+	var texture := ResourceLoader.load(icon_path, "Texture2D") as Texture2D
+	if texture != null:
+		_texture_cache[icon_path] = texture
+	return texture
 
 
 func _schedule_icon_unlock(status_id: StringName) -> void:

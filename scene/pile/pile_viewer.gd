@@ -1,6 +1,6 @@
 ﻿# 原文件名: pile_viewer(生成局外收获卡牌).gd
 # 功能: 局内抽牌堆/弃牌堆查看器
-# 核心逻辑: open_pile_view() 根据真实牌堆生成只读卡牌副本；背景遮罩吞掉下层输入；show_tooltip()/hide_tooltip() 复用通用卡牌 tooltip。
+# 核心逻辑: open_pile_view() 根据真实牌堆生成只读卡牌副本；可按源顺序或随机顺序展示；背景遮罩吞掉下层输入；show_tooltip()/hide_tooltip() 复用通用卡牌 tooltip。
 extends CanvasLayer
 
 @onready var card_grid = $ScrollContainer/card
@@ -43,7 +43,7 @@ func _ready():
 	$back.pressed.connect(_on_close_pressed)
 
 
-func open_pile_view(source_pile: Pile, manager: CardManager):
+func open_pile_view(source_pile: Pile, manager: CardManager, use_source_order: bool = false, sort_by_card_id: bool = false):
 	card_manager = manager
 	layer = top_layer
 	_pause_underlying_scene()
@@ -61,10 +61,27 @@ func open_pile_view(source_pile: Pile, manager: CardManager):
 	# 注意：我们不能直接把 source_pile 里的卡牌移动过来，那样会破坏游戏逻辑。
 	# 我们需要根据数据生成“视觉副本”。
 	var cards_to_show := source_pile._held_cards.duplicate()
-	if randomize_view_order:
+	# 收获阶段的卡组按钮需要展示“当前完整卡组”的稳定顺序，战斗中仍保留原本的随机查看体验。
+	if sort_by_card_id:
+		cards_to_show.sort_custom(Callable(self, "_compare_cards_by_json_id"))
+	elif randomize_view_order and not use_source_order:
 		cards_to_show.shuffle()
 	for real_card in cards_to_show:
 		_create_visual_copy(real_card)
+
+
+func _compare_cards_by_json_id(card_a: Card, card_b: Card) -> bool:
+	var order_a := _get_card_json_sort_id(card_a)
+	var order_b := _get_card_json_sort_id(card_b)
+	if order_a == order_b:
+		return str(card_a.card_name) < str(card_b.card_name)
+	return order_a < order_b
+
+
+func _get_card_json_sort_id(card: Card) -> int:
+	if not is_instance_valid(card):
+		return 999999
+	return int(card.card_info.get("id", 999999))
 
 
 func _unhandled_input(event: InputEvent) -> void:
