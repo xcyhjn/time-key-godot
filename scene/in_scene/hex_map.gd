@@ -10,6 +10,7 @@ const HEX_TERRAIN_RULES := preload("res://scene/in_scene/HexTerrainRules.gd")
 const HEX_TARGET_RULES := preload("res://scene/in_scene/HexTargetRules.gd")
 const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/TileDestructionBatchQueue.gd")
 const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/EnemyIntentMapPresenter.gd")
+const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/SettlementRewardPresenter.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -321,6 +322,7 @@ var active_stack: Area2D = null
 var selected_stack: Area2D = null  # 记录当前被点击选中的地块
 var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明湮灭状态的地块
 var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
+var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1277,11 +1279,11 @@ func exit_settlement_reward_mode() -> void:
 	settlement_reward_hovered_stack = null
 	_set_camera_zoom_input_enabled(true)
 
+	var presenter_config := _build_settlement_reward_presenter_config()
 	for stack in settlement_reward_stacks:
 		if not is_instance_valid(stack):
 			continue
-		_apply_settlement_reward_shader(stack, false, false)
-		_remove_settlement_reward_tooltip(stack)
+		_settlement_reward_presenter.clear_stack(stack, presenter_config)
 
 	settlement_reward_stacks.clear()
 	settlement_reward_stack_data.clear()
@@ -1292,6 +1294,7 @@ func exit_settlement_reward_mode() -> void:
 func _collect_settlement_reward_stacks() -> void:
 	settlement_reward_stacks.clear()
 	settlement_reward_stack_data.clear()
+	var presenter_config := _build_settlement_reward_presenter_config()
 
 	for coord in stack_nodes.keys():
 		var stack = stack_nodes[coord]
@@ -1300,14 +1303,13 @@ func _collect_settlement_reward_stacks() -> void:
 
 		var reward_landform = _get_settlement_reward_landform(stack, coord)
 		if not is_instance_valid(reward_landform):
-			_remove_settlement_reward_tooltip(stack)
-			_apply_settlement_reward_shader(stack, false, false)
+			_settlement_reward_presenter.clear_stack(stack, presenter_config)
 			continue
 
 		var reward_info = _build_settlement_reward_info(stack, coord, reward_landform)
 		settlement_reward_stacks.append(stack)
 		settlement_reward_stack_data[stack] = reward_info
-		_refresh_settlement_reward_stack(stack)
+		_refresh_settlement_reward_stack(stack, presenter_config)
 
 
 ## 从 stack / map_data 双通道读取建筑。
@@ -1383,6 +1385,8 @@ func _is_settlement_reward_stack_available(stack: Area2D) -> bool:
 	)
 
 
+## 判断奖励建筑是否已经消费过局外收获。
+## 这里只读取 landform 暴露的状态字段，不创建默认值，避免把奖励状态写入不支持该机制的建筑。
 func _is_settlement_reward_used(reward_landform: Node) -> bool:
 	if not is_instance_valid(reward_landform):
 		return true
@@ -1400,13 +1404,11 @@ func _handle_settlement_reward_hover(stack: Area2D, is_entered: bool) -> void:
 
 	if is_entered:
 		settlement_reward_hovered_stack = stack
-		_apply_settlement_reward_shader(stack, true, true)
-		_animate_settlement_reward_tooltip(stack, true)
+		_settlement_reward_presenter.set_hover_state(stack, true, true, _build_settlement_reward_presenter_config())
 	else:
 		if settlement_reward_hovered_stack == stack:
 			settlement_reward_hovered_stack = null
-		_apply_settlement_reward_shader(stack, true, false)
-		_animate_settlement_reward_tooltip(stack, false)
+		_settlement_reward_presenter.set_hover_state(stack, true, false, _build_settlement_reward_presenter_config())
 
 
 ## 点击未使用奖励建筑时，只发出请求信号。
@@ -1432,143 +1434,42 @@ func mark_settlement_reward_used(stack: Area2D) -> void:
 	elif is_instance_valid(reward_landform) and _object_has_property(reward_landform, &"settlement_reward_used"):
 		reward_landform.set("settlement_reward_used", true)
 
-	_apply_settlement_reward_shader(stack, false, false)
-	_refresh_settlement_reward_tooltip(stack)
-	_animate_settlement_reward_tooltip(stack, false)
+	var presenter_config := _build_settlement_reward_presenter_config()
+	_settlement_reward_presenter.refresh_stack(stack, reward_info, false, presenter_config)
+	_settlement_reward_presenter.animate_tooltip(stack, false, presenter_config)
 	if settlement_reward_hovered_stack == stack:
 		settlement_reward_hovered_stack = null
 	_refresh_stack_interactivity()
 
 
 ## 根据奖励是否可用刷新单个 stack 的视觉与 tooltip。
-func _refresh_settlement_reward_stack(stack: Area2D) -> void:
+func _refresh_settlement_reward_stack(stack: Area2D, presenter_config: Dictionary = {}) -> void:
 	var is_available = _is_settlement_reward_stack_available(stack)
-	_apply_settlement_reward_shader(stack, is_available, false)
-	_ensure_settlement_reward_tooltip(stack)
-	_refresh_settlement_reward_tooltip(stack)
-
-
-## 统一写入局外收获 shader 参数。
-## 常驻高亮与 hover 上浮拆开，是为了让“未使用”状态能发光但不一直跳动。
-func _apply_settlement_reward_shader(stack: Area2D, is_available: bool, is_hovered: bool) -> void:
-	if not is_instance_valid(stack):
+	var reward_info: Dictionary = settlement_reward_stack_data.get(stack, {})
+	if reward_info.is_empty():
 		return
 
-	var sprites = stack.get_meta("sprites") as Array
-	for sprite in sprites:
-		if not is_instance_valid(sprite) or not sprite.material:
-			continue
-		if not (sprite.material is ShaderMaterial):
-			continue
-		if block_material != null and (sprite.material as ShaderMaterial).shader != block_material.shader:
-			continue
-
-		if is_available:
-			var color = settlement_reward_hover_color if is_hovered else settlement_reward_highlight_color
-			sprite.set_instance_shader_parameter("settlement_highlight_color", color)
-			sprite.set_instance_shader_parameter("settlement_highlight_blend", settlement_reward_highlight_blend)
-			sprite.set_instance_shader_parameter("settlement_hover_blend", settlement_reward_hover_blend if is_hovered else 0.0)
-			sprite.set_instance_shader_parameter("highlight_color", color)
-			sprite.set_instance_shader_parameter("is_selected_blend", 1.0 if is_hovered else 0.0)
-		else:
-			sprite.set_instance_shader_parameter("settlement_highlight_blend", 0.0)
-			sprite.set_instance_shader_parameter("settlement_hover_blend", 0.0)
-			sprite.set_instance_shader_parameter("is_selected_blend", 0.0)
+	var config := presenter_config if not presenter_config.is_empty() else _build_settlement_reward_presenter_config()
+	_settlement_reward_presenter.refresh_stack(stack, reward_info, is_available, config)
 
 
-func _ensure_settlement_reward_tooltip(stack: Area2D) -> PanelContainer:
-	var panel = stack.get_node_or_null("SettlementRewardTooltip") as PanelContainer
-	if panel != null:
-		_update_settlement_reward_tooltip_position(stack, panel)
-		return panel
-
-	panel = PanelContainer.new()
-	panel.name = "SettlementRewardTooltip"
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.z_index = settlement_reward_tooltip_z_index
-	panel.custom_minimum_size = settlement_reward_tooltip_size
-	panel.size = settlement_reward_tooltip_size
-	panel.pivot_offset = settlement_reward_tooltip_size * 0.5
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.08, 0.04, 0.88)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(1.0, 0.78, 0.18, 1.0)
-	style.set_corner_radius_all(6)
-	panel.add_theme_stylebox_override("panel", style)
-
-	var margin = MarginContainer.new()
-	margin.name = "Margin"
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
-	panel.add_child(margin)
-
-	var label = Label.new()
-	label.name = "Label"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", settlement_reward_tooltip_font_size)
-	label.add_theme_color_override("font_color", Color(1.0, 0.93, 0.72, 1.0))
-	margin.add_child(label)
-
-	stack.add_child(panel)
-	_update_settlement_reward_tooltip_position(stack, panel)
-	return panel
-
-
-func _refresh_settlement_reward_tooltip(stack: Area2D) -> void:
-	if not settlement_reward_stack_data.has(stack):
-		return
-
-	var panel = _ensure_settlement_reward_tooltip(stack)
-	var label = panel.get_node_or_null("Margin/Label") as Label
-	if label == null:
-		return
-
-	var reward_landform = settlement_reward_stack_data[stack].get("landform")
-	if is_instance_valid(reward_landform) and reward_landform.has_method("get_settlement_reward_tooltip_text"):
-		label.text = reward_landform.get_settlement_reward_tooltip_text()
-	else:
-		var reward_label = settlement_reward_stack_data[stack].get("reward_label", "收获")
-		label.text = "%s 未使用" % reward_label
-
-
-func _update_settlement_reward_tooltip_position(stack: Area2D, panel: PanelContainer) -> void:
-	var height = int(stack.get_meta("height")) if stack.has_meta("height") else 1
-	var current_step_h = step_height * (tile_scale / REF_SCALE)
-	var top_block_y = 0.0 if current_view_state == MapViewState.VIEW_FLAT else -(height - 1) * current_step_h
-	panel.position = Vector2(
-		settlement_reward_tooltip_offset.x,
-		top_block_y + settlement_reward_tooltip_offset.y
-	)
-
-
-func _animate_settlement_reward_tooltip(stack: Area2D, is_hovered: bool) -> void:
-	var panel = stack.get_node_or_null("SettlementRewardTooltip") as PanelContainer
-	if panel == null:
-		return
-
-	var meta_key = "settlement_reward_tooltip_tween"
-	if stack.has_meta(meta_key):
-		var old_tween = stack.get_meta(meta_key)
-		if is_instance_valid(old_tween) and old_tween.is_valid():
-			old_tween.kill()
-
-	var target_scale = settlement_reward_tooltip_hover_scale if is_hovered else Vector2.ONE
-	var tw = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	stack.set_meta(meta_key, tw)
-	tw.tween_property(panel, "scale", target_scale, 0.12)
-
-
-func _remove_settlement_reward_tooltip(stack: Area2D) -> void:
-	var panel = stack.get_node_or_null("SettlementRewardTooltip")
-	if is_instance_valid(panel):
-		panel.queue_free()
+## 收集局外收获地图表现调参。
+## 所有可调项仍在 HexMap Inspector 上导出；SettlementRewardPresenter 只消费这份快照，不反向读取 HexMap 状态。
+func _build_settlement_reward_presenter_config() -> Dictionary:
+	return {
+		"tooltip_offset": settlement_reward_tooltip_offset,
+		"tooltip_size": settlement_reward_tooltip_size,
+		"tooltip_font_size": settlement_reward_tooltip_font_size,
+		"tooltip_z_index": settlement_reward_tooltip_z_index,
+		"highlight_color": settlement_reward_highlight_color,
+		"hover_color": settlement_reward_hover_color,
+		"highlight_blend": settlement_reward_highlight_blend,
+		"hover_blend": settlement_reward_hover_blend,
+		"tooltip_hover_scale": settlement_reward_tooltip_hover_scale,
+		"current_step_h": step_height * (tile_scale / REF_SCALE),
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+		"block_shader": block_material.shader if block_material != null else null,
+	}
 
 # ==========================================
 # ★ 统一的点击输入处理 (支持 3D & 平铺视图)
@@ -2156,9 +2057,7 @@ func _sync_stack_to_current_view(coord: Vector2i, animate: bool = false) -> void
 	if is_instance_valid(collision):
 		_sync_cached_node_to_flat(cache, "collision_data", collision, drop_delta, animate)
 
-	var settlement_tooltip := stack.get_node_or_null("SettlementRewardTooltip") as PanelContainer
-	if is_instance_valid(settlement_tooltip):
-		_update_settlement_reward_tooltip_position(stack, settlement_tooltip)
+	_settlement_reward_presenter.update_tooltip_position(stack, _build_settlement_reward_presenter_config())
 
 	height_view_original_materials[stack] = cache
 
@@ -2298,12 +2197,10 @@ func _refresh_all_settlement_reward_tooltip_positions() -> void:
 	if settlement_reward_stacks.is_empty():
 		return
 
-	for stack in settlement_reward_stacks:
-		if not is_instance_valid(stack):
-			continue
-		var panel := stack.get_node_or_null("SettlementRewardTooltip") as PanelContainer
-		if is_instance_valid(panel):
-			_update_settlement_reward_tooltip_position(stack, panel)
+	_settlement_reward_presenter.refresh_positions(
+		settlement_reward_stacks,
+		_build_settlement_reward_presenter_config()
+	)
 
 
 func _set_camera_zoom_input_enabled(enabled: bool) -> void:

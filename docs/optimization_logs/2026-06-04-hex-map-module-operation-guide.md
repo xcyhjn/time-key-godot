@@ -107,6 +107,78 @@ Adjustment notes:
 - Add concrete damage/heal/build target restrictions here first, then keep `hex_map.gd` as the visual coordinator.
 - Do not put shader, tooltip, or CardManager lookup logic in this module.
 
+### `scene/in_scene/EnemyIntentMapPresenter.gd`
+
+Responsibility:
+- Highlight the enemy intent source stack.
+- Create/reuse target ripple overlay sprites.
+- Restore the source stack's previous shader state when the preview is cleared.
+- Keep map-side enemy intent visuals separate from timeline rules and tooltip UI.
+
+Main callers:
+- `hex_map.gd::show_enemy_intent_preview()`
+- `hex_map.gd::clear_enemy_intent_preview()`
+
+Related exported tuning variables still adjusted in `hex_map.gd`:
+- `enemy_intent_frame_tex`
+- `enemy_intent_target_shader`
+- `enemy_intent_overlay_scale`
+- `enemy_intent_overlay_z_index`
+- `enemy_intent_source_valid_highlight_blend`
+- `enemy_intent_source_valid_selected_blend`
+- `enemy_intent_source_self_highlight_blend`
+- `enemy_intent_source_self_selected_blend`
+- `enemy_intent_source_invalid_highlight_blend`
+- `enemy_intent_source_invalid_selected_blend`
+- `enemy_intent_target_ripple_speed`
+- `enemy_intent_target_ripple_density`
+- `enemy_intent_target_min_alpha`
+- `enemy_intent_target_max_alpha`
+- `hitbox_width`
+- `hitbox_base_height`
+- `hitbox_offset_x`
+- `hitbox_offset_y`
+
+Adjustment notes:
+- Change `enemy_intent_target_*` exports to tune target ripple motion and alpha.
+- Change `enemy_intent_source_*_blend` exports to tune source tile highlight strength by valid/self/invalid intent state.
+- `enemy_intent_source_highlight_width` remains exported for legacy/source-overlay experiments, but the current presenter does not consume it.
+
+### `scene/in_scene/SettlementRewardPresenter.gd`
+
+Responsibility:
+- Apply settlement reward shader instance parameters to eligible stack sprites.
+- Create/reuse `SettlementRewardTooltip` panels.
+- Refresh tooltip label text from reward info or landform custom copy.
+- Animate tooltip hover scale.
+- Reposition reward tooltips after 3D/flat height-view changes.
+- Clear reward presentation when reward mode exits or a stack loses eligibility.
+
+Main callers:
+- `hex_map.gd::exit_settlement_reward_mode()`
+- `hex_map.gd::_collect_settlement_reward_stacks()`
+- `hex_map.gd::_handle_settlement_reward_hover()`
+- `hex_map.gd::mark_settlement_reward_used()`
+- `hex_map.gd::_sync_stack_to_current_view()`
+- `hex_map.gd::_refresh_all_settlement_reward_tooltip_positions()`
+
+Related exported tuning variables still adjusted in `hex_map.gd`:
+- `settlement_reward_tooltip_offset`
+- `settlement_reward_tooltip_size`
+- `settlement_reward_tooltip_font_size`
+- `settlement_reward_tooltip_z_index`
+- `settlement_reward_highlight_color`
+- `settlement_reward_hover_color`
+- `settlement_reward_highlight_blend`
+- `settlement_reward_hover_blend`
+- `settlement_reward_tooltip_hover_scale`
+
+Adjustment notes:
+- Reward eligibility and payload creation stay in `hex_map.gd`; do not add reward-state rules to the presenter.
+- Change tooltip placement through `settlement_reward_tooltip_offset`.
+- Change reward visual intensity through `settlement_reward_highlight_blend` and `settlement_reward_hover_blend`.
+- Tooltip position also consumes `step_height`, `tile_scale`, `REF_SCALE`, and `current_view_state` at runtime.
+
 ## Verification Checklist
 
 Run after changing any extracted module:
@@ -133,7 +205,6 @@ Use these in the editor after parser checks:
 ## Next Extraction Candidates
 
 Priority order:
-- Enemy intent map presentation.
-- Settlement reward tooltip/highlight presentation.
 - Height view pillar/label visual state.
 - Runtime landform registration.
+- Concrete card target restrictions in `HexTargetRules.gd`.

@@ -64,7 +64,6 @@ These remain on `hex_map.gd` and are passed into the presenter through `_build_e
 - `enemy_intent_target_shader`
 - `enemy_intent_overlay_scale`
 - `enemy_intent_overlay_z_index`
-- `enemy_intent_source_highlight_width`
 - `enemy_intent_source_valid_highlight_blend`
 - `enemy_intent_source_valid_selected_blend`
 - `enemy_intent_source_self_highlight_blend`
@@ -87,7 +86,7 @@ Position/size values consumed for overlay placement:
 
 - To change target ripple appearance, adjust the `enemy_intent_target_*` exports on HexMap.
 - To change source tile highlight strength, adjust the `enemy_intent_source_*_blend` exports on HexMap.
-- `enemy_intent_source_highlight_width` is currently preserved in the config list but source highlighting writes existing tile sprite shader parameters directly; if the tile shader supports width tuning later, wire it in `EnemyIntentMapPresenter._show_source_highlight()`.
+- `enemy_intent_source_highlight_width` remains exported for legacy/source-overlay experiments, but the current presenter does not consume it because source highlighting writes existing tile sprite blend parameters directly.
 - Target overlay nodes are reused instead of freed to avoid repeated hover allocations.
 
 ## Verification
