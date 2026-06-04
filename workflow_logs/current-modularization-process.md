@@ -309,3 +309,114 @@ workflow_logs/current-modularization-process.md
 ```text
 请继续 D:/godot/时之钥/时之钥 的模块化解耦。先读取 AGENTS.md、docs/ai-handoff-ultimate-operation-guide.md、docs/hex-map-ultimate-operation-guide.md、workflow_logs/current-modularization-process.md。先分析目标文件，再列待拆清单，最后每批只拆一个风险面。优先处理 scene/in_scene/in_scene.gd，从节点桥接、GlobalClock 桥接或牌堆 UI 控制这种低风险模块开始。新增模块写中文注释，Markdown 用中文自然语言。docs 目录只保留最新版总结性说明，中间流程写 workflow_logs/current-modularization-process.md。每批改完运行 git diff --check 和 Godot headless 检查，并单独 commit。
 ```
+
+## in_scene.gd 第一批低风险拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只处理低风险桥接和 UI 转发，不改卡牌生命周期、回合结算、胜负流程和切场景流程。
+
+目标函数范围：
+
+```text
+_ready() 的节点解析入口
+_connect_global_clock_progress_signal()
+_pull_era_from_global()
+_push_era_to_global()
+_refresh_combat_cartoon_ui_progress()
+_advance_global_phase()
+update_counts_and_ui()
+_on_deck_button_gui_input()
+_on_discard_button_pressed()
+_open_deck_pile_viewer()
+```
+
+当前读写的成员变量：
+
+```text
+deck_button / discard_button / deck_count_label / discard_count_label
+shop_button / acquire_reward_button / remove_reward_button / craft_reward_button
+lose_button / win_debug_button / combat_victory_debug_button / game_over_ui
+hex_map / timecoin_container
+end_turn_button / end_combat_button / height_view_toggle_button / cursor_tooltip
+timeline_ui / timeline_manager / dim / win / total_enemy_health_bar
+combat_victory_banner / combat_cartoon_ui
+current_era_value / current_deck_count / current_discard_count
+is_processing_deck / current_battle_state
+```
+
+当前触碰的外部节点和 autoload：
+
+```text
+ui/Main 周边固定 UI 节点
+map/HexMap
+CartoonUI
+combat_victory_banner
+TimecoinContainer
+GlobalClock
+MapState
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/bridges/InSceneNodeBridge.gd
+scene/in_scene/in_scene_modules/bridges/InSceneGlobalClockBridge.gd
+scene/in_scene/in_scene_modules/cards/CardPileUiController.gd
+```
+
+模块边界：
+
+- `InSceneNodeBridge.gd` 只集中节点路径查找，不缓存玩法状态，不修改场景树。
+- `InSceneGlobalClockBridge.gd` 只集中 `GlobalClock` 信号连接、时代拉取、时代回写和阶段推进后的存档同步。
+- `CardPileUiController.gd` 只集中牌堆数量刷新、抽牌堆按钮动作判定、抽牌堆/弃牌堆查看器打开。它不移动卡牌、不洗牌、不决定战斗阶段。
+
+保留的旧公共入口：
+
+```text
+update_counts_and_ui()
+_on_deck_button_gui_input(event)
+_on_discard_button_pressed()
+_open_deck_pile_viewer()
+_pull_era_from_global()
+_push_era_to_global()
+_advance_global_phase()
+```
+
+这些函数仍由 `in_scene.gd` 暴露，内部转发给新模块，避免影响已有调用方。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+ui/Main 里分散的 @onready 硬编码节点路径，已经由 InSceneNodeBridge 统一维护。
+牌堆计数和查看器打开逻辑，已经由 CardPileUiController 统一维护。
+GlobalClock 时代读写和阶段存档同步，已经由 InSceneGlobalClockBridge 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 时，修复过新模块的 warning-as-error 和 class_name 时序问题；最终筛选未再出现 SCRIPT ERROR、Parse Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些在前序文档中已记录，不作为本批新增问题处理。
+```
+
+### 下一批建议
+
+下一批仍建议保持低到中风险，不要直接拆胜负或切场景：
+
+1. `CardSystemBootstrap.gd`：拆 `setup_card_system()` 中 CardManager、Hand、Deck、Discard 和 CardFactory 初始化，保留 `manager_instance`、`player_hand`、`deck_pile`、`discard_pile` 等旧变量。
+2. 或 `InSceneInputLockController.gd`：拆 `disable_player_inputs()` 与 `enable_player_inputs()`，输入锁范围清晰，验证路径短。
+3. 暂缓 `SettlementDeckReclaimService.gd`、`InSceneSceneSwitcher.gd` 和 `CombatResultController.gd`，这些涉及跨场景生命周期和结算状态，等前两批稳定后再动。

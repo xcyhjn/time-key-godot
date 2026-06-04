@@ -7,6 +7,9 @@ const PILE_VIEWER_SCENE: PackedScene = preload("res://scene/pile/pile_viewer.tsc
 const CARD_MANAGER_SCENE: PackedScene = preload("res://addons/card-framework/card_manager.tscn")
 const CARD_FACTORY_SCENE: PackedScene = preload("res://addons/card-framework/card_factory.tscn")
 const HEX_TARGET_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexTargetRules.gd")
+const IN_SCENE_NODE_BRIDGE := preload("res://scene/in_scene/in_scene_modules/bridges/InSceneNodeBridge.gd")
+const IN_SCENE_GLOBAL_CLOCK_BRIDGE := preload("res://scene/in_scene/in_scene_modules/bridges/InSceneGlobalClockBridge.gd")
+const CARD_PILE_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/cards/CardPileUiController.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -60,37 +63,37 @@ var drop_area = 4.0 / 7.0
 @export var hand_spacing: float = 20.0  # 手牌间距
 
 # UI 节点引用
-@onready var deck_button = $"../DeckButton"
-@onready var discard_button = $"../DiscardButton"
-@onready var deck_count_label = $"../DeckButton/Label"
-@onready var discard_count_label = $"../DiscardButton/Label"
+var deck_button
+var discard_button
+var deck_count_label
+var discard_count_label
 
 # ★ 新增：局外收获按钮引用
-@onready var shop_button = $"../ShopButton"
-@onready var acquire_reward_button = $"../AcquireRewardButton"
-@onready var remove_reward_button = $"../RemoveRewardButton"
-@onready var craft_reward_button = $"../CraftRewardButton"
-@onready var lose_button = $"../LoseButton"
-@onready var win_debug_button: Button = $"../WinButton"
-@onready var combat_victory_debug_button: Button = $"../CombatVictoryDebugButton"
-@onready var game_over_ui = $"../GameOver"
+var shop_button
+var acquire_reward_button
+var remove_reward_button
+var craft_reward_button
+var lose_button
+var win_debug_button: Button
+var combat_victory_debug_button: Button
+var game_over_ui
 # ★ 新增：地图和时间币显示引用
-@onready var hex_map = $"../../map/HexMap"
-@onready var timecoin_container = get_node_or_null("/root/in_scene/TimecoinView/TimecoinCanvasLayer/TimecoinContainer")
+var hex_map
+var timecoin_container
 
 # ★ 新增：回合与局内功能按钮引用
-@onready var end_turn_button = $"../EndTurnButton"
-@onready var end_combat_button = $"../EndCombatButton"  # 根据你的实际路径修改
-@onready var height_view_toggle_button: Button = $"../HeightViewToggleButton"
-@onready var cursor_tooltip = $"../CursorTooltip"  # 指向刚才创建的 Label
+var end_turn_button
+var end_combat_button
+var height_view_toggle_button: Button
+var cursor_tooltip
 var cursor_tooltip_panel: PanelContainer  # 增强后的PanelContainer包装
-@onready var timeline_ui = $"../TimelineUI"  # 根据你的实际路径修改
-@onready var timeline_manager = $"../TimelineSystem/TimelineManager"
-@onready var dim = $"../DimMenu"
-@onready var win = $"../GameWinScreen"
-@onready var total_enemy_health_bar = $"../TotalEnemyHealthBar"
-@onready var combat_victory_banner = $"../../combat_victory_banner"
-@onready var combat_cartoon_ui = $"../../CartoonUI"
+var timeline_ui
+var timeline_manager
+var dim
+var win
+var total_enemy_health_bar
+var combat_victory_banner
+var combat_cartoon_ui
 
 # ================================
 # ★ 导出调整项：Tooltip 资源
@@ -150,8 +153,13 @@ var _resolution_hides_debug_buttons: bool = false
 var _first_turn_started: bool = false
 var _first_turn_starting: bool = false
 
+var _node_bridge: RefCounted = IN_SCENE_NODE_BRIDGE.new()
+var _global_clock_bridge: RefCounted = IN_SCENE_GLOBAL_CLOCK_BRIDGE.new()
+var _card_pile_ui_controller: RefCounted = CARD_PILE_UI_CONTROLLER.new()
+
 
 func _ready() -> void:
+	_resolve_scene_nodes()
 	_connect_global_clock_progress_signal()
 	if SceneLog:
 		SceneLog.scene_event("InSceneMain", "ready", {"incoming_payload": incoming_external_payload})
@@ -231,8 +239,37 @@ func _ready() -> void:
 	call_deferred("_ensure_entry_dim_hidden")
 	
 
+func _resolve_scene_nodes() -> void:
+	var nodes: Dictionary = _node_bridge.resolve(self)
+	deck_button = nodes.get("deck_button")
+	discard_button = nodes.get("discard_button")
+	deck_count_label = nodes.get("deck_count_label")
+	discard_count_label = nodes.get("discard_count_label")
+	shop_button = nodes.get("shop_button")
+	acquire_reward_button = nodes.get("acquire_reward_button")
+	remove_reward_button = nodes.get("remove_reward_button")
+	craft_reward_button = nodes.get("craft_reward_button")
+	lose_button = nodes.get("lose_button")
+	win_debug_button = nodes.get("win_debug_button") as Button
+	combat_victory_debug_button = nodes.get("combat_victory_debug_button") as Button
+	game_over_ui = nodes.get("game_over_ui")
+	hex_map = nodes.get("hex_map")
+	timecoin_container = nodes.get("timecoin_container")
+	end_turn_button = nodes.get("end_turn_button")
+	end_combat_button = nodes.get("end_combat_button")
+	height_view_toggle_button = nodes.get("height_view_toggle_button") as Button
+	cursor_tooltip = nodes.get("cursor_tooltip")
+	timeline_ui = nodes.get("timeline_ui")
+	timeline_manager = nodes.get("timeline_manager")
+	dim = nodes.get("dim")
+	win = nodes.get("win")
+	total_enemy_health_bar = nodes.get("total_enemy_health_bar")
+	combat_victory_banner = nodes.get("combat_victory_banner")
+	combat_cartoon_ui = nodes.get("combat_cartoon_ui")
+
+
 func _connect_global_clock_progress_signal() -> void:
-	_connect_signal_once(GlobalClock.progress_changed, _on_global_clock_progress_changed)
+	_global_clock_bridge.connect_progress_changed(_connect_signal_once, _on_global_clock_progress_changed)
 
 
 func _connect_signal_once(source_signal: Signal, callback: Callable) -> void:
@@ -248,16 +285,14 @@ func _on_global_clock_progress_changed(era_value: int, _phase_value: int) -> voi
 ## 从 GlobalClock 拉取当前时代值。
 ## UI 显示和回合推进都以 GlobalClock 为唯一来源。
 func _pull_era_from_global() -> void:
-	current_era_value = max(int(GlobalClock.get_current_era()), 1)
+	current_era_value = _global_clock_bridge.pull_era()
 	_push_era_to_global()
 
 
 ## 把局内当前时代值回写到 GlobalClock。
 ## 这是“局内战斗进度”与“局外全局进度”之间的同步桥。
 func _push_era_to_global() -> void:
-	current_era_value = max(current_era_value, 1)
-	GlobalClock.set_current_era(current_era_value)
-	MapState.set_saved_era_progress(current_era_value, int(GlobalClock.get_current_phase()))
+	current_era_value = _global_clock_bridge.push_era(current_era_value)
 
 
 ## 初始化局内顶部 CartoonUI。
@@ -286,8 +321,8 @@ func _refresh_combat_cartoon_ui_progress() -> void:
 	if not is_instance_valid(combat_cartoon_ui):
 		return
 
-	current_era_value = max(int(GlobalClock.get_current_era()), 1)
-	var phase_value := int(GlobalClock.get_current_phase())
+	current_era_value = _global_clock_bridge.pull_era()
+	var phase_value: int = _global_clock_bridge.get_phase()
 	combat_cartoon_ui.set_progress_labels(current_era_value, phase_value)
 
 
@@ -575,60 +610,36 @@ func setup_card_system():
 
 # --- 按钮逻辑修正 ---
 func update_counts_and_ui():
-	# 1. 从逻辑实体获取最新数据
-	if is_instance_valid(deck_pile) and deck_pile._held_cards != null:
-		current_deck_count = deck_pile._held_cards.size()
-	else:
-		current_deck_count = 0
-
-	if is_instance_valid(discard_pile) and discard_pile._held_cards != null:
-		current_discard_count = discard_pile._held_cards.size()
-	else:
-		current_discard_count = 0
-
-	# 2. 更新 UI 标签
-	if is_instance_valid(deck_count_label):
-		deck_count_label.text = str(current_deck_count)
-	if is_instance_valid(discard_count_label):
-		discard_count_label.text = str(current_discard_count)
+	var counts: Dictionary = _card_pile_ui_controller.update_counts(deck_pile, discard_pile, deck_count_label, discard_count_label)
+	current_deck_count = int(counts.get("deck_count", 0))
+	current_discard_count = int(counts.get("discard_count", 0))
 
 
 # --- 新增：抽牌堆的输入处理 (左键抽牌，右键查看) ---
 func _on_deck_button_gui_input(event: InputEvent):
-	# ★ 第一道防线：如果正在洗牌或抽牌，屏蔽此按钮的所有点击
-	if is_processing_deck:
-		return
-		
-	# 检查是否是鼠标按键事件
-	if event is InputEventMouseButton and event.pressed:
-		if current_battle_state == BattleFlowState.SETTLEMENT:
-			_open_deck_pile_viewer()
-			get_viewport().set_input_as_handled()
-			return
+	var result: Dictionary = _card_pile_ui_controller.resolve_deck_button_action(event, {
+		"is_processing_deck": is_processing_deck,
+		"is_settlement": current_battle_state == BattleFlowState.SETTLEMENT,
+		"enable_left_click_draw_from_deck": enable_left_click_draw_from_deck,
+		"left_click_deck_draw_count": left_click_deck_draw_count,
+	})
 
-		# --- 左键点击：抽牌 ---
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if enable_left_click_draw_from_deck:
-				attempt_draw_cards(left_click_deck_draw_count)
-			else:
-				_open_deck_pile_viewer()
+	var action: String = String(result.get("action", CARD_PILE_UI_CONTROLLER.ACTION_NONE))
+	if action == CARD_PILE_UI_CONTROLLER.ACTION_OPEN_DECK:
+		_open_deck_pile_viewer()
+	elif action == CARD_PILE_UI_CONTROLLER.ACTION_DRAW_FROM_DECK:
+		attempt_draw_cards(int(result.get("draw_count", left_click_deck_draw_count)))
 
-		# --- 右键点击：查看抽牌堆 ---
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			_open_deck_pile_viewer()
+	if bool(result.get("handled", false)):
+		get_viewport().set_input_as_handled()
 
 func _on_discard_button_pressed():
-	# 点击弃牌堆按钮 -> 查看弃牌堆
-	if discard_pile._held_cards.size() > 0:
-		pile_viewer.open_pile_view(discard_pile, manager_instance)
-	else:
-		pass
+	_card_pile_ui_controller.open_discard_viewer(discard_pile, manager_instance, pile_viewer)
 
 
 func _open_deck_pile_viewer() -> void:
-	if is_instance_valid(deck_pile) and deck_pile._held_cards.size() > 0:
-		var is_settlement := current_battle_state == BattleFlowState.SETTLEMENT
-		pile_viewer.open_pile_view(deck_pile, manager_instance, is_settlement, is_settlement)
+	var is_settlement := current_battle_state == BattleFlowState.SETTLEMENT
+	_card_pile_ui_controller.open_deck_viewer(deck_pile, manager_instance, pile_viewer, is_settlement)
 
 # ==========================================
 # ★ 回合流程控制区
@@ -692,9 +703,8 @@ func _start_turn(advance_phase: bool = true) -> void:
 
 
 func _advance_global_phase() -> void:
-	GlobalClock.advance_phase()
-	current_era_value = max(int(GlobalClock.get_current_era()), 1)
-	MapState.set_saved_era_progress(current_era_value, int(GlobalClock.get_current_phase()))
+	var progress: Dictionary = _global_clock_bridge.advance_phase()
+	current_era_value = int(progress.get("era", 1))
 
 
 # ==========================================
