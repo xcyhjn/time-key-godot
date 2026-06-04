@@ -1253,3 +1253,86 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `CombatVictorySettlementController.gd`：拆 `_on_combat_victory_triggered()` 中“切换 SETTLEMENT、停 BGM、隐藏战斗 UI、准备牌堆、清时间轴、显示结算按钮”这一组。
 2. 或先拆 `CombatDefeatFlowController.gd`，但它牵动 GameOver UI 和存档删除，风险略高。
 3. `_return_to_out_scene()` 现在已经由 payload / loader / executor 支撑，可以稍后单独瘦身，但不建议和胜负流程同批处理。
+
+## in_scene.gd 第十一批战斗胜利结算编排拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆“战斗胜利后进入结算期”的场景编排。
+不判断胜利条件、不进入最终胜利页、不处理失败结算，也不修改奖励页打开和退出流程。
+
+目标函数范围：
+
+```text
+_on_combat_victory_triggered()
+```
+
+当前读写的成员变量：
+
+```text
+current_battle_state
+timeline_manager
+hex_map
+total_enemy_health_bar
+combat_victory_banner
+```
+
+当前触碰的外部节点和接口：
+
+```text
+SoundManager.stop_bgm()
+disable_player_inputs()
+timeline_manager.clear_grid()
+hex_map.set_tiles_interactive(false)
+hex_map.set_visuals_locked(true)
+hex_map.update_all_stack_conditional_effects()
+hex_map.enter_settlement_reward_mode(self)
+combat_victory_banner.play_banner("战斗胜利")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/settlement/CombatVictorySettlementController.gd
+```
+
+模块边界：
+
+- `CombatVictorySettlementController.gd` 只负责胜利后进入结算期的动作顺序。
+- 它不判断当前是否处于战斗期，状态守卫仍由 `in_scene.gd` 保留。
+- 它通过 `Callable` 调回主脚本已有的输入锁、UI 隐藏、牌堆准备和结算按钮显示入口，避免重复知道这些模块内部细节。
+- 它只锁定地图并进入结算奖励模式，不消费奖励、不切场。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+胜利结算中的 BGM 停止、战斗 UI 收口、时间轴清理、地图锁定、血条隐藏、胜利横幅和结算按钮显示，已经由 CombatVictorySettlementController 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批可以在结算区继续拆，但建议一次只碰一个入口：
+
+1. `CombatDefeatFlowController.gd`：拆 `_on_defeat_triggered()` 中失败 UI、统计数据和删档动作，但需要特别确认 `Saver.Delete_save(0)` 的触发时机。
+2. `GameWinFlowController.gd`：拆 `_on_win_button_button_down()` 中最终胜利页触发和音效，不要和战斗胜利结算混在一起。
+3. `_return_to_out_scene()` 可以继续瘦身，但它已经由 payload / loader / executor 分担，优先级低于失败流。

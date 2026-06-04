@@ -21,6 +21,7 @@ const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_
 const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardSceneController.gd")
 const SETTLEMENT_REWARD_EXIT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardExitController.gd")
 const SETTLEMENT_REWARD_CONSUMER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardConsumer.gd")
+const COMBAT_VICTORY_SETTLEMENT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/CombatVictorySettlementController.gd")
 const IN_SCENE_RETURN_PAYLOAD_BUILDER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd")
 const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd")
 const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
@@ -183,6 +184,7 @@ var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVI
 var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CONTROLLER.new()
 var _settlement_reward_exit_controller: RefCounted = SETTLEMENT_REWARD_EXIT_CONTROLLER.new()
 var _settlement_reward_consumer: RefCounted = SETTLEMENT_REWARD_CONSUMER.new()
+var _combat_victory_settlement_controller: RefCounted = COMBAT_VICTORY_SETTLEMENT_CONTROLLER.new()
 var _return_payload_builder: RefCounted = IN_SCENE_RETURN_PAYLOAD_BUILDER.new()
 var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new()
 var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
@@ -1369,30 +1371,21 @@ func _on_combat_victory_triggered() -> void:
 		return
 
 	current_battle_state = BattleFlowState.SETTLEMENT
-	SoundManager.stop_bgm()
-	_hide_debug_buttons_for_resolution()
-
-	disable_player_inputs()
-	_hide_combat_phase_ui_for_settlement()
-	_prepare_deck_button_for_settlement(true)
-
-	if is_instance_valid(timeline_manager):
-		timeline_manager.clear_grid()
-
-	if is_instance_valid(hex_map):
-		hex_map.set_tiles_interactive(false)
-		hex_map.set_visuals_locked(true)
-		hex_map.update_all_stack_conditional_effects()
-		hex_map.enter_settlement_reward_mode(self)
-
-	if is_instance_valid(total_enemy_health_bar):
-		total_enemy_health_bar.hide()
-	_set_single_health_bars_visible(false)
-
-	if is_instance_valid(combat_victory_banner) and combat_victory_banner.has_method("play_banner"):
-		await combat_victory_banner.play_banner("战斗胜利")
-
-	_show_settlement_buttons()
+	await _combat_victory_settlement_controller.enter_settlement({
+		"sound_manager": SoundManager,
+		"hide_debug_buttons": Callable(self, "_hide_debug_buttons_for_resolution"),
+		"disable_player_inputs": Callable(self, "disable_player_inputs"),
+		"hide_combat_phase_ui": Callable(self, "_hide_combat_phase_ui_for_settlement"),
+		"prepare_deck_button_for_settlement": Callable(self, "_prepare_deck_button_for_settlement"),
+		"timeline_manager": timeline_manager,
+		"hex_map": hex_map,
+		"reward_host": self,
+		"total_enemy_health_bar": total_enemy_health_bar,
+		"set_single_health_bars_visible": Callable(self, "_set_single_health_bars_visible"),
+		"combat_victory_banner": combat_victory_banner,
+		"show_settlement_buttons": Callable(self, "_show_settlement_buttons"),
+		"banner_text": "战斗胜利",
+	})
 
 func _on_timeline_action_executed(_action: TimelineAction) -> void:
 	SoundManager.play_sfx("tile_damage")
