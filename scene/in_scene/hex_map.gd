@@ -30,6 +30,7 @@ const TILE_STACK_FACTORY := preload("res://scene/in_scene/hex_map_modules/factor
 const TILE_LANDFORM_ATTACH_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileLandformAttachService.gd")
 const TILE_STACK_INITIALIZATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileStackInitializationService.gd")
 const CARD_MANAGER_LOCATOR := preload("res://scene/in_scene/hex_map_modules/bridges/CardManagerLocator.gd")
+const HEX_MAP_SCENE_BRIDGE := preload("res://scene/in_scene/hex_map_modules/bridges/HexMapSceneBridge.gd")
 const TILE_TURN_BEHAVIOR_RUNNER := preload("res://scene/in_scene/hex_map_modules/turn/TileTurnBehaviorRunner.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
@@ -361,6 +362,7 @@ var _tile_stack_factory := TILE_STACK_FACTORY.new()
 var _tile_landform_attach_service := TILE_LANDFORM_ATTACH_SERVICE.new()
 var _tile_stack_initialization_service := TILE_STACK_INITIALIZATION_SERVICE.new()
 var _card_manager_locator := CARD_MANAGER_LOCATOR.new()
+var _hex_map_scene_bridge := HEX_MAP_SCENE_BRIDGE.new()
 var _tile_turn_behavior_runner := TILE_TURN_BEHAVIOR_RUNNER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
@@ -458,13 +460,8 @@ func _ready():
 	build_map_pipeline()
 	if SceneLog:
 		SceneLog.scene_event("HexMap", "build_map_pipeline finished", {"room_type": room_type, "map_tiles": map_data.size()})
-	# 绑定现有高度视图切换按钮
-	var height_view_button = get_node_or_null("../../ui/HeightViewToggleButton")
-	
-	# 双保险：通过当前场景根节点寻找
-	if not height_view_button and get_tree().current_scene:
-		height_view_button = get_tree().current_scene.get_node_or_null("ui/HeightViewToggleButton")
-		
+	# 绑定现有高度视图切换按钮；具体路径由 HexMapSceneBridge 集中维护。
+	var height_view_button = _hex_map_scene_bridge.find_height_view_button(self)
 	if height_view_button:
 		height_view_button.pressed.connect(_on_height_view_toggle_pressed)
 	else:
@@ -902,9 +899,9 @@ func _create_map_intro_reveal_timer(duration: float) -> SceneTreeTimer:
 
 
 ## 查找入场动画期间需要隐藏和补发血条的 BarManager。
-## 路径留在 HexMap，避免 runner 记住具体节点命名。
+## 具体节点命名集中在 HexMapSceneBridge，避免 runner 记住场景路径。
 func _get_intro_bar_manager() -> Node:
-	return get_node_or_null("BarManager")
+	return _hex_map_scene_bridge.find_bar_manager(self)
 
 
 ## 把延迟的单体血条创建请求交回 BarManager。
@@ -942,10 +939,7 @@ func _set_intro_auxiliary_visuals_visible(is_visible: bool) -> void:
 
 
 func _get_total_enemy_health_bar() -> Node:
-	var total_health_bar = get_node_or_null("../../ui/TotalEnemyHealthBar")
-	if not is_instance_valid(total_health_bar) and get_tree().current_scene:
-		total_health_bar = get_tree().current_scene.get_node_or_null("ui/TotalEnemyHealthBar")
-	return total_health_bar
+	return _hex_map_scene_bridge.find_total_enemy_health_bar(self)
 
 
 ## 当前是否处于“地块选择态”。
@@ -1394,9 +1388,9 @@ func _on_stack_hover(stack: Area2D, is_entered: bool):
 
 
 ## 转发地块 hover 给敌人意图系统。
-## 路径查找暂时保留在 HexMap，后续如果拆 TimelineSystem 依赖，可以把它改成初始化时注入。
+## 敌人意图管理器的场景路径已经集中到 HexMapSceneBridge；后续仍可替换为初始化注入。
 func _handle_enemy_intent_stack_hover(stack: Area2D, is_entered: bool) -> void:
-	var intent_controller = get_node_or_null("../../ui/TimelineSystem/EnemyIntentManager")
+	var intent_controller = _hex_map_scene_bridge.find_enemy_intent_manager(self)
 	if intent_controller and intent_controller.has_method("handle_map_stack_hover"):
 		intent_controller.handle_map_stack_hover(stack, is_entered)
 
@@ -1734,17 +1728,14 @@ func _get_height_view_drop_delta(stack: Area2D) -> float:
 
 
 func _find_health_bar_for_landform(entity: landform) -> Node:
-	var bar_manager := get_node_or_null("BarManager")
+	var bar_manager := _hex_map_scene_bridge.find_bar_manager(self)
 	return _external_render_node_registrar.find_health_bar_for_landform(entity, bar_manager)
 
 
 ## 按 occupant 实例查找高度视图缓存需要的血条。
-## 全图平铺/3D 过渡沿用旧命名规则 `HealthBar_<instance_id>`，并把 BarManager 路径留在 HexMap 内部。
+## 全图平铺/3D 过渡沿用旧命名规则 `HealthBar_<instance_id>`，具体 BarManager 路径由 bridge 维护。
 func _find_height_view_health_bar_for_occupant(occupant: Variant) -> Node:
-	var bar_manager := get_node_or_null("BarManager")
-	if not is_instance_valid(bar_manager) or not is_instance_valid(occupant):
-		return null
-	return bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
+	return _hex_map_scene_bridge.find_health_bar_for_occupant(self, occupant)
 
 
 func _get_or_create_height_view_cache(stack: Area2D) -> Dictionary:
@@ -1919,10 +1910,7 @@ func _refresh_all_settlement_reward_tooltip_positions() -> void:
 
 
 func _set_camera_zoom_input_enabled(enabled: bool) -> void:
-	var camera = get_node_or_null("../Camera2D")
-	if not is_instance_valid(camera) and get_tree().current_scene:
-		camera = get_tree().current_scene.get_node_or_null("map/Camera2D")
-
+	var camera = _hex_map_scene_bridge.find_camera(self)
 	if is_instance_valid(camera) and _object_has_property(camera, &"zoom_input_enabled"):
 		camera.set("zoom_input_enabled", enabled)
 ## 为单个精灵设置shader参数补间（辅助函数）
@@ -2037,7 +2025,7 @@ func set_visuals_locked(locked: bool) -> void:
 # ==========================================
 ## 当血条生成后，将其视觉组件加入到对应的渲染栈中，以便统一Shader和高亮
 func recollect_sprites_for_landform(landform_obj: landform) -> void:
-	var bar_manager = get_node_or_null("BarManager")
+	var bar_manager = _hex_map_scene_bridge.find_bar_manager(self)
 	_external_render_node_registrar.recollect_for_landform(
 		landform_obj,
 		bar_manager,
@@ -2117,11 +2105,7 @@ func _create_tile_elevation_tween() -> Tween:
 ## 给升降服务查找需要独立移动的外部血条。
 ## 如果血条已经是地块或其子节点的一部分，就不单独返回，避免同一视觉节点被父级和自身各移动一次。
 func _get_elevation_health_bar_for_occupant(occupant: Variant, moving_parts: Array) -> Node:
-	var bar_manager = get_node_or_null("BarManager")
-	if not is_instance_valid(bar_manager) or not is_instance_valid(occupant):
-		return null
-
-	var hb_node = bar_manager.get_node_or_null("HealthBar_" + str(occupant.get_instance_id()))
+	var hb_node = _hex_map_scene_bridge.find_health_bar_for_occupant(self, occupant)
 	if is_instance_valid(hb_node) and hb_node.get_parent() not in moving_parts:
 		return hb_node
 	return null

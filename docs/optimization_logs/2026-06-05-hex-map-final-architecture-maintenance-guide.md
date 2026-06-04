@@ -474,6 +474,23 @@ RuntimeLandformRegistrar.gd
 - 要回归卡牌 hover 合法/非法目标、范围型效果和无目标卡牌。
 - 如果后续 MainBoard tooltip 改成信号或专用 UI controller，应优先替换 adapter 内部实现，而不是再改 `HexMap`。
 
+### 已落地第一步：HexMapSceneBridge
+
+当前状态：`HexMap` 中高度按钮、敌人意图管理器、相机、总血条和 BarManager 的场景路径已经集中到 `scene/in_scene/hex_map_modules/bridges/HexMapSceneBridge.gd`。
+
+已完成：
+
+- 高度视图按钮仍按旧顺序查找：先相对路径，再 current_scene 的 `ui/HeightViewToggleButton`。
+- 地图相机仍按旧顺序查找：先 `../Camera2D`，再 current_scene 的 `map/Camera2D`。
+- 总敌方血量条仍按旧顺序查找：先相对路径，再 current_scene 的 `ui/TotalEnemyHealthBar`。
+- 敌人意图管理器只迁移旧相对路径，不新增额外兜底。
+- `BarManager` 和 `HealthBar_<instance_id>` 命名规则集中到 bridge。
+
+仍待处理：
+
+- `in_scene.gd`、`TimelineManager.gd`、`DragShapeController.gd` 里仍有各自的地图路径查找。
+- 后续如果改局内场景树，优先改 bridge；如果要进一步解耦，应考虑由 `in_scene.gd` 显式注入依赖。
+
 ### 第五优先级：refresh_tile_visual 局部重绘
 
 目标：减少当前“删除旧 stack 后完整 `_create_stack_at()`”的粗粒度流程。
