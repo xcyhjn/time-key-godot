@@ -13,6 +13,9 @@ const CARD_PILE_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/
 const CARD_SYSTEM_BOOTSTRAP := preload("res://scene/in_scene/in_scene_modules/cards/CardSystemBootstrap.gd")
 const IN_SCENE_INPUT_LOCK_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneInputLockController.gd")
 const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/turn/FirstTurnIntroRunner.gd")
+const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd")
+const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/CursorTooltipController.gd")
+const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -162,6 +165,9 @@ var _card_pile_ui_controller: RefCounted = CARD_PILE_UI_CONTROLLER.new()
 var _card_system_bootstrap: RefCounted = CARD_SYSTEM_BOOTSTRAP.new()
 var _input_lock_controller: RefCounted = IN_SCENE_INPUT_LOCK_CONTROLLER.new()
 var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
+var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
+var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
+var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.new()
 
 
 func _ready() -> void:
@@ -811,64 +817,22 @@ func trigger_1_effect():
 
 # --- 共享 Tooltip 模块入口 ---
 func _setup_card_tooltip_presenter() -> void:
-	if card_tooltip_presenter != null:
-		return
-	card_tooltip_presenter = CardTooltipPresenter.new(self, tooltip_config, true)
+	card_tooltip_presenter = _card_tooltip_ui_adapter.ensure_presenter(self, card_tooltip_presenter, tooltip_config)
 
 
 ## 保留旧接口名，避免其它脚本调用链重写。
 ## 现在它只负责初始化 presenter，而不再在本文件里手工拼 UI。
 func setup_tooltip_ui():
-	_setup_card_tooltip_presenter()
-	card_tooltip_presenter.ensure_ui_created()
+	card_tooltip_presenter = _card_tooltip_ui_adapter.setup_ui(self, card_tooltip_presenter, tooltip_config)
 
 
 # 显示多重词条与效果
 func show_tooltip(card: Control):
-	# 优先从树根查找 card_manager 元数据，兼容场景切换
-	var cm = null
-	var tree_root = get_tree().root
-	if tree_root and tree_root.has_meta("card_manager"):
-		cm = tree_root.get_meta("card_manager")
-	else:
-		pass
-		# 回退到当前场景（向后兼容）
-		var current_scene = get_tree().current_scene
-		if current_scene and current_scene.has_meta("card_manager"):
-			cm = current_scene.get_meta("card_manager")
-	
-	if not cm: return
-
-	var selected_card = cm.get("current_selected_card")
-	if selected_card != null and selected_card != card:
-		return
-
-	_setup_card_tooltip_presenter()
-	card_tooltip_presenter.show_card_tooltip(card, {
-		"show_keywords": true,
-		"fallback_text": "",
-	})
+	card_tooltip_presenter = _card_tooltip_ui_adapter.show_tooltip(self, card_tooltip_presenter, tooltip_config, card)
 
 
 func hide_tooltip(card: Control = null):
-	# 优先从树根查找 card_manager 元数据，兼容场景切换
-	var cm = null
-	var tree_root = get_tree().root
-	if tree_root and tree_root.has_meta("card_manager"):
-		cm = tree_root.get_meta("card_manager")
-	else:
-		pass
-		# 回退到当前场景（向后兼容）
-		var current_scene = get_tree().current_scene
-		if current_scene and current_scene.has_meta("card_manager"):
-			cm = current_scene.get_meta("card_manager")
-	
-	# 如果有卡牌被选中，不隐藏工具提示
-	if cm and cm.get("current_selected_card") != null:
-		return
-
-	if card_tooltip_presenter != null:
-		card_tooltip_presenter.hide_tooltip()
+	card_tooltip_presenter = _card_tooltip_ui_adapter.hide_tooltip(self, card_tooltip_presenter, tooltip_config, card)
 
 
 # ==========================================
@@ -1223,184 +1187,79 @@ func _ensure_entry_dim_hidden() -> void:
 
 ## 增强光标提示框，模仿卡牌文本框的样式
 func _enhance_cursor_tooltip() -> void:
-	if not is_instance_valid(cursor_tooltip):
-		return
-	cursor_tooltip.hide()
-	
-	# 检查是否已经增强过（通过检查父节点是否为PanelContainer）
-	if cursor_tooltip.get_parent() is PanelContainer:
-		return
-	
-	# 保存原始标签的引用和属性
-	var original_label = cursor_tooltip
-	var original_position = original_label.global_position
-	var original_visible = original_label.visible
-	var original_text = original_label.text
-	var original_parent = original_label.get_parent()
-	var original_z_index = original_label.z_index
-	
-	# 创建PanelContainer作为新容器
-	var panel = PanelContainer.new()
-	panel.z_index = original_z_index + 1
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	panel.visible = original_visible
-	
-	# 应用样式（复用 TooltipConfig，确保光标提示和卡牌提示保持同一套外框语言）
-	var style = StyleBoxFlat.new()
-	style.bg_color = tooltip_config.tooltip_bg_color
-	style.border_width_left = tooltip_config.tooltip_border_width
-	style.border_width_top = tooltip_config.tooltip_border_width
-	style.border_width_right = tooltip_config.tooltip_border_width
-	style.border_width_bottom = tooltip_config.tooltip_border_width
-	style.border_color = tooltip_config.tooltip_border_color
-	style.set_corner_radius_all(tooltip_config.tooltip_corner_radius)
-	panel.add_theme_stylebox_override("panel", style)
-	
-	# 创建MarginContainer用于内边距
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	panel.add_child(margin)
-	
-	# 将原始标签重新父级到MarginContainer
-	original_label.get_parent().remove_child(original_label)
-	margin.add_child(original_label)
-	
-	# 将Panel添加到原始父节点
-	original_parent.add_child(panel)
-	panel.global_position = original_position
-	
-	# 更新Panel大小以适应内容
-	panel.custom_minimum_size = Vector2.ZERO
-	
-	# 隐藏原始标签的边框和背景（如果有）
-	original_label.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
-	original_label.fit_content = true
-	original_label.scroll_active = false
-	original_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	original_label.custom_minimum_size = Vector2.ZERO
-	
-	# 保存Panel引用
-	cursor_tooltip_panel = panel
-	
-	# 连接可见性变化信号，确保Panel与Label同步
-	original_label.visibility_changed.connect(_on_cursor_tooltip_visibility_changed)
+	cursor_tooltip_panel = _cursor_tooltip_controller.enhance(
+		cursor_tooltip,
+		tooltip_config,
+		_on_cursor_tooltip_visibility_changed
+	)
 	
 
 ## 当cursor_tooltip可见性变化时，同步Panel的可见性
 func _on_cursor_tooltip_visibility_changed() -> void:
-	if is_instance_valid(cursor_tooltip_panel) and is_instance_valid(cursor_tooltip):
-		_refresh_cursor_tooltip_size()
-		cursor_tooltip_panel.visible = cursor_tooltip.visible
+	_cursor_tooltip_controller.sync_visibility(
+		cursor_tooltip,
+		cursor_tooltip_panel,
+		_build_cursor_tooltip_size_config()
+	)
 
 ## 设置光标提示框的位置（增强后使用Panel的位置）
 func set_cursor_tooltip_position(position: Vector2) -> void:
-	_refresh_cursor_tooltip_size()
-	if is_instance_valid(cursor_tooltip_panel):
-		cursor_tooltip_panel.global_position = position
-	elif is_instance_valid(cursor_tooltip):
-		cursor_tooltip.global_position = position
+	_cursor_tooltip_controller.set_position(
+		cursor_tooltip,
+		cursor_tooltip_panel,
+		position,
+		_build_cursor_tooltip_size_config()
+	)
 
 
 ## 刷新光标提示框尺寸。
 ## 核心逻辑：先关闭自动换行测自然宽度，再按最小/最大宽度重排，避免中文被压成一字一行。
 func _refresh_cursor_tooltip_size() -> void:
-	if not is_instance_valid(cursor_tooltip):
-		return
-
-	var min_width: float = maxf(cursor_tooltip_min_width, 1.0)
-	var max_width: float = maxf(cursor_tooltip_max_width, min_width)
-	var original_autowrap: int = cursor_tooltip.autowrap_mode
-
-	cursor_tooltip.size = Vector2.ZERO
-	cursor_tooltip.custom_minimum_size = Vector2.ZERO
-	cursor_tooltip.autowrap_mode = TextServer.AUTOWRAP_OFF
-	var content_width: float = float(cursor_tooltip.get_content_width())
-	cursor_tooltip.autowrap_mode = original_autowrap
-
-	var target_width: float = clampf(content_width, min_width, max_width)
-	cursor_tooltip.size = Vector2(target_width, 0.0)
-	var target_height: float = maxf(float(cursor_tooltip.get_content_height()), cursor_tooltip_min_height)
-	cursor_tooltip.custom_minimum_size = Vector2(target_width, target_height)
-
-	if is_instance_valid(cursor_tooltip_panel):
-		cursor_tooltip_panel.size = Vector2.ZERO
-		cursor_tooltip_panel.custom_minimum_size = Vector2.ZERO
+	_cursor_tooltip_controller.refresh_size(
+		cursor_tooltip,
+		cursor_tooltip_panel,
+		_build_cursor_tooltip_size_config()
+	)
 
 
-## ==========================================
-## ★ 局外场景UI管理函数
-## ==========================================
-
-## 隐藏除hexmap和时间币外的所有UI，为局外场景做准备
-func hide_ui_for_external_scene():
-	
-	# 记录需要隐藏的UI元素
-	# 注意：hex_map和timecoin_container会保持显示
-	
-	# 1. 隐藏卡牌系统UI
-	if is_instance_valid(player_hand): player_hand.hide()
-	if is_instance_valid(deck_pile): deck_pile.hide()
-	if is_instance_valid(discard_pile): discard_pile.hide()
-	
-	# 2. 隐藏按钮UI
-	if is_instance_valid(deck_button): deck_button.hide()
-	if is_instance_valid(discard_button): discard_button.hide()
-	if is_instance_valid(end_turn_button): end_turn_button.hide()
-	if is_instance_valid(end_combat_button): end_combat_button.hide()
-	if is_instance_valid(height_view_toggle_button):
-		height_view_toggle_button.hide()
-		height_view_toggle_button.disabled = true
-	
-	# 3. 隐藏时间轴UI
-	if is_instance_valid(timeline_ui): timeline_ui.hide()
-	
-	# 4. 隐藏光标提示
-	if is_instance_valid(cursor_tooltip): cursor_tooltip.hide()
-	if is_instance_valid(cursor_tooltip_panel): cursor_tooltip_panel.hide()
-	
-	# 5. 隐藏tooltip系统
-	hide_tooltip()
-	
-	# 6. 隐藏四个局外按钮（它们会在场景退出时单独恢复）
-	if is_instance_valid(shop_button): shop_button.hide()
-	if is_instance_valid(acquire_reward_button): acquire_reward_button.hide()
-	if is_instance_valid(remove_reward_button): remove_reward_button.hide()
-	if is_instance_valid(craft_reward_button): craft_reward_button.hide()
-	if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.hide()
-	_set_single_health_bars_visible(false)
-	
-	# 8. 确保hexmap和时间币显示
-	if is_instance_valid(hex_map): 
-		hex_map.show()
-		# 确保hexmap在正确层级
-		hex_map.z_index = 0
-	
-	if is_instance_valid(timecoin_container):
-		timecoin_container.show()
-		# 确保时间币UI在最上层
-		timecoin_container.z_index = 100
+func _build_cursor_tooltip_size_config() -> Dictionary:
+	return {
+		"min_width": cursor_tooltip_min_width,
+		"max_width": cursor_tooltip_max_width,
+		"min_height": cursor_tooltip_min_height,
+	}
 
 
-## 单体血条由 HexMap/BarManager 动态生成。
-## 局外收获阶段要求不显示血条，所以这里统一转发给 BarManager。
-func _set_single_health_bars_visible(is_visible: bool) -> void:
-	if not is_instance_valid(hex_map):
-		return
-	var bar_manager = hex_map.get_node_or_null("BarManager")
-	if bar_manager and bar_manager.has_method("set_all_health_bars_visible"):
-		bar_manager.set_all_health_bars_visible(is_visible)
+func _build_ui_visibility_config() -> Dictionary:
+	return {
+		"player_hand": player_hand,
+		"deck_pile": deck_pile,
+		"discard_pile": discard_pile,
+		"deck_button": deck_button,
+		"discard_button": discard_button,
+		"end_turn_button": end_turn_button,
+		"end_combat_button": end_combat_button,
+		"height_view_toggle_button": height_view_toggle_button,
+		"timeline_ui": timeline_ui,
+		"cursor_tooltip": cursor_tooltip,
+		"cursor_tooltip_panel": cursor_tooltip_panel,
+		"shop_button": shop_button,
+		"acquire_reward_button": acquire_reward_button,
+		"remove_reward_button": remove_reward_button,
+		"craft_reward_button": craft_reward_button,
+		"total_enemy_health_bar": total_enemy_health_bar,
+		"hex_map": hex_map,
+		"timecoin_container": timecoin_container,
+		"is_settlement": current_battle_state == BattleFlowState.SETTLEMENT,
+		"show_settlement_debug_buttons": show_settlement_debug_buttons,
+		"resolution_hides_debug_buttons": _resolution_hides_debug_buttons,
+		"hide_tooltip": Callable(self, "hide_tooltip"),
+		"prepare_deck_button_for_settlement": Callable(self, "_prepare_deck_button_for_settlement"),
+	}
 
 
-## 结算期统一隐藏调试入口。
-## 覆盖失败、胜利、旧奖励调试等按钮，防止结算界面露出开发控件。
-func _hide_debug_buttons_for_resolution() -> void:
-	_resolution_hides_debug_buttons = true
-
-	var debug_buttons: Array[Control] = [
+func _build_resolution_debug_buttons() -> Array:
+	return [
 		win_debug_button,
 		combat_victory_debug_button,
 		lose_button,
@@ -1410,108 +1269,41 @@ func _hide_debug_buttons_for_resolution() -> void:
 		craft_reward_button,
 	]
 
-	for button in debug_buttons:
-		if not is_instance_valid(button):
-			continue
-		button.hide()
-		if button is BaseButton:
-			(button as BaseButton).disabled = true
+
+## ==========================================
+## ★ 局外场景UI管理函数
+## ==========================================
+
+## 隐藏除hexmap和时间币外的所有UI，为局外场景做准备
+func hide_ui_for_external_scene():
+	_ui_visibility_controller.hide_for_external_scene(_build_ui_visibility_config())
+
+
+## 单体血条由 HexMap/BarManager 动态生成。
+## 局外收获阶段要求不显示血条，所以这里统一转发给 BarManager。
+func _set_single_health_bars_visible(is_visible: bool) -> void:
+	_ui_visibility_controller.set_single_health_bars_visible(hex_map, is_visible)
+
+
+## 结算期统一隐藏调试入口。
+## 覆盖失败、胜利、旧奖励调试等按钮，防止结算界面露出开发控件。
+func _hide_debug_buttons_for_resolution() -> void:
+	_resolution_hides_debug_buttons = true
+	_ui_visibility_controller.hide_debug_buttons(_build_resolution_debug_buttons())
 	
 
 func _refresh_height_view_toggle_button_after_external_scene() -> void:
-	if not is_instance_valid(height_view_toggle_button):
-		return
-
-	if current_battle_state == BattleFlowState.SETTLEMENT:
-		height_view_toggle_button.show()
-		height_view_toggle_button.disabled = false
-	else:
-		height_view_toggle_button.hide()
-		height_view_toggle_button.disabled = true
+	_ui_visibility_controller.refresh_height_view_toggle_after_external_scene(_build_ui_visibility_config())
 
 
 ## 退出局外场景后，恢复四个局外按钮
 func restore_ui_after_external_scene():
-	_refresh_height_view_toggle_button_after_external_scene()
-
-	if _resolution_hides_debug_buttons:
-		if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(end_combat_button):
-			end_combat_button.show()
-			end_combat_button.disabled = false
-		if current_battle_state == BattleFlowState.SETTLEMENT:
-			_prepare_deck_button_for_settlement()
-			if is_instance_valid(total_enemy_health_bar):
-				total_enemy_health_bar.hide()
-			_set_single_health_bars_visible(false)
-		return
-
-	
-	# 只恢复四个局外按钮，其他UI保持隐藏状态
-	var buttons_restored = 0
-	if show_settlement_debug_buttons and is_instance_valid(shop_button):
-		shop_button.show()
-		buttons_restored += 1
-	elif is_instance_valid(shop_button):
-		shop_button.hide()
-	
-	if show_settlement_debug_buttons and is_instance_valid(acquire_reward_button):
-		acquire_reward_button.show()
-		buttons_restored += 1
-	elif is_instance_valid(acquire_reward_button):
-		acquire_reward_button.hide()
-	
-	if show_settlement_debug_buttons and is_instance_valid(remove_reward_button):
-		remove_reward_button.show()
-		buttons_restored += 1
-	elif is_instance_valid(remove_reward_button):
-		remove_reward_button.hide()
-	
-	if show_settlement_debug_buttons and is_instance_valid(craft_reward_button):
-		craft_reward_button.show()
-		buttons_restored += 1
-	elif is_instance_valid(craft_reward_button):
-		craft_reward_button.hide()
-	
-	if current_battle_state == BattleFlowState.SETTLEMENT and is_instance_valid(end_combat_button):
-		end_combat_button.show()
-		end_combat_button.disabled = false
-	
-	if current_battle_state == BattleFlowState.SETTLEMENT:
-		_prepare_deck_button_for_settlement()
-		if is_instance_valid(total_enemy_health_bar):
-			total_enemy_health_bar.hide()
-		_set_single_health_bars_visible(false)
+	_ui_visibility_controller.restore_after_external_scene(_build_ui_visibility_config())
 	
 
 ## 完全恢复所有UI（用于返回游戏主界面）
 func restore_all_ui():
-	
-	# 恢复所有之前隐藏的UI元素
-	if is_instance_valid(player_hand): player_hand.show()
-	if is_instance_valid(deck_pile): deck_pile.show()
-	if is_instance_valid(discard_pile): discard_pile.show()
-	
-	if is_instance_valid(deck_button): deck_button.show()
-	if is_instance_valid(discard_button): discard_button.show()
-	if is_instance_valid(end_turn_button): end_turn_button.show()
-	if is_instance_valid(end_combat_button): end_combat_button.show()
-	if is_instance_valid(height_view_toggle_button):
-		height_view_toggle_button.show()
-		height_view_toggle_button.disabled = false
-	
-	if is_instance_valid(timeline_ui): timeline_ui.show()
-	
-	# 四个局外按钮也显示
-	if current_battle_state == BattleFlowState.SETTLEMENT:
-		_show_settlement_buttons()
-	else:
-		_hide_settlement_buttons()
-	if current_battle_state == BattleFlowState.SETTLEMENT:
-		if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.hide()
-		_set_single_health_bars_visible(false)
-	else:
-		if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
-		_set_single_health_bars_visible(true)
+	_ui_visibility_controller.restore_all(_build_ui_visibility_config())
 	
 
 ## 外部场景退出按钮回调
@@ -1603,49 +1395,15 @@ func _on_win_button_button_down() -> void:
 
 
 func _hide_settlement_buttons() -> void:
-	if is_instance_valid(shop_button): shop_button.hide()
-	if is_instance_valid(acquire_reward_button): acquire_reward_button.hide()
-	if is_instance_valid(remove_reward_button): remove_reward_button.hide()
-	if is_instance_valid(craft_reward_button): craft_reward_button.hide()
-	if is_instance_valid(end_combat_button):
-		end_combat_button.hide()
-		end_combat_button.disabled = false
+	_ui_visibility_controller.hide_settlement_buttons(_build_ui_visibility_config())
 
 
 func _show_settlement_buttons() -> void:
-	if _resolution_hides_debug_buttons:
-		if is_instance_valid(end_combat_button):
-			end_combat_button.show()
-			end_combat_button.disabled = false
-		return
-
-	if show_settlement_debug_buttons:
-		if is_instance_valid(shop_button): shop_button.show()
-		if is_instance_valid(acquire_reward_button): acquire_reward_button.show()
-		if is_instance_valid(remove_reward_button): remove_reward_button.show()
-		if is_instance_valid(craft_reward_button): craft_reward_button.show()
-	else:
-		if is_instance_valid(shop_button): shop_button.hide()
-		if is_instance_valid(acquire_reward_button): acquire_reward_button.hide()
-		if is_instance_valid(remove_reward_button): remove_reward_button.hide()
-		if is_instance_valid(craft_reward_button): craft_reward_button.hide()
-	if is_instance_valid(end_combat_button):
-		end_combat_button.show()
-		end_combat_button.disabled = false
+	_ui_visibility_controller.show_settlement_buttons(_build_ui_visibility_config())
 
 
 func _hide_combat_phase_ui_for_settlement() -> void:
-	if is_instance_valid(player_hand): player_hand.hide()
-	if is_instance_valid(deck_pile): deck_pile.hide()
-	if is_instance_valid(discard_pile): discard_pile.hide()
-	if is_instance_valid(discard_button): discard_button.hide()
-	if is_instance_valid(end_turn_button): end_turn_button.hide()
-	if is_instance_valid(timeline_ui):
-		if timeline_ui.has_method("clear_grid_preview"):
-			timeline_ui.clear_grid_preview()
-		timeline_ui.hide()
-	if is_instance_valid(cursor_tooltip): cursor_tooltip.hide()
-	if is_instance_valid(cursor_tooltip_panel): cursor_tooltip_panel.hide()
+	_ui_visibility_controller.hide_combat_phase_for_settlement(_build_ui_visibility_config())
 
 
 func _prepare_deck_button_for_settlement(reclaim_runtime_cards: bool = false) -> void:

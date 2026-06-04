@@ -537,3 +537,122 @@ _open_settlement_reward_scene()
 _reclaim_all_runtime_cards_to_deck()
 _on_combat_victory_triggered()
 ```
+
+## in_scene.gd 第三批三模块拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批一次拆 3 个低到中风险 UI 模块，继续避开切场景、胜负结算、奖励消费和运行时卡牌回收。
+目标函数范围：
+
+```text
+_setup_card_tooltip_presenter()
+setup_tooltip_ui()
+show_tooltip(card)
+hide_tooltip(card)
+_enhance_cursor_tooltip()
+_on_cursor_tooltip_visibility_changed()
+set_cursor_tooltip_position(position)
+_refresh_cursor_tooltip_size()
+hide_ui_for_external_scene()
+_set_single_health_bars_visible(is_visible)
+_hide_debug_buttons_for_resolution()
+_refresh_height_view_toggle_button_after_external_scene()
+restore_ui_after_external_scene()
+restore_all_ui()
+_hide_settlement_buttons()
+_show_settlement_buttons()
+_hide_combat_phase_ui_for_settlement()
+```
+
+当前读写的成员变量：
+
+```text
+card_tooltip_presenter / tooltip_config
+cursor_tooltip / cursor_tooltip_panel
+cursor_tooltip_min_width / cursor_tooltip_max_width / cursor_tooltip_min_height
+player_hand / deck_pile / discard_pile
+deck_button / discard_button / end_turn_button / end_combat_button / height_view_toggle_button
+timeline_ui / hex_map / timecoin_container / total_enemy_health_bar
+shop_button / acquire_reward_button / remove_reward_button / craft_reward_button
+win_debug_button / combat_victory_debug_button / lose_button
+current_battle_state / show_settlement_debug_buttons / _resolution_hides_debug_buttons
+```
+
+当前触碰的外部节点和接口：
+
+```text
+CardTooltipPresenter
+CardManager.current_selected_card
+CursorTooltip RichTextLabel
+HexMap/BarManager.set_all_health_bars_visible()
+TimelineUI.clear_grid_preview()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd
+scene/in_scene/in_scene_modules/ui/CursorTooltipController.gd
+scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd
+```
+
+模块边界：
+
+- `CardTooltipUiAdapter.gd` 只负责连接 InScene 与共享 `CardTooltipPresenter`，保留旧的 `card_manager` 查找顺序和“选中卡牌不抢 tooltip”规则。
+- `CursorTooltipController.gd` 只负责光标提示框的 Panel 包装、定位和尺寸同步，不写提示文本，不参与目标判定。
+- `InSceneUiVisibilityController.gd` 只执行局外场景和结算阶段的 UI 显隐，不切换场景，不消费奖励，不改变战斗阶段。
+
+保留的旧公共入口：
+
+```text
+setup_tooltip_ui()
+show_tooltip(card)
+hide_tooltip(card)
+set_cursor_tooltip_position(position)
+hide_ui_for_external_scene()
+restore_ui_after_external_scene()
+restore_all_ui()
+_hide_debug_buttons_for_resolution()
+_hide_settlement_buttons()
+_show_settlement_buttons()
+_hide_combat_phase_ui_for_settlement()
+```
+
+这些函数仍由 `in_scene.gd` 暴露，内部转发给新模块，避免影响卡牌 hover、结算按钮、外部奖励页退出和旧信号回调。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+卡牌 tooltip presenter 的创建、展示、隐藏连接已由 CardTooltipUiAdapter 统一维护。
+光标 tooltip 的外框构建、尺寸刷新和定位已由 CursorTooltipController 统一维护。
+局外场景、结算按钮、血条和调试按钮的显隐执行已由 InSceneUiVisibilityController 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批建议从“结算期卡牌回收”和“场景切换”之间二选一，但不要混拆：
+
+1. `SettlementDeckReclaimService.gd`：拆 `_prepare_deck_button_for_settlement()`、`_snapshot_current_deck_for_settlement()`、`_reclaim_all_runtime_cards_to_deck()` 这一组，但只做卡牌回收到牌堆，不碰胜负触发。
+2. 或 `InSceneSceneReturnController.gd`：拆 `_build_combat_return_payload()` 与 `_push_era_to_global()` 周边的 payload 组装，但暂缓真正 `_switch_scene_with_data()`。
+3. 继续暂缓 `_on_combat_victory_triggered()`、`_on_defeat_triggered()`、`_open_settlement_reward_scene()`，这些会同时牵动奖励消费、状态迁移和外部场景生命周期。
