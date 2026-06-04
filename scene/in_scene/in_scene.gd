@@ -20,6 +20,7 @@ const SETTLEMENT_DECK_SNAPSHOT_SERVICE := preload("res://scene/in_scene/in_scene
 const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd")
 const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardSceneController.gd")
 const SETTLEMENT_REWARD_EXIT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardExitController.gd")
+const SETTLEMENT_REWARD_CONSUMER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardConsumer.gd")
 const IN_SCENE_RETURN_PAYLOAD_BUILDER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd")
 const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd")
 const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
@@ -181,6 +182,7 @@ var _settlement_deck_snapshot_service: RefCounted = SETTLEMENT_DECK_SNAPSHOT_SER
 var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVICE.new()
 var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CONTROLLER.new()
 var _settlement_reward_exit_controller: RefCounted = SETTLEMENT_REWARD_EXIT_CONTROLLER.new()
+var _settlement_reward_consumer: RefCounted = SETTLEMENT_REWARD_CONSUMER.new()
 var _return_payload_builder: RefCounted = IN_SCENE_RETURN_PAYLOAD_BUILDER.new()
 var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new()
 var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
@@ -1277,15 +1279,7 @@ func _on_external_scene_exit_pressed(scene_instance: Node):
 ## Main 只负责把“这个奖励已经被确认使用”的事实传回 HexMap；
 ## 具体高亮、tooltip 文案、碰撞关闭都由 HexMap 统一处理。
 func _consume_settlement_reward_context(reward_context: Dictionary) -> void:
-	if reward_context.is_empty():
-		return
-	if not is_instance_valid(hex_map):
-		return
-
-	var reward_stack = reward_context.get("stack")
-	if is_instance_valid(reward_stack):
-		hex_map.mark_settlement_reward_used(reward_stack)
-
+	_settlement_reward_consumer.consume(reward_context, hex_map)
 	active_settlement_reward_context.clear()
 
 # 信号响应：执行实际的动画转换逻辑

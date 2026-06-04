@@ -1180,3 +1180,76 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `SettlementRewardConsumer.gd`：拆 `_consume_settlement_reward_context()`，只负责把已确认使用的奖励建筑写回 HexMap。
 2. 或 `CombatResultFlowController.gd`：先拆 `_on_combat_victory_triggered()` 中结算状态切换、隐藏战斗 UI、准备牌堆、清时间轴、显示结算按钮这一组。
 3. 继续暂缓 `_on_defeat_triggered()`，它还牵动声音、GameOver UI、存档删除，适合最后单独拆。
+
+## in_scene.gd 第十批结算奖励消费拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆“奖励建筑已经被确认使用”这件事如何写回 `HexMap`。
+不打开奖励页、不关闭奖励页、不恢复 UI，也不动胜负流程。
+
+目标函数范围：
+
+```text
+_consume_settlement_reward_context(reward_context)
+```
+
+当前读写的成员变量：
+
+```text
+active_settlement_reward_context
+hex_map
+```
+
+当前触碰的外部节点和接口：
+
+```text
+reward_context["stack"]
+hex_map.mark_settlement_reward_used(stack)
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/settlement/SettlementRewardConsumer.gd
+```
+
+模块边界：
+
+- `SettlementRewardConsumer.gd` 只负责验证奖励上下文和 `HexMap`，并调用 `mark_settlement_reward_used()`。
+- 它不清理 `active_settlement_reward_context`，不恢复 UI，不知道奖励页实例。
+- `in_scene.gd` 继续保留 `_consume_settlement_reward_context()` 入口，并负责清理 active context。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+奖励建筑 stack 校验和 HexMap 标记调用已由 SettlementRewardConsumer 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批可以开始处理结算胜利流程，但仍不要混入失败流程：
+
+1. `CombatVictorySettlementController.gd`：拆 `_on_combat_victory_triggered()` 中“切换 SETTLEMENT、停 BGM、隐藏战斗 UI、准备牌堆、清时间轴、显示结算按钮”这一组。
+2. 或先拆 `CombatDefeatFlowController.gd`，但它牵动 GameOver UI 和存档删除，风险略高。
+3. `_return_to_out_scene()` 现在已经由 payload / loader / executor 支撑，可以稍后单独瘦身，但不建议和胜负流程同批处理。
