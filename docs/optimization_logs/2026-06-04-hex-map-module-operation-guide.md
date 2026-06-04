@@ -416,6 +416,54 @@
 - 切换后的奖励 tooltip 全量刷新仍然在 `toggle_height_view()` 中。
 - 不要在这里修改地块高度或 `map_data`。
 
+### `scene/in_scene/hex_map_modules/runners/MapIntroRevealRunner.gd`
+
+这个模块负责战斗地图初次生成后的涟漪入场流程：
+
+- 判断当前构建是否应该播放初始入场。
+- 管理入场是否正在播放、是否已经播放过，以及延迟血条请求队列。
+- 按地块到左下源点的距离分层创建 Tween。
+- 通过 `dissolve_blend` 让地块从完全湮灭恢复到正常显示。
+- 入场期间隐藏 BarManager 和总血量条，结束后恢复。
+- 入场结束后补发单体血条创建请求。
+- 入场结束后回调 HexMap 刷新地块交互、敌人列表和 `map_intro_reveal_finished` 信号。
+
+主要调用方：
+
+- `hex_map.gd::_begin_map_intro_reveal_if_needed()`
+- `hex_map.gd::is_map_intro_reveal_active()`
+- `hex_map.gd::should_defer_intro_health_bars()`
+- `hex_map.gd::queue_intro_health_bar_request()`
+- `hex_map.gd::_play_map_intro_reveal()`
+- `hex_map.gd::_finish_map_intro_reveal()`
+
+相关导出变量仍然在 `hex_map.gd` 的“地块入场动画”导出组中调整：
+
+- `map_intro_reveal_enabled`
+- `map_intro_reveal_tile_duration`
+- `map_intro_reveal_wave_delay`
+- `map_intro_reveal_wave_pixel_step`
+- `map_intro_reveal_finish_delay`
+- `map_intro_reveal_origin_padding`
+- `map_intro_reveal_hide_health_ui`
+- `map_intro_reveal_lock_interaction`
+- `map_intro_reveal_trans_type`
+- `map_intro_reveal_ease_type`
+
+运行时会读取：
+
+- `stack_nodes`
+- `_map_intro_reveal_state`
+- 地块 `sprites` metadata
+- HexMap 注入的 Tween、Timer、BarManager、总血量条、血条创建和信号回调
+
+调整时注意：
+
+- 这个模块只管入场流程，不生成地图、不修改 `map_data`，也不决定敌人或地貌规则。
+- BarManager 和总血量条的路径仍然留在 `hex_map.gd`，runner 只能通过回调拿到节点。
+- `map_intro_reveal_lock_interaction` 的交互锁仍由 `hex_map.gd::_refresh_stack_interactivity()` 执行，runner 只维护状态。
+- 如果以后要加新入场样式，优先在 runner 中新增播放分支，并继续让可调参数从 HexMap 导出组传入。
+
 ## 修改后的验证清单
 
 改动任意已提取模块后，先运行：
@@ -447,4 +495,4 @@ git diff --check
 
 - 等目标限制稳定后，再清理敌人和结算 tooltip 的边界情况。
 - 手动高度视图回归稳定后，再考虑把高度视图切换状态机本身拆成更薄的 controller。
-- 如果 BarManager 耦合继续变重，再单独拆地图开场血条延迟队列。
+- 地图开场血条延迟队列已经拆到 `MapIntroRevealRunner.gd`。下一步如果继续拆 BarManager 耦合，应优先看血条创建接口和总血量刷新接口。

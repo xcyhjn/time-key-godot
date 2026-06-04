@@ -16,6 +16,7 @@ const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/hex_map_module
 const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/ExternalRenderNodeRegistrar.gd")
 const HEIGHT_VIEW_STATE_SYNCHRONIZER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewStateSynchronizer.gd")
 const HEIGHT_VIEW_MAP_TRANSITION_RUNNER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewMapTransitionRunner.gd")
+const MAP_INTRO_REVEAL_RUNNER := preload("res://scene/in_scene/hex_map_modules/runners/MapIntroRevealRunner.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -332,17 +333,19 @@ var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
 var _height_view_state_synchronizer := HEIGHT_VIEW_STATE_SYNCHRONIZER.new()
 var _height_view_map_transition_runner := HEIGHT_VIEW_MAP_TRANSITION_RUNNER.new()
+var _map_intro_reveal_runner := MAP_INTRO_REVEAL_RUNNER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
 var _last_target_selection_active: bool = false
-## 初始地图涟漪入场是否正在播放。这个状态会被 BarManager / UI 用来延后血条生成。
-var _map_intro_reveal_in_progress: bool = false
-## 防止运行期刷新地貌时再次播放“初始入场”。
-var _has_played_map_intro_reveal: bool = false
-## 入场动画期间暂存的单体血条生成请求，动画结束后统一交还给 BarManager。
-var _pending_intro_health_bar_requests: Array[Dictionary] = []
-var _pending_intro_health_bar_request_ids: Dictionary = {}
+## 地图初始入场动画状态包。
+## Runner 只读写这份状态，HexMap 继续通过旧公共函数给 BarManager、教程和战斗流程暴露查询入口。
+var _map_intro_reveal_state: Dictionary = {
+	"is_active": false,
+	"has_played": false,
+	"pending_requests": [],
+	"pending_request_ids": {}
+}
 var _tile_destruction_queue := TILE_DESTRUCTION_BATCH_QUEUE.new()
 
 
@@ -456,7 +459,7 @@ func build_map_pipeline():
 	_render_map()
 	_refresh_stack_interactivity()
 
-	if _map_intro_reveal_in_progress:
+	if is_map_intro_reveal_active():
 		_set_intro_auxiliary_visuals_visible(false)
 		_play_map_intro_reveal()
 	else:
@@ -791,118 +794,32 @@ func _render_map():
 
 
 ## 判断本次构建是否需要播放初始地块入场。
-## 核心逻辑：只在局内第一次构建地图时开启，同时清空上一轮缓存，避免重建视觉时重复播放。
+## 核心逻辑已经交给 MapIntroRevealRunner；HexMap 这里只负责把当前导出变量和视图状态打包进去。
 func _begin_map_intro_reveal_if_needed() -> void:
-	_pending_intro_health_bar_requests.clear()
-	_pending_intro_health_bar_request_ids.clear()
-
-	_map_intro_reveal_in_progress = (
-		map_intro_reveal_enabled
-		and not _has_played_map_intro_reveal
-		and current_view_state == MapViewState.VIEW_3D
-	)
-
-	if _map_intro_reveal_in_progress:
-		_has_played_map_intro_reveal = true
+	_map_intro_reveal_state = _map_intro_reveal_runner.begin_if_needed(_build_map_intro_reveal_config())
 
 
 ## 外部节点查询入口：BarManager / UI 可用它判断是否需要延后生成战斗信息。
 func is_map_intro_reveal_active() -> bool:
-	return _map_intro_reveal_in_progress
+	return _map_intro_reveal_runner.is_active(_map_intro_reveal_state)
 
 
 ## BarManager 的入场期保护开关。
 ## 返回 true 时，单体血条请求会先进入 HexMap 缓存，等涟漪动画完成再实例化。
 func should_defer_intro_health_bars() -> bool:
-	return _map_intro_reveal_in_progress
+	return _map_intro_reveal_runner.should_defer_health_bars(_map_intro_reveal_state)
 
 
 ## 暂存入场期间收到的单体血条生成请求。
-## 核心逻辑：用 landform 实例 id 去重，避免同一个建筑视觉刷新时重复排队。
+## 去重、缓存结构和收尾补发已经移到 MapIntroRevealRunner，HexMap 保留旧函数名给 BarManager 调用。
 func queue_intro_health_bar_request(landform_in: landform, situation: int, x: float, y: float) -> void:
-	if not is_instance_valid(landform_in):
-		return
-
-	var request_id = landform_in.get_instance_id()
-	if _pending_intro_health_bar_request_ids.has(request_id):
-		return
-
-	_pending_intro_health_bar_request_ids[request_id] = true
-	_pending_intro_health_bar_requests.append({
-		"landform": landform_in,
-		"situation": situation,
-		"x": x,
-		"y": y
-	})
+	_map_intro_reveal_runner.queue_health_bar_request(_map_intro_reveal_state, landform_in, situation, x, y)
 
 
 ## 播放“倒放湮灭”的左下角涟漪入场。
-## 核心逻辑：所有地块先保持 dissolve_blend=1，再按到左下源点的距离分层延迟还原到 0。
+## Tween 分层、等待和收尾都在 MapIntroRevealRunner 中；HexMap 只提供创建 Tween/Timer 的回调。
 func _play_map_intro_reveal() -> void:
-	var reveal_stacks = _get_map_intro_reveal_stacks()
-	if reveal_stacks.is_empty():
-		_finish_map_intro_reveal()
-		return
-
-	var origin = _get_map_intro_reveal_origin(reveal_stacks)
-	var wave_step = maxf(map_intro_reveal_wave_pixel_step, 1.0)
-	var wave_delay = maxf(map_intro_reveal_wave_delay, 0.0)
-	var tile_duration = maxf(map_intro_reveal_tile_duration, 0.001)
-	var longest_time = 0.0
-
-	for stack in reveal_stacks:
-		if not is_instance_valid(stack):
-			continue
-
-		var wave_index = int(floor(stack.position.distance_to(origin) / wave_step))
-		var delay = float(wave_index) * wave_delay
-		longest_time = maxf(longest_time, delay + tile_duration)
-
-		var tween = create_tween()
-		tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		tween.set_trans(map_intro_reveal_trans_type)
-		tween.set_ease(map_intro_reveal_ease_type)
-		if delay > 0.0:
-			tween.tween_interval(delay)
-		tween.tween_method(
-			Callable(self, "_set_intro_stack_dissolve_from_tween").bind(stack),
-			1.0,
-			0.0,
-			tile_duration
-		)
-
-	var total_wait = longest_time + maxf(map_intro_reveal_finish_delay, 0.0)
-	await get_tree().create_timer(total_wait).timeout
-	_finish_map_intro_reveal()
-
-
-func _get_map_intro_reveal_stacks() -> Array[Area2D]:
-	var result: Array[Area2D] = []
-	for stack in stack_nodes.values():
-		if is_instance_valid(stack) and stack is Area2D:
-			result.append(stack)
-	return result
-
-
-func _get_map_intro_reveal_origin(stacks: Array[Area2D]) -> Vector2:
-	var first_stack = stacks[0]
-	var min_x = first_stack.position.x
-	var max_y = first_stack.position.y
-
-	for stack in stacks:
-		if not is_instance_valid(stack):
-			continue
-		min_x = minf(min_x, stack.position.x)
-		max_y = maxf(max_y, stack.position.y)
-
-	return Vector2(
-		min_x - map_intro_reveal_origin_padding.x,
-		max_y + map_intro_reveal_origin_padding.y
-	)
-
-
-func _set_intro_stack_dissolve_from_tween(value: float, stack: Area2D) -> void:
-	_set_stack_dissolve_blend(stack, value)
+	_map_intro_reveal_runner.play(_build_map_intro_reveal_config())
 
 
 func _set_stack_dissolve_blend(stack: Area2D, value: float) -> void:
@@ -915,56 +832,85 @@ func _set_stack_dissolve_blend(stack: Area2D, value: float) -> void:
 			sprite.set_instance_shader_parameter("dissolve_blend", value)
 
 
-## 完成入场收尾：恢复交互、补发血条请求，并通知总血量/敌人意图等系统刷新。
-func _finish_map_intro_reveal() -> void:
-	_map_intro_reveal_in_progress = false
+## 构造地图初始入场 runner 需要的上下文。
+## 所有导出调整仍留在 HexMap Inspector 上；Runner 只消费这份快照和回调，不保存场景节点引用。
+func _build_map_intro_reveal_config() -> Dictionary:
+	return {
+		"state": _map_intro_reveal_state,
+		"enabled": map_intro_reveal_enabled,
+		"current_view_state": current_view_state,
+		"view_state_3d": MapViewState.VIEW_3D,
+		"stack_nodes": stack_nodes,
+		"wave_pixel_step": map_intro_reveal_wave_pixel_step,
+		"wave_delay": map_intro_reveal_wave_delay,
+		"tile_duration": map_intro_reveal_tile_duration,
+		"finish_delay": map_intro_reveal_finish_delay,
+		"origin_padding": map_intro_reveal_origin_padding,
+		"hide_health_ui": map_intro_reveal_hide_health_ui,
+		"trans_type": map_intro_reveal_trans_type,
+		"ease_type": map_intro_reveal_ease_type,
+		"set_stack_dissolve": Callable(self, "_set_stack_dissolve_blend"),
+		"create_tween": Callable(self, "_create_map_intro_reveal_tween"),
+		"create_timer": Callable(self, "_create_map_intro_reveal_timer"),
+		"get_bar_manager": Callable(self, "_get_intro_bar_manager"),
+		"get_total_enemy_health_bar": Callable(self, "_get_total_enemy_health_bar"),
+		"create_health_bar": Callable(self, "_create_intro_health_bar"),
+		"refresh_stack_interactivity": Callable(self, "_refresh_stack_interactivity"),
+		"emit_enemy_roster_changed": Callable(self, "_emit_intro_enemy_roster_changed"),
+		"emit_reveal_finished": Callable(self, "_emit_map_intro_reveal_finished"),
+	}
 
-	for stack in stack_nodes.values():
-		if is_instance_valid(stack):
-			_set_stack_dissolve_blend(stack, 0.0)
 
-	_flush_intro_health_bar_requests()
-	_set_intro_auxiliary_visuals_visible(true)
-	_refresh_stack_interactivity()
+## 给 MapIntroRevealRunner 创建 Tween。
+## 这层薄包装让动画仍然由 HexMap 这个场景节点持有，避免 runner 直接依赖 Node.create_tween()。
+func _create_map_intro_reveal_tween() -> Tween:
+	return create_tween()
+
+
+## 给 MapIntroRevealRunner 创建一次性计时器。
+## 返回 SceneTreeTimer 后由 runner await timeout，保持原本的总等待时间逻辑。
+func _create_map_intro_reveal_timer(duration: float) -> SceneTreeTimer:
+	return get_tree().create_timer(duration)
+
+
+## 查找入场动画期间需要隐藏和补发血条的 BarManager。
+## 路径留在 HexMap，避免 runner 记住具体节点命名。
+func _get_intro_bar_manager() -> Node:
+	return get_node_or_null("BarManager")
+
+
+## 把延迟的单体血条创建请求交回 BarManager。
+## 如果 BarManager 不存在或接口缺失，保持旧行为：跳过本次请求，不让入场流程报错中断。
+func _create_intro_health_bar(landform_in: landform, situation: int, x: float, y: float) -> void:
+	var bar_manager := _get_intro_bar_manager()
+	if not is_instance_valid(bar_manager) or not bar_manager.has_method("Create_Blood_Bar"):
+		return
+	bar_manager.Create_Blood_Bar(landform_in, situation, x, y)
+
+
+## 入场完成后通知依赖敌人列表的系统刷新。
+## 这层回调用来让 runner 不直接持有 HexMap signal。
+func _emit_intro_enemy_roster_changed() -> void:
 	enemy_roster_changed.emit()
+
+
+## 入场完成后发出公共完成信号。
+## 教程、总血量条和开局回合流程仍然监听 HexMap 原有 signal。
+func _emit_map_intro_reveal_finished() -> void:
 	map_intro_reveal_finished.emit()
 
 
+## 完成入场收尾：恢复交互、补发血条请求，并通知总血量/敌人意图等系统刷新。
+func _finish_map_intro_reveal() -> void:
+	_map_intro_reveal_runner.finish(_build_map_intro_reveal_config())
+
+
 func _flush_intro_health_bar_requests() -> void:
-	var bar_manager = get_node_or_null("BarManager")
-	if not is_instance_valid(bar_manager) or not bar_manager.has_method("Create_Blood_Bar"):
-		_pending_intro_health_bar_requests.clear()
-		_pending_intro_health_bar_request_ids.clear()
-		return
-
-	for request in _pending_intro_health_bar_requests:
-		var landform_in = request.get("landform", null)
-		if not is_instance_valid(landform_in):
-			continue
-		bar_manager.Create_Blood_Bar(
-			landform_in,
-			int(request.get("situation", 0)),
-			float(request.get("x", 0.0)),
-			float(request.get("y", 0.0))
-		)
-
-	_pending_intro_health_bar_requests.clear()
-	_pending_intro_health_bar_request_ids.clear()
+	_map_intro_reveal_runner.flush_health_bar_requests(_build_map_intro_reveal_config())
 
 
 func _set_intro_auxiliary_visuals_visible(is_visible: bool) -> void:
-	if not map_intro_reveal_hide_health_ui:
-		return
-
-	var bar_manager = get_node_or_null("BarManager")
-	if is_instance_valid(bar_manager):
-		bar_manager.visible = is_visible
-		if bar_manager.has_method("set_all_health_bars_visible"):
-			bar_manager.set_all_health_bars_visible(is_visible)
-
-	var total_health_bar = _get_total_enemy_health_bar()
-	if is_instance_valid(total_health_bar):
-		total_health_bar.visible = is_visible
+	_map_intro_reveal_runner.set_auxiliary_visuals_visible(is_visible, _build_map_intro_reveal_config())
 
 
 func _get_total_enemy_health_bar() -> Node:
@@ -1005,7 +951,7 @@ func _stack_has_enemy_building(stack: Area2D) -> bool:
 ## 3. 地块选择态时，全部启用
 ## 4. 闲置态时，仅启用敌人建筑格
 func _refresh_stack_interactivity() -> void:
-	if _map_intro_reveal_in_progress and map_intro_reveal_lock_interaction:
+	if is_map_intro_reveal_active() and map_intro_reveal_lock_interaction:
 		for stack in stack_nodes.values():
 			if is_instance_valid(stack) and stack is Area2D:
 				stack.input_pickable = false
@@ -1188,7 +1134,7 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 	stack_container.set_meta("sprites", sprites_in_stack)
 	stack_container.set_meta("height", height)
 	stack_container.set_meta("occupant", enemy_instance)
-	if _map_intro_reveal_in_progress:
+	if is_map_intro_reveal_active():
 		_set_stack_dissolve_blend(stack_container, 1.0)
 
 	stack_container.mouse_entered.connect(_on_stack_hover.bind(stack_container, true))
