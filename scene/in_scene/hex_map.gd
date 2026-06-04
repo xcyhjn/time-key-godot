@@ -29,6 +29,7 @@ const TARGET_HOVER_CONTROLLER := preload("res://scene/in_scene/hex_map_modules/i
 const TILE_STACK_FACTORY := preload("res://scene/in_scene/hex_map_modules/factory/TileStackFactory.gd")
 const TILE_LANDFORM_ATTACH_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileLandformAttachService.gd")
 const TILE_STACK_INITIALIZATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileStackInitializationService.gd")
+const TILE_STACK_REBUILD_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileStackRebuildService.gd")
 const CARD_MANAGER_LOCATOR := preload("res://scene/in_scene/hex_map_modules/bridges/CardManagerLocator.gd")
 const HEX_MAP_SCENE_BRIDGE := preload("res://scene/in_scene/hex_map_modules/bridges/HexMapSceneBridge.gd")
 const TILE_TURN_BEHAVIOR_RUNNER := preload("res://scene/in_scene/hex_map_modules/turn/TileTurnBehaviorRunner.gd")
@@ -361,6 +362,7 @@ var _target_hover_controller := TARGET_HOVER_CONTROLLER.new()
 var _tile_stack_factory := TILE_STACK_FACTORY.new()
 var _tile_landform_attach_service := TILE_LANDFORM_ATTACH_SERVICE.new()
 var _tile_stack_initialization_service := TILE_STACK_INITIALIZATION_SERVICE.new()
+var _tile_stack_rebuild_service := TILE_STACK_REBUILD_SERVICE.new()
 var _card_manager_locator := CARD_MANAGER_LOCATOR.new()
 var _hex_map_scene_bridge := HEX_MAP_SCENE_BRIDGE.new()
 var _tile_turn_behavior_runner := TILE_TURN_BEHAVIOR_RUNNER.new()
@@ -1115,22 +1117,21 @@ func _build_tile_stack_initialization_config(
 ## 局部刷新单个地块的视觉表现（优化性能，避免全局重绘）
 ## @param coord 六边形坐标（Vector2i）
 func refresh_tile_visual(coord: Vector2i) -> void:
-	if not map_data.has(coord):
-		return
-	
-	# 获取地块数据
-	var data = map_data[coord]
-	
-	# 如果已有视觉节点，先移除
-	if stack_nodes.has(coord):
-		var old_node = stack_nodes[coord]
-		if is_instance_valid(old_node):
-			old_node.queue_free()
-		stack_nodes.erase(coord)
-	
-	# 重新创建视觉节点（_create_stack_at 使用 Vector2i 坐标）
-	_create_stack_at(coord, data)
-	_refresh_stack_interactivity()
+	_tile_stack_rebuild_service.rebuild(
+		coord,
+		map_data,
+		stack_nodes,
+		_build_tile_stack_rebuild_service_config()
+	)
+
+
+## 收集单格重建服务需要的回调。
+## 当前服务先复刻旧删除重建流程；真正复用 metadata、血条和高度视图缓存时，再扩展这份边界。
+func _build_tile_stack_rebuild_service_config() -> Dictionary:
+	return {
+		"create_stack_at": Callable(self, "_create_stack_at"),
+		"refresh_stack_interactivity": Callable(self, "_refresh_stack_interactivity"),
+	}
 
 
 func get_card_manager() -> Node:
@@ -1864,8 +1865,7 @@ func apply_damage_to_tile(coord: Vector2i, new_damage: int) -> void:
 
 ## 刷新地貌视觉（整合自 node_2d.gd）
 func refresh_landform_visual(coord: Vector2i) -> void:
-	# 重新生成整个地图（简单实现）
-	build_map_pipeline()
+	refresh_tile_visual(coord)
 
 ## 处理回合结束时的建筑行为
 func _on_step_next(step: int, behavior: int) -> void:

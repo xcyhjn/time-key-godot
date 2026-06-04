@@ -191,6 +191,7 @@ boss_stage <map_seed>
 - `ExternalRenderNodeRegistrar.gd`：血条等外部渲染节点注册。
 - `MapIntroRevealRunner.gd`：地图入场揭示动画。
 - `TileElevationService.gd`：地块升降。
+- `TileStackRebuildService.gd`：单格 stack 删除重建边界。
 - `TileDestructionBatchQueue.gd`：地块毁灭合批队列。
 - `TileDestructionMutationService.gd`：地块真实销毁。
 
@@ -406,7 +407,7 @@ RuntimeLandformRegistrar.gd
 
 - 只改高度：优先走 `TileElevationService.gd`。
 - 真实删除地块：走 `TileDestructionMutationService.gd` 和 `TileDestructionBatchQueue.gd`。
-- 局部重绘：目前 `refresh_tile_visual()` 仍是粗粒度删除重建，这是后续待拆点。
+- 局部重绘：走 `TileStackRebuildService.gd`；目前内部仍是粗粒度删除重建，真正复用节点和 metadata 是后续性能待办。
 - 新增外部视觉节点：走 `ExternalRenderNodeRegistrar.gd`。
 
 ## 后续维护优先级
@@ -491,19 +492,21 @@ RuntimeLandformRegistrar.gd
 - `in_scene.gd`、`TimelineManager.gd`、`DragShapeController.gd` 里仍有各自的地图路径查找。
 - 后续如果改局内场景树，优先改 bridge；如果要进一步解耦，应考虑由 `in_scene.gd` 显式注入依赖。
 
-### 第五优先级：refresh_tile_visual 局部重绘
+### 已落地第一步：TileStackRebuildService
 
-目标：减少当前“删除旧 stack 后完整 `_create_stack_at()`”的粗粒度流程。
+当前状态：`refresh_tile_visual()` 的单格删除重建边界已经拆到 `scene/in_scene/hex_map_modules/factory/TileStackRebuildService.gd`。
 
-预期收益：
+已完成：
 
-- 运行时地貌变化和局部刷新更可控。
-- 降低 stack metadata、血条和高度视图缓存被重建影响的风险。
+- `HexMap` 只保留刷新入口和 `_build_tile_stack_rebuild_service_config()`。
+- 服务负责按坐标删除旧 stack、同步 `stack_nodes`、回调 `_create_stack_at()` 并刷新交互。
+- `refresh_landform_visual(coord)` 不再触发全图 `build_map_pipeline()`，而是委托单格刷新。
 
-注意：
+仍待处理：
 
-- 只有在地块创建三层服务稳定后再动。
-- 改前要先写清楚哪些 metadata 要保留，哪些节点可以重建。
+- 服务内部仍是粗粒度“删除旧 stack 后完整重建”，这只是边界拆分，不是最终性能优化。
+- 后续如果要复用 metadata，必须先写清楚 `sprites`、`height`、`occupant`、`collision_node`、高度视图缓存、奖励 tooltip、血条绑定分别怎么迁移。
+- 对象池建议从 tooltip、overlay、label 等纯表现节点开始，不要直接池化承载规则数据的 stack。
 
 ## 维护规则
 
