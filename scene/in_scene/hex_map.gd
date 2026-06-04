@@ -13,6 +13,7 @@ const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/EnemyIntentMap
 const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/SettlementRewardPresenter.gd")
 const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/HeightViewIndicatorPresenter.gd")
 const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/RuntimeLandformRegistrar.gd")
+const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/ExternalRenderNodeRegistrar.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -326,6 +327,7 @@ var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
 var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
+var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1865,12 +1867,8 @@ func _get_height_view_drop_delta(stack: Area2D) -> float:
 
 
 func _find_health_bar_for_landform(entity: landform) -> Node:
-	if not is_instance_valid(entity):
-		return null
 	var bar_manager := get_node_or_null("BarManager")
-	if not is_instance_valid(bar_manager):
-		return null
-	return bar_manager.get_node_or_null("HealthBar_" + str(entity.get_instance_id()))
+	return _external_render_node_registrar.find_health_bar_for_landform(entity, bar_manager)
 
 
 func _get_or_create_height_view_cache(stack: Area2D) -> Dictionary:
@@ -2233,25 +2231,12 @@ func set_visuals_locked(locked: bool) -> void:
 # ==========================================
 ## 当血条生成后，将其视觉组件加入到对应的渲染栈中，以便统一Shader和高亮
 func recollect_sprites_for_landform(landform_obj: landform) -> void:
-	var coord = landform_obj.location
-	# 修复：使用你真实的存储字典 stack_nodes
-	if not stack_nodes.has(coord): 
-		return
-	
-	var stack = stack_nodes[coord]
-	if not is_instance_valid(stack):
-		return
-		
-	var sprites_list = stack.get_meta("sprites") as Array
-	var height = stack.get_meta("height") as int
-	
-	# 在 BarManager 中寻找属于这个 landform 的血条 (HealthBuffer模式)
 	var bar_manager = get_node_or_null("BarManager")
-	if bar_manager:
-		var bar_node = bar_manager.get_node_or_null("HealthBar_" + str(landform_obj.get_instance_id()))
-		if bar_node:
-			# 寻找血条内部的所有 Sprite2D 或 TextureRect 并加入精灵列表
-			_find_and_register_ui_sprites(bar_node, sprites_list, height)
+	_external_render_node_registrar.recollect_for_landform(
+		landform_obj,
+		bar_manager,
+		_build_external_render_node_registrar_context()
+	)
 
 # ==========================================
 # ★ 血条等外部节点的视觉同步注册系统
@@ -2259,32 +2244,19 @@ func recollect_sprites_for_landform(landform_obj: landform) -> void:
 
 ## 接收外部节点（如血条），将其内部的贴图加入地块渲染序列
 func register_extra_render_node(coord: Vector2i, node: Node) -> void:
-	if not stack_nodes.has(coord): 
-		return
-	
-	var stack = stack_nodes[coord]
-	if not is_instance_valid(stack): return
-	
-	var sprites_list = stack.get_meta("sprites") as Array
-	var height = stack.get_meta("height") as int
-	
-	# 开始递归寻找并注册 UI 贴图
-	_find_and_register_ui_sprites(node, sprites_list, height)
+	_external_render_node_registrar.register_node_at(
+		coord,
+		node,
+		_build_external_render_node_registrar_context()
+	)
 
-## 递归寻找 UI 内部的贴图并加入动画更新队列
-func _find_and_register_ui_sprites(node: Node, list: Array, height: int) -> void:
-	if node is Sprite2D or node is TextureRect or node is TextureProgressBar:
-		if not list.has(node):
-			# ★ 核心修复：只传递高度参数并加入队列，绝对不覆盖它本身的 Material！
-			# 只要传递了这两个参数，上面的 ui_health_bar.gdshader 就会完美执行悬浮和起伏！
-			if node.material:
-				node.set_instance_shader_parameter("block_idx", float(height + 1))
-				node.set_instance_shader_parameter("total_height", float(height + 2))
-			
-			list.append(node) 
-			
-	for child in node.get_children():
-		_find_and_register_ui_sprites(child, list, height)
+
+## 收集外部渲染节点注册所需的地图上下文。
+## Registrar 只消费 stack_nodes；BarManager、血条生成时机和视角同步仍由 HexMap 调度。
+func _build_external_render_node_registrar_context() -> Dictionary:
+	return {
+		"stack_nodes": stack_nodes,
+	}
 
 ## 增强版：处理地块升降（融合了安全偏移逻辑）
 func animate_elevation_change(stack: Area2D, delta_height: int) -> void:

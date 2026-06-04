@@ -258,6 +258,32 @@ Adjustment notes:
 - Change entity anchor tuning through `hitbox_offset_x`, `hitbox_offset_y`, and `landform_instance_offset`.
 - Change runtime spawn VFX through `runtime_landform_spawn_vfx_enabled` and `runtime_landform_spawn_vfx_duration`.
 
+### `scene/in_scene/ExternalRenderNodeRegistrar.gd`
+
+Responsibility:
+- Find health bars owned by BarManager through the existing `HealthBar_<landform_instance_id>` naming rule.
+- Register health bar and external UI render nodes into stack `sprites` metadata.
+- Recursively collect `Sprite2D`, `TextureRect`, and `TextureProgressBar` children.
+- Write height shader instance parameters without replacing UI node materials.
+
+Main callers:
+- `hex_map.gd::recollect_sprites_for_landform()`
+- `hex_map.gd::register_extra_render_node()`
+- `hex_map.gd::_find_health_bar_for_landform()`
+
+Related exported tuning variables:
+- None.
+
+Runtime data consumed:
+- `stack_nodes`
+- stack `sprites` metadata
+- stack `height` metadata
+
+Adjustment notes:
+- Add new external render node types in `_is_supported_render_node()`.
+- Keep health bar creation and deletion in BarManager; this module only registers visuals for shared map effects.
+- Keep flat/3D positioning in HexMap view synchronization; this module only updates render membership and shader parameters.
+
 ## Verification Checklist
 
 Run after changing any extracted module:
@@ -285,4 +311,5 @@ Use these in the editor after parser checks:
 
 Priority order:
 - Enemy/settlement tooltip edge-case cleanup after target restrictions are stable.
+- Flat/3D view synchronization state extraction.
 - Optional: move shared target checks from timeline command classes into a pure rule helper if command duplication grows.
