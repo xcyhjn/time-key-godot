@@ -7,6 +7,7 @@ var rng := RandomNumberGenerator.new()
 
 const HEX_COORD_RULES := preload("res://scene/in_scene/HexCoordRules.gd")
 const HEX_TERRAIN_RULES := preload("res://scene/in_scene/HexTerrainRules.gd")
+const HEX_TARGET_RULES := preload("res://scene/in_scene/HexTargetRules.gd")
 const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/TileDestructionBatchQueue.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
@@ -1690,14 +1691,7 @@ func _clear_all_aoe_highlights() -> void:
 func _update_aoe_display(card: Control, center_stack: Area2D, main_board: Node) -> void:
 	var new_aoe_stacks: Array[Area2D] = []
 	var center_coord = stack_nodes.find_key(center_stack)
-	
-	if center_coord != null and card.has_method("get_absolute_effect_range"):
-		var range_coords = card.get_absolute_effect_range(center_coord)
-		
-		# 收集受影响的真实地块
-		for coord in range_coords:
-			if stack_nodes.has(coord) and is_instance_valid(stack_nodes[coord]):
-				new_aoe_stacks.append(stack_nodes[coord])
+	new_aoe_stacks = HEX_TARGET_RULES.get_effect_range_stacks(card, center_coord, stack_nodes)
 	
 	# 1. 状态卸载：旧的范围内有，但新范围内没有的地块，恢复平静
 	for stack in current_aoe_stacks:
@@ -1728,11 +1722,7 @@ func _is_stack_valid_target(stack: Area2D) -> bool:
 	if not cm: return false
 
 	var selected_card = cm.get("current_selected_card")
-	if not selected_card: return false
-
-	# 这里需要根据卡牌的效果来判断地块是否有效
-	# 暂时先返回true作为测试
-	return true
+	return HEX_TARGET_RULES.is_stack_valid_target(stack, selected_card)
 
 ## 右键取消选中卡牌
 func _cancel_card_selection() -> void:
