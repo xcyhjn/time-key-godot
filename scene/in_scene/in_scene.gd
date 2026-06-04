@@ -10,6 +10,9 @@ const HEX_TARGET_RULES := preload("res://scene/in_scene/hex_map_modules/rules/He
 const IN_SCENE_NODE_BRIDGE := preload("res://scene/in_scene/in_scene_modules/bridges/InSceneNodeBridge.gd")
 const IN_SCENE_GLOBAL_CLOCK_BRIDGE := preload("res://scene/in_scene/in_scene_modules/bridges/InSceneGlobalClockBridge.gd")
 const CARD_PILE_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/cards/CardPileUiController.gd")
+const CARD_SYSTEM_BOOTSTRAP := preload("res://scene/in_scene/in_scene_modules/cards/CardSystemBootstrap.gd")
+const IN_SCENE_INPUT_LOCK_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneInputLockController.gd")
+const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/turn/FirstTurnIntroRunner.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -156,6 +159,9 @@ var _first_turn_starting: bool = false
 var _node_bridge: RefCounted = IN_SCENE_NODE_BRIDGE.new()
 var _global_clock_bridge: RefCounted = IN_SCENE_GLOBAL_CLOCK_BRIDGE.new()
 var _card_pile_ui_controller: RefCounted = CARD_PILE_UI_CONTROLLER.new()
+var _card_system_bootstrap: RefCounted = CARD_SYSTEM_BOOTSTRAP.new()
+var _input_lock_controller: RefCounted = IN_SCENE_INPUT_LOCK_CONTROLLER.new()
+var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
 
 
 func _ready() -> void:
@@ -329,12 +335,8 @@ func _refresh_combat_cartoon_ui_progress() -> void:
 ## 安排局内自动进入第一回合。
 ## 这取代旧的“开局先生成一次敌方意图”流程，避免第一回合开始时重复生成意图。
 func _schedule_auto_first_turn() -> void:
-	if (
-		is_instance_valid(hex_map)
-		and hex_map.is_map_intro_reveal_active()
-	):
-		if not hex_map.map_intro_reveal_finished.is_connected(_start_first_turn_after_scene_ready):
-			hex_map.map_intro_reveal_finished.connect(_start_first_turn_after_scene_ready)
+	if _first_turn_intro_runner.should_wait_for_map_intro(hex_map):
+		_first_turn_intro_runner.connect_map_intro_finished(hex_map, _start_first_turn_after_scene_ready)
 		return
 
 	call_deferred("_start_first_turn_after_scene_ready")
@@ -357,14 +359,13 @@ func play_timeline_intro_and_generate_enemy_intents() -> void:
 
 
 func _start_first_turn_after_timeline_ready(force_timeline_visible: bool = false) -> void:
-	if _first_turn_started or _first_turn_starting:
-		return
-	if not is_instance_valid(timeline_manager):
-		return
-
-	# 教程等特殊流程可能会在开局隐藏时间轴。
-	# 此时先不自动开局，等导演节点调用 play_timeline_intro_and_generate_enemy_intents() 再继续。
-	if is_instance_valid(timeline_ui) and not timeline_ui.visible and not force_timeline_visible:
+	if not _first_turn_intro_runner.can_start_first_turn({
+		"first_turn_started": _first_turn_started,
+		"first_turn_starting": _first_turn_starting,
+		"timeline_manager": timeline_manager,
+		"timeline_ui": timeline_ui,
+		"force_timeline_visible": force_timeline_visible,
+	}):
 		return
 
 	_first_turn_starting = true
@@ -377,48 +378,29 @@ func _start_first_turn_after_timeline_ready(force_timeline_visible: bool = false
 
 
 func _wait_for_card_system_ready() -> void:
-	while not _card_system_ready and is_inside_tree():
-		await get_tree().process_frame
+	await _first_turn_intro_runner.wait_for_card_system_ready(self, func() -> bool:
+		return _card_system_ready
+	)
 
 
 func _play_timeline_intro_if_visible() -> void:
-	var intro_started: bool = false
-
-	if is_instance_valid(combat_cartoon_ui) and combat_cartoon_ui.has_method("play_intro"):
-		combat_cartoon_ui.play_intro()
-		intro_started = true
-
-	if is_instance_valid(total_enemy_health_bar) and total_enemy_health_bar.has_method("play_intro"):
-		total_enemy_health_bar.play_intro()
-		intro_started = true
-
-	if is_instance_valid(timeline_ui) and timeline_ui.visible and timeline_ui.has_method("play_intro"):
-		timeline_ui.play_intro()
-		intro_started = true
-
-	if intro_started:
-		await _wait_for_battle_intro_ui()
+	await _first_turn_intro_runner.play_intro_if_visible(self, _build_first_turn_intro_config())
 
 
 func _wait_for_battle_intro_ui() -> void:
-	while _is_any_battle_intro_ui_running():
-		await get_tree().process_frame
+	await _first_turn_intro_runner.wait_for_battle_intro_ui(self, _build_first_turn_intro_config())
 
 
 func _is_any_battle_intro_ui_running() -> bool:
-	if is_instance_valid(combat_cartoon_ui) and combat_cartoon_ui.has_method("is_intro_in_progress"):
-		if bool(combat_cartoon_ui.call("is_intro_in_progress")):
-			return true
+	return _first_turn_intro_runner.is_any_battle_intro_ui_running(_build_first_turn_intro_config())
 
-	if is_instance_valid(total_enemy_health_bar) and total_enemy_health_bar.has_method("is_intro_in_progress"):
-		if bool(total_enemy_health_bar.call("is_intro_in_progress")):
-			return true
 
-	if is_instance_valid(timeline_ui) and timeline_ui.visible and timeline_ui.has_method("is_intro_in_progress"):
-		if bool(timeline_ui.call("is_intro_in_progress")):
-			return true
-
-	return false
+func _build_first_turn_intro_config() -> Dictionary:
+	return {
+		"combat_cartoon_ui": combat_cartoon_ui,
+		"total_enemy_health_bar": total_enemy_health_bar,
+		"timeline_ui": timeline_ui,
+	}
 
 
 func _refresh_enemy_intents_on_timeline() -> void:
@@ -500,112 +482,44 @@ func _clear_pulse_shader(target_node: Node):
 
 
 func setup_card_system():
-	var screen_size = get_viewport_rect().size
-
-	# 验证场景是否加载成功
-	var manager_scene := CARD_MANAGER_SCENE
-	if not is_instance_valid(manager_scene):
-		push_error("project.gd: 无法加载 card_manager.tscn！")
-		return
-
-	manager_instance = manager_scene.instantiate() as CardManager
-	if not is_instance_valid(manager_instance):
-		push_error("project.gd: 无法实例化 CardManager！")
-		return
-
-	var card_factory_scene := CARD_FACTORY_SCENE
-	if is_instance_valid(card_factory_scene):
-		manager_instance.card_factory_scene = card_factory_scene
-	else:
-		push_warning("project.gd: card_factory.tscn 加载失败！")
-
-	manager_instance.debug_mode = true
-	add_child(manager_instance)
-
-	# --- 【修复重点】必须告诉工厂卡牌长什么样 ---
-	# 如果不加这几行，工厂生产出来的卡是空的，或者导致空指针报错
-	await get_tree().process_frame  # 等待工厂节点就绪
-	if is_instance_valid(manager_instance.card_factory) and is_instance_valid(card_scene_ref):
-		manager_instance.card_factory.default_card_scene = card_scene_ref
-	else:
-		push_error("project.gd: card_factory 或 card_scene_ref 无效！")
-
-	# --- 1. 实例化手牌区 ---
-	if is_instance_valid(hand_scene):
-		player_hand = hand_scene.instantiate() as Hand
-		if is_instance_valid(player_hand):
-			player_hand.name = "PlayerHand"  # ★ 强制命名
-			add_child(player_hand)
-			player_hand.position = Vector2(screen_size.x * hand_x_position_ratio - card_size.x / 2, screen_size.y * hand_y_position_ratio + hand_y_offset)
-		else:
-			push_error("project.gd: 无法实例化 Hand！")
-	else:
-		push_error("project.gd: hand_scene 无效！")
-
-	# --- 2. 实例化抽牌区 (逻辑实体-屏幕外) ---
-	if is_instance_valid(pile_scene):
-		deck_pile = pile_scene.instantiate() as Pile
-		if is_instance_valid(deck_pile):
-			deck_pile.name = "DeckPile"  # ★ 强制命名
-			add_child(deck_pile)
-			deck_pile.position = Vector2(0, 400)
-			deck_pile.visible = false
-		else:
-			push_error("project.gd: 无法实例化 deck_pile！")
-	else:
-		push_error("project.gd: pile_scene 无效！")
-
-	# --- 3. 实例化弃牌区 (逻辑实体-屏幕外) ---
-	if is_instance_valid(pile_scene):
-		discard_pile = pile_scene.instantiate() as Pile
-		if is_instance_valid(discard_pile):
-			discard_pile.name = "DiscardPile"  # ★ 强制命名
-			add_child(discard_pile)
-			discard_pile.add_to_group("DiscardPile")  # 添加到组，便于全局查找
-			discard_pile.position = Vector2(2000, 400)
-			discard_pile.visible = false
-		else:
-			push_error("project.gd: 无法实例化 discard_pile！")
-
-	# --- 4. 生成初始卡牌 (从全局动态牌组生成) ---
-	if is_instance_valid(manager_instance.card_factory) and is_instance_valid(deck_pile):
-		# ★ 替换原本的硬编码 for i in range(10)
-		for card_id in GlobalDB.player_deck:
-			manager_instance.card_factory.create_card(card_id, deck_pile)
-
-		if deck_pile._held_cards.size() > 0:
-			deck_pile._held_cards.shuffle()
-	else:
-		push_error("project.gd: 无法生成初始卡牌，card_factory 或 deck_pile 无效！")
+	var result: Dictionary = await _card_system_bootstrap.setup(_build_card_system_bootstrap_config())
+	manager_instance = result.get("manager_instance") as CardManager
+	player_hand = result.get("player_hand") as Hand
+	deck_pile = result.get("deck_pile") as Pile
+	discard_pile = result.get("discard_pile") as Pile
 
 	update_counts_and_ui()
+	_card_system_ready = bool(result.get("ready", false))
 
-	# --- 5. 连接 UI 按钮点击事件 ---
-	# 先断开可能的旧连接，防止重复触发
-	if is_instance_valid(discard_button):
-		if discard_button.pressed.is_connected(_on_discard_button_pressed):
-			discard_button.pressed.disconnect(_on_discard_button_pressed)
-		discard_button.pressed.connect(_on_discard_button_pressed)
 
-	if is_instance_valid(deck_button):
-		if deck_button.gui_input.is_connected(_on_deck_button_gui_input):
-			deck_button.gui_input.disconnect(_on_deck_button_gui_input)
-		deck_button.gui_input.connect(_on_deck_button_gui_input)
-
-	if is_instance_valid(end_turn_button):
-		_connect_signal_once(end_turn_button.pressed, _on_end_turn_pressed)
-	
-	# ★ 新增：绑定局外收获按钮
-	if is_instance_valid(shop_button):
-		_connect_signal_once(shop_button.pressed, _on_shop_button_pressed)
-	if is_instance_valid(acquire_reward_button):
-		_connect_signal_once(acquire_reward_button.pressed, _on_acquire_reward_button_pressed)
-	if is_instance_valid(remove_reward_button):
-		_connect_signal_once(remove_reward_button.pressed, _on_remove_reward_button_pressed)
-	if is_instance_valid(craft_reward_button):
-		_connect_signal_once(craft_reward_button.pressed, _on_craft_reward_button_pressed)
-
-	_card_system_ready = true
+func _build_card_system_bootstrap_config() -> Dictionary:
+	return {
+		"owner": self,
+		"manager_scene": CARD_MANAGER_SCENE,
+		"card_factory_scene": CARD_FACTORY_SCENE,
+		"hand_scene": hand_scene,
+		"pile_scene": pile_scene,
+		"card_scene_ref": card_scene_ref,
+		"card_size": card_size,
+		"hand_x_position_ratio": hand_x_position_ratio,
+		"hand_y_position_ratio": hand_y_position_ratio,
+		"hand_y_offset": hand_y_offset,
+		"deck_button": deck_button,
+		"deck_gui_input": _on_deck_button_gui_input,
+		"discard_button": discard_button,
+		"discard_pressed": _on_discard_button_pressed,
+		"end_turn_button": end_turn_button,
+		"end_turn_pressed": _on_end_turn_pressed,
+		"shop_button": shop_button,
+		"shop_pressed": _on_shop_button_pressed,
+		"acquire_reward_button": acquire_reward_button,
+		"acquire_reward_pressed": _on_acquire_reward_button_pressed,
+		"remove_reward_button": remove_reward_button,
+		"remove_reward_pressed": _on_remove_reward_button_pressed,
+		"craft_reward_button": craft_reward_button,
+		"craft_reward_pressed": _on_craft_reward_button_pressed,
+		"connect_once": _connect_signal_once,
+	}
 
 
 # --- 按钮逻辑修正 ---
@@ -712,17 +626,20 @@ func _advance_global_phase() -> void:
 # ==========================================
 # 这些函数在结算回合时极其重要，它们能切断玩家的任何鼠标操作（拖拽、抽牌），防止逻辑穿插崩溃
 func disable_player_inputs():
-	if is_instance_valid(player_hand): player_hand.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if is_instance_valid(deck_button): deck_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if is_instance_valid(discard_button): discard_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if is_instance_valid(end_turn_button): end_turn_button.disabled = true
+	_input_lock_controller.disable(_build_input_lock_config())
 
 
 func enable_player_inputs():
-	if is_instance_valid(player_hand): player_hand.mouse_filter = Control.MOUSE_FILTER_PASS
-	if is_instance_valid(deck_button): deck_button.mouse_filter = Control.MOUSE_FILTER_PASS
-	if is_instance_valid(discard_button): discard_button.mouse_filter = Control.MOUSE_FILTER_PASS
-	if is_instance_valid(end_turn_button): end_turn_button.disabled = false
+	_input_lock_controller.enable(_build_input_lock_config())
+
+
+func _build_input_lock_config() -> Dictionary:
+	return {
+		"player_hand": player_hand,
+		"deck_button": deck_button,
+		"discard_button": discard_button,
+		"end_turn_button": end_turn_button,
+	}
 
 
 func discard_all_hand_cards():

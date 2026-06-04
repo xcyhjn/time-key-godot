@@ -420,3 +420,120 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `CardSystemBootstrap.gd`：拆 `setup_card_system()` 中 CardManager、Hand、Deck、Discard 和 CardFactory 初始化，保留 `manager_instance`、`player_hand`、`deck_pile`、`discard_pile` 等旧变量。
 2. 或 `InSceneInputLockController.gd`：拆 `disable_player_inputs()` 与 `enable_player_inputs()`，输入锁范围清晰，验证路径短。
 3. 暂缓 `SettlementDeckReclaimService.gd`、`InSceneSceneSwitcher.gd` 和 `CombatResultController.gd`，这些涉及跨场景生命周期和结算状态，等前两批稳定后再动。
+
+## in_scene.gd 第二批三模块拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批一次拆 3 个低到中风险模块，但继续避开胜负结算、切场景、奖励页关闭和结算阶段卡牌回收。
+
+目标函数范围：
+
+```text
+setup_card_system()
+disable_player_inputs()
+enable_player_inputs()
+_schedule_auto_first_turn()
+_start_first_turn_after_timeline_ready()
+_wait_for_card_system_ready()
+_play_timeline_intro_if_visible()
+_wait_for_battle_intro_ui()
+_is_any_battle_intro_ui_running()
+```
+
+当前读写的成员变量：
+
+```text
+manager_instance / player_hand / deck_pile / discard_pile
+_card_system_ready
+_first_turn_started / _first_turn_starting
+deck_button / discard_button / end_turn_button
+shop_button / acquire_reward_button / remove_reward_button / craft_reward_button
+timeline_ui / timeline_manager
+combat_cartoon_ui / total_enemy_health_bar
+```
+
+当前触碰的外部节点和 autoload：
+
+```text
+CardManager / CardFactory / Hand / Pile
+GlobalDB.player_deck
+HexMap.map_intro_reveal_finished
+TimelineUI / TotalEnemyHealthBar / CartoonUI 的入场动画接口
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/cards/CardSystemBootstrap.gd
+scene/in_scene/in_scene_modules/ui/InSceneInputLockController.gd
+scene/in_scene/in_scene_modules/turn/FirstTurnIntroRunner.gd
+```
+
+模块边界：
+
+- `CardSystemBootstrap.gd` 只负责创建 `CardManager`、`Hand`、`DeckPile`、`DiscardPile`、设置默认卡牌场景、生成初始牌堆和连接稳定 UI 按钮。它不抽牌、不洗牌、不处理弃牌效果。
+- `InSceneInputLockController.gd` 只执行输入锁定/解锁，不决定什么时候锁输入。
+- `FirstTurnIntroRunner.gd` 只处理首回合启动前的等待条件和入场 UI 动画，不推进回合规则，不生成敌人意图。
+
+保留的旧公共入口：
+
+```text
+setup_card_system()
+disable_player_inputs()
+enable_player_inputs()
+_schedule_auto_first_turn()
+_start_first_turn_after_timeline_ready(force_timeline_visible)
+_wait_for_card_system_ready()
+_play_timeline_intro_if_visible()
+_wait_for_battle_intro_ui()
+_is_any_battle_intro_ui_running()
+```
+
+这些函数仍由 `in_scene.gd` 暴露，内部转发给新模块，避免影响教程导演、信号回调和旧按钮连接。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+setup_card_system() 中的 CardManager/Hand/Pile 创建和按钮连接已由 CardSystemBootstrap 统一维护。
+disable_player_inputs()/enable_player_inputs() 的 UI 状态写入已由 InSceneInputLockController 统一维护。
+首回合等待和入场 UI 动画轮询已由 FirstTurnIntroRunner 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批可以继续拆中风险但较独立的 UI 模块：
+
+1. `CursorTooltipController.gd`：拆 `_enhance_cursor_tooltip()`、`set_cursor_tooltip_position()` 和 `_refresh_cursor_tooltip_size()`。
+2. `CardTooltipUiAdapter.gd`：拆 `setup_tooltip_ui()`、`show_tooltip()`、`hide_tooltip()` 中与 `CardTooltipPresenter` 的连接。
+3. 或 `InSceneUiVisibilityController.gd`：拆 `hide_ui_for_external_scene()`、`restore_ui_after_external_scene()`、`restore_all_ui()`，但这会触碰奖励页和结算阶段，建议单独一批。
+
+仍建议暂缓：
+
+```text
+_return_to_out_scene()
+_switch_scene_with_data()
+_open_settlement_reward_scene()
+_reclaim_all_runtime_cards_to_deck()
+_on_combat_victory_triggered()
+```
