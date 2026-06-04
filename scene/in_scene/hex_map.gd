@@ -11,6 +11,7 @@ const HEX_TARGET_RULES := preload("res://scene/in_scene/HexTargetRules.gd")
 const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/TileDestructionBatchQueue.gd")
 const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/EnemyIntentMapPresenter.gd")
 const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/SettlementRewardPresenter.gd")
+const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/HeightViewIndicatorPresenter.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -286,7 +287,6 @@ var height_view_original_materials: Dictionary = {} #优化后字典，上面那
 var height_view_hovered_stack: Area2D = null  # 高度视图下鼠标悬浮的地块
 var height_view_selected_stack: Area2D = null  # 高度视图下点击选中的地块
 #var height_view_original_materials: Dictionary = {}  # 存储地块原始材质（用于恢复）
-var height_view_pillar_tweens: Dictionary = {}  # 存储光柱动画补间
 var is_view_transitioning: bool = false  # ★ 新增：动画状态锁
 var is_visuals_locked: bool = false  # ★ 新增：视觉状态锁，防止拖拽时清除高亮和消融效果
 # ==========================================
@@ -323,6 +323,7 @@ var selected_stack: Area2D = null  # 记录当前被点击选中的地块
 var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明湮灭状态的地块
 var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
 var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
+var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -2234,91 +2235,15 @@ func _tween_position_y(node, target_y: float, duration: float) -> void:
 	
 ## 创建高度指示器（光柱 + 高度标签）使用导出参数
 func _create_height_indicator(stack: Area2D, original_height: int) -> void:
-	if not is_instance_valid(stack):
-		return
-	
-	_remove_height_indicator(stack)
-	
-	var sprites = stack.get_meta("sprites") as Array
-	if sprites.is_empty():
-		return
-	
-	if original_height <= 0 or original_height - 1 >= sprites.size():
-		return
-	
-	var top_sprite = sprites[original_height - 1]
-	if not is_instance_valid(top_sprite):
-		return
-	
-	var pillar_position: Vector2
-	if current_view_state == MapViewState.VIEW_FLAT:
-		pillar_position = Vector2(hitbox_offset_x, hitbox_offset_y) + height_view_pillar_offset
-	else:
-		pillar_position = Vector2(hitbox_offset_x, top_sprite.position.y + hitbox_offset_y) + height_view_pillar_offset
-
-	# --- 修改点 1：控制光柱生成 ---
-	if show_height_pillars:
-		var line = Line2D.new()
-		line.name = "HeightIndicatorLine"
-		line.width = height_view_pillar_width
-		line.default_color = height_view_pillar_color
-		
-		var pillar_length = height_view_pillar_length * original_height * 0.5
-		var min_pillar_length = height_view_pillar_length * 1.5
-		if pillar_length < min_pillar_length:
-			pillar_length = min_pillar_length
-		
-		line.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -pillar_length)])
-		line.position = pillar_position
-		line.z_index = 1000
-		stack.add_child(line)
-		stack.set_meta("height_indicator_line", line)
-		stack.set_meta("height_view_pillar", line)
-
-	# --- 修改点 2：控制数字标签生成 ---
-	if show_height_labels:
-		var label = Label.new()
-		label.name = "HeightIndicatorLabel"
-		label.text = str(original_height)
-		# 平铺视角数字仅用于显示，绝不能拦截地块的鼠标输入。
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.focus_mode = Control.FOCUS_NONE
-		
-		if height_label_font:
-			label.add_theme_font_override("font", height_label_font)
-		
-		label.add_theme_font_size_override("font_size", height_label_font_size)
-		label.add_theme_color_override("font_color", height_label_color)
-		label.add_theme_color_override("font_outline_color", height_label_outline_color)
-		label.add_theme_constant_override("outline_size", height_label_outline_size)
-		
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.position = pillar_position + height_label_offset
-		label.z_index = 1001
-		stack.add_child(label)
-		stack.set_meta("height_indicator_label", label)
+	_height_view_indicator_presenter.create_indicator(
+		stack,
+		original_height,
+		_build_height_view_indicator_presenter_config()
+	)
 
 ## 移除高度指示器
 func _remove_height_indicator(stack: Area2D) -> void:
-	if not is_instance_valid(stack):
-		return
-	
-	if stack.has_meta("height_indicator_line"):
-		var line = stack.get_meta("height_indicator_line")
-		if is_instance_valid(line):
-			line.queue_free()
-		stack.set_meta("height_indicator_line", null)
-	
-	if stack.has_meta("height_indicator_label"):
-		var label = stack.get_meta("height_indicator_label")
-		if is_instance_valid(label):
-			label.queue_free()
-		stack.set_meta("height_indicator_label", null)
-	
-	# 清除光柱引用（如果存在）
-	if stack.has_meta("height_view_pillar"):
-		stack.set_meta("height_view_pillar", null)
+	_height_view_indicator_presenter.remove_indicator(stack)
 
 ## 按钮按下回调
 func _on_height_view_toggle_pressed() -> void:
@@ -2330,56 +2255,44 @@ func _on_height_view_toggle_pressed() -> void:
 
 ## 开始光柱浮动动画（鼠标悬停时调用）
 func _start_pillar_floating_animation(stack: Area2D) -> void:
-	if not current_view_state == MapViewState.VIEW_FLAT or not is_instance_valid(stack):
-		return
-	
-	# 获取光柱引用
-	var pillar = stack.get_meta("height_view_pillar") if stack.has_meta("height_view_pillar") else null
-	if not is_instance_valid(pillar):
-		return
-	
-	
-	# 停止现有动画（如果存在）
-	if height_view_pillar_tweens.has(stack):
-		var existing_tween = height_view_pillar_tweens[stack]
-		if is_instance_valid(existing_tween):
-			existing_tween.stop()
-	
-	# 创建新的浮动动画
-	var original_y = pillar.position.y
-	var tween = create_tween()
-	tween.set_loops()
-	tween.set_trans(Tween.TRANS_SINE)
-	tween.set_ease(Tween.EASE_IN_OUT)
-	
-	# 上下浮动动画
-	tween.tween_property(pillar, "position:y", original_y - height_view_hover_amplitude, height_view_hover_speed / 2.0)
-	tween.tween_property(pillar, "position:y", original_y + height_view_hover_amplitude, height_view_hover_speed)
-	tween.tween_property(pillar, "position:y", original_y, height_view_hover_speed / 2.0)
-	
-	# 保存动画引用
-	height_view_pillar_tweens[stack] = tween
+	_height_view_indicator_presenter.start_pillar_floating(
+		stack,
+		_build_height_view_indicator_presenter_config()
+	)
 
 ## 停止光柱浮动动画（鼠标离开时调用）
 func _stop_pillar_floating_animation(stack: Area2D) -> void:
-	if not current_view_state == MapViewState.VIEW_FLAT or not is_instance_valid(stack):
-		return
-	
-	# 停止动画
-	if height_view_pillar_tweens.has(stack):
-		var tween = height_view_pillar_tweens[stack]
-		if is_instance_valid(tween):
-			tween.stop()
-		
-		# 恢复原始位置
-		var pillar = stack.get_meta("height_view_pillar") if stack.has_meta("height_view_pillar") else null
-		if is_instance_valid(pillar):
-			var original_y = pillar.position.y
-			# 快速平滑返回
-			var restore_tween = create_tween()
-			restore_tween.set_trans(Tween.TRANS_SINE)
-			restore_tween.set_ease(Tween.EASE_IN_OUT)
-			restore_tween.tween_property(pillar, "position:y", original_y, 0.2)
+	_height_view_indicator_presenter.stop_pillar_floating(
+		stack,
+		_build_height_view_indicator_presenter_config()
+	)
+
+
+## 收集高度视图指示器表现调参。
+## HexMap 继续持有 Inspector 导出项，Presenter 只消费这份配置快照。
+func _build_height_view_indicator_presenter_config() -> Dictionary:
+	return {
+		"show_pillars": show_height_pillars,
+		"show_labels": show_height_labels,
+		"pillar_length": height_view_pillar_length,
+		"pillar_width": height_view_pillar_width,
+		"pillar_color": height_view_pillar_color,
+		"pillar_offset": height_view_pillar_offset,
+		"pillar_z_index": 1000,
+		"label_font_size": height_label_font_size,
+		"label_color": height_label_color,
+		"label_outline_color": height_label_outline_color,
+		"label_outline_size": height_label_outline_size,
+		"label_offset": height_label_offset,
+		"label_font": height_label_font,
+		"label_z_index": 1001,
+		"hover_speed": height_view_hover_speed,
+		"hover_amplitude": height_view_hover_amplitude,
+		"label_bounce_duration": ele_anim_duration * 0.5,
+		"hitbox_offset_x": hitbox_offset_x,
+		"hitbox_offset_y": hitbox_offset_y,
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+	}
 
 
 ## 统一开启或关闭所有地块的鼠标交互
@@ -2564,17 +2477,11 @@ func animate_elevation_change(stack: Area2D, delta_height: int) -> void:
 				sprites[i].set_instance_shader_parameter("block_idx", float(i))
 				sprites[i].set_instance_shader_parameter("total_height", float(visual_height))
 
-		# 纯二维数字弹跳动画
-		var label = stack.get_meta("height_indicator_label") if stack.has_meta("height_indicator_label") else null
-		if is_instance_valid(label):
-			label.text = str(visual_height)
-			var label_step_duration: float = maxf(0.01, ele_anim_duration * 0.5)
-			var tw_label = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw_label.tween_property(label, "scale", Vector2(1.8, 1.8), label_step_duration)
-			tw_label.parallel().tween_property(label, "modulate", Color(1.0, 0.2, 0.2), label_step_duration)
-			tw_label.tween_property(label, "scale", Vector2.ONE, label_step_duration)
-			tw_label.parallel().tween_property(label, "modulate", Color.WHITE, label_step_duration)
-			await tw_label.finished
+		await _height_view_indicator_presenter.animate_label_height(
+			stack,
+			visual_height,
+			_build_height_view_indicator_presenter_config()
+		)
 
 		stack.set_meta("is_animating", false)
 		if should_destroy_after_elevation:
