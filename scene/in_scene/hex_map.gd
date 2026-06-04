@@ -5,6 +5,7 @@ class_name battle
 
 var rng := RandomNumberGenerator.new()
 
+const HEX_COORD_RULES := preload("res://scene/in_scene/HexCoordRules.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -473,38 +474,12 @@ func _generate_map_data():
 
 ## 扇形坐标采样器 - 返回满足角度范围的六边形坐标
 func _get_fan_coords(radius: int, angle_span: float, center_angle: float = 90.0) -> Array[Vector2i]:
-	var coords: Array[Vector2i] = []
-	var min_angle = center_angle - (angle_span / 2.0)
-	var max_angle = center_angle + (angle_span / 2.0)
-	
-	for q in range(-radius, radius + 1):
-		for r in range(-radius, radius + 1):
-			if q == 0 and r == 0:
-				continue
-			# 六边形轴向坐标距离公式
-			var dist = (abs(q) + abs(q + r) + abs(r)) / 2
-			if dist <= radius:
-				var pixel_pos = _get_hex_pixel_pos(Vector2(q, r))
-				var angle_deg = rad_to_deg(pixel_pos.angle())
-				if angle_deg < 0:
-					angle_deg += 360.0
-				if angle_deg >= min_angle and angle_deg <= max_angle:
-					coords.append(Vector2i(q, r))
-	return coords
+	return HEX_COORD_RULES.get_fan_coords(radius, angle_span, center_angle, spacing_x, spacing_y, tile_scale / REF_SCALE)
 
 
 ## 圆形坐标采样器 - 返回圆形区域内的六边形坐标
 func _get_circular_coords(radius: int) -> Array[Vector2i]:
-	var coords: Array[Vector2i] = []
-	for q in range(-radius, radius + 1):
-		for r in range(-radius, radius + 1):
-			if q == 0 and r == 0:
-				continue
-			# 六边形轴向坐标距离公式（确保完美的圆形区域）
-			var dist = (abs(q) + abs(q + r) + abs(r)) / 2
-			if dist <= radius:
-				coords.append(Vector2i(q, r))
-	return coords
+	return HEX_COORD_RULES.get_circular_coords(radius)
 
 
 ## 统一数据填充管线 - 将坐标数组转换为地图数据
@@ -1133,10 +1108,7 @@ func rebuild_all_collision_shapes() -> void:
 
 
 func _get_hex_pixel_pos(hex_coord: Vector2) -> Vector2:
-	var ratio = tile_scale / REF_SCALE
-	var screen_x = hex_coord.x * spacing_x * ratio
-	var screen_y = hex_coord.y * spacing_y * ratio + (hex_coord.x * spacing_y * ratio * 0.5)
-	return Vector2(screen_x, screen_y)
+	return HEX_COORD_RULES.hex_to_pixel(hex_coord, spacing_x, spacing_y, tile_scale / REF_SCALE)
 
 
 func _create_stack_at(coord: Vector2i, data: Dictionary):
