@@ -14,6 +14,7 @@ const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/SettlementRew
 const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/HeightViewIndicatorPresenter.gd")
 const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/RuntimeLandformRegistrar.gd")
 const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/ExternalRenderNodeRegistrar.gd")
+const HEIGHT_VIEW_STATE_SYNCHRONIZER := preload("res://scene/in_scene/HeightViewStateSynchronizer.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -328,6 +329,7 @@ var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
+var _height_view_state_synchronizer := HEIGHT_VIEW_STATE_SYNCHRONIZER.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1863,7 +1865,10 @@ func _cleanup_stack_sprites(stack: Area2D) -> Array:
 
 
 func _get_height_view_drop_delta(stack: Area2D) -> float:
-	return float(_get_stack_height(stack) - 1) * filler_block_spacing * (tile_scale / REF_SCALE)
+	return _height_view_state_synchronizer.get_drop_delta(
+		stack,
+		_build_height_view_state_synchronizer_config()
+	)
 
 
 func _find_health_bar_for_landform(entity: landform) -> Node:
@@ -1872,148 +1877,73 @@ func _find_health_bar_for_landform(entity: landform) -> Node:
 
 
 func _get_or_create_height_view_cache(stack: Area2D) -> Dictionary:
-	if height_view_original_materials.has(stack):
-		return height_view_original_materials[stack]
-
-	var sprites_data: Array = []
-	for sprite in _cleanup_stack_sprites(stack):
-		if is_instance_valid(sprite):
-			sprites_data.append({"sprite": sprite, "original_position": _get_visual_node_position(sprite)})
-
-	var occupant: Variant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
-	var occupant_data: Variant = null
-	if is_instance_valid(occupant):
-		occupant_data = {"node": occupant, "original_position": _get_visual_node_position(occupant)}
-
-	var collision: Variant = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-	var collision_data: Variant = null
-	if is_instance_valid(collision):
-		collision_data = {"node": collision, "original_position": _get_visual_node_position(collision)}
-
-	var health_bar_data: Variant = null
-	if occupant is landform:
-		var occupant_landform := occupant as landform
-		var health_bar := _find_health_bar_for_landform(occupant_landform)
-		if is_instance_valid(health_bar):
-			health_bar_data = {"node": health_bar, "original_position": _get_visual_node_position(health_bar)}
-
-	var cache := {
-		"sprites_data": sprites_data,
-		"occupant_data": occupant_data,
-		"collision_data": collision_data,
-		"health_bar_data": health_bar_data
-	}
-	height_view_original_materials[stack] = cache
-	return cache
+	return _height_view_state_synchronizer.get_or_create_cache(
+		stack,
+		_cleanup_stack_sprites(stack),
+		_build_height_view_state_synchronizer_config()
+	)
 
 
 func _get_or_add_sprite_cache(cache: Dictionary, sprite: Node2D) -> Dictionary:
-	var sprites_data: Array = cache.get("sprites_data", [])
-	for sprite_data in sprites_data:
-		if sprite_data.get("sprite") == sprite:
-			return sprite_data
-
-	var new_data := {"sprite": sprite, "original_position": sprite.position}
-	sprites_data.append(new_data)
-	cache["sprites_data"] = sprites_data
-	return new_data
+	return _height_view_state_synchronizer.get_or_add_sprite_cache(cache, sprite)
 
 
 func _get_visual_node_position(node: Node) -> Vector2:
-	if node is Node2D:
-		return (node as Node2D).position
-	if node is Control:
-		return (node as Control).position
-	return Vector2.ZERO
+	return _height_view_state_synchronizer.get_visual_node_position(node)
 
 
 func _sync_node_position_y(node: Node, target_y: float, animate: bool) -> void:
-	if not is_instance_valid(node):
-		return
-	if animate:
-		_tween_position_y(node, target_y, 0.3)
-		return
-
-	if node is Node2D:
-		var node_2d := node as Node2D
-		node_2d.position.y = target_y
-	elif node is Control:
-		var control := node as Control
-		control.position.y = target_y
+	_height_view_state_synchronizer.sync_node_position_y(
+		node,
+		target_y,
+		animate,
+		_build_height_view_state_synchronizer_config()
+	)
 
 
 func _sync_cached_node_to_flat(cache: Dictionary, key: String, node: Node, drop_delta: float, animate: bool) -> void:
-	if not is_instance_valid(node) or not (node is Node2D or node is Control):
-		return
-
-	var data: Variant = cache.get(key, null)
-	if typeof(data) != TYPE_DICTIONARY or data.get("node") != node:
-		data = {"node": node, "original_position": _get_visual_node_position(node)}
-		cache[key] = data
-
-	var original_position: Vector2 = data.get("original_position", _get_visual_node_position(node))
-	_sync_node_position_y(node, original_position.y + drop_delta, animate)
+	_height_view_state_synchronizer.sync_cached_node_to_flat(
+		cache,
+		key,
+		node,
+		drop_delta,
+		animate,
+		_build_height_view_state_synchronizer_config()
+	)
 
 
 ## 将指定地块栈立即同步到当前视角。
 ## 作用: 给运行期后加入的贴图、实体、血条补上平铺视角下落位置和 3D 恢复缓存。
 func _sync_stack_to_current_view(coord: Vector2i, animate: bool = false) -> void:
-	if not stack_nodes.has(coord):
-		return
+	_height_view_state_synchronizer.sync_stack_to_current_view(
+		coord,
+		animate,
+		_build_height_view_state_synchronizer_config()
+	)
 
-	var stack: Area2D = stack_nodes[coord]
-	if not is_instance_valid(stack):
-		return
 
-	var height := _get_stack_height(stack)
-	var sprites := _cleanup_stack_sprites(stack)
+## 收集平铺/3D 视角同步所需上下文。
+## 同步器只处理缓存与节点位置；具体地块生成、tooltip 配置和切换流程仍由 HexMap 负责。
+func _build_height_view_state_synchronizer_config() -> Dictionary:
+	return {
+		"stack_nodes": stack_nodes,
+		"height_view_original_materials": height_view_original_materials,
+		"filler_block_spacing": filler_block_spacing,
+		"tile_scale": tile_scale,
+		"ref_scale": REF_SCALE,
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+		"cleanup_stack_sprites": Callable(self, "_cleanup_stack_sprites"),
+		"find_health_bar_for_landform": Callable(self, "_find_health_bar_for_landform"),
+		"tween_position_y": Callable(self, "_tween_position_y"),
+		"position_tween_duration": 0.3,
+		"update_reward_tooltip": Callable(self, "_update_settlement_reward_tooltip_position_for_stack"),
+	}
 
-	if current_view_state != MapViewState.VIEW_FLAT:
-		for sprite in sprites:
-			var item := sprite as CanvasItem
-			if is_instance_valid(item) and item.material:
-				item.set_instance_shader_parameter("is_flat_view", 0.0)
-		return
 
-	var cache := _get_or_create_height_view_cache(stack)
-	var drop_delta := _get_height_view_drop_delta(stack)
-
-	for i in range(sprites.size()):
-		var sprite: Variant = sprites[i]
-		var item := sprite as CanvasItem
-		if not is_instance_valid(item):
-			continue
-		if item.material:
-			item.set_instance_shader_parameter("is_flat_view", 1.0)
-
-		if i < height - 1:
-			item.visible = false
-			item.modulate.a = 0.0
-			continue
-
-		if item.get_parent() == stack and item is Node2D:
-			var sprite_node := item as Node2D
-			var sprite_data := _get_or_add_sprite_cache(cache, sprite_node)
-			var original_position: Vector2 = sprite_data.get("original_position", sprite_node.position)
-			_sync_node_position_y(sprite_node, original_position.y + drop_delta, animate)
-
-	var occupant: Variant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
-	if is_instance_valid(occupant):
-		_sync_cached_node_to_flat(cache, "occupant_data", occupant, drop_delta, animate)
-
-		if occupant is landform:
-			var occupant_landform := occupant as landform
-			var health_bar := _find_health_bar_for_landform(occupant_landform)
-			if is_instance_valid(health_bar):
-				_sync_cached_node_to_flat(cache, "health_bar_data", health_bar, drop_delta, animate)
-
-	var collision: Variant = stack.get_meta("collision_node") if stack.has_meta("collision_node") else null
-	if is_instance_valid(collision):
-		_sync_cached_node_to_flat(cache, "collision_data", collision, drop_delta, animate)
-
+## 刷新单个地块的收获 tooltip 位置。
+## 该回调给 HeightViewStateSynchronizer 使用，避免同步器直接依赖奖励 Presenter。
+func _update_settlement_reward_tooltip_position_for_stack(stack: Area2D) -> void:
 	_settlement_reward_presenter.update_tooltip_position(stack, _build_settlement_reward_presenter_config())
-
-	height_view_original_materials[stack] = cache
 
 
 ## 添加地貌视觉（用于地形实体死亡、损坏或运行期新增时更新视觉）

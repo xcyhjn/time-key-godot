@@ -314,6 +314,35 @@ Adjustment notes:
 - Do not add VFX, waits, card JSON parsing, or entity creation to this helper.
 - When a new timeline command needs target checks, add a small helper here and keep the command focused on side effects.
 
+### `scene/in_scene/HeightViewStateSynchronizer.gd`
+
+Responsibility:
+- Manage flat/3D view original-position cache helpers.
+- Calculate flat-view drop distance for one stack.
+- Sync runtime-changed stacks to current flat/3D state.
+- Move `Node2D` and `Control` nodes by direct write or HexMap tween callback.
+- Keep health-bar lookup and settlement tooltip updates decoupled through callbacks.
+
+Main callers:
+- `hex_map.gd::_sync_stack_to_current_view()`
+- `hex_map.gd::_get_or_create_height_view_cache()`
+- `hex_map.gd::_sync_cached_node_to_flat()`
+- `hex_map.gd::_sync_node_position_y()`
+
+Related exported tuning variables still adjusted in `hex_map.gd`:
+- `filler_block_spacing`
+- `tile_scale`
+
+Runtime data consumed:
+- `height_view_original_materials`
+- `stack_nodes`
+- stack `height`, `sprites`, `occupant`, and `collision_node` metadata
+
+Adjustment notes:
+- Full-map `_compress_to_single_height_view()` and `_restore_original_height_view()` still live in `hex_map.gd`.
+- Use this module for runtime single-stack synchronization after spawning, rebuilding visuals, or registering external render nodes.
+- Do not mutate tile height or `map_data` here; this module only handles cache and visual y positions.
+
 ## Verification Checklist
 
 Run after changing any extracted module:
@@ -341,5 +370,5 @@ Use these in the editor after parser checks:
 
 Priority order:
 - Enemy/settlement tooltip edge-case cleanup after target restrictions are stable.
-- Flat/3D view synchronization state extraction.
+- Optional: migrate full-map flat/3D compress/restore loops after manual visual regression.
 - Optional: split map intro health-bar defer queue if BarManager coupling grows.
