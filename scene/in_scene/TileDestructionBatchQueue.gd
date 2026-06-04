@@ -1,12 +1,18 @@
 class_name TileDestructionBatchQueue
 extends RefCounted
 
+## TileDestructionBatchQueue 只负责高度超限地块的销毁调度。
+## 真正的 VFX、map_data/stack_nodes 清理、信号派发仍由调用方传入的 `perform_destruction` 完成。
+
 const QUEUED_META_KEY := "queued_for_height_limit_destruction"
 
 var _pending_entries: Array[Dictionary] = []
 var _is_running := false
 
 
+## 将一个地块加入销毁队列，并等待它的 QUEUED_META_KEY 被移除。
+## `batch_size/collect_delay/batch_interval` 来自 `hex_map.gd` 的导出变量，
+## `perform_destruction` 必须是可 await 的 Callable，参数为 `(stack, coord)`。
 func queue_and_wait(
 	stack: Area2D,
 	coord: Vector2i,
@@ -33,6 +39,8 @@ func queue_and_wait(
 		await tree.process_frame
 
 
+## 按批处理当前 pending 队列。
+## 第一次启动时会先等待 collect_delay，用于把同一波高度结算产生的多个地块收集到同一批。
 func _run_batches(
 	tree: SceneTree,
 	batch_size: int,
@@ -71,6 +79,8 @@ func _run_batches(
 	_is_running = false
 
 
+## 执行单个队列条目。
+## 回调执行结束后移除 queued meta，让 `queue_and_wait()` 和 `_wait_for_batch()` 都能结束等待。
 func _perform_entry(entry: Dictionary, perform_destruction: Callable) -> void:
 	var stack_value: Variant = entry.get("stack", null)
 	var coord: Vector2i = entry.get("coord", Vector2i.ZERO)
@@ -86,6 +96,8 @@ func _perform_entry(entry: Dictionary, perform_destruction: Callable) -> void:
 		stack.remove_meta(QUEUED_META_KEY)
 
 
+## 等待一批里的所有有效地块都完成销毁。
+## 判断依据是每个 stack 是否还保留 QUEUED_META_KEY，而不是依赖固定动画时长。
 func _wait_for_batch(tree: SceneTree, batch: Array[Dictionary]) -> void:
 	var has_pending := true
 	while has_pending:
