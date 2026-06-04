@@ -22,6 +22,7 @@ const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_sce
 const IN_SCENE_RETURN_PAYLOAD_BUILDER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd")
 const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd")
 const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
+const IN_SCENE_SCENE_SWITCH_LOADER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneSceneSwitchLoader.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -180,6 +181,7 @@ var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CO
 var _return_payload_builder: RefCounted = IN_SCENE_RETURN_PAYLOAD_BUILDER.new()
 var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new()
 var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
+var _scene_switch_loader: RefCounted = IN_SCENE_SCENE_SWITCH_LOADER.new()
 
 
 func _ready() -> void:
@@ -994,32 +996,17 @@ func _switch_scene_with_data(path: String, payload: Variant = null) -> void:
 
 ## 用 ResourceLoader 加载 PackedScene，避免导出版 res:// 场景被 remap 后 FileAccess.file_exists() 误判。
 func _load_packed_scene_for_switch(path: String, fail_message: String) -> PackedScene:
-	if path.strip_edges() == "":
-		_log_scene_switch_error(fail_message + "：场景路径为空", {"path": path})
-		return null
-
-	var packed_scene := ResourceLoader.load(path, "PackedScene") as PackedScene
-	if packed_scene == null:
-		_log_scene_switch_error(fail_message + "：无法加载 PackedScene", {
-			"path": path,
-			"resource_exists": ResourceLoader.exists(path, "PackedScene"),
-		})
-		return null
-
-	return packed_scene
+	return _scene_switch_loader.load_packed_scene(path, fail_message, SceneLog)
 
 
 ## 切场失败时把当前黑幕退回去，避免玩家停在全黑过渡层。
 func _recover_dim_after_failed_switch() -> void:
-	if is_instance_valid(dim) and dim.has_method("use"):
-		dim.use(1, 1)
+	_scene_switch_loader.recover_dim_after_failed_switch(dim)
 
 
 ## 统一记录切场错误，导出版可在 user://logs/scene_flow.log 里定位。
 func _log_scene_switch_error(message: String, extra: Dictionary = {}) -> void:
-	if SceneLog:
-		SceneLog.error_event("InSceneMain", message, extra)
-	push_error("[InSceneMain] %s %s" % [message, str(extra)])
+	_scene_switch_loader.log_error(message, extra, SceneLog)
 
 
 ## 在新场景进入树之前写入返回 payload。

@@ -949,3 +949,81 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `InSceneSceneSwitchLoader.gd`：拆 `_load_packed_scene_for_switch()`、`_log_scene_switch_error()`、`_recover_dim_after_failed_switch()`。
 2. 或 `SettlementRewardExitController.gd`：拆 `_on_external_scene_exit_pressed()` 中“读取奖励页 meta、判断是否消费、queue_free、清 active context”的部分，但先不要改 HexMap 的奖励写回。
 3. 暂缓 `_switch_scene_with_data()` 完整迁移，等 loader、payload、reward 打开和退出都独立后再处理。
+
+## in_scene.gd 第七批切场加载器拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆场景切换前的资源加载、失败恢复和错误记录。
+刻意不触碰 `_switch_scene_with_data()` 中的新场景实例化、`current_scene` 替换、旧场景释放和 payload 注入。
+
+目标函数范围：
+
+```text
+_load_packed_scene_for_switch(path, fail_message)
+_recover_dim_after_failed_switch()
+_log_scene_switch_error(message, extra)
+```
+
+当前读写的成员变量：
+
+```text
+dim
+```
+
+当前触碰的外部节点和接口：
+
+```text
+ResourceLoader.load(path, "PackedScene")
+ResourceLoader.exists(path, "PackedScene")
+DimMenu.use(1, 1)
+SceneLog.error_event()
+push_error()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/scene_flow/InSceneSceneSwitchLoader.gd
+```
+
+模块边界：
+
+- `InSceneSceneSwitchLoader.gd` 只负责加载 `PackedScene`、记录加载失败原因、在失败时恢复黑幕。
+- 它不实例化新场景、不写 `get_tree().current_scene`，也不释放旧场景。
+- `in_scene.gd` 继续保留旧 helper 名称，内部转发给 loader，避免 `_switch_scene_with_data()` 的生命周期逻辑在本批扩大改动。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+空路径检查、ResourceLoader 加载、resource_exists 诊断和 SceneLog/push_error 记录已由 InSceneSceneSwitchLoader 统一维护。
+切场失败时的 DimMenu 黑幕恢复已由 InSceneSceneSwitchLoader 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批建议从两个方向二选一：
+
+1. `SettlementRewardExitController.gd`：拆 `_on_external_scene_exit_pressed()` 中读取 meta、判断是否消费、隐藏/释放奖励页、清理 active context 的部分；`_consume_settlement_reward_context()` 仍先留在主脚本。
+2. `InSceneSceneSwitchExecutor.gd`：在 payload、loader 都拆完后，可以把 `_switch_scene_with_data()` 的实例化、挂树、`current_scene` 替换和旧场景释放整体搬出，但这批风险更高，建议单独做。
+3. 暂缓胜负触发函数 `_on_combat_victory_triggered()` 和 `_on_defeat_triggered()`，等奖励退出和切场 executor 稳定后再处理。
