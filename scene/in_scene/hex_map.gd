@@ -6,6 +6,7 @@ class_name battle
 var rng := RandomNumberGenerator.new()
 
 const HEX_COORD_RULES := preload("res://scene/in_scene/HexCoordRules.gd")
+const HEX_TERRAIN_RULES := preload("res://scene/in_scene/HexTerrainRules.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -519,32 +520,13 @@ func _populate_map_data(coords: Array[Vector2i], shape_type: String, shape_param
 		# 根据形状类型计算高度和 tier
 		match shape_type:
 			"fan":
-				# 计算距离（六边形轴向坐标距离）
-				var q = coord_v2i.x
-				var r = coord_v2i.y
-				var dist = (abs(q) + abs(q + r) + abs(r)) / 2
-				# 根据距离分配 tier
-				if dist <= inner_tier_radius:
-					tier = 3
-				elif dist <= inner_tier_radius + 2:
-					tier = 2
-				else:
-					tier = 1
-				# 基于 tier 随机高度
+				tier = HEX_TERRAIN_RULES.get_fan_tier(coord_v2i, inner_tier_radius)
 				height = _roll_height_by_tier_with_rng(tier, rng)
 				# 地形根据高度直接计算
 				terrain = get_terrain_from_height(height)
 			
 			"circular":
-				# 根据房间类型确定高度范围
-				var h_min = base_h_min
-				var h_max = base_h_max
-				if room_type == "battle_elite":
-					h_max += elite_h_bonus
-				elif room_type == "boss_stage":
-					h_max += elite_h_bonus + 1
-				# 随机高度
-				height = rng.randi_range(h_min, h_max)
+				height = HEX_TERRAIN_RULES.roll_circular_height_with_rng(room_type, base_h_min, base_h_max, elite_h_bonus, rng)
 				# 根据高度获取地形类型
 				terrain = get_terrain_from_height(height)
 			
@@ -570,11 +552,7 @@ func _populate_map_data(coords: Array[Vector2i], shape_type: String, shape_param
 
 ## 带随机数生成器的 tier 高度滚动（用于可重复生成）
 func _roll_height_by_tier_with_rng(tier: int, rng: RandomNumberGenerator) -> int:
-	var roll = rng.randf()
-	if tier == 3:
-		return rng.randi_range(4, 6) if roll < 0.6 else rng.randi_range(2, 3)
-	else:
-		return rng.randi_range(1, 3) if roll < 0.7 else rng.randi_range(3, 4)
+	return HEX_TERRAIN_RULES.roll_height_by_tier_with_rng(tier, rng)
 
 
 func _generate_fan_map_data():
@@ -588,9 +566,7 @@ func _generate_circular_map_data():
 	_populate_map_data(coords, "circular", {})
 
 func _roll_height_by_tier(tier: int) -> int:
-	var roll = randf()
-	if tier == 3: return randi_range(4, 6) if roll < 0.6 else randi_range(2, 3)
-	else: return randi_range(1, 3) if roll < 0.7 else randi_range(3, 4)
+	return HEX_TERRAIN_RULES.roll_height_by_tier(tier)
 
 
 func _check_map_validity() -> bool: return true  # 遮挡由于有了透视效果，不一定需要驳回重成了
@@ -598,13 +574,14 @@ func _check_map_validity() -> bool: return true  # 遮挡由于有了透视效�
 
 ## 根据高度获取地形类型
 func get_terrain_from_height(h: int) -> TerrainType:
-	if terrain_by_height.has(h):
-		return terrain_by_height[h]
-	# 超出表范围：按区间兜底
-	if h <= 1: return TerrainType.BEACH
-	if h <= 3: return TerrainType.PLAINS
-	if h == 4: return TerrainType.HILLS
-	return TerrainType.MOUNTAIN
+	return HEX_TERRAIN_RULES.terrain_from_height(
+		h,
+		terrain_by_height,
+		TerrainType.BEACH,
+		TerrainType.PLAINS,
+		TerrainType.HILLS,
+		TerrainType.MOUNTAIN
+	) as TerrainType
 # ==========================================
 # 2. 配额抽取逻辑
 # ==========================================
@@ -793,12 +770,7 @@ func get_side_tex(terrain) -> Texture2D:
 
 ## 地形类型转字符串（用于调试）
 func terrain_type_to_string(terrain: TerrainType) -> String:
-	match terrain:
-		TerrainType.BEACH: return "BEACH"
-		TerrainType.PLAINS: return "PLAINS"
-		TerrainType.HILLS: return "HILLS"
-		TerrainType.MOUNTAIN: return "MOUNTAIN"
-		_: return "UNKNOWN"
+	return HEX_TERRAIN_RULES.terrain_name(terrain, "UNKNOWN")
 
 
 func _render_map():
@@ -2411,22 +2383,11 @@ func add_landform_visual_at(coord: Vector2i) -> void:
 
 ## 地形名称转换函数（整合自 node_2d.gd）
 func terrain_name(t: int) -> String:
-	match t:
-		TerrainType.BEACH: return "BEACH"
-		TerrainType.PLAINS: return "PLAINS"
-		TerrainType.HILLS: return "HILLS"
-		TerrainType.MOUNTAIN: return "MOUNTAIN"
-		_: return "UNK"
+	return HEX_TERRAIN_RULES.terrain_name(t)
 
 ## 地貌名称转换函数（整合自 node_2d.gd）
 func landform_name(l: int) -> String:
-	match l:
-		LandformType.NONE: return "NONE"
-		LandformType.MINE: return "MINE"
-		LandformType.CAVE: return "CAVE"
-		LandformType.VILLAGE: return "VILLAGE"
-		LandformType.RUINS: return "RUINS"
-		_: return "UNK"
+	return HEX_TERRAIN_RULES.landform_name(l)
 
 ## 对地块应用伤害（整合自 node_2d.gd）
 func apply_damage_to_tile(coord: Vector2i, new_damage: int) -> void:
