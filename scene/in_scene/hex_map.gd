@@ -12,6 +12,7 @@ const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/TileDestruct
 const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/EnemyIntentMapPresenter.gd")
 const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/SettlementRewardPresenter.gd")
 const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/HeightViewIndicatorPresenter.gd")
+const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/RuntimeLandformRegistrar.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -324,6 +325,7 @@ var currently_occluding_stacks: Array[Area2D] = []  # 记录当前处于透明�
 var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
 var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
+var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1773,30 +1775,19 @@ func _tween_shader_param(stack: Area2D, param_name: String, target_val: float, d
 ## - 建造卡、敌人召唤、雷达虚影等“局中新增实体”都应该优先走这里。
 ## - 这样新增实体不会再遗漏平铺视角下落、血条锚点、分组和交互刷新。
 func register_runtime_landform(coord: Vector2i, entity: landform, landform_type: String = "") -> bool:
-	if not is_instance_valid(entity):
+	var result := _runtime_landform_registrar.register_landform(
+		coord,
+		entity,
+		landform_type,
+		_build_runtime_landform_registrar_context()
+	)
+	if not bool(result.get("success", false)):
 		return false
-	if not stack_nodes.has(coord) or not map_data.has(coord):
-		return false
 
-	var stack: Area2D = stack_nodes[coord]
-	if not is_instance_valid(stack):
-		return false
-
-	var resolved_type := landform_type
-	if resolved_type == "":
-		resolved_type = entity.landform_name
-
-	var tile_data: Dictionary = map_data[coord]
-	tile_data["landform"] = entity
-	tile_data["landform_in"] = entity
-	tile_data["landform_type"] = resolved_type
-	map_data[coord] = tile_data
-
-	_attach_landform_entity_to_stack(coord, entity, stack)
-	_apply_landform_group(entity)
-	add_landform_visual_at(coord)
 	_sync_stack_to_current_view(coord, false)
 	_play_runtime_landform_spawn_vfx(entity)
+	if bool(result.get("is_enemy", false)):
+		enemy_roster_changed.emit()
 	_refresh_stack_interactivity()
 	tile_topology_changed.emit()
 	return true
@@ -1813,40 +1804,22 @@ func _play_runtime_landform_spawn_vfx(entity: landform) -> void:
 	VFXManager.play_pixel_spawn_vfx(entity, get_tree(), runtime_landform_spawn_vfx_duration)
 
 
-## 把逻辑实体挂到对应地块栈下，并重算它的 3D 基准坐标。
-## 平铺视角的下落偏移不在这里直接写死，而是交给 _sync_stack_to_current_view() 统一处理。
-func _attach_landform_entity_to_stack(coord: Vector2i, entity: landform, stack: Area2D) -> void:
-	if not is_instance_valid(entity) or not is_instance_valid(stack):
-		return
-
-	var height := _get_stack_height(stack)
-	var current_step_h := step_height * (tile_scale / REF_SCALE)
-	var top_block_y := -(height - 1) * current_step_h
-
-	entity.owner_battle = self
-	entity.location = coord
-	entity.target = coord
-	entity.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y) + landform_instance_offset
-
-	var old_parent := entity.get_parent()
-	if old_parent != stack:
-		if is_instance_valid(old_parent):
-			old_parent.remove_child(entity)
-		stack.add_child(entity)
-
-	stack.set_meta("occupant", entity)
-
-
-## 统一处理运行期实体阵营分组，避免各个建筑脚本重复维护。
-func _apply_landform_group(entity: landform) -> void:
-	if not is_instance_valid(entity):
-		return
-	if entity.Attitude == entity.Attitude_Pool.Enemy:
-		if not entity.is_in_group("Enemies"):
-			entity.add_to_group("Enemies")
-	else:
-		if not entity.is_in_group("Middle"):
-			entity.add_to_group("Middle")
+## 收集运行期地貌注册所需上下文。
+## Registrar 不直接读取 HexMap 成员变量；所有可变依赖都通过这份快照传入。
+func _build_runtime_landform_registrar_context() -> Dictionary:
+	return {
+		"owner_battle": self,
+		"stack_nodes": stack_nodes,
+		"map_data": map_data,
+		"step_height": step_height,
+		"tile_scale": tile_scale,
+		"ref_scale": REF_SCALE,
+		"hitbox_offset_x": hitbox_offset_x,
+		"hitbox_offset_y": hitbox_offset_y,
+		"landform_instance_offset": landform_instance_offset,
+		"block_material": block_material,
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+	}
 
 
 func _get_stack_height(stack: Area2D) -> int:
@@ -1867,42 +1840,7 @@ func _get_stack_sprites(stack: Area2D) -> Array:
 
 
 func _cleanup_stack_sprites(stack: Area2D) -> Array:
-	var cleaned: Array = []
-
-	# 先保留原有顺序。地形块通常已经按底层到顶层排好，视角切换依赖这个顺序隐藏侧面块。
-	for sprite in _get_stack_sprites(stack):
-		_append_stack_render_sprite(cleaned, sprite)
-
-	# 再强制重扫 stack 直属 Sprite。运行期生成的 LandformSprite_* 偶尔会漏进旧缓存，
-	# 这里把真正挂在地块栈下的建筑/虚影贴图重新收编，保证平铺视角会一起下落。
-	for child in stack.get_children():
-		if child is Sprite2D:
-			_append_stack_render_sprite(cleaned, child)
-
-	var occupant: Variant = stack.get_meta("occupant") if stack.has_meta("occupant") else null
-	if occupant is landform:
-		var occupant_landform := occupant as landform
-		_append_stack_render_sprite(cleaned, occupant_landform.tex)
-		for child in occupant_landform.get_children():
-			if child is Sprite2D:
-				_append_stack_render_sprite(cleaned, child)
-
-	stack.set_meta("sprites", cleaned)
-	return cleaned
-
-
-func _append_stack_render_sprite(list: Array, sprite: Variant) -> void:
-	if not is_instance_valid(sprite):
-		return
-	if not (sprite is Node and sprite is CanvasItem):
-		return
-	if (sprite as Node).name.begins_with("StatusIcon_"):
-		return
-	if (sprite as Node).is_queued_for_deletion():
-		return
-	if list.has(sprite):
-		return
-	list.append(sprite)
+	return _runtime_landform_registrar.cleanup_stack_sprites(stack)
 
 
 func _get_height_view_drop_delta(stack: Area2D) -> float:
@@ -2064,63 +2002,18 @@ func _sync_stack_to_current_view(coord: Vector2i, animate: bool = false) -> void
 
 
 ## 添加地貌视觉（用于地形实体死亡、损坏或运行期新增时更新视觉）
+## 兼容旧路径：如果调用方已经写好 map_data，这里只委托 Registrar 重新挂接实体、刷新贴图和收编 sprites。
 func add_landform_visual_at(coord: Vector2i) -> void:
-	# 检查是否存在对应的栈容器和地貌数据（使用 Vector2i 键）
-	if not stack_nodes.has(coord):
+	var result := _runtime_landform_registrar.refresh_visual_at(
+		coord,
+		_build_runtime_landform_registrar_context()
+	)
+	if not bool(result.get("success", false)):
 		return
-	if not map_data.has(coord):
-		return
-	
-	var stack_container := stack_nodes[coord] as Area2D
-	if not is_instance_valid(stack_container):
-		return
-	var data: Dictionary = map_data[coord]
-	
-	# 获取地貌实例
-	var landform_inst := data.get("landform") as landform
-	if not is_instance_valid(landform_inst):
-		return
-
-	if not data.has("landform_in") or not is_instance_valid(data["landform_in"]):
-		data["landform_in"] = landform_inst
-	if not data.has("landform_type") or str(data.get("landform_type", "")) == "":
-		data["landform_type"] = landform_inst.landform_name
-	map_data[coord] = data
-
-	# 兜底收编：兼容旧代码里只写 map_data 后直接调用 add_landform_visual_at() 的路径。
-	_attach_landform_entity_to_stack(coord, landform_inst, stack_container)
-	_apply_landform_group(landform_inst)
-	
-	var height = data["height"]
-	var current_step_h = step_height * (tile_scale / REF_SCALE)
-	
-	# 调用地貌的 attach_visual 方法重新创建视觉精灵
-	landform_inst.attach_visual(stack_container, height, current_step_h, tile_scale)
-	
-	# attach_visual() 会把本次新建的 Sprite 写入 landform_inst.tex，优先使用这个引用可以避开同名旧节点残留。
-	var unique_name = "LandformSprite_%s_%s" % [coord.x, coord.y]
-	var landform_sprite := landform_inst.tex as Sprite2D
-	if not is_instance_valid(landform_sprite):
-		landform_sprite = stack_container.get_node_or_null(unique_name) as Sprite2D
-	if is_instance_valid(landform_sprite):
-		if block_material:
-			# 为新生成的建筑/虚影应用shader材质
-			landform_sprite.material = block_material.duplicate()
-			# 建筑在地形之上，block_idx增加1以确保悬浮效果触发
-			landform_sprite.set_instance_shader_parameter("block_idx", float(height + 1))
-			landform_sprite.set_instance_shader_parameter("total_height", float(height + 2))
-			if current_view_state == MapViewState.VIEW_FLAT:
-				landform_sprite.set_instance_shader_parameter("is_flat_view", 1.0)
-		
-		# 将 landform 精灵添加到 sprites 元数据中，以便后续效果应用
-		var sprites = _cleanup_stack_sprites(stack_container)
-		if not sprites.has(landform_sprite):
-			sprites.append(landform_sprite)
-			stack_container.set_meta("sprites", sprites)
 
 	_sync_stack_to_current_view(coord, false)
-	
-	if landform_inst.Attitude == landform_inst.Attitude_Pool.Enemy:
+
+	if bool(result.get("is_enemy", false)):
 		enemy_roster_changed.emit()
 	
 

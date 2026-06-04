@@ -179,6 +179,77 @@ Adjustment notes:
 - Change reward visual intensity through `settlement_reward_highlight_blend` and `settlement_reward_hover_blend`.
 - Tooltip position also consumes `step_height`, `tile_scale`, `REF_SCALE`, and `current_view_state` at runtime.
 
+### `scene/in_scene/HeightViewIndicatorPresenter.gd`
+
+Responsibility:
+- Create and remove height-view pillar `Line2D` nodes.
+- Create and update height-view number `Label` nodes.
+- Own pillar hover tweens while flat height view is active.
+- Animate height label feedback after flat-view elevation changes.
+- Keep indicator nodes stored under the existing stack metadata keys.
+
+Main callers:
+- `hex_map.gd::_create_height_indicator()`
+- `hex_map.gd::_remove_height_indicator()`
+- `hex_map.gd::_start_pillar_floating_animation()`
+- `hex_map.gd::_stop_pillar_floating_animation()`
+- `hex_map.gd::animate_elevation_change()`
+
+Related exported tuning variables still adjusted in `hex_map.gd`:
+- `show_height_pillars`
+- `show_height_labels`
+- `height_view_pillar_length`
+- `height_view_pillar_width`
+- `height_view_pillar_color`
+- `height_view_pillar_offset`
+- `height_label_font_size`
+- `height_label_color`
+- `height_label_outline_color`
+- `height_label_outline_size`
+- `height_label_offset`
+- `height_label_font`
+- `height_view_hover_speed`
+- `height_view_hover_amplitude`
+
+Adjustment notes:
+- Change `show_height_pillars/show_height_labels` to enable each indicator layer independently.
+- Change `height_view_pillar_offset` to move pillar and number anchor together.
+- Change `height_label_offset` to move only the number relative to the pillar anchor.
+- Change `height_view_hover_speed/height_view_hover_amplitude` to tune hover motion.
+- The presenter does not change tile height data; elevation mutation stays in `hex_map.gd`.
+
+### `scene/in_scene/RuntimeLandformRegistrar.gd`
+
+Responsibility:
+- Register newly created runtime landform entities.
+- Refresh landform visuals for old paths that already wrote `map_data`.
+- Attach entities to their stack and update `occupant` metadata.
+- Apply enemy/middle groups without owning scene-level signals.
+- Apply landform sprite block shader parameters.
+- Recollect stack render sprites after visual changes.
+
+Main callers:
+- `hex_map.gd::register_runtime_landform()`
+- `hex_map.gd::add_landform_visual_at()`
+- `hex_map.gd::_cleanup_stack_sprites()`
+
+Related exported tuning variables still adjusted in `hex_map.gd`:
+- `step_height`
+- `tile_scale`
+- `hitbox_offset_x`
+- `hitbox_offset_y`
+- `landform_instance_offset`
+- `block_material`
+- `runtime_landform_spawn_vfx_enabled`
+- `runtime_landform_spawn_vfx_duration`
+
+Adjustment notes:
+- Use `register_runtime_landform()` for build cards, village expansion, radar summons, and any future runtime entity creation.
+- Use `add_landform_visual_at()` only when a legacy path already wrote `map_data` and needs a visual refresh.
+- Keep `enemy_roster_changed`, `tile_topology_changed`, and VFX playback in `hex_map.gd`.
+- Change entity anchor tuning through `hitbox_offset_x`, `hitbox_offset_y`, and `landform_instance_offset`.
+- Change runtime spawn VFX through `runtime_landform_spawn_vfx_enabled` and `runtime_landform_spawn_vfx_duration`.
+
 ## Verification Checklist
 
 Run after changing any extracted module:
@@ -205,6 +276,5 @@ Use these in the editor after parser checks:
 ## Next Extraction Candidates
 
 Priority order:
-- Height view pillar/label visual state.
-- Runtime landform registration.
 - Concrete card target restrictions in `HexTargetRules.gd`.
+- Enemy/settlement tooltip edge-case cleanup after target restrictions are stable.
