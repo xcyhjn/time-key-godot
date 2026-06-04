@@ -1702,3 +1702,74 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `TurnFlowController.gd` 可以拆回合结束和新回合开始编排，但它同时牵动时间轴 resolve、建筑行为、抽牌、敌方意图和胜利中断，风险高于前面几批。
 2. `_input(event)` 可以按键盘调试、右键取消选牌、空地弃牌拆成小 handler，收益中等，风险低于回合流。
 3. 如果不继续拆，`in_scene.gd` 已经更接近 composition root，剩余很多函数只是旧公共入口和跨模块编排。
+
+## in_scene.gd 第十七批输入事件拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆 `MainBoard._input(event)` 中的输入解析。
+需要等待一帧的弃牌移动仍留在 `in_scene.gd` 执行，避免输入模块直接持有场景树异步副作用。
+
+目标函数范围：
+
+```text
+_input(event)
+```
+
+当前拆出的输入类型：
+
+- 键盘 9 调试时间货币。
+- 右键取消当前选中卡牌。
+- 左键空地释放时识别需要弃掉的卡牌。
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/ui/InSceneInputEventController.gd
+```
+
+模块边界：
+
+- `InSceneInputEventController.gd` 负责把原始 `InputEvent` 转成 `"handled"`、`"discard_card"` 或 `"none"`。
+- 它可以执行同步的调试加币和右键取消选牌。
+- 它不调用 `discard_pile.move_cards()`，不等待 `process_frame`，不刷新牌堆计数。
+- `in_scene.gd` 保留 `_input(event)` 入口，并负责弃牌的异步移动、弃牌效果和 UI 计数刷新。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+键盘调试、右键取消选牌和空地弃牌卡牌识别，不再全部堆在 in_scene.gd 的 _input(event) 中。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 退出判断
+
+本批后 `in_scene.gd` 仍保留这些较大的编排入口：
+
+- `_ready()`：局内场景 composition root 初始化。
+- `_start_turn()` / `_on_end_turn_pressed()`：回合推进，牵动时间轴、建筑行为、抽牌、敌方意图和胜利中断。
+- `discard_all_hand_cards()`：强制结束回合时的手牌回收，和回合流绑定紧密。
+- `_open_settlement_reward_scene()` / `_on_external_scene_exit_pressed()`：奖励页打开和退出，已经由多个 settlement 模块分担，剩余是入口编排。
+- 多个 `_build_*_config()`：模块配置组装，属于 composition root 职责。
+
+当前可以继续拆的点已经不再是低风险纯表现或桥接模块。
+下一步如果继续拆，建议先写专门测试或手动验证回合结束、胜利中断、教程首回合和奖励页返回，再拆 `TurnFlowController.gd`。

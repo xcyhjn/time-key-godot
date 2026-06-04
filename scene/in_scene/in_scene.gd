@@ -16,6 +16,7 @@ const IN_SCENE_INPUT_LOCK_CONTROLLER := preload("res://scene/in_scene/in_scene_m
 const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/turn/FirstTurnIntroRunner.gd")
 const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd")
 const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/CursorTooltipController.gd")
+const IN_SCENE_INPUT_EVENT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneInputEventController.gd")
 const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd")
 const TARGET_SELECTION_HOVER_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/TargetSelectionHoverUiController.gd")
 const TIMELINE_ACTION_HOVER_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/TimelineActionHoverUiController.gd")
@@ -185,6 +186,7 @@ var _input_lock_controller: RefCounted = IN_SCENE_INPUT_LOCK_CONTROLLER.new()
 var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
 var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
 var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
+var _input_event_controller: RefCounted = IN_SCENE_INPUT_EVENT_CONTROLLER.new()
 var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.new()
 var _target_selection_hover_ui_controller: RefCounted = TARGET_SELECTION_HOVER_UI_CONTROLLER.new()
 var _timeline_action_hover_ui_controller: RefCounted = TIMELINE_ACTION_HOVER_UI_CONTROLLER.new()
@@ -676,63 +678,36 @@ func attempt_draw_cards(count: int):
 
 # --- 弃牌判定逻辑 (拖拽松手) ---
 func _input(event):
-	if (
-		enable_keyboard_timecoin_debug
-		and event is InputEventKey
-		and event.pressed
-		and not event.echo
-		and event.keycode == KEY_9
-	):
-		if GlobalTimecoin:
-			GlobalTimecoin.add_timecoins(keyboard_timecoin_debug_amount)
-			get_viewport().set_input_as_handled()
-			return
+	var input_result: Dictionary = _input_event_controller.handle_input(event, _build_input_event_config())
+	var action: String = str(input_result.get("action", "none"))
+	if action == "handled":
+		get_viewport().set_input_as_handled()
+		return
+	if action == "discard_card":
+		var card: Variant = input_result.get("card")
+		if is_instance_valid(card):
+			if card.has_method("change_state"):
+				card.change_state(0)  # 0 对应 State.IDLE
+			hide_tooltip()
+			discard_pile.call_deferred("move_cards", [card])
+			_handle_discard_effects(card)
+			await get_tree().process_frame
+			update_counts_and_ui()
 
-	# 在“已选中卡牌但尚未进入时间占位拖拽”阶段，右键任意位置都可以取消选牌。
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
-		var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
-		var is_dragging_timeline_shape = false
-		if drag_controller and drag_controller.get("is_dragging") != null:
-			is_dragging_timeline_shape = drag_controller.is_dragging
-		
-		if not is_dragging_timeline_shape:
-			var cm = manager_instance
-			var selected_card = cm.get("current_selected_card") if cm else null
-			if is_instance_valid(selected_card) and selected_card.has_method("force_deselect"):
-				selected_card.force_deselect()
-				hide_tooltip()
-				get_viewport().set_input_as_handled()
-				return
 
-	# 【修复重点】删除了之前这里检测 deck_pile 距离的代码，因为现在用按钮了
-
-	# 截获“空地释放”实现弃牌
-	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		for card in player_hand._held_cards:
-			# 检查卡牌是否仍然有效（没有被释放）
-			if not is_instance_valid(card):
-				continue
-
-			# 检查是否有卡牌处于被按住状态
-			if card.is_pressed:
-				var mouse_pos = get_global_mouse_position()
-				var screen_size = get_viewport_rect().size
-				var discard_threshold = screen_size.y * drop_area
-				# 如果在上方区域松手
-				if mouse_pos.y < discard_threshold:
-					# 移动到弃牌堆
-					# ================= ★ 新增修正 =================
-					# 强制打断悬停或拖拽的表现，将其重置为闲置
-					# 避免被丢入弃牌堆的卡残留放大和发光状态
-					if card.has_method("change_state"):
-						card.change_state(0)  # 0 对应 State.IDLE
-					hide_tooltip()
-					# ===============================================
-					discard_pile.call_deferred("move_cards", [card])
-					_handle_discard_effects(card)
-					await get_tree().process_frame
-					update_counts_and_ui()
-					break
+func _build_input_event_config() -> Dictionary:
+	return {
+		"enable_keyboard_timecoin_debug": enable_keyboard_timecoin_debug,
+		"keyboard_timecoin_debug_amount": keyboard_timecoin_debug_amount,
+		"global_timecoin": GlobalTimecoin,
+		"drag_controller": get_tree().get_first_node_in_group("DragShapeController"),
+		"manager_instance": manager_instance,
+		"hide_tooltip": Callable(self, "hide_tooltip"),
+		"player_hand": player_hand,
+		"mouse_position": get_global_mouse_position(),
+		"screen_size": get_viewport_rect().size,
+		"drop_area": drop_area,
+	}
 
 
 # 洗牌逻辑
