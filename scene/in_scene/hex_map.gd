@@ -8,6 +8,7 @@ var rng := RandomNumberGenerator.new()
 const HEX_COORD_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexCoordRules.gd")
 const HEX_TERRAIN_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexTerrainRules.gd")
 const HEX_TARGET_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexTargetRules.gd")
+const MAP_GENERATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/generation/MapGenerationService.gd")
 const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/hex_map_modules/destruction/TileDestructionBatchQueue.gd")
 const TILE_DESTRUCTION_MUTATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/destruction/TileDestructionMutationService.gd")
 const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/EnemyIntentMapPresenter.gd")
@@ -349,6 +350,7 @@ var _hex_map_collision_presenter := HEX_MAP_COLLISION_PRESENTER.new()
 var _hex_map_visual_state_presenter := HEX_MAP_VISUAL_STATE_PRESENTER.new()
 var _target_aoe_hover_presenter := TARGET_AOE_HOVER_PRESENTER.new()
 var _target_selection_tooltip_adapter := TARGET_SELECTION_TOOLTIP_ADAPTER.new()
+var _map_generation_service := MAP_GENERATION_SERVICE.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
@@ -505,90 +507,8 @@ func _process(_delta: float) -> void:
 
 
 func _generate_map_data():
-	match map_generation_mode:
-		0: # 扇形战斗地图
-			_generate_fan_map_data()
-		1: # 圆形随机地图
-			_generate_circular_map_data()
-		_:
-			push_error("无效的地图生成模式: " + str(map_generation_mode))
-			_generate_fan_map_data()  # 默认回退
-
-## 扇形坐标采样器 - 返回满足角度范围的六边形坐标
-func _get_fan_coords(radius: int, angle_span: float, center_angle: float = 90.0) -> Array[Vector2i]:
-	return HEX_COORD_RULES.get_fan_coords(radius, angle_span, center_angle, spacing_x, spacing_y, tile_scale / REF_SCALE)
-
-
-## 圆形坐标采样器 - 返回圆形区域内的六边形坐标
-func _get_circular_coords(radius: int) -> Array[Vector2i]:
-	return HEX_COORD_RULES.get_circular_coords(radius)
-
-
-## 统一数据填充管线 - 将坐标数组转换为地图数据
-## @param coords 六边形坐标数组（Vector2i）
-## @param shape_type 形状类型："fan" 或 "circular"
-## @param shape_params 形状参数（如 angle_span, radius 等）
-func _populate_map_data(coords: Array[Vector2i], shape_type: String, shape_params: Dictionary = {}) -> void:
-	# 初始化随机数生成器
-	if use_external_seed and received_text != "":
-		var seed_text := incoming_map_seed if incoming_map_seed != "" else received_text
-		rng.seed = seed_text.hash()
-	else:
-		rng.randomize()
-	
-	# 清空现有地图数据
-	map_data.clear()
-	
-	# 特殊处理：扇形地图的核心地块
-	if shape_type == "fan":
-		# 确保中心坐标 (0,0) 作为 nexus_core（使用 Vector2i 统一键类型）
-		var center_coord = Vector2i(0, 0)
-		map_data[center_coord] = {
-			"height": nexus_height,
-			"tier": 3,
-			"terrain": "nexus_core",
-			"terrain_type": "nexus_core",
-			"landform": null
-		}
-	
-	# 遍历所有坐标，填充高度和地形
-	for coord_v2i in coords:
-		# 使用 Vector2i 作为键，统一坐标类型
-		var height: int = 0
-		var tier: int = 1
-		var terrain = ""  # 可存储 String 或 TerrainType 枚举
-		
-		# 根据形状类型计算高度和 tier
-		match shape_type:
-			"fan":
-				tier = HEX_TERRAIN_RULES.get_fan_tier(coord_v2i, inner_tier_radius)
-				height = _roll_height_by_tier_with_rng(tier, rng)
-				# 地形根据高度直接计算
-				terrain = get_terrain_from_height(height)
-			
-			"circular":
-				height = HEX_TERRAIN_RULES.roll_circular_height_with_rng(room_type, base_h_min, base_h_max, elite_h_bonus, rng)
-				# 根据高度获取地形类型
-				terrain = get_terrain_from_height(height)
-			
-			_:
-				push_error("未知的形状类型: " + shape_type)
-				continue
-		
-		# 构建地块数据
-		var tile_data = {
-			"height": height,
-			"terrain": terrain,
-			"terrain_type": terrain,
-			"landform": null
-		}
-		
-		# 扇形地图额外存储 tier 信息
-		if shape_type == "fan":
-			tile_data["tier"] = tier
-		
-		map_data[coord_v2i] = tile_data
-	
+	var result := _map_generation_service.generate(_build_map_generation_service_config())
+	map_data = result.get("map_data", {})
 
 
 ## 带随机数生成器的 tier 高度滚动（用于可重复生成）
@@ -597,17 +517,40 @@ func _roll_height_by_tier_with_rng(tier: int, rng: RandomNumberGenerator) -> int
 
 
 func _generate_fan_map_data():
-	# 使用形状发生器模式：坐标采样 + 数据填充
-	var coords = _get_fan_coords(fan_radius, fan_angle_span, 90.0)
-	_populate_map_data(coords, "fan", {})
+	map_data = _map_generation_service.generate_fan(_build_map_generation_service_config()).get("map_data", {})
 
 func _generate_circular_map_data():
-	# 使用形状发生器模式：坐标采样 + 数据填充
-	var coords = _get_circular_coords(map_radius)
-	_populate_map_data(coords, "circular", {})
+	map_data = _map_generation_service.generate_circular(_build_map_generation_service_config()).get("map_data", {})
 
 func _roll_height_by_tier(tier: int) -> int:
 	return HEX_TERRAIN_RULES.roll_height_by_tier(tier)
+
+
+## 收集地图数据生成服务需要的配置。
+## 导出变量继续留在 HexMap Inspector；服务只消费这份快照并返回新的 map_data。
+func _build_map_generation_service_config() -> Dictionary:
+	return {
+		"rng": rng,
+		"mode": map_generation_mode,
+		"use_external_seed": use_external_seed,
+		"received_text": received_text,
+		"incoming_map_seed": incoming_map_seed,
+		"room_type": room_type,
+		"fan_radius": fan_radius,
+		"fan_angle_span": fan_angle_span,
+		"fan_center_angle": 90.0,
+		"spacing_x": spacing_x,
+		"spacing_y": spacing_y,
+		"scale_ratio": tile_scale / REF_SCALE,
+		"map_radius": map_radius,
+		"nexus_height": nexus_height,
+		"inner_tier_radius": inner_tier_radius,
+		"base_h_min": base_h_min,
+		"base_h_max": base_h_max,
+		"elite_h_bonus": elite_h_bonus,
+		"terrain_by_height": terrain_by_height,
+		"fallback_mode": 0,
+	}
 
 
 func _check_map_validity() -> bool: return true  # 遮挡由于有了透视效果，不一定需要驳回重成了
