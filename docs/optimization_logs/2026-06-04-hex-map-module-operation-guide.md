@@ -792,6 +792,47 @@
 - `_create_stack_at()` 里仍保留地貌 sprite 收编、`sprites/height/occupant` metadata、入场 dissolve、输入信号和高度视图标签。
 - 后续如果继续拆地貌挂接，优先复用或扩展 `RuntimeLandformRegistrar.gd`，不要让基础工厂开始理解地貌行为。
 
+### `scene/in_scene/hex_map_modules/factory/TileLandformAttachService.gd`
+
+这个模块负责初始建图阶段的地貌挂接：
+
+- 从地块数据里读取 `landform` 实例。
+- 按旧公式设置地貌位置，并挂到 stack 下。
+- 调用地貌自己的 `attach_visual()`。
+- 收编 stack 下的 `LandformSprite_*`。
+- 收编地貌实例自己的子 `Sprite2D`。
+- 给这些地貌 sprite 复制 `block_material`，并写入 `block_idx`、`total_height` 和平铺视图参数。
+- 设置 `owner_battle`。
+- 按旧逻辑只给敌方地貌加入 `Enemies` 分组。
+
+主要调用方：
+
+- `hex_map.gd::_create_stack_at()`
+
+目前没有新增导出变量。
+
+运行时会读取：
+
+- 地块数据里的 `landform`
+- 基础地块栈
+- 基础 `sprites` 列表
+- 地块高度
+- `current_step_h`
+- `tile_scale`
+- `hitbox_offset_x`
+- `hitbox_offset_y`
+- `landform_instance_offset`
+- `block_material`
+- 当前是否平铺视图
+- HexMap 自身作为 `owner_battle`
+
+调整时注意：
+
+- 这个模块只服务初始建图路径，运行时建造仍由 `RuntimeLandformRegistrar.gd` 负责。
+- 这里暂时不写 `location/target` 和 `map_data`，保持旧 `_create_stack_at()` 行为。
+- 这里暂时不把中立地貌加入 `Middle` 分组，保持旧 `_create_stack_at()` 行为。
+- 如果后续要统一初始建图和运行时注册，建议先抽共享的 sprite 收编工具，再合并数据写入流程。
+
 ## 修改后的验证清单
 
 改动任意已提取模块后，先运行：
@@ -833,5 +874,6 @@ git diff --check
 - `_update_aoe_display()` 的范围结果、目标状态和 tooltip 请求已拆到 `TargetAoeHoverPresenter.gd`。
 - MainBoard tooltip 的具体 UI controller 仍未拆，当前只在 HexMap 中保留一层旧接口适配。
 - `_create_stack_at()` 的基础地块容器、基础 sprite 和碰撞体已拆到 `TileStackFactory.gd`。
-- `_create_stack_at()` 中仍保留地貌挂接、地貌 sprite 收编、输入信号、高度标签和入场 dissolve 收尾，适合后续继续拆。
+- `_create_stack_at()` 的初始地貌挂接和地貌 sprite 收编已拆到 `TileLandformAttachService.gd`。
+- `_create_stack_at()` 中仍保留 metadata、输入信号、高度标签和入场 dissolve 收尾，适合后续继续拆。
 - `refresh_tile_visual()` 仍然通过删除旧 stack 再调用 `_create_stack_at()` 重建，等工厂继续稳定后再拆局部重绘服务。

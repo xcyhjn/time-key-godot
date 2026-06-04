@@ -25,6 +25,7 @@ const TILE_ELEVATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/el
 const HEX_MAP_INPUT_COORDINATOR := preload("res://scene/in_scene/hex_map_modules/input/HexMapInputCoordinator.gd")
 const TARGET_HOVER_CONTROLLER := preload("res://scene/in_scene/hex_map_modules/input/TargetHoverController.gd")
 const TILE_STACK_FACTORY := preload("res://scene/in_scene/hex_map_modules/factory/TileStackFactory.gd")
+const TILE_LANDFORM_ATTACH_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileLandformAttachService.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -350,6 +351,7 @@ var _tile_destruction_mutation_service := TILE_DESTRUCTION_MUTATION_SERVICE.new(
 var _hex_map_input_coordinator := HEX_MAP_INPUT_COORDINATOR.new()
 var _target_hover_controller := TARGET_HOVER_CONTROLLER.new()
 var _tile_stack_factory := TILE_STACK_FACTORY.new()
+var _tile_landform_attach_service := TILE_LANDFORM_ATTACH_SERVICE.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1017,7 +1019,8 @@ func _get_hex_pixel_pos(hex_coord: Vector2) -> Vector2:
 
 ## 创建指定坐标的地块栈。
 ## 基础容器、地块层 sprite 和碰撞体已经拆到 TileStackFactory；
-## 地貌挂接、旧 metadata、输入信号和高度视图标签暂时留在 HexMap，保持地图生成行为不变。
+## 初始地貌挂接和地貌 sprite 收编已经拆到 TileLandformAttachService；
+## 旧 metadata、输入信号和高度视图标签暂时留在 HexMap，保持地图生成行为不变。
 func _create_stack_at(coord: Vector2i, data: Dictionary):
 	var stack_result := _tile_stack_factory.create_stack(
 		_build_tile_stack_factory_config(coord, data)
@@ -1029,39 +1032,15 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 	var sprites_in_stack: Array = stack_result["sprites"]
 	stack_nodes[coord] = stack_container
 
-	var enemy_instance = null
-	if data.has("landform") and data["landform"] != null:
-		var landform_inst = data["landform"]
-		enemy_instance = landform_inst
-		enemy_instance.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y) + landform_instance_offset
-		stack_container.add_child(enemy_instance)
-		
-		landform_inst.attach_visual(stack_container, height, current_step_h, tile_scale)
-		
-		for child in stack_container.get_children():
-			if child is Sprite2D and child.name.begins_with("LandformSprite_"):
-				if not sprites_in_stack.has(child):
-					if block_material:
-						child.material = block_material.duplicate()
-						child.set_instance_shader_parameter("block_idx", float(height + 1))
-						child.set_instance_shader_parameter("total_height", float(height + 2))
-						if current_view_state == MapViewState.VIEW_FLAT:
-							child.material.set_instance_shader_parameter("is_flat_view", 1.0)
-					sprites_in_stack.append(child)
-					
-		for child in enemy_instance.get_children():
-			if child is Sprite2D:
-				if block_material:
-					child.material = block_material.duplicate()
-					child.set_instance_shader_parameter("block_idx", float(height + 1))
-					child.set_instance_shader_parameter("total_height", float(height + 2))
-					if current_view_state == MapViewState.VIEW_FLAT:
-						child.material.set_instance_shader_parameter("is_flat_view", 1.0)
-				sprites_in_stack.append(child)
-				
-		landform_inst.owner_battle = self
-		if landform_inst.Attitude == landform_inst.Attitude_Pool.Enemy:
-			landform_inst.add_to_group("Enemies")
+	var landform_result := _tile_landform_attach_service.attach(
+		coord,
+		data,
+		stack_container,
+		sprites_in_stack,
+		_build_tile_landform_attach_config(height, current_step_h, top_block_y)
+	)
+	var enemy_instance: Variant = landform_result.get("occupant", null)
+	sprites_in_stack = landform_result.get("sprites", sprites_in_stack)
 	
 	stack_container.set_meta("sprites", sprites_in_stack)
 	stack_container.set_meta("height", height)
@@ -1096,6 +1075,23 @@ func _build_tile_stack_factory_config(coord: Vector2i, data: Dictionary) -> Dict
 		"hitbox_z_index": _get_safe_hitbox_z_index(),
 		"hitbox_offset_x": hitbox_offset_x,
 		"hitbox_offset_y": hitbox_offset_y,
+	}
+
+
+## 收集初始地貌挂接服务需要的上下文。
+## 服务只负责迁移 `_create_stack_at()` 中的旧地貌挂接逻辑，不直接读取 HexMap 成员变量。
+func _build_tile_landform_attach_config(height: int, current_step_h: float, top_block_y: float) -> Dictionary:
+	return {
+		"owner_battle": self,
+		"height": height,
+		"current_step_h": current_step_h,
+		"tile_scale": tile_scale,
+		"top_block_y": top_block_y,
+		"hitbox_offset_x": hitbox_offset_x,
+		"hitbox_offset_y": hitbox_offset_y,
+		"landform_instance_offset": landform_instance_offset,
+		"block_material": block_material,
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
 	}
 
 ## 局部刷新单个地块的视觉表现（优化性能，避免全局重绘）
