@@ -6,6 +6,7 @@ const CARD_SCENE_REF: PackedScene = preload("res://scene/card/custom_card.tscn")
 const PILE_VIEWER_SCENE: PackedScene = preload("res://scene/pile/pile_viewer.tscn")
 const CARD_MANAGER_SCENE: PackedScene = preload("res://addons/card-framework/card_manager.tscn")
 const CARD_FACTORY_SCENE: PackedScene = preload("res://addons/card-framework/card_factory.tscn")
+const HEX_TARGET_RULES := preload("res://scene/in_scene/HexTargetRules.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -948,55 +949,23 @@ func hide_tooltip(card: Control = null):
 # ==========================================
 # 校验玩家悬浮的地块是否满足当前举起卡牌的释放条件
 func is_valid_target(hovered_stack: Area2D, active_card: Control) -> bool:
-	if not is_instance_valid(hovered_stack) or not is_instance_valid(active_card):
-		return false
-	if _card_has_effect_type(active_card, "built") or _card_has_effect_type(active_card, "build"):
-		return _is_empty_build_target(hovered_stack)
-	return true
+	return HEX_TARGET_RULES.is_stack_valid_target(
+		hovered_stack,
+		active_card,
+		_build_hex_target_rules_context(hovered_stack)
+	)
 
 
-## built 类卡牌只允许选择空地块。
-## 放牌阶段先拦截非法目标，结算阶段 BuiltCommand 仍会再校验一次，避免时间轴期间地块状态变化。
-func _is_empty_build_target(stack: Area2D) -> bool:
-	if not is_instance_valid(stack):
-		return false
-
-	if stack.has_meta("occupant"):
-		var occupant: Variant = stack.get_meta("occupant")
-		if is_instance_valid(occupant):
-			return false
-
+## 收集目标规则需要的地图上下文。
+## MainBoard 只负责传递 HexMap 数据，不再复制建造、伤害、治疗等目标细则。
+func _build_hex_target_rules_context(center_stack: Area2D) -> Dictionary:
 	if not is_instance_valid(hex_map):
-		return false
-
-	var coord: Variant = hex_map.stack_nodes.find_key(stack)
-	if coord == null or not hex_map.map_data.has(coord):
-		return false
-
-	var tile_data: Variant = hex_map.map_data[coord]
-	if typeof(tile_data) != TYPE_DICTIONARY:
-		return false
-	if tile_data.has("landform") and is_instance_valid(tile_data["landform"]):
-		return false
-	if tile_data.has("landform_in") and is_instance_valid(tile_data["landform_in"]):
-		return false
-
-	return true
-
-
-func _card_has_effect_type(card: Control, effect_type: String) -> bool:
-	var card_info: Variant = card.get("card_info")
-	if typeof(card_info) != TYPE_DICTIONARY:
-		return false
-
-	var effects: Variant = card_info.get("effects", [])
-	if typeof(effects) != TYPE_ARRAY:
-		return false
-
-	for effect in effects:
-		if typeof(effect) == TYPE_DICTIONARY and str(effect.get("type", "")) == effect_type:
-			return true
-	return false
+		return {}
+	return {
+		"center_coord": hex_map.stack_nodes.find_key(center_stack),
+		"stack_nodes": hex_map.stack_nodes,
+		"map_data": hex_map.map_data,
+	}
 
 
 # 控制单个地块叠加选中特效的开关

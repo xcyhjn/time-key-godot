@@ -1498,6 +1498,9 @@ func _handle_tile_click(stack: Area2D) -> void:
 	
 	# 如果手中有卡牌，尝试打出卡牌
 	if is_instance_valid(active_card):
+		# 非法目标只保留灰色 hover 提示，不进入时间轴放置流程。
+		if not _is_stack_valid_target(stack):
+			return
 		if active_card.has_method("play_card"):
 			active_card.play_card(stack)
 			_clear_all_aoe_highlights()
@@ -1625,7 +1628,21 @@ func _is_stack_valid_target(stack: Area2D) -> bool:
 	if not cm: return false
 
 	var selected_card = cm.get("current_selected_card")
-	return HEX_TARGET_RULES.is_stack_valid_target(stack, selected_card)
+	return HEX_TARGET_RULES.is_stack_valid_target(
+		stack,
+		selected_card,
+		_build_hex_target_rules_context(stack)
+	)
+
+
+## 收集卡牌目标规则需要的地图上下文。
+## 规则模块只读取坐标、map_data 和 stack_nodes；高亮状态与 UI 表现仍留在 HexMap。
+func _build_hex_target_rules_context(center_stack: Area2D) -> Dictionary:
+	return {
+		"center_coord": stack_nodes.find_key(center_stack),
+		"stack_nodes": stack_nodes,
+		"map_data": map_data,
+	}
 
 ## 右键取消选中卡牌
 func _cancel_card_selection() -> void:

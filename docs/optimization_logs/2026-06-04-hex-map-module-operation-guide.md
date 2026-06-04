@@ -94,18 +94,26 @@ Adjustment notes:
 Responsibility:
 - Decide whether the selected card can target the current stack.
 - Collect valid map stacks from a card's absolute effect range.
+- Centralize build, damage, recover/heal, poison, elevation, clear, and unknown-effect target semantics.
 
 Main callers:
 - `hex_map.gd::_is_stack_valid_target()`
 - `hex_map.gd::_update_aoe_display()`
+- `in_scene.gd::is_valid_target()`
 
 Related exported tuning variables:
 - None yet.
 
 Adjustment notes:
-- Current target validation preserves old behavior: valid stack plus selected card means valid target.
-- Add concrete damage/heal/build target restrictions here first, then keep `hex_map.gd` as the visual coordinator.
+- `built/build` requires an empty stack and empty `map_data.landform/landform_in`.
+- `damage` requires at least one affected stack with a live `take_damage()` entity.
+- `recover/heal` requires at least one affected stack with a healable entity, and does not count full HP entities when HP fields exist.
+- `poison` requires at least one affected stack with a live `add_status()` entity.
+- `elevation` remains valid for any valid terrain stack.
+- `clear` remains valid because it uses the no-map-target timeline clear path.
+- Unknown effects remain valid to avoid blocking prototype cards during refactor.
 - Do not put shader, tooltip, or CardManager lookup logic in this module.
+- Timeline command classes still perform final execution-time validation; target rules are the user-facing preflight.
 
 ### `scene/in_scene/EnemyIntentMapPresenter.gd`
 
@@ -276,5 +284,5 @@ Use these in the editor after parser checks:
 ## Next Extraction Candidates
 
 Priority order:
-- Concrete card target restrictions in `HexTargetRules.gd`.
 - Enemy/settlement tooltip edge-case cleanup after target restrictions are stable.
+- Optional: move shared target checks from timeline command classes into a pure rule helper if command duplication grows.
