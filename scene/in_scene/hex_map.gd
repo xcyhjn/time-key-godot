@@ -24,6 +24,7 @@ const MAP_INTRO_REVEAL_RUNNER := preload("res://scene/in_scene/hex_map_modules/r
 const TILE_ELEVATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/elevation/TileElevationService.gd")
 const HEX_MAP_INPUT_COORDINATOR := preload("res://scene/in_scene/hex_map_modules/input/HexMapInputCoordinator.gd")
 const TARGET_HOVER_CONTROLLER := preload("res://scene/in_scene/hex_map_modules/input/TargetHoverController.gd")
+const TILE_STACK_FACTORY := preload("res://scene/in_scene/hex_map_modules/factory/TileStackFactory.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -348,6 +349,7 @@ var _tile_elevation_service := TILE_ELEVATION_SERVICE.new()
 var _tile_destruction_mutation_service := TILE_DESTRUCTION_MUTATION_SERVICE.new()
 var _hex_map_input_coordinator := HEX_MAP_INPUT_COORDINATOR.new()
 var _target_hover_controller := TARGET_HOVER_CONTROLLER.new()
+var _tile_stack_factory := TILE_STACK_FACTORY.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1013,62 +1015,19 @@ func _get_hex_pixel_pos(hex_coord: Vector2) -> Vector2:
 	return HEX_COORD_RULES.hex_to_pixel(hex_coord, spacing_x, spacing_y, tile_scale / REF_SCALE)
 
 
+## 创建指定坐标的地块栈。
+## 基础容器、地块层 sprite 和碰撞体已经拆到 TileStackFactory；
+## 地貌挂接、旧 metadata、输入信号和高度视图标签暂时留在 HexMap，保持地图生成行为不变。
 func _create_stack_at(coord: Vector2i, data: Dictionary):
-	var pos = _get_hex_pixel_pos(coord)
-	var height = data["height"]
-	var current_step_h = step_height * (tile_scale / REF_SCALE)
-
-	var stack_container = Area2D.new()
-	stack_container.position = pos
-	map_root.add_child(stack_container)
+	var stack_result := _tile_stack_factory.create_stack(
+		_build_tile_stack_factory_config(coord, data)
+	)
+	var stack_container := stack_result["stack"] as Area2D
+	var height := int(stack_result["height"])
+	var current_step_h := float(stack_result["current_step_h"])
+	var top_block_y := float(stack_result["top_block_y"])
+	var sprites_in_stack: Array = stack_result["sprites"]
 	stack_nodes[coord] = stack_container
-
-	var terrain_type = data.get("terrain_type", TerrainType.PLAINS)
-	var top_tex = get_top_tex(terrain_type)
-	var side_tex = get_side_tex(terrain_type)
-
-	var sprites_in_stack = []
-	for i in range(height):
-		var sprite = Sprite2D.new()
-		sprite.texture = top_tex if i == height - 1 else side_tex
-		sprite.centered = false
-		sprite.offset = Vector2(-256, -400)
-		sprite.scale = Vector2(tile_scale, tile_scale)
-
-		if block_material:
-			sprite.material = block_material.duplicate()
-			sprite.set_instance_shader_parameter("block_idx", float(i))
-			sprite.set_instance_shader_parameter("total_height", float(height))
-		
-		# ★ 核心修复：生成方块时，严格判断当前是否处于平铺视图
-		if current_view_state == MapViewState.VIEW_FLAT:
-			if sprite.material:
-				sprite.material.set_instance_shader_parameter("is_flat_view", 1.0)
-			if i < height - 1:
-				sprite.visible = false
-				sprite.modulate.a = 0.0
-			else:
-				sprite.position.y = 0.0
-		else:
-			# 3D 视图正常生成
-			sprite.position.y = -i * current_step_h
-			if i < height - 1: sprite.modulate = Color(1.0, 1.0, 1.0)
-
-		stack_container.add_child(sprite)
-		sprites_in_stack.append(sprite)
-
-	var collision = CollisionPolygon2D.new()
-	collision.polygon = _build_hitbox_polygon()
-	# 把碰撞箱本体的层级抬高。
-	# 这样在启用碰撞调试显示时，它会尽量显示在最上面，不容易被地块/建筑贴图视觉干扰。
-	collision.z_as_relative = false
-	collision.z_index = _get_safe_hitbox_z_index()
-	
-	# ★ 核心修复：如果是平铺视角，碰撞格必须贴地
-	var top_block_y = 0.0 if current_view_state == MapViewState.VIEW_FLAT else -(height - 1) * current_step_h
-	collision.position = Vector2(hitbox_offset_x, top_block_y + hitbox_offset_y)
-	stack_container.add_child(collision)
-	stack_container.set_meta("collision_node", collision)
 
 	var enemy_instance = null
 	if data.has("landform") and data["landform"] != null:
@@ -1117,6 +1076,27 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 	# 如果处于平铺视角，补齐顶部的数字标签
 	if current_view_state == MapViewState.VIEW_FLAT:
 		_create_height_indicator(stack_container, height)
+
+
+## 收集 TileStackFactory 创建基础地块栈所需的上下文。
+## 工厂只消费这份快照，不直接读取 HexMap 的导出变量或场景树。
+func _build_tile_stack_factory_config(coord: Vector2i, data: Dictionary) -> Dictionary:
+	var terrain_type: Variant = data.get("terrain_type", TerrainType.PLAINS)
+	return {
+		"position": _get_hex_pixel_pos(coord),
+		"map_root": map_root,
+		"height": int(data["height"]),
+		"current_step_h": step_height * (tile_scale / REF_SCALE),
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+		"tile_scale": tile_scale,
+		"top_texture": get_top_tex(terrain_type),
+		"side_texture": get_side_tex(terrain_type),
+		"block_material": block_material,
+		"hitbox_polygon": _build_hitbox_polygon(),
+		"hitbox_z_index": _get_safe_hitbox_z_index(),
+		"hitbox_offset_x": hitbox_offset_x,
+		"hitbox_offset_y": hitbox_offset_y,
+	}
 
 ## 局部刷新单个地块的视觉表现（优化性能，避免全局重绘）
 ## @param coord 六边形坐标（Vector2i）

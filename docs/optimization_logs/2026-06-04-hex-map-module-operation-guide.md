@@ -756,6 +756,42 @@
 - MainBoard tooltip 的真实调用仍在 `hex_map.gd::_update_target_selection_tooltip()`，后续如果要拆 UI controller，可以从这个函数继续下手。
 - 目标合法性仍走 HexMap 旧入口，主要是为了暂时保留 CardManager 生命周期兜底；等 `CardManagerLocator.gd` 完成后再考虑把合法性上下文进一步收窄。
 
+### `scene/in_scene/hex_map_modules/factory/TileStackFactory.gd`
+
+这个模块负责创建基础地块栈：
+
+- 创建 `Area2D` 地块容器，并挂到 HexMap 传入的 `map_root`。
+- 创建基础顶面和侧面 `Sprite2D`。
+- 复制 `block_material`，并写入基础 shader 实例参数。
+- 按 3D/平铺视图处理基础地块层的位置和显隐。
+- 创建 `CollisionPolygon2D`，写入碰撞形状、z_index 和位置。
+- 写入 `collision_node` metadata。
+
+主要调用方：
+
+- `hex_map.gd::_create_stack_at()`
+
+目前没有新增导出变量。
+
+运行时会读取：
+
+- HexMap 传入的 `map_root`
+- HexMap 传入的地块像素位置
+- 地块高度
+- 当前视图是否平铺
+- `tile_scale`
+- `current_step_h`
+- 顶面/侧面纹理
+- `block_material`
+- 碰撞多边形、z_index 和偏移
+
+调整时注意：
+
+- 这个模块不写 `stack_nodes`，地图拓扑仍由 HexMap 持有。
+- 这个模块不挂接地貌实体，也不处理 `owner_battle`、`Enemies` 分组和血条。
+- `_create_stack_at()` 里仍保留地貌 sprite 收编、`sprites/height/occupant` metadata、入场 dissolve、输入信号和高度视图标签。
+- 后续如果继续拆地貌挂接，优先复用或扩展 `RuntimeLandformRegistrar.gd`，不要让基础工厂开始理解地貌行为。
+
 ## 修改后的验证清单
 
 改动任意已提取模块后，先运行：
@@ -796,4 +832,6 @@ git diff --check
 - `_update_highlight()` 的 hover 中心选择和刷新触发已拆到 `TargetHoverController.gd`。
 - `_update_aoe_display()` 的范围结果、目标状态和 tooltip 请求已拆到 `TargetAoeHoverPresenter.gd`。
 - MainBoard tooltip 的具体 UI controller 仍未拆，当前只在 HexMap 中保留一层旧接口适配。
-- `_create_stack_at()` 和 `refresh_tile_visual()` 仍然混合了地块节点创建、地貌挂接、shader 初始化和碰撞创建，适合后续拆成 tile stack factory。
+- `_create_stack_at()` 的基础地块容器、基础 sprite 和碰撞体已拆到 `TileStackFactory.gd`。
+- `_create_stack_at()` 中仍保留地貌挂接、地貌 sprite 收编、输入信号、高度标签和入场 dissolve 收尾，适合后续继续拆。
+- `refresh_tile_visual()` 仍然通过删除旧 stack 再调用 `_create_stack_at()` 重建，等工厂继续稳定后再拆局部重绘服务。

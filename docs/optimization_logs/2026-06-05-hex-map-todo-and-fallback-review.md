@@ -4,9 +4,9 @@
 
 ## 当前结论
 
-`hex_map.gd` 已经拆出一批稳定模块：坐标规则、地形规则、目标规则、碰撞输入开关、普通视觉状态、敌人意图地图表现、结算奖励表现、高度视图指示器、平铺/3D 同步、整图平铺/恢复、地图入场、运行时地貌注册、外部渲染节点注册、地块升降编排、地块真实销毁、地块输入协调、目标 hover 控制器和目标 AOE hover 展示计划。
+`hex_map.gd` 已经拆出一批稳定模块：坐标规则、地形规则、目标规则、碰撞输入开关、普通视觉状态、敌人意图地图表现、结算奖励表现、高度视图指示器、平铺/3D 同步、整图平铺/恢复、地图入场、运行时地貌注册、外部渲染节点注册、地块升降编排、地块真实销毁、地块输入协调、目标 hover 控制器、目标 AOE hover 展示计划和基础地块栈工厂。
 
-剩下的耦合主要不再是“一个函数特别长”这么简单，而是几个场景根职责还在 `hex_map.gd` 中交叉：地块创建、MainBoard tooltip 旧接口适配、CardManager 查找、敌人/建筑回合行为、奖励状态、时间轴/敌人意图路径依赖。
+剩下的耦合主要不再是“一个函数特别长”这么简单，而是几个场景根职责还在 `hex_map.gd` 中交叉：地貌挂接与 sprite 收编、MainBoard tooltip 旧接口适配、CardManager 查找、敌人/建筑回合行为、奖励状态、时间轴/敌人意图路径依赖。
 
 ## 优先待拆列表
 
@@ -46,23 +46,40 @@
 
 - 后续继续拆 tooltip 或 CardManager 查找时，必须回归合法目标、非法目标、范围型效果和无目标卡牌。
 
-### 第一优先级：`_create_stack_at()` 地块创建工厂
+### 已完成第一层：`_create_stack_at()` 基础地块栈工厂
 
-当前问题：
+完成情况：
 
-- 同时负责 Area2D 创建、地块贴图层创建、shader 初始化、碰撞节点创建、地貌实例挂接、地貌 sprite 收集、分组、metadata 写入和信号连接。
-- 它是目前 `hex_map.gd` 中最重的剩余函数之一。
+- 已新增 `scene/in_scene/hex_map_modules/factory/TileStackFactory.gd`。
+- 基础 `Area2D` 容器、顶面/侧面 sprite、基础 shader 参数和碰撞体创建已经离开 `hex_map.gd`。
+- `_create_stack_at()` 仍保留旧入口名，并通过 `_build_tile_stack_factory_config()` 传入所有旧导出项和运行时状态。
+- 地貌挂接、地貌 sprite 收编、输入信号、高度视图标签和入场 dissolve 收尾仍留在 HexMap。
 
-建议拆法：
+剩余问题：
 
-- 新建 `hex_map_modules/factory/TileStackFactory.gd`。
-- 第一步只抽“创建基础地块层 + collision + metadata”，保留地貌挂接在 HexMap。
-- 第二步再把地貌挂接和 sprite 收集交给已有 `RuntimeLandformRegistrar` 或单独 factory。
+- `_create_stack_at()` 中的地貌挂接仍然包含位置计算、`attach_visual()`、地貌 sprite 收编、`owner_battle`、`Enemies` 分组和 `occupant` metadata。
+- `refresh_tile_visual()` 仍然通过删除旧 stack 再重新 `_create_stack_at()`，属于较粗的局部重绘。
 
 风险：
 
-- 影响地图生成、局部刷新、平铺视图生成、入场动画和碰撞。
-- 建议拆之前先保留 `_create_stack_at()` 包装入口，避免全局替换。
+- 后续继续拆地貌挂接时，需要重点回归地图生成、局部刷新、平铺视图生成、入场动画、血条和碰撞。
+
+### 第一优先级：地貌挂接与 sprite 收编服务
+
+当前问题：
+
+- `_create_stack_at()` 中仍直接处理 `landform` 实例的位置、挂接、`attach_visual()`、地貌 sprite shader 参数、`owner_battle` 和敌人分组。
+- 运行时新增地貌已经有 `RuntimeLandformRegistrar.gd`，但初始建图路径还没有完全复用它。
+
+建议拆法：
+
+- 优先评估是否可以复用 `RuntimeLandformRegistrar.attach_entity_to_stack()` 与 `apply_landform_group()`。
+- 如果直接复用风险高，则新增 `hex_map_modules/factory/TileLandformAttachService.gd`，先只搬初始建图路径里的地貌挂接和 sprite 收编。
+- 保留 `_create_stack_at()` 包装入口，不一次性改 `refresh_tile_visual()`。
+
+风险：
+
+- 影响地貌显示、血条定位、敌人分组、奖励扫描和旧建筑行为。
 
 ### 第二优先级：CardManager 查找服务
 
@@ -147,7 +164,7 @@
 
 ## 下一步建议顺序
 
-1. 先拆 `_create_stack_at()` 的基础地块创建工厂，收益最大但要小步做。
+1. 先拆 `_create_stack_at()` 里剩余的地貌挂接和 sprite 收编，尽量复用 `RuntimeLandformRegistrar.gd`。
 2. 抽 `CardManagerLocator.gd`，统一 HexMap 和奖励脚本的查找路径。
 3. 抽 `_on_step_next()` 的建筑回合行为 runner。
 4. 拆 MainBoard tooltip 旧接口适配，让 HexMap 最终只发目标 hover 事件。
