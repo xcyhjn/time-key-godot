@@ -760,3 +760,99 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `InSceneReturnPayloadBuilder.gd`：先拆 `_build_combat_return_payload()`，只组装时代、时间币、牌组快照和房间上下文。
 2. `InScenePayloadApplier.gd`：可拆 `_apply_payload_to_new_scene_before_tree()` 与 `apply_external_event()` 的 payload 写入/解析，但不要同时改 HexMap。
 3. 暂缓 `_switch_scene_with_data()` 整体搬迁，等 payload 和日志/失败恢复先拆干净后再动 current_scene 生命周期。
+
+## in_scene.gd 第五批场景 payload 拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批一次拆 3 个场景 payload 相关模块，只处理“数据如何组装、解析和转发”。
+刻意不整体搬迁 `_switch_scene_with_data()`，也不改变黑幕过渡、current_scene 替换、旧场景释放和奖励页生命周期。
+
+目标函数范围：
+
+```text
+_build_combat_return_payload()
+_apply_payload_to_new_scene_before_tree(next_scene, payload)
+apply_external_event(payload)
+_apply_incoming_payload_to_hex_map()
+```
+
+当前读写的成员变量：
+
+```text
+incoming_external_payload / incoming_battle_tag / incoming_map_seed
+current_era_value
+hex_map
+```
+
+当前触碰的外部节点和接口：
+
+```text
+MapState.get_active_room_context()
+GlobalTimecoin.get_timecoins()
+GlobalDB.player_deck
+next_scene.apply_external_event(payload)
+hex_map.apply_external_event(payload_text)
+SceneLog.scene_event() / SceneLog.error_event()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd
+scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd
+scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd
+```
+
+模块边界：
+
+- `InSceneReturnPayloadBuilder.gd` 只组装“局内 -> 局外”的返回 payload，不写 `MapState.pending_room_resolution`，不切场景。
+- `InSceneExternalPayloadParser.gd` 只解析局外传入的文本 payload，保留 `battle_tag` 和 `map_seed` 的旧拆分协议。
+- `InScenePayloadBridge.gd` 只把 payload 转交给新场景或 `HexMap`，不解析、不创建、不销毁场景节点。
+
+保留的旧公共入口：
+
+```text
+_build_combat_return_payload()
+_apply_payload_to_new_scene_before_tree(next_scene, payload)
+apply_external_event(payload)
+_apply_incoming_payload_to_hex_map()
+```
+
+这些函数仍由 `in_scene.gd` 暴露，内部转发给 `scene_flow` 模块。教程场景和局外场景仍可沿用旧的 `apply_external_event()` 协议。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+返回 payload 字段组装已由 InSceneReturnPayloadBuilder 统一维护。
+局外传入 payload 的 battle_tag/map_seed 解析已由 InSceneExternalPayloadParser 统一维护。
+payload 转发到新场景或 HexMap 的桥接已由 InScenePayloadBridge 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+下一批可以继续沿着场景返回链路向外拆，但仍建议一批只动 3 到 4 个风险面：
+
+1. `InSceneSceneSwitchLoader.gd`：拆 `_load_packed_scene_for_switch()`、`_log_scene_switch_error()`、`_recover_dim_after_failed_switch()`，只处理加载失败和错误记录。
+2. 或 `SettlementRewardSceneController.gd`：拆 `_open_settlement_reward_scene()`、`_get_settlement_reward_scene()`、四个奖励按钮入口，但不要同时拆 `_on_external_scene_exit_pressed()` 的奖励消费。
+3. 暂缓 `_return_to_out_scene()` 和 `_switch_scene_with_data()` 整体搬迁，等 loader / payload / reward 打开链路都独立后再处理。

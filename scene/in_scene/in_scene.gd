@@ -18,6 +18,9 @@ const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_module
 const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd")
 const SETTLEMENT_DECK_SNAPSHOT_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckSnapshotService.gd")
 const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd")
+const IN_SCENE_RETURN_PAYLOAD_BUILDER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd")
+const IN_SCENE_EXTERNAL_PAYLOAD_PARSER := preload("res://scene/in_scene/in_scene_modules/scene_flow/InSceneExternalPayloadParser.gd")
+const IN_SCENE_PAYLOAD_BRIDGE := preload("res://scene/in_scene/in_scene_modules/scene_flow/InScenePayloadBridge.gd")
 
 # 预加载资源
 var hand_scene: PackedScene = HAND_SCENE
@@ -172,6 +175,9 @@ var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
 var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.new()
 var _settlement_deck_snapshot_service: RefCounted = SETTLEMENT_DECK_SNAPSHOT_SERVICE.new()
 var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVICE.new()
+var _return_payload_builder: RefCounted = IN_SCENE_RETURN_PAYLOAD_BUILDER.new()
+var _external_payload_parser: RefCounted = IN_SCENE_EXTERNAL_PAYLOAD_PARSER.new()
+var _payload_bridge: RefCounted = IN_SCENE_PAYLOAD_BRIDGE.new()
 
 
 func _ready() -> void:
@@ -949,23 +955,14 @@ func _return_to_out_scene() -> void:
 ## - 写入路线记录
 ## 都有足够的上下文字段可用。
 func _build_combat_return_payload() -> Dictionary:
-	var room_context: Dictionary = {}
-	if MapState:
-		room_context = MapState.get_active_room_context()
-
-	return {
-		"transition_type": "return_from_combat",
-		"combat_result": "completed",
-		"battle_state": "settlement",
+	return _return_payload_builder.build({
+		"map_state": MapState,
+		"global_timecoin": GlobalTimecoin,
+		"global_db": GlobalDB,
 		"battle_tag": incoming_battle_tag,
 		"map_seed": incoming_map_seed,
 		"era": current_era_value,
-		"timecoins": GlobalTimecoin.get_timecoins() if GlobalTimecoin else 0,
-		"deck_snapshot": GlobalDB.player_deck.duplicate() if GlobalDB else [],
-		"deck_size": GlobalDB.player_deck.size() if GlobalDB else 0,
-		"room_context": room_context,
-		"clear_active_room_context": true,
-	}
+	})
 
 
 ## 通用场景切换函数。
@@ -1026,10 +1023,7 @@ func _log_scene_switch_error(message: String, extra: Dictionary = {}) -> void:
 ## 在新场景进入树之前写入返回 payload。
 ## OutScene 会把 payload 暂存在 pending_external_event，等 _ready() 完成后再消费。
 func _apply_payload_to_new_scene_before_tree(next_scene: Node, payload: Variant) -> void:
-	if payload == null:
-		return
-	if next_scene.has_method("apply_external_event"):
-		next_scene.apply_external_event(payload)
+	_payload_bridge.apply_to_new_scene_before_tree(next_scene, payload)
 
 # 商店按钮回调
 func _on_shop_button_pressed():
@@ -1137,27 +1131,12 @@ func apply_external_event(payload: String) -> void:
 	print("[Project] 接收到外部事件数据: ", payload)
 	if SceneLog:
 		SceneLog.scene_event("InSceneMain", "apply_external_event", {"payload": payload})
-	incoming_external_payload = payload
-	incoming_battle_tag = ""
-	incoming_map_seed = ""
-
-	# 兼容当前局外场景传递格式：
-	# "battle_normal <map_seed>"
-	# "battle_elite <map_seed>"
-	# "boss_stage <map_seed>"
-	if payload == null:
+	var parsed_payload: Dictionary = _external_payload_parser.parse(payload)
+	incoming_external_payload = parsed_payload.get("raw_payload")
+	incoming_battle_tag = str(parsed_payload.get("battle_tag", ""))
+	incoming_map_seed = str(parsed_payload.get("map_seed", ""))
+	if not bool(parsed_payload.get("has_payload", false)):
 		return
-
-	var payload_text := str(payload).strip_edges()
-	if payload_text == "":
-		return
-
-	var first_space_index := payload_text.find(" ")
-	if first_space_index == -1:
-		incoming_battle_tag = payload_text
-	else:
-		incoming_battle_tag = payload_text.substr(0, first_space_index)
-		incoming_map_seed = payload_text.substr(first_space_index + 1).strip_edges()
 
 	# 如果 Main 已经进入节点树，则立刻同步一次；
 	# 如果切场时在 add_child() 前预注入，_ready 里的 deferred 会在 HexMap ready 后再补一次。
@@ -1166,19 +1145,7 @@ func apply_external_event(payload: String) -> void:
 
 
 func _apply_incoming_payload_to_hex_map() -> void:
-	if not is_instance_valid(hex_map):
-		if SceneLog:
-			SceneLog.error_event("InSceneMain", "hex_map missing while applying payload")
-		return
-	if incoming_external_payload == null:
-		return
-
-	var payload_text := str(incoming_external_payload).strip_edges()
-	if payload_text == "":
-		return
-	if SceneLog:
-		SceneLog.scene_event("InSceneMain", "forward payload to hex_map", {"payload": payload_text})
-	hex_map.apply_external_event(payload_text)
+	_payload_bridge.forward_to_hex_map(hex_map, incoming_external_payload, SceneLog)
 
 
 func _ensure_entry_dim_hidden() -> void:
