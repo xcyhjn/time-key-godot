@@ -9,6 +9,7 @@ const HEX_COORD_RULES := preload("res://scene/in_scene/hex_map_modules/rules/Hex
 const HEX_TERRAIN_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexTerrainRules.gd")
 const HEX_TARGET_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexTargetRules.gd")
 const MAP_GENERATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/generation/MapGenerationService.gd")
+const LANDFORM_PLACEMENT_SERVICE := preload("res://scene/in_scene/hex_map_modules/generation/LandformPlacementService.gd")
 const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/hex_map_modules/destruction/TileDestructionBatchQueue.gd")
 const TILE_DESTRUCTION_MUTATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/destruction/TileDestructionMutationService.gd")
 const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/EnemyIntentMapPresenter.gd")
@@ -351,6 +352,7 @@ var _hex_map_visual_state_presenter := HEX_MAP_VISUAL_STATE_PRESENTER.new()
 var _target_aoe_hover_presenter := TARGET_AOE_HOVER_PRESENTER.new()
 var _target_selection_tooltip_adapter := TARGET_SELECTION_TOOLTIP_ADAPTER.new()
 var _map_generation_service := MAP_GENERATION_SERVICE.new()
+var _landform_placement_service := LANDFORM_PLACEMENT_SERVICE.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
@@ -566,149 +568,48 @@ func get_terrain_from_height(h: int) -> TerrainType:
 		TerrainType.HILLS,
 		TerrainType.MOUNTAIN
 	) as TerrainType
-# ==========================================
-# 2. 配额抽取逻辑
-# ==========================================
-
-# ==========================================
-# 1. 核心分配逻辑 (严格遵循 35% 密度限制)
-# ==========================================
+## 按配额把中立和敌方地貌放入 map_data。
+## 高度池、探针选点和实例化细节已经拆到 LandformPlacementService；
+## HexMap 只保留导出配置和地貌池。
 func _assign_terrains_and_enemies():
-	rng.randomize()
-	
-	# 【修复1】：清空上一局残留的高度池，并增加安全性校验
-	for h_key in GlobalClock.tile_h_pool.keys():
-		GlobalClock.tile_h_pool[h_key].clear()
+	_landform_placement_service.assign(map_data, _build_landform_placement_service_config())
 
-	var coords_list = map_data.keys()
-	coords_list.shuffle()  # 随机打乱顺序，保证生成位置随机
-	
-	var valid_tile_count = 0 # 记录真正可以放置地貌的地块数量
-	
-	for coord in coords_list:
-		var data = map_data[coord]
-		
-		# 跳过 nexus 核心
-		if data.has("terrain") and str(data["terrain"]) == "nexus_core":
-			continue
-			
-		valid_tile_count += 1
-		
-		var height = data["height"]
-		var terrain_type = data["terrain_type"]
-		
-		if terrain_type == null:
-			terrain_type = get_terrain_from_height(height)
-			data["terrain_type"] = terrain_type
-			
-		# 填入全局高度池（防报错：如果键不存在则动态创建）
-		if not GlobalClock.tile_h_pool.has(height):
-			GlobalClock.tile_h_pool[height] = []
-		GlobalClock.tile_h_pool[height].append(coord)
 
-	# 【核心机制】：应用 max_landform_ratio (0.35) 全局密度上限
-	var absolute_max_landforms = int(valid_tile_count * max_landform_ratio)
-	var current_placed = 0
-	
+## 收集地貌投放服务需要的配置。
+## 服务会直接在 map_data 上写入 landform / landform_type，保持旧生成管线的数据生命周期。
+func _build_landform_placement_service_config() -> Dictionary:
+	return {
+		"owner_battle": self,
+		"rng": rng,
+		"tile_h_pool": GlobalClock.tile_h_pool,
+		"neutral_pool": neutral_pool,
+		"enemy_pool": enemy_pool,
+		"max_neutral_landforms": Max_Neutral_landform,
+		"max_enemy_landforms": Max_Enemy_landform,
+		"max_landform_ratio": max_landform_ratio,
+		"terrain_from_height": Callable(self, "get_terrain_from_height"),
+	}
 
-	# 优先放置中立地形（森林/雪山等），但不超过设定的最大值，也不超过全局总上限
-	var neutral_to_place = min(Max_Neutral_landform, absolute_max_landforms - current_placed)
-	current_placed += _place_from_pool(neutral_pool, neutral_to_place)
-	
-	# 随后放置敌对地形（村庄/碉堡等），利用剩余的总配额
-	var enemy_to_place = min(Max_Enemy_landform, absolute_max_landforms - current_placed)
-	current_placed += _place_from_pool(enemy_pool, enemy_to_place)
-	
-# ==========================================
-# 2. 通用抽取放置函数 (返回实际放置的数量)
-# ==========================================
+
+## 旧调试入口：从指定池里按数量投放地貌。
+## 实际逻辑已经交给 LandformPlacementService，避免外部临时调用旧函数时报错。
 func _place_from_pool(pool: Array[Script], max_count: int) -> int:
-	if pool.is_empty() or max_count <= 0:
-		return 0
-		
-	var number = 0
-	
-	# 1. 保证池子里的每种地貌至少生成一个（保底机制）
-	for landform_script in pool:
-		if number >= max_count:
-			break
-			
-		var coord = landform_pick(landform_script)
-		if coord != Vector2i(-100, -100):
-			var inst = landform_script.new(coord, self)
-			map_data[coord]["landform"] = inst
-			map_data[coord]["landform_type"] = inst.landform_name
-			
-			if inst.get("Attitude") == inst.Attitude_Pool.Enemy:
-				inst.add_to_group("Enemies")
-			elif inst.get("Attitude") == inst.Attitude_Pool.Middle:
-				inst.add_to_group("Middle")
-				
-			number += 1
+	return _landform_placement_service.place_from_pool(
+		pool,
+		max_count,
+		map_data,
+		_build_landform_placement_service_config()
+	)
 
-	# 2. 用随机地貌填满剩下的配额
-	var remain = max_count - number
-	if remain > 0:
-		for i in range(remain):
-			var landform_script = pool.pick_random()
-			var coord = landform_pick(landform_script)
-			if coord != Vector2i(-100, -100):
-				var inst = landform_script.new(coord, self)
-				map_data[coord]["landform"] = inst
-				map_data[coord]["landform_type"] = inst.landform_name
-				
-				if inst.get("Attitude") == inst.Attitude_Pool.Enemy:
-					inst.add_to_group("Enemies")
-				elif inst.get("Attitude") == inst.Attitude_Pool.Middle:
-					inst.add_to_group("Middle")
-					
-				number += 1
-				
-	return number
-# ==========================================
-# 3. 具体坐标筛选器 (使用探针机制)
-# ==========================================
+
+## 旧调试入口：使用探针为某个地貌脚本选择坐标。
+## 真实选点逻辑已经拆到 LandformPlacementService，保持入口是为了兼容临时调试调用。
 func landform_pick(landform_script: Script) -> Vector2i:
-	# 实例化一个“探针”仅用于读取规则
-	var buffer = landform_script.new(Vector2i(-100, -100), self)
-	var buffer_pool: Array = []
-	
-	# 1. 圈定候选池（依据高度规则）
-	if buffer.landform_rules.has("require_height") and buffer.landform_rules["require_height"] != null:
-		var valid_heights = buffer.landform_rules["require_height"]
-		# 从允许的高度中随机挑一个高度层
-		var target_h = valid_heights[randi() % valid_heights.size()]
-		if GlobalClock.tile_h_pool.has(target_h):
-			buffer_pool = GlobalClock.tile_h_pool[target_h].duplicate()
-	else:
-		# 没有高度限制，全图可放
-		buffer_pool = map_data.keys().duplicate()
-		
-	# 2. 如果候选池是空的，直接销毁探针返回失败
-	if buffer_pool.is_empty():
-		buffer.queue_free() 
-		return Vector2i(-100, -100)
-
-	# 3. 在候选池中随机抽取并验证
-	var coord_index = randi() % buffer_pool.size()
-	var test_coord = buffer_pool[coord_index]
-	
-	# 循环验证，如果该坐标不合法，踢出池子继续抽
-	while not buffer_pool.is_empty() and not buffer.get_possible_coords(test_coord, map_data):
-		buffer_pool.remove_at(coord_index)
-		if buffer_pool.is_empty():
-			break
-		# 【修复2】：只有在不为空时才计算 modulo，防止除零崩溃
-		coord_index = randi() % buffer_pool.size()
-		test_coord = buffer_pool[coord_index]
-
-	# 4. 销毁探针，返回结果
-	buffer.queue_free()
-	
-	if buffer_pool.is_empty():
-		return Vector2i(-100, -100)
-	else:
-		return test_coord
+	return _landform_placement_service.pick_landform_coord(
+		landform_script,
+		map_data,
+		_build_landform_placement_service_config()
+	)
 		
 ## 获取地形顶部纹理（支持 TerrainType 枚举或 String 类型）
 func get_top_tex(terrain) -> Texture2D:

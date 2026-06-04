@@ -166,6 +166,11 @@ boss_stage <map_seed>
 - `TileLandformAttachService.gd`：初始建图地貌挂接。
 - `TileStackInitializationService.gd`：stack metadata、输入信号、入场 dissolve、高度标签。
 
+### generation
+
+- `MapGenerationService.gd`：地图坐标采样、seed 处理和 `map_data` 初始规则数据。
+- `LandformPlacementService.gd`：地貌配额、`GlobalClock.tile_h_pool` 重建、探针选点和初始地貌实例投放。
+
 ### presenters
 
 - `HexMapCollisionPresenter.gd`：碰撞形状和地块输入开关。
@@ -411,6 +416,24 @@ RuntimeLandformRegistrar.gd
 - 新增外部视觉节点：走 `ExternalRenderNodeRegistrar.gd`。
 
 ## 后续维护优先级
+
+### 已落地第一步：MapGenerationService 和 LandformPlacementService
+
+当前状态：地图数据生成已经拆到 `scene/in_scene/hex_map_modules/generation/MapGenerationService.gd`，初始地貌投放已经拆到 `scene/in_scene/hex_map_modules/generation/LandformPlacementService.gd`。
+
+已完成：
+
+- `HexMap` 保留 `map_generation_mode`、半径、高度范围、seed 和地貌配额等 Inspector 导出变量。
+- `MapGenerationService.gd` 只生成 `map_data`，不创建节点、不实例化地貌、不写全局状态。
+- `LandformPlacementService.gd` 负责重建 `GlobalClock.tile_h_pool`，并按旧顺序先投放中立地貌，再投放敌方地貌。
+- 地貌池内部仍保持“每种地貌先尝试一次，再随机补足配额”的旧行为。
+- 地貌实例仍写入 `map_data[coord].landform` 和 `landform_type`，敌方加入 `Enemies`，中立加入 `Middle`。
+
+仍待处理：
+
+- `neutral_pool` 和 `enemy_pool` 仍在 `HexMap._ready()` 中硬编码初始化。
+- 地貌脚本仍依赖 `landform_rules`、`get_possible_coords()`、`Attitude` 等鸭子类型接口。
+- 如果未来要给不同房间配置不同地貌池，建议新增配置资源或 `LandformPoolProvider`，不要把更多条件塞回 `HexMap`。
 
 ### 已落地第一步：CardManagerLocator
 
