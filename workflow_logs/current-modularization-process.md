@@ -1844,3 +1844,71 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `EnemyIntentTimelineRefresher.gd`：拆 `_refresh_enemy_intents_on_timeline()`，只负责清时间轴、取 Enemies 组、生成意图和 debug 输出。
 2. 或拆 `CombatCartoonUiController.gd`，收口 `_setup_combat_cartoon_ui()` / `_refresh_combat_cartoon_ui_progress()` 的顶部 UI 适配。
 3. 完整回合流仍建议等这些小块再瘦一轮后处理。
+
+## in_scene.gd 第十九批敌方意图时间轴刷新拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆“把当前敌人意图刷新到时间轴”的小流程。
+不拆回合推进，不修改敌人意图生成规则，也不处理 hover 表现。
+
+目标函数范围：
+
+```text
+_refresh_enemy_intents_on_timeline()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+timeline_manager.clear_grid()
+get_tree().get_nodes_in_group("Enemies")
+timeline_manager.generate_enemy_intents(all_enemies)
+timeline_manager.debug_print_grid()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/turn/EnemyIntentTimelineRefresher.gd
+```
+
+模块边界：
+
+- `EnemyIntentTimelineRefresher.gd` 只负责清空时间轴、读取 Enemies 组、生成敌方意图并输出 debug grid。
+- 它不推进回合、不抽牌、不触发建筑行为。
+- `in_scene.gd` 保留 `_refresh_enemy_intents_on_timeline()` 旧入口，供 `_start_turn()` 继续调用。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+敌方意图刷新时间轴的节点组读取和 TimelineManager 调用已经由 EnemyIntentTimelineRefresher 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+如果继续拆，当前还剩一个相对清晰的小块：
+
+1. `CombatCartoonUiController.gd`：拆 `_setup_combat_cartoon_ui()` / `_refresh_combat_cartoon_ui_progress()`，只处理顶部战斗 CartoonUI 与时间轴 reserved space。
+2. 完整 `TurnFlowController.gd` 仍暂缓，因为胜利中断、建筑行为、抽牌和敌方意图都在同一条链路里。
+3. 如果拆完 CartoonUI 后没有新的低风险小块，就可以退出 `in_scene.gd` 本轮拆解。

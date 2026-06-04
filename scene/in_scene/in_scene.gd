@@ -15,6 +15,7 @@ const CARD_DRAW_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_module
 const HAND_DISCARD_FLOW_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/cards/HandDiscardFlowController.gd")
 const IN_SCENE_INPUT_LOCK_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneInputLockController.gd")
 const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/turn/FirstTurnIntroRunner.gd")
+const ENEMY_INTENT_TIMELINE_REFRESHER := preload("res://scene/in_scene/in_scene_modules/turn/EnemyIntentTimelineRefresher.gd")
 const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd")
 const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/CursorTooltipController.gd")
 const IN_SCENE_INPUT_EVENT_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneInputEventController.gd")
@@ -186,6 +187,7 @@ var _card_draw_flow_controller: RefCounted = CARD_DRAW_FLOW_CONTROLLER.new()
 var _hand_discard_flow_controller: RefCounted = HAND_DISCARD_FLOW_CONTROLLER.new()
 var _input_lock_controller: RefCounted = IN_SCENE_INPUT_LOCK_CONTROLLER.new()
 var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
+var _enemy_intent_timeline_refresher: RefCounted = ENEMY_INTENT_TIMELINE_REFRESHER.new()
 var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
 var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
 var _input_event_controller: RefCounted = IN_SCENE_INPUT_EVENT_CONTROLLER.new()
@@ -448,18 +450,10 @@ func _build_first_turn_intro_config() -> Dictionary:
 
 
 func _refresh_enemy_intents_on_timeline() -> void:
-	if not is_instance_valid(timeline_manager):
-		return
-
-	timeline_manager.clear_grid()
-	
-	var all_enemies = get_tree().get_nodes_in_group("Enemies")
-	
-	if all_enemies.is_empty():
-		return
-	
-	timeline_manager.generate_enemy_intents(all_enemies)
-	timeline_manager.debug_print_grid()
+	_enemy_intent_timeline_refresher.refresh({
+		"timeline_manager": timeline_manager,
+		"tree": get_tree(),
+	})
 
 
 func _on_timeline_action_hovered(action: TimelineAction, is_hovering: bool):
