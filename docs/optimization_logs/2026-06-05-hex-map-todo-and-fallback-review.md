@@ -4,9 +4,9 @@
 
 ## 当前结论
 
-`hex_map.gd` 已经拆出一批稳定模块：坐标规则、地形规则、目标规则、碰撞输入开关、普通视觉状态、敌人意图地图表现、结算奖励表现、高度视图指示器、平铺/3D 同步、整图平铺/恢复、地图入场、运行时地貌注册、外部渲染节点注册、地块升降编排、地块真实销毁、地块输入协调、目标 hover 控制器、目标 AOE hover 展示计划、基础地块栈工厂和初始地貌挂接服务。
+`hex_map.gd` 已经拆出一批稳定模块：坐标规则、地形规则、目标规则、碰撞输入开关、普通视觉状态、敌人意图地图表现、结算奖励表现、高度视图指示器、平铺/3D 同步、整图平铺/恢复、地图入场、运行时地貌注册、外部渲染节点注册、地块升降编排、地块真实销毁、地块输入协调、目标 hover 控制器、目标 AOE hover 展示计划、基础地块栈工厂、初始地貌挂接服务和地块栈初始化收尾服务。
 
-剩下的耦合主要不再是“一个函数特别长”这么简单，而是几个场景根职责还在 `hex_map.gd` 中交叉：地块初始化收尾、MainBoard tooltip 旧接口适配、CardManager 查找、敌人/建筑回合行为、奖励状态、时间轴/敌人意图路径依赖。
+剩下的耦合主要不再是“一个函数特别长”这么简单，而是几个场景根职责还在 `hex_map.gd` 中交叉：MainBoard tooltip 旧接口适配、CardManager 查找、敌人/建筑回合行为、奖励状态、时间轴/敌人意图路径依赖，以及 `refresh_tile_visual()` 的粗粒度删除重建。
 
 ## 优先待拆列表
 
@@ -53,11 +53,11 @@
 - 已新增 `scene/in_scene/hex_map_modules/factory/TileStackFactory.gd`。
 - 基础 `Area2D` 容器、顶面/侧面 sprite、基础 shader 参数和碰撞体创建已经离开 `hex_map.gd`。
 - `_create_stack_at()` 仍保留旧入口名，并通过 `_build_tile_stack_factory_config()` 传入所有旧导出项和运行时状态。
-- 输入信号、高度视图标签和入场 dissolve 收尾仍留在 HexMap。
+- 输入信号、高度视图标签和入场 dissolve 收尾已经继续拆到 `TileStackInitializationService.gd`。
 
 剩余问题：
 
-- `_create_stack_at()` 仍写入 `sprites/height/occupant` metadata，并连接鼠标输入信号。
+- `_create_stack_at()` 现在仍是地块创建链路的 composition root，负责串联基础栈、地貌挂接和初始化收尾。
 - `refresh_tile_visual()` 仍然通过删除旧 stack 再重新 `_create_stack_at()`，属于较粗的局部重绘。
 
 风险：
@@ -75,28 +75,29 @@
 剩余问题：
 
 - 初始建图和运行时注册还没有共享底层 sprite 收编工具。
-- `_create_stack_at()` 仍负责 metadata、输入信号、高度标签和入场 dissolve 收尾。
+- `_create_stack_at()` 的 metadata、输入信号、高度标签和入场 dissolve 收尾已经继续拆到 `TileStackInitializationService.gd`。
 
 风险：
 
 - 后续如果统一初始建图与运行时注册，需要重点回归地貌显示、血条定位、敌人分组、奖励扫描和旧建筑行为。
 
-### 第一优先级：`_create_stack_at()` 初始化收尾服务
+### 已完成第一层：`_create_stack_at()` 初始化收尾服务
 
-当前问题：
+完成情况：
 
-- `_create_stack_at()` 仍写入 `sprites/height/occupant` metadata。
-- `_create_stack_at()` 仍处理入场 dissolve 初始值、鼠标 hover/input 信号连接和平铺高度标签。
+- 已新增 `scene/in_scene/hex_map_modules/factory/TileStackInitializationService.gd`。
+- `sprites/height/occupant` metadata 写入已经离开 `hex_map.gd`。
+- 入场 dissolve 初始值、鼠标 hover/input 信号连接和平铺高度标签创建已经离开 `hex_map.gd`。
+- 服务通过 `_build_tile_stack_initialization_config()` 消费 HexMap 注入的状态和回调，不直接读取地图主控成员变量。
 
-建议拆法：
+剩余问题：
 
-- 新建 `hex_map_modules/factory/TileStackInitializationService.gd`。
-- 第一刀只搬 metadata 写入和输入信号连接，高度标签可以继续留在 HexMap。
-- 如果高度标签一起搬，需要把 `_create_height_indicator()` 作为回调注入，不要让初始化服务直接依赖高度视图 presenter。
+- `_create_stack_at()` 已经变薄，但 `refresh_tile_visual()` 仍然通过删除旧 stack 后重新走完整创建链路。
+- 初始建图和运行时注册还没有共享 sprite 收编工具。
 
 风险：
 
-- 输入信号连接影响点击、hover、结算奖励 hover、敌人意图 hover 和卡牌 AOE hover，必须完整回归。
+- 输入信号连接影响点击、hover、结算奖励 hover、敌人意图 hover 和卡牌 AOE hover，后续改动时仍必须完整回归。
 
 ### 第二优先级：CardManager 查找服务
 
@@ -181,10 +182,10 @@
 
 ## 下一步建议顺序
 
-1. 拆 `_create_stack_at()` 的初始化收尾：metadata、输入信号、入场 dissolve 和高度标签。
-2. 抽 `CardManagerLocator.gd`，统一 HexMap 和奖励脚本的查找路径。
-3. 抽 `_on_step_next()` 的建筑回合行为 runner。
-4. 拆 MainBoard tooltip 旧接口适配，让 HexMap 最终只发目标 hover 事件。
+1. 抽 `CardManagerLocator.gd`，统一 HexMap 和奖励脚本的查找路径。
+2. 抽 `_on_step_next()` 的建筑回合行为 runner。
+3. 拆 MainBoard tooltip 旧接口适配，让 HexMap 最终只发目标 hover 事件。
+4. 拆 `refresh_tile_visual()` 的局部重绘边界，减少“删除旧 stack 再完整重建”的粗粒度流程。
 5. 最后再清理 `has_method` 兜底，每次只删一个契约已经统一的接口。
 
 ## 验证要求

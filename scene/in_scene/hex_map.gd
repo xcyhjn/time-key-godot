@@ -26,6 +26,7 @@ const HEX_MAP_INPUT_COORDINATOR := preload("res://scene/in_scene/hex_map_modules
 const TARGET_HOVER_CONTROLLER := preload("res://scene/in_scene/hex_map_modules/input/TargetHoverController.gd")
 const TILE_STACK_FACTORY := preload("res://scene/in_scene/hex_map_modules/factory/TileStackFactory.gd")
 const TILE_LANDFORM_ATTACH_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileLandformAttachService.gd")
+const TILE_STACK_INITIALIZATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/factory/TileStackInitializationService.gd")
 const ENEMY_INTENT_FRAME_TEXTURE: Texture2D = preload("res://image/texture/hexagon_frame.png")
 const ENEMY_INTENT_TARGET_SHADER: Shader = preload("res://shaders/enemy_intent_target_ripple.gdshader")
 #血条信号测试用
@@ -352,6 +353,7 @@ var _hex_map_input_coordinator := HEX_MAP_INPUT_COORDINATOR.new()
 var _target_hover_controller := TARGET_HOVER_CONTROLLER.new()
 var _tile_stack_factory := TILE_STACK_FACTORY.new()
 var _tile_landform_attach_service := TILE_LANDFORM_ATTACH_SERVICE.new()
+var _tile_stack_initialization_service := TILE_STACK_INITIALIZATION_SERVICE.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -1020,7 +1022,7 @@ func _get_hex_pixel_pos(hex_coord: Vector2) -> Vector2:
 ## 创建指定坐标的地块栈。
 ## 基础容器、地块层 sprite 和碰撞体已经拆到 TileStackFactory；
 ## 初始地貌挂接和地貌 sprite 收编已经拆到 TileLandformAttachService；
-## 旧 metadata、输入信号和高度视图标签暂时留在 HexMap，保持地图生成行为不变。
+## metadata、输入信号、入场 dissolve 和平铺高度标签收尾已经拆到 TileStackInitializationService。
 func _create_stack_at(coord: Vector2i, data: Dictionary):
 	var stack_result := _tile_stack_factory.create_stack(
 		_build_tile_stack_factory_config(coord, data)
@@ -1041,20 +1043,11 @@ func _create_stack_at(coord: Vector2i, data: Dictionary):
 	)
 	var enemy_instance: Variant = landform_result.get("occupant", null)
 	sprites_in_stack = landform_result.get("sprites", sprites_in_stack)
-	
-	stack_container.set_meta("sprites", sprites_in_stack)
-	stack_container.set_meta("height", height)
-	stack_container.set_meta("occupant", enemy_instance)
-	if is_map_intro_reveal_active():
-		_set_stack_dissolve_blend(stack_container, 1.0)
 
-	stack_container.mouse_entered.connect(_on_stack_hover.bind(stack_container, true))
-	stack_container.mouse_exited.connect(_on_stack_hover.bind(stack_container, false))
-	stack_container.input_event.connect(_on_stack_input.bind(stack_container))
-	
-	# 如果处于平铺视角，补齐顶部的数字标签
-	if current_view_state == MapViewState.VIEW_FLAT:
-		_create_height_indicator(stack_container, height)
+	_tile_stack_initialization_service.initialize(
+		stack_container,
+		_build_tile_stack_initialization_config(stack_container, sprites_in_stack, height, enemy_instance)
+	)
 
 
 ## 收集 TileStackFactory 创建基础地块栈所需的上下文。
@@ -1093,6 +1086,29 @@ func _build_tile_landform_attach_config(height: int, current_step_h: float, top_
 		"block_material": block_material,
 		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
 	}
+
+
+## 收集地块栈初始化收尾服务需要的上下文。
+## 信号回调在这里提前绑定 stack，服务只负责连接，不理解 HexMap 的 hover、点击或高度视图细节。
+func _build_tile_stack_initialization_config(
+	stack: Area2D,
+	sprites_in_stack: Array,
+	height: int,
+	enemy_instance: Variant
+) -> Dictionary:
+	return {
+		"sprites": sprites_in_stack,
+		"height": height,
+		"occupant": enemy_instance,
+		"intro_reveal_active": is_map_intro_reveal_active(),
+		"is_flat_view": current_view_state == MapViewState.VIEW_FLAT,
+		"set_stack_dissolve": Callable(self, "_set_stack_dissolve_blend"),
+		"mouse_entered_callback": Callable(self, "_on_stack_hover").bind(stack, true),
+		"mouse_exited_callback": Callable(self, "_on_stack_hover").bind(stack, false),
+		"input_event_callback": Callable(self, "_on_stack_input").bind(stack),
+		"create_height_indicator": Callable(self, "_create_height_indicator"),
+	}
+
 
 ## 局部刷新单个地块的视觉表现（优化性能，避免全局重绘）
 ## @param coord 六边形坐标（Vector2i）

@@ -789,8 +789,8 @@
 
 - 这个模块不写 `stack_nodes`，地图拓扑仍由 HexMap 持有。
 - 这个模块不挂接地貌实体，也不处理 `owner_battle`、`Enemies` 分组和血条。
-- `_create_stack_at()` 里仍保留地貌 sprite 收编、`sprites/height/occupant` metadata、入场 dissolve、输入信号和高度视图标签。
-- 后续如果继续拆地貌挂接，优先复用或扩展 `RuntimeLandformRegistrar.gd`，不要让基础工厂开始理解地貌行为。
+- 地貌挂接由 `TileLandformAttachService.gd` 负责，metadata 与输入信号收尾由 `TileStackInitializationService.gd` 负责。
+- 后续如果继续拆局部重绘，优先保持基础工厂只理解“基础地块栈”，不要让它开始处理奖励、卡牌或回合行为。
 
 ### `scene/in_scene/hex_map_modules/factory/TileLandformAttachService.gd`
 
@@ -832,6 +832,38 @@
 - 这里暂时不写 `location/target` 和 `map_data`，保持旧 `_create_stack_at()` 行为。
 - 这里暂时不把中立地貌加入 `Middle` 分组，保持旧 `_create_stack_at()` 行为。
 - 如果后续要统一初始建图和运行时注册，建议先抽共享的 sprite 收编工具，再合并数据写入流程。
+
+### `scene/in_scene/hex_map_modules/factory/TileStackInitializationService.gd`
+
+这个模块负责地块栈创建完成后的初始化收尾：
+
+- 写入 `sprites`、`height`、`occupant` metadata。
+- 在地图开场揭示动画期间，把新建地块的 dissolve 初始值设为完全隐藏。
+- 连接地块 `mouse_entered`、`mouse_exited` 和 `input_event` 信号。
+- 在平铺高度视图下，通过 HexMap 注入的回调创建高度数字标签。
+
+主要调用方：
+
+- `hex_map.gd::_create_stack_at()`
+
+目前没有新增导出变量。
+
+运行时会读取：
+
+- 基础地块栈。
+- 地块 sprite 列表。
+- 地块高度。
+- 地貌占用者。
+- 当前是否处于地图入场揭示。
+- 当前是否处于平铺高度视图。
+- HexMap 注入的 dissolve、高度标签和输入信号回调。
+
+调整时注意：
+
+- 这个模块不直接读取 `stack_nodes`、`current_view_state` 或任何 HexMap 成员变量，所有状态必须通过 `_build_tile_stack_initialization_config()` 传入。
+- 鼠标回调在 HexMap 里提前绑定 stack，服务只负责连接信号，不判断 hover、点击、奖励模式或敌人意图模式。
+- `occupant` 为空时仍然写入 metadata，保持旧逻辑里 `has_meta("occupant")` 可以成立。
+- 高度标签仍走 `_create_height_indicator()` 回调，因此不要在这里直接依赖 `HeightViewIndicatorPresenter.gd`。
 
 ## 修改后的验证清单
 
@@ -875,5 +907,6 @@ git diff --check
 - MainBoard tooltip 的具体 UI controller 仍未拆，当前只在 HexMap 中保留一层旧接口适配。
 - `_create_stack_at()` 的基础地块容器、基础 sprite 和碰撞体已拆到 `TileStackFactory.gd`。
 - `_create_stack_at()` 的初始地貌挂接和地貌 sprite 收编已拆到 `TileLandformAttachService.gd`。
-- `_create_stack_at()` 中仍保留 metadata、输入信号、高度标签和入场 dissolve 收尾，适合后续继续拆。
+- `_create_stack_at()` 的 metadata、输入信号、高度标签和入场 dissolve 收尾已拆到 `TileStackInitializationService.gd`。
 - `refresh_tile_visual()` 仍然通过删除旧 stack 再调用 `_create_stack_at()` 重建，等工厂继续稳定后再拆局部重绘服务。
+- 下一批建议优先拆 `CardManagerLocator.gd` 或 `_on_step_next()` 建筑回合行为 runner；如果继续沿地块链路，则看 `refresh_tile_visual()` 的局部重绘边界。
