@@ -76,7 +76,7 @@
 
 - 不要在 `TileElevationService.gd` 中直接查找 BarManager。血条查找必须通过 HexMap 注入回调完成。
 - 不要在服务中直接调用 `tile_topology_changed.emit()`。需要发信号时走 `emit_tile_topology_changed` 回调。
-- 不要把 `_perform_tile_destruction()` 搬进这个服务；真实删除和静态库清理是下一块生命周期 mutation 的职责。
+- 不要把 `_perform_tile_destruction()` 搬进这个服务；真实删除和静态库清理已经拆到 `TileDestructionMutationService.gd`。
 - 平铺视图下升降时必须维护 `height_view_original_materials`，否则切回 3D 后地貌、碰撞箱或血条会错位。
 - 新增或删除侧面块后必须刷新 `block_idx` 和 `total_height`。
 - 如果后续修改高度上下限规则，需要同时检查 `HexTargetRules.gd` 的放置预检和 `ElevationCommand.gd` 的等待逻辑。

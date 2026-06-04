@@ -9,6 +9,7 @@ const HEX_COORD_RULES := preload("res://scene/in_scene/hex_map_modules/rules/Hex
 const HEX_TERRAIN_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexTerrainRules.gd")
 const HEX_TARGET_RULES := preload("res://scene/in_scene/hex_map_modules/rules/HexTargetRules.gd")
 const TILE_DESTRUCTION_BATCH_QUEUE := preload("res://scene/in_scene/hex_map_modules/destruction/TileDestructionBatchQueue.gd")
+const TILE_DESTRUCTION_MUTATION_SERVICE := preload("res://scene/in_scene/hex_map_modules/destruction/TileDestructionMutationService.gd")
 const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/EnemyIntentMapPresenter.gd")
 const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/SettlementRewardPresenter.gd")
 const HEX_MAP_COLLISION_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapCollisionPresenter.gd")
@@ -340,6 +341,7 @@ var _height_view_state_synchronizer := HEIGHT_VIEW_STATE_SYNCHRONIZER.new()
 var _height_view_map_transition_runner := HEIGHT_VIEW_MAP_TRANSITION_RUNNER.new()
 var _map_intro_reveal_runner := MAP_INTRO_REVEAL_RUNNER.new()
 var _tile_elevation_service := TILE_ELEVATION_SERVICE.new()
+var _tile_destruction_mutation_service := TILE_DESTRUCTION_MUTATION_SERVICE.new()
 ## 鼠标碰撞总开关，拖拽/结算阶段会优先关闭它。
 var _tiles_interactive_master_enabled: bool = true
 ## 记录上一帧是否处于地块选择态，仅在状态变化时刷新碰撞开关。
@@ -2179,7 +2181,7 @@ func _animate_elevation_height_label(stack: Area2D, visual_height: int) -> void:
 
 
 ## 给拆出的服务统一发出地图拓扑变化信号。
-## 当前主要服务 3D 视图下非销毁升降；销毁流程仍由 `_perform_tile_destruction()` 自己发信号。
+## 当前服务升降完成和地块销毁两个路径；调用方通过回调触发，避免直接持有 HexMap 信号。
 func _emit_tile_topology_changed() -> void:
 	tile_topology_changed.emit()
 	
@@ -2234,55 +2236,40 @@ func is_entity_alive(entity: Node) -> bool:
 		return false
 	return true
 
-## 执行毁灭流程
+## 执行单个地块的真实销毁流程。
+## 旧入口名继续给 TileDestructionBatchQueue 调用；真实 mutation 已拆到 TileDestructionMutationService。
 func _perform_tile_destruction(stack: Area2D, coord: Vector2i) -> void:
-	var sprites = stack.get_meta("sprites") as Array
-	
-	# ★ 核心解耦：等待 VFXManager 的表现播完
-	await VFXManager.play_tile_destruction_vfx(
-		sprites,
-		get_tree(),
-		tile_destruction_shake_count,
-		tile_destruction_shake_step_duration,
-		tile_destruction_shake_distance,
-		tile_destruction_dissolve_duration
+	await _tile_destruction_mutation_service.perform(
+		stack,
+		coord,
+		_build_tile_destruction_mutation_service_config()
 	)
-	
-	# 表现播完后，执行逻辑抹除
-	var occupant: Variant = null
-	if is_instance_valid(stack) and stack.has_meta("occupant"):
-		occupant = stack.get_meta("occupant")
 
-	if is_instance_valid(stack):
-		stack.queue_free()
-	
-	var destroyed_height := 0
-	if map_data.has(coord) and typeof(map_data[coord]) == TYPE_DICTIONARY:
-		destroyed_height = int(map_data[coord].get("height", 0))
-	if GlobalClock.tile_h_pool.has(destroyed_height):
-		GlobalClock.tile_h_pool[destroyed_height].erase(coord)
 
-	stack_nodes.erase(coord)
-	map_data.erase(coord)
-	_refresh_stack_interactivity()
+## 收集真实销毁服务需要的上下文。
+## 导出调参、VFXManager、数据字典和信号入口都从 HexMap 注入，服务本身不直接查找场景节点。
+func _build_tile_destruction_mutation_service_config() -> Dictionary:
+	return {
+		"tree": get_tree(),
+		"vfx_manager": VFXManager,
+		"stack_nodes": stack_nodes,
+		"map_data": map_data,
+		"tile_h_pool": GlobalClock.tile_h_pool,
+		"shake_count": tile_destruction_shake_count,
+		"shake_step_duration": tile_destruction_shake_step_duration,
+		"shake_distance": tile_destruction_shake_distance,
+		"dissolve_duration": tile_destruction_dissolve_duration,
+		"landform_library_holders": [iron_mine, village],
+		"refresh_stack_interactivity": Callable(self, "_refresh_stack_interactivity"),
+		"emit_enemy_roster_changed": Callable(self, "_emit_enemy_roster_changed"),
+		"emit_tile_topology_changed": Callable(self, "_emit_tile_topology_changed"),
+	}
 
-	_remove_destroyed_coord_from_landform_libraries(coord)
 
-	if is_instance_valid(occupant):
-		occupant.queue_free()
-	
+## 给拆出的销毁服务统一发出敌人列表变化信号。
+## 当前地块销毁可能移除敌人建筑，因此需要通知总血量和意图等系统刷新。
+func _emit_enemy_roster_changed() -> void:
 	enemy_roster_changed.emit()
-	tile_topology_changed.emit()
-
-
-## 运行期高度崩塌会直接删除地块，因此要同步清理仍保存旧坐标的静态库。
-## 当前主要用于 iron_mine / village 这类会缓存全局坐标列表的旧建筑逻辑。
-func _remove_destroyed_coord_from_landform_libraries(coord: Vector2i) -> void:
-	if iron_mine != null and "Library" in iron_mine:
-		iron_mine.Library.erase(coord)
-
-	if village != null and "Library" in village:
-		village.Library.erase(coord)
 
 
 ## 将超限地块排入两两消失队列，并等待该地块真正完成销毁。

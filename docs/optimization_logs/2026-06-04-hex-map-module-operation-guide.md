@@ -99,7 +99,7 @@
 
 - `tile_destruction_batch_size` 决定一次消失多少个超限地块。
 - `tile_destruction_batch_collect_delay` 应保持较小，它只是把同一波地形变化收集到一起。
-- VFX 时间参数仍然通过 `_perform_tile_destruction()` 传给 `VFXManager`，不是队列模块自己播放。
+- VFX 时间参数会经由 `_perform_tile_destruction()` 包装入口传给 `TileDestructionMutationService.gd`，不是队列模块自己播放。
 
 ### `scene/in_scene/hex_map_modules/rules/HexTargetRules.gd`
 
@@ -612,10 +612,52 @@
 调整时注意：
 
 - `TileElevationService.gd` 只管升降过程，不直接调用 BarManager 路径、不直接发奖励、不直接改敌人列表。
-- 超限地块的真实删除仍然在 `hex_map.gd::_perform_tile_destruction()` 中，队列仍然在 `TileDestructionBatchQueue.gd` 中。
+- 超限地块的真实删除已经由 `hex_map.gd::_perform_tile_destruction()` 包装入口委托给 `TileDestructionMutationService.gd`，队列仍然在 `TileDestructionBatchQueue.gd` 中。
 - 平铺视图下的高度变化必须同时维护 `height_view_original_materials`，否则切回 3D 后地貌、碰撞箱和血条会错位。
 - 新增侧面块时必须刷新 `block_idx` 和 `total_height`，否则 hover、遮挡和平铺 shader 会读到旧层数。
-- 如果以后继续拆销毁流程，优先把 `_perform_tile_destruction()` 和 `_remove_destroyed_coord_from_landform_libraries()` 拆成单独 mutation service，不要放进升降服务。
+- 地块真实删除已经拆到 `TileDestructionMutationService.gd`，不要把删除数据字典或旧静态库清理再塞回升降服务。
+
+### `scene/in_scene/hex_map_modules/destruction/TileDestructionMutationService.gd`
+
+这个模块负责高度超限后的单个地块真实删除：
+
+- 读取地块 `sprites` metadata，并调用 `VFXManager.play_tile_destruction_vfx()` 播放销毁表现。
+- 保存并释放地块 occupant。
+- 释放地块 `Area2D` 根节点。
+- 从 `GlobalClock.tile_h_pool` 中移除被销毁坐标。
+- 从 `stack_nodes` 和 `map_data` 中删除被销毁坐标。
+- 刷新地块输入状态。
+- 清理 `iron_mine.Library` 和 `village.Library` 这类旧静态坐标库。
+- 通过 HexMap 注入回调发出 `enemy_roster_changed` 和 `tile_topology_changed`。
+
+主要调用方：
+
+- `hex_map.gd::_perform_tile_destruction()`
+- `TileDestructionBatchQueue.gd` 通过 HexMap 包装入口间接调用
+
+相关导出变量仍然在 `hex_map.gd` 中调整：
+
+- `tile_destruction_shake_count`
+- `tile_destruction_shake_step_duration`
+- `tile_destruction_shake_distance`
+- `tile_destruction_dissolve_duration`
+
+运行时会读取：
+
+- `stack_nodes`
+- `map_data`
+- `GlobalClock.tile_h_pool`
+- 地块 `sprites` 和 `occupant` metadata
+- `iron_mine.Library`
+- `village.Library`
+- HexMap 注入的 `VFXManager`、`SceneTree`、交互刷新和信号回调
+
+调整时注意：
+
+- 这个模块只做单个地块 mutation，不做批处理节奏。批处理仍归 `TileDestructionBatchQueue.gd`。
+- 不要在这里决定地块是否应该销毁；高度上下限判断仍在 `TileElevationService.gd`。
+- 如果新增会缓存坐标的旧建筑脚本，需要把它加入 HexMap 传入的 `landform_library_holders`。
+- 如果后续要清理更多跨系统状态，例如奖励模式缓存或敌人意图缓存，优先通过 HexMap 提供明确回调，不要让服务直接查找其他 controller。
 
 ## 修改后的验证清单
 
@@ -651,5 +693,7 @@ git diff --check
 - 地图开场血条延迟队列已经拆到 `MapIntroRevealRunner.gd`。下一步如果继续拆 BarManager 耦合，应优先看血条创建接口和总血量刷新接口。
 - 碰撞和 input_pickable 已拆到 `HexMapCollisionPresenter.gd`。
 - 普通 hover、AOE 和遮挡高亮已拆到 `HexMapVisualStatePresenter.gd`。
-- 地块升降编排已拆到 `TileElevationService.gd`。下一步如果继续拆地块生命周期，优先拆 `_perform_tile_destruction()` 的真实删除和静态库清理。
-- `_on_stack_hover()` 和 `_on_stack_input()` 仍然是输入编排耦合点，可以在销毁 mutation 稳定后继续拆。
+- 地块升降编排已拆到 `TileElevationService.gd`。
+- 地块真实删除和旧静态库清理已拆到 `TileDestructionMutationService.gd`。
+- `_on_stack_hover()` 和 `_on_stack_input()` 仍然是输入编排耦合点，可以作为下一批拆分目标。
+- `_create_stack_at()` 和 `refresh_tile_visual()` 仍然混合了地块节点创建、地貌挂接、shader 初始化和碰撞创建，适合后续拆成 tile stack factory。
