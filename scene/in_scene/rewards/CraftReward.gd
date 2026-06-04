@@ -1,5 +1,7 @@
 ﻿extends CanvasLayer
 
+signal reward_scene_close_requested(scene_instance: Node)
+
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
 
@@ -135,17 +137,7 @@ func close() -> void:
 	background_mask.hide()
 	_reset_crafting_state()
 
-	var parent = get_parent()
-	if parent and parent.has_method("_on_external_scene_exit_pressed"):
-		parent._on_external_scene_exit_pressed(self)
-	else:
-		var main = get_tree().root.find_child("Project", true, false)
-		if main and main.has_method("_on_external_scene_exit_pressed"):
-			main._on_external_scene_exit_pressed(self)
-		elif main and main.has_method("restore_ui_after_external_scene"):
-			main.restore_ui_after_external_scene()
-			await get_tree().process_frame
-			queue_free()
+	reward_scene_close_requested.emit(self)
 
 
 func set_deck_manager(manager) -> void:

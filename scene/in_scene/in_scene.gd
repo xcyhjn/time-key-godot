@@ -1215,6 +1215,7 @@ func _open_settlement_reward_scene(reward_type: String, reward_context: Dictiona
 	var reward_instance = packed_scene.instantiate()
 	add_child(reward_instance)
 	reward_instance.show()
+	_connect_signal_once(reward_instance.reward_scene_close_requested, _on_external_scene_exit_pressed)
 
 	if not reward_context.is_empty():
 		reward_instance.set_meta("settlement_reward_context", reward_context)
@@ -1233,9 +1234,6 @@ func _open_settlement_reward_scene(reward_type: String, reward_context: Dictiona
 		reward_instance.open()
 	else:
 		reward_instance.show()
-
-	_connect_exit_signal_for_external_scene(reward_instance)
-
 
 # 当局外界面点击离开/下一关时调用这个函数
 func _get_settlement_reward_scene(scene_path: String) -> PackedScene:
@@ -1619,63 +1617,6 @@ func restore_all_ui():
 		if is_instance_valid(total_enemy_health_bar): total_enemy_health_bar.show()
 		_set_single_health_bars_visible(true)
 	
-
-## 连接外部场景的退出信号
-func _connect_exit_signal_for_external_scene(scene_instance: Node):
-	# 奖励/商店场景本身已经在 _ready 里把按钮接到自己的 close / exit 流程。
-	# 这些流程会回调 _on_external_scene_exit_pressed；这里如果再次直连按钮，
-	# 会绕过奖励页自己的“退出禁用 / 未完成确认”等状态机。
-	if scene_instance.has_method("_on_back_pressed") or scene_instance.has_method("_on_exit_pressed"):
-		return
-
-	# 尝试连接常见的退出按钮信号
-	# 1. 检查 btn_exit (商店使用)
-	if scene_instance.has_node("btn_exit"):
-		var btn_exit = scene_instance.get_node("btn_exit")
-		if btn_exit is Button and btn_exit.pressed.is_connected(_on_external_scene_exit_pressed):
-			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
-		if btn_exit is Button:
-			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-	
-	# 2. 检查 btn_back (奖励场景使用)
-	if scene_instance.has_node("btn_back"):
-		var btn_back = scene_instance.get_node("btn_back")
-		if btn_back is Button and btn_back.pressed.is_connected(_on_external_scene_exit_pressed):
-			btn_back.pressed.disconnect(_on_external_scene_exit_pressed)
-		if btn_back is Button:
-			btn_back.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-	
-	# 3. 检查 BtnExit (带大写)
-	if scene_instance.has_node("BtnExit"):
-		var btn_exit = scene_instance.get_node("BtnExit")
-		if btn_exit is Button and btn_exit.pressed.is_connected(_on_external_scene_exit_pressed):
-			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
-		if btn_exit is Button:
-			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-	
-	# 4. 检查 BtnBack (带大写)
-	if scene_instance.has_node("BtnBack"):
-		var btn_back = scene_instance.get_node("BtnBack")
-		if btn_back is Button and btn_back.pressed.is_connected(_on_external_scene_exit_pressed):
-			btn_back.pressed.disconnect(_on_external_scene_exit_pressed)
-		if btn_back is Button:
-			btn_back.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-	
-	# 5. 检查 Sidebar/BtnExit (商店侧边栏退出按钮)
-	if scene_instance.has_node("Sidebar/BtnExit"):
-		var btn_exit = scene_instance.get_node("Sidebar/BtnExit")
-		if btn_exit is Button and btn_exit.pressed.is_connected(_on_external_scene_exit_pressed):
-			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
-		if btn_exit is Button:
-			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
-	
-	# 6. 检查 Sidebar/btn_exit (小写版本)
-	if scene_instance.has_node("Sidebar/btn_exit"):
-		var btn_exit = scene_instance.get_node("Sidebar/btn_exit")
-		if btn_exit is Button and btn_exit.pressed.is_connected(_on_external_scene_exit_pressed):
-			btn_exit.pressed.disconnect(_on_external_scene_exit_pressed)
-		if btn_exit is Button:
-			btn_exit.pressed.connect(_on_external_scene_exit_pressed.bind(scene_instance))
 
 ## 外部场景退出按钮回调
 func _on_external_scene_exit_pressed(scene_instance: Node):

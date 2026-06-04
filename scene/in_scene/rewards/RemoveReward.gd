@@ -4,6 +4,8 @@
 
 extends CanvasLayer
 
+signal reward_scene_close_requested(scene_instance: Node)
+
 ## 卡牌数据池单例引用
 var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
@@ -142,22 +144,7 @@ func close():
 	# 清理资源
 	_clear_deck_display()
 	
-	# ★ 模仿商店页面退出逻辑: 通知父场景恢复UI
-	# 尝试查找父节点中的 _on_external_scene_exit_pressed 方法
-	var parent = get_parent()
-	if parent and parent.has_method("_on_external_scene_exit_pressed"):
-		parent._on_external_scene_exit_pressed(self)
-	else:
-		# 备用方案: 尝试通过树查找主Project节点
-		var main = get_tree().root.find_child("Project", true, false)
-		if main and main.has_method("_on_external_scene_exit_pressed"):
-			main._on_external_scene_exit_pressed(self)
-		elif main and main.has_method("restore_ui_after_external_scene"):
-			# 直接恢复UI，但不移除场景实例
-			main.restore_ui_after_external_scene()
-			# 延迟一帧后移除自己，避免立即queue_free导致问题
-			await get_tree().process_frame
-			self.queue_free()
+	reward_scene_close_requested.emit(self)
 
 ## ==========================================
 ## ★ 牌组显示逻辑
