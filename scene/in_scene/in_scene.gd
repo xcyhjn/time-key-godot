@@ -16,6 +16,7 @@ const FIRST_TURN_INTRO_RUNNER := preload("res://scene/in_scene/in_scene_modules/
 const CARD_TOOLTIP_UI_ADAPTER := preload("res://scene/in_scene/in_scene_modules/ui/CardTooltipUiAdapter.gd")
 const CURSOR_TOOLTIP_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/CursorTooltipController.gd")
 const IN_SCENE_UI_VISIBILITY_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/InSceneUiVisibilityController.gd")
+const TARGET_SELECTION_HOVER_UI_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/ui/TargetSelectionHoverUiController.gd")
 const SETTLEMENT_DECK_SNAPSHOT_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckSnapshotService.gd")
 const SETTLEMENT_DECK_RECLAIM_SERVICE := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementDeckReclaimService.gd")
 const SETTLEMENT_REWARD_SCENE_CONTROLLER := preload("res://scene/in_scene/in_scene_modules/settlement/SettlementRewardSceneController.gd")
@@ -182,6 +183,7 @@ var _first_turn_intro_runner: RefCounted = FIRST_TURN_INTRO_RUNNER.new()
 var _card_tooltip_ui_adapter: RefCounted = CARD_TOOLTIP_UI_ADAPTER.new()
 var _cursor_tooltip_controller: RefCounted = CURSOR_TOOLTIP_CONTROLLER.new()
 var _ui_visibility_controller: RefCounted = IN_SCENE_UI_VISIBILITY_CONTROLLER.new()
+var _target_selection_hover_ui_controller: RefCounted = TARGET_SELECTION_HOVER_UI_CONTROLLER.new()
 var _settlement_deck_snapshot_service: RefCounted = SETTLEMENT_DECK_SNAPSHOT_SERVICE.new()
 var _settlement_deck_reclaim_service: RefCounted = SETTLEMENT_DECK_RECLAIM_SERVICE.new()
 var _settlement_reward_scene_controller: RefCounted = SETTLEMENT_REWARD_SCENE_CONTROLLER.new()
@@ -903,23 +905,13 @@ func _set_stack_selected_shader(stack: Area2D, is_selected: bool):
 
 
 func update_target_selection_hover(hovered_stack: Area2D, active_card: Control):
-	var mouse_pos = get_global_mouse_position()
-	# 这里使用 call_deferred 防止 Godot 的坐标尚未更新导致漂移
-	set_cursor_tooltip_position(mouse_pos + Vector2(20, -30))
-
-	if is_valid_target(hovered_stack, active_card):
-		# ★ 核心修复：坚决不在这里修改 Shader！全权交由 HexMap 的状态机处理
-		var card_info = active_card.get("card_info")
-		var dmg = card_info.get("ATK", 0) if typeof(card_info) == TYPE_DICTIONARY else 0
-		cursor_tooltip.text = "-" + str(dmg)
-		cursor_tooltip.add_theme_color_override("font_color", Color.RED)
-		cursor_tooltip.show()
-	else:
-		pass
-		# ★ 核心修复：坚决不在这里修改 Shader！
-		cursor_tooltip.text = "无效果"
-		cursor_tooltip.add_theme_color_override("font_color", Color.GRAY)
-		cursor_tooltip.show()
+	_target_selection_hover_ui_controller.update_hover({
+		"cursor_tooltip": cursor_tooltip,
+		"set_cursor_tooltip_position": Callable(self, "set_cursor_tooltip_position"),
+		"mouse_position": get_global_mouse_position(),
+		"is_valid_target": is_valid_target(hovered_stack, active_card),
+		"active_card": active_card,
+	})
 		
 func _on_end_combat_pressed():
 	if current_battle_state != BattleFlowState.SETTLEMENT:

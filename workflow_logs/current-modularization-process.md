@@ -1478,3 +1478,72 @@ ObjectDB / RID / resource 退出提示仍会出现。
 1. `CardDrawFlowController.gd`：拆 `attempt_draw_cards()` 和 `shuffle_card()`，但要小心 `is_processing_deck`、输入锁和 `process_frame`。
 2. `TurnFlowController.gd`：拆 `_on_end_turn_pressed()` / `_start_turn()` 的回合推进编排，但牵动时间轴、敌意图和抽牌，应等抽牌流先稳定。
 3. `TargetHoverUiController.gd`：拆 `update_target_selection_hover()` 的 tooltip 文案和定位，风险比回合流低。
+
+## in_scene.gd 第十四批目标选择 hover UI 拆分记录
+
+日期：2026-06-05
+
+### 本批目标
+
+本批只拆卡牌目标选择 hover 时的光标提示表现。
+目标合法性仍由 `in_scene.gd` 调用 `HexTargetRules` 判断，避免 UI 模块知道地图规则。
+
+目标函数范围：
+
+```text
+update_target_selection_hover(hovered_stack, active_card)
+```
+
+当前触碰的外部节点和接口：
+
+```text
+cursor_tooltip.text
+cursor_tooltip.add_theme_color_override()
+cursor_tooltip.show()
+set_cursor_tooltip_position()
+active_card.card_info["ATK"]
+```
+
+### 新增模块
+
+```text
+scene/in_scene/in_scene_modules/ui/TargetSelectionHoverUiController.gd
+```
+
+模块边界：
+
+- `TargetSelectionHoverUiController.gd` 只负责设置目标 hover tooltip 的位置、文案、颜色和显示。
+- 它不调用 `HexTargetRules`，不读取 `hex_map.map_data`，不改地块 shader。
+- `in_scene.gd` 保留 `update_target_selection_hover()` 旧接口，供 HexMap 的 `TargetSelectionTooltipAdapter` 继续调用。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+目标 hover 的 “-伤害值 / 无效果” 文案、红灰颜色和 tooltip 定位已经由 TargetSelectionHoverUiController 统一维护。
+```
+
+回归检查：
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
+
+已知旧噪声：
+
+```text
+TileSet atlas 相关报错仍会在加载场景时大量输出。
+ObjectDB / RID / resource 退出提示仍会出现。
+这些仍按旧噪声处理。
+```
+
+### 下一批建议
+
+`in_scene.gd` 仍有可拆点，暂时不退出流程：
+
+1. `CardDrawFlowController.gd`：拆 `attempt_draw_cards()` 和 `shuffle_card()`，需要把 `is_processing_deck` 的读写结果回传给主脚本。
+2. `TimelineActionHoverUiController.gd`：拆 `_on_timeline_action_hovered()` 中玩家行动 tooltip 和 pulse shader 表现；敌方意图已由 EnemyIntentPresentationController 接管，拆时要继续保持 ENEMY 早退。
+3. `TurnFlowController.gd` 继续暂缓，等抽牌流和时间轴 hover 更薄后再处理。
