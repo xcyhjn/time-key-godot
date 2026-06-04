@@ -15,6 +15,7 @@ const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/hex_map_modul
 const HEX_MAP_COLLISION_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapCollisionPresenter.gd")
 const HEX_MAP_VISUAL_STATE_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapVisualStatePresenter.gd")
 const TARGET_AOE_HOVER_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/TargetAoeHoverPresenter.gd")
+const TARGET_SELECTION_TOOLTIP_ADAPTER := preload("res://scene/in_scene/hex_map_modules/ui/TargetSelectionTooltipAdapter.gd")
 const SETTLEMENT_REWARD_CONTROLLER := preload("res://scene/in_scene/hex_map_modules/rewards/SettlementRewardController.gd")
 const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd")
 const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/RuntimeLandformRegistrar.gd")
@@ -345,6 +346,7 @@ var _settlement_reward_controller := SETTLEMENT_REWARD_CONTROLLER.new()
 var _hex_map_collision_presenter := HEX_MAP_COLLISION_PRESENTER.new()
 var _hex_map_visual_state_presenter := HEX_MAP_VISUAL_STATE_PRESENTER.new()
 var _target_aoe_hover_presenter := TARGET_AOE_HOVER_PRESENTER.new()
+var _target_selection_tooltip_adapter := TARGET_SELECTION_TOOLTIP_ADAPTER.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
@@ -1496,16 +1498,10 @@ func _build_target_aoe_hover_presenter_config() -> Dictionary:
 
 
 ## 根据 AOE 展示计划刷新 MainBoard tooltip。
-## MainBoard 的接口仍是旧 `update_target_selection_hover(center_stack, card)`，本函数只把 presenter 的请求翻译回旧调用。
+## MainBoard 旧接口的函数名和参数细节已经交给 TargetSelectionTooltipAdapter，
+## HexMap 这里只保留一个地图侧入口，方便后续替换为信号或显式 UI 注入。
 func _update_target_selection_tooltip(main_board: Node, display_plan: Dictionary) -> void:
-	if not is_instance_valid(main_board):
-		return
-	if not main_board.has_method("update_target_selection_hover"):
-		return
-	var tooltip_stack: Variant = display_plan.get("tooltip_stack", null)
-	var tooltip_card: Variant = display_plan.get("tooltip_card", null)
-	if is_instance_valid(tooltip_stack) and tooltip_stack is Area2D:
-		main_board.update_target_selection_hover(tooltip_stack, tooltip_card)
+	_target_selection_tooltip_adapter.apply(main_board, display_plan)
 # ==========================================
 # ★ 新增：条件地块效果系统
 # ==========================================

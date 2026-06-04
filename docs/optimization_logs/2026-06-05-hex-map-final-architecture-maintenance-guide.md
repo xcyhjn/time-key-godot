@@ -282,8 +282,8 @@ boss_stage <map_seed>
 
 维护建议：
 
-- 下一步优先抽 `CardManagerLocator.gd`。
-- 抽 locator 之前，不要在奖励脚本、商店脚本或新 UI 里再复制新的 CardManager 查找链。
+- `HexMap.get_card_manager()` 已经委托 `CardManagerLocator.gd`，新的地图侧代码不要再复制 CardManager 查找链。
+- 奖励脚本、商店脚本或其他 UI 如果后续要收敛，应逐个迁移到 locator。
 - 不要直接删 root/current_scene metadata 兜底，除非所有入口都已经统一注入 CardManager。
 
 ### BarManager 与 HexMap
@@ -302,8 +302,8 @@ boss_stage <map_seed>
 
 维护建议：
 
-- `_on_step_next()` 是当前最明显的待拆点之一。
-- 后续应抽 `TileTurnBehaviorRunner.gd`，保留旧顺序：先处理 `iron_mine.Library`，再处理其他地貌。
+- `_on_step_next()` 已经委托 `TileTurnBehaviorRunner.gd`。
+- runner 保留旧顺序：先处理 `iron_mine.Library`，再处理其他地貌。
 - 不要在新的建筑脚本里绕过回合 runner 直接找 `HexMap` 改地图。
 
 ## HexMap 的使用方式
@@ -459,18 +459,20 @@ RuntimeLandformRegistrar.gd
 - 打开奖励页面仍由 `in_scene.gd` 处理。
 - 奖励页内部的 CardManager 查找链后续可以逐步迁移到 `CardManagerLocator.gd`。
 
-### 第四优先级：MainBoard Tooltip 适配器
+### 已落地第一步：TargetSelectionTooltipAdapter
 
-目标：把 `HexMap` 中对 MainBoard 旧 tooltip 接口的直接调用拆成适配器或事件。
+当前状态：`HexMap` 对 MainBoard 旧 tooltip 接口的直接调用已经拆到 `scene/in_scene/hex_map_modules/ui/TargetSelectionTooltipAdapter.gd`。
 
-预期收益：
+已完成：
 
 - `TargetAoeHoverPresenter.gd` 只生成展示计划。
-- `HexMap` 不再关心 MainBoard 的具体函数名。
+- `HexMap` 只把 `main_board` 和 `display_plan` 交给 adapter。
+- MainBoard 旧接口 `update_target_selection_hover(center_stack, card)` 暂时保持不变。
 
-注意：
+仍待处理：
 
 - 要回归卡牌 hover 合法/非法目标、范围型效果和无目标卡牌。
+- 如果后续 MainBoard tooltip 改成信号或专用 UI controller，应优先替换 adapter 内部实现，而不是再改 `HexMap`。
 
 ### 第五优先级：refresh_tile_visual 局部重绘
 
