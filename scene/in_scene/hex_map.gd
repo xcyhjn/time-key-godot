@@ -14,6 +14,7 @@ const ENEMY_INTENT_MAP_PRESENTER := preload("res://scene/in_scene/hex_map_module
 const SETTLEMENT_REWARD_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/SettlementRewardPresenter.gd")
 const HEX_MAP_COLLISION_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapCollisionPresenter.gd")
 const HEX_MAP_VISUAL_STATE_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/HexMapVisualStatePresenter.gd")
+const TARGET_AOE_HOVER_PRESENTER := preload("res://scene/in_scene/hex_map_modules/presenters/TargetAoeHoverPresenter.gd")
 const HEIGHT_VIEW_INDICATOR_PRESENTER := preload("res://scene/in_scene/hex_map_modules/height_view/HeightViewIndicatorPresenter.gd")
 const RUNTIME_LANDFORM_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/RuntimeLandformRegistrar.gd")
 const EXTERNAL_RENDER_NODE_REGISTRAR := preload("res://scene/in_scene/hex_map_modules/registrars/ExternalRenderNodeRegistrar.gd")
@@ -336,6 +337,7 @@ var _enemy_intent_map_presenter := ENEMY_INTENT_MAP_PRESENTER.new()
 var _settlement_reward_presenter := SETTLEMENT_REWARD_PRESENTER.new()
 var _hex_map_collision_presenter := HEX_MAP_COLLISION_PRESENTER.new()
 var _hex_map_visual_state_presenter := HEX_MAP_VISUAL_STATE_PRESENTER.new()
+var _target_aoe_hover_presenter := TARGET_AOE_HOVER_PRESENTER.new()
 var _height_view_indicator_presenter := HEIGHT_VIEW_INDICATOR_PRESENTER.new()
 var _runtime_landform_registrar := RUNTIME_LANDFORM_REGISTRAR.new()
 var _external_render_node_registrar := EXTERNAL_RENDER_NODE_REGISTRAR.new()
@@ -1553,26 +1555,51 @@ func _clear_all_aoe_highlights() -> void:
 	selected_stack = result.get("selected_stack", null)
 	active_stack = result.get("active_stack", null)
 		
-## 计算范围并驱动状态机 (所有范围内地块享受同等高亮)
+## 应用卡牌目标 AOE hover 展示计划。
+## 范围收集、目标状态选择和 tooltip 请求已经拆到 TargetAoeHoverPresenter；
+## HexMap 这里只负责把计划交给视觉状态 presenter，并沿用旧 MainBoard tooltip 调用。
 func _update_aoe_display(card: Control, center_stack: Area2D, main_board: Node) -> void:
-	var new_aoe_stacks: Array[Area2D] = []
-	var center_coord = stack_nodes.find_key(center_stack)
-	new_aoe_stacks = HEX_TARGET_RULES.get_effect_range_stacks(card, center_coord, stack_nodes)
-			
-	# 判断中心点是否合法，决定全境是亮金边还是亮灰边。
-	var is_valid = _is_stack_valid_target(center_stack)
-	var target_state = TileVisualState.HOVER_TARGET_VALID if is_valid else TileVisualState.HOVER_TARGET_INVALID
-	
+	var display_plan := _target_aoe_hover_presenter.build_display_plan(
+		card,
+		center_stack,
+		_build_target_aoe_hover_presenter_config()
+	)
+	var new_aoe_stacks: Array[Area2D] = display_plan.get("new_aoe_stacks", [])
+	var target_state := int(display_plan.get("target_state", int(TileVisualState.HOVER_TARGET_INVALID)))
+
 	current_aoe_stacks = _hex_map_visual_state_presenter.apply_aoe_state(
 		current_aoe_stacks,
 		new_aoe_stacks,
 		int(target_state),
 		_build_visual_state_presenter_config()
 	)
-	
-	# 更新 Tooltip 文本位置
-	if main_board and main_board.has_method("update_target_selection_hover"):
-		main_board.update_target_selection_hover(center_stack, card)
+
+	if bool(display_plan.get("tooltip_requested", false)):
+		_update_target_selection_tooltip(main_board, display_plan)
+
+
+## 收集 TargetAoeHoverPresenter 需要的运行时配置。
+## presenter 需要地图节点表和目标合法性回调，但不直接读取 CardManager 或 MainBoard。
+func _build_target_aoe_hover_presenter_config() -> Dictionary:
+	return {
+		"stack_nodes": stack_nodes,
+		"target_valid_state": int(TileVisualState.HOVER_TARGET_VALID),
+		"target_invalid_state": int(TileVisualState.HOVER_TARGET_INVALID),
+		"is_stack_valid_target": Callable(self, "_is_stack_valid_target"),
+	}
+
+
+## 根据 AOE 展示计划刷新 MainBoard tooltip。
+## MainBoard 的接口仍是旧 `update_target_selection_hover(center_stack, card)`，本函数只把 presenter 的请求翻译回旧调用。
+func _update_target_selection_tooltip(main_board: Node, display_plan: Dictionary) -> void:
+	if not is_instance_valid(main_board):
+		return
+	if not main_board.has_method("update_target_selection_hover"):
+		return
+	var tooltip_stack: Variant = display_plan.get("tooltip_stack", null)
+	var tooltip_card: Variant = display_plan.get("tooltip_card", null)
+	if is_instance_valid(tooltip_stack) and tooltip_stack is Area2D:
+		main_board.update_target_selection_hover(tooltip_stack, tooltip_card)
 # ==========================================
 # ★ 新增：条件地块效果系统
 # ==========================================

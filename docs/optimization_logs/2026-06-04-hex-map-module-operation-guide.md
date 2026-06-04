@@ -728,6 +728,34 @@
 - CardManager 查找仍保留在 `hex_map.gd::get_card_manager()`，后续统一 `CardManagerLocator.gd` 时再收敛。
 - Tooltip 的具体文案和位置更新仍由 MainBoard 负责，这里只保留无卡牌时隐藏旧 tooltip 的行为。
 
+### `scene/in_scene/hex_map_modules/presenters/TargetAoeHoverPresenter.gd`
+
+这个模块负责生成卡牌目标 AOE hover 的展示计划：
+
+- 根据 `card + center_stack + stack_nodes` 计算新的 AOE 地块列表。
+- 通过 HexMap 注入的目标合法性回调，决定合法目标高亮或非法目标高亮。
+- 返回 tooltip 请求，让 HexMap 继续调用 MainBoard 的旧 tooltip 接口。
+
+主要调用方：
+
+- `hex_map.gd::_update_aoe_display()`
+
+目前没有新增导出变量。
+
+运行时会读取：
+
+- `stack_nodes`
+- `TileVisualState.HOVER_TARGET_VALID` 对应的状态值
+- `TileVisualState.HOVER_TARGET_INVALID` 对应的状态值
+- HexMap 注入的 `_is_stack_valid_target()` 回调
+- `HexTargetRules.get_effect_range_stacks()` 规则函数
+
+调整时注意：
+
+- 这个模块只生成展示计划，不直接写 shader，不直接改 `current_aoe_stacks`。
+- MainBoard tooltip 的真实调用仍在 `hex_map.gd::_update_target_selection_tooltip()`，后续如果要拆 UI controller，可以从这个函数继续下手。
+- 目标合法性仍走 HexMap 旧入口，主要是为了暂时保留 CardManager 生命周期兜底；等 `CardManagerLocator.gd` 完成后再考虑把合法性上下文进一步收窄。
+
 ## 修改后的验证清单
 
 改动任意已提取模块后，先运行：
@@ -766,5 +794,6 @@ git diff --check
 - 地块真实删除和旧静态库清理已拆到 `TileDestructionMutationService.gd`。
 - 地块输入编排已拆到 `HexMapInputCoordinator.gd`。
 - `_update_highlight()` 的 hover 中心选择和刷新触发已拆到 `TargetHoverController.gd`。
-- `_update_aoe_display()` 仍然混合了卡牌范围收集、目标合法性判断、视觉状态应用和 MainBoard tooltip 更新，适合下一步拆成 AOE hover presenter 或目标 hover view model。
+- `_update_aoe_display()` 的范围结果、目标状态和 tooltip 请求已拆到 `TargetAoeHoverPresenter.gd`。
+- MainBoard tooltip 的具体 UI controller 仍未拆，当前只在 HexMap 中保留一层旧接口适配。
 - `_create_stack_at()` 和 `refresh_tile_visual()` 仍然混合了地块节点创建、地貌挂接、shader 初始化和碰撞创建，适合后续拆成 tile stack factory。

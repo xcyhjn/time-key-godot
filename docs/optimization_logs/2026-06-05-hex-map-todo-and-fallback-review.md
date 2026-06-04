@@ -4,9 +4,9 @@
 
 ## 当前结论
 
-`hex_map.gd` 已经拆出一批稳定模块：坐标规则、地形规则、目标规则、碰撞输入开关、普通视觉状态、敌人意图地图表现、结算奖励表现、高度视图指示器、平铺/3D 同步、整图平铺/恢复、地图入场、运行时地貌注册、外部渲染节点注册、地块升降编排、地块真实销毁、地块输入协调和目标 hover 控制器。
+`hex_map.gd` 已经拆出一批稳定模块：坐标规则、地形规则、目标规则、碰撞输入开关、普通视觉状态、敌人意图地图表现、结算奖励表现、高度视图指示器、平铺/3D 同步、整图平铺/恢复、地图入场、运行时地貌注册、外部渲染节点注册、地块升降编排、地块真实销毁、地块输入协调、目标 hover 控制器和目标 AOE hover 展示计划。
 
-剩下的耦合主要不再是“一个函数特别长”这么简单，而是几个场景根职责还在 `hex_map.gd` 中交叉：地块创建、AOE hover 具体表现、CardManager 查找、敌人/建筑回合行为、奖励状态、时间轴/敌人意图路径依赖。
+剩下的耦合主要不再是“一个函数特别长”这么简单，而是几个场景根职责还在 `hex_map.gd` 中交叉：地块创建、MainBoard tooltip 旧接口适配、CardManager 查找、敌人/建筑回合行为、奖励状态、时间轴/敌人意图路径依赖。
 
 ## 优先待拆列表
 
@@ -21,29 +21,30 @@
 
 剩余问题：
 
-- `_update_aoe_display()` 仍同时负责卡牌范围收集、目标合法性判断、视觉状态应用和 MainBoard tooltip 更新。
+- `_update_aoe_display()` 仍负责把 AOE 展示计划交给视觉状态 presenter，并把 tooltip 请求翻译回 MainBoard 旧接口。
 - CardManager 多路径查找仍留在 `hex_map.gd::get_card_manager()`。
 
 风险：
 
 - 后续继续拆 AOE 表现时，需要回归卡牌 hover、tooltip、遮挡和右键取消。
 
-### 第一优先级：`_update_aoe_display()` AOE hover 表现
+### 已完成第一层：`_update_aoe_display()` AOE hover 展示计划
 
-当前问题：
+完成情况：
 
-- 仍然直接读取 `stack_nodes`，调用 `HexTargetRules`，判断目标合法性，并更新 MainBoard tooltip。
-- 视觉状态应用虽然已委托 `HexMapVisualStatePresenter`，但“范围数据 + tooltip + 是否有效”的组合仍在 HexMap 中。
+- 已新增 `scene/in_scene/hex_map_modules/presenters/TargetAoeHoverPresenter.gd`。
+- AOE 范围收集、目标状态选择和 tooltip 请求已经离开 `hex_map.gd`。
+- `_update_aoe_display()` 现在只负责应用视觉状态和调用旧 MainBoard tooltip 入口。
+- 目标合法性仍由 HexMap 注入，避免本批改变 CardManager 生命周期兜底。
 
-建议拆法：
+剩余问题：
 
-- 新建 `hex_map_modules/presenters/TargetAoeHoverPresenter.gd` 或 `hex_map_modules/input/TargetHoverViewModel.gd`。
-- 第一刀只抽“根据 card + center_stack 得到 new_aoe_stacks、target_state、tooltip 请求”。
-- HexMap 继续调用 `HexMapVisualStatePresenter.apply_aoe_state()`，等视图模型稳定后再决定是否迁移。
+- MainBoard tooltip 仍是旧直接调用，后续可以拆成 UI controller 或事件。
+- CardManager 查找仍在 `_is_stack_valid_target()` 间接路径里。
 
 风险：
 
-- 影响所有卡牌目标范围预览，必须回归合法目标、非法目标、范围型效果和无目标卡牌。
+- 后续继续拆 tooltip 或 CardManager 查找时，必须回归合法目标、非法目标、范围型效果和无目标卡牌。
 
 ### 第一优先级：`_create_stack_at()` 地块创建工厂
 
@@ -146,10 +147,10 @@
 
 ## 下一步建议顺序
 
-1. 先拆 `_update_aoe_display()` 的范围结果和 tooltip 请求，让目标 hover 链路继续变薄。
-2. 再拆 `_create_stack_at()` 的基础地块创建工厂，收益最大但要小步做。
-3. 抽 `CardManagerLocator.gd`，统一 HexMap 和奖励脚本的查找路径。
-4. 抽 `_on_step_next()` 的建筑回合行为 runner。
+1. 先拆 `_create_stack_at()` 的基础地块创建工厂，收益最大但要小步做。
+2. 抽 `CardManagerLocator.gd`，统一 HexMap 和奖励脚本的查找路径。
+3. 抽 `_on_step_next()` 的建筑回合行为 runner。
+4. 拆 MainBoard tooltip 旧接口适配，让 HexMap 最终只发目标 hover 事件。
 5. 最后再清理 `has_method` 兜底，每次只删一个契约已经统一的接口。
 
 ## 验证要求
