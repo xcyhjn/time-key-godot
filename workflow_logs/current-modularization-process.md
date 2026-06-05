@@ -2627,3 +2627,55 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十一批卡牌效果预览文本拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆从卡牌描述生成拖拽效果预览文案和数值的逻辑。
+不显示 tooltip，不查找敌人或血条，也不触发任何实际卡牌效果。
+
+目标函数范围：
+
+```text
+_get_card_effect_preview_text()
+_get_card_damage_amount()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+current_card.get_parsed_description()
+current_card.raw_description
+current_card.card_info["效果"]
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragCardEffectPreviewTextResolver.gd
+```
+
+模块边界：
+
+- `DragCardEffectPreviewTextResolver.gd` 只负责从卡牌描述生成拖拽效果预览文案和数值。
+- 它不显示 tooltip，不查找敌人或血条，也不触发任何实际卡牌效果。
+- `DragShapeController.gd` 保留 `_get_card_effect_preview_text()` 和 `_get_card_damage_amount()` 旧入口，内部转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+卡牌描述读取、简单 BBCode 清理、预览文案生成和数值提取已经由 DragCardEffectPreviewTextResolver 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

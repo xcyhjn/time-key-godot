@@ -15,6 +15,7 @@ const DragPlacementQueryServiceScript = preload("res://scene/in_scene/drag_modul
 const DragTimelineUiStateControllerScript = preload("res://scene/in_scene/drag_modules/DragTimelineUiStateController.gd")
 const DragTimelineGridCoordinateResolverScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridCoordinateResolver.gd")
 const DragSceneInteractionLockControllerScript = preload("res://scene/in_scene/drag_modules/DragSceneInteractionLockController.gd")
+const DragCardEffectPreviewTextResolverScript = preload("res://scene/in_scene/drag_modules/DragCardEffectPreviewTextResolver.gd")
 
 # ==========================================
 # 信号
@@ -81,6 +82,7 @@ var _placement_query_service = null
 var _timeline_ui_state_controller = null
 var _timeline_grid_coordinate_resolver = null
 var _scene_interaction_lock_controller = null
+var _card_effect_preview_text_resolver = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -148,6 +150,12 @@ func _get_scene_interaction_lock_controller():
 	return _scene_interaction_lock_controller
 
 
+func _get_card_effect_preview_text_resolver():
+	if _card_effect_preview_text_resolver == null:
+		_card_effect_preview_text_resolver = DragCardEffectPreviewTextResolverScript.new()
+	return _card_effect_preview_text_resolver
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -186,6 +194,7 @@ func _ready() -> void:
 	_timeline_ui_state_controller = DragTimelineUiStateControllerScript.new()
 	_timeline_grid_coordinate_resolver = DragTimelineGridCoordinateResolverScript.new()
 	_scene_interaction_lock_controller = DragSceneInteractionLockControllerScript.new()
+	_card_effect_preview_text_resolver = DragCardEffectPreviewTextResolverScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -471,58 +480,12 @@ func _clear_timeline_grid_preview() -> void:
 
 ## 获取卡牌效果预览文本
 func _get_card_effect_preview_text() -> String:
-	if not current_card:
-		return ""
-
-	# 尝试获取原始描述，避免BBCode标签问题
-	var raw_description = ""
-	if current_card.has_method("get_parsed_description"):
-		# 获取原始描述，而不是BBCode格式的描述
-		if current_card.get("raw_description") != null:
-			raw_description = current_card.raw_description
-		else:
-			# 如果没有原始描述，尝试从卡牌信息中获取
-			if current_card.get("card_info") != null and "效果" in current_card.card_info:
-				raw_description = current_card.card_info["效果"]
-
-	# 如果无法获取原始描述，使用解析描述并尝试移除BBCode标签
-	if raw_description.is_empty():
-		var parsed_description = current_card.get_parsed_description()
-		# 简单移除BBCode标签
-		raw_description = parsed_description.replace("[color=", "").replace("]", "").replace("[/color]", "")
-
-	# 根据描述内容生成预览文本
-	if "摧毁" in raw_description:
-		return "摧毁目标：-10 生命值"
-	elif "治疗" in raw_description:
-		return "治疗目标：+8 生命值"
-	elif "攻击" in raw_description:
-		return "攻击目标：-5 生命值"
-	else:
-		# 默认显示描述的前20个字符（移除BBCode标签后）
-		var clean_text = raw_description.replace("[", "").replace("]", "")
-		var preview = clean_text.substr(0, 20)
-		if clean_text.length() > 20:
-			preview += "..."
-		return preview
+	return _get_card_effect_preview_text_resolver().get_preview_text(current_card)
 
 
 ## 获取卡牌伤害数值
 func _get_card_damage_amount() -> int:
-	if not current_card:
-		return 0
-
-	var card_description = current_card.get_parsed_description()
-
-	# 根据卡牌描述提取伤害数值
-	if "摧毁" in card_description:
-		return 10
-	elif "攻击" in card_description:
-		return 5
-	elif "治疗" in card_description:
-		return 8
-	else:
-		return 0
+	return _get_card_effect_preview_text_resolver().get_damage_amount(current_card)
 
 
 ## 触发敌人效果预览
