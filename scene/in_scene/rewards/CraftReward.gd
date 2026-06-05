@@ -5,6 +5,7 @@ signal reward_scene_close_requested(scene_instance: Node)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
 const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/CraftRecipeResolver.gd")
+const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/CraftConnectionLinePresenter.gd")
 
 enum CraftMode {
 	BOARD,
@@ -63,6 +64,7 @@ var current_deck_cards: Array = []
 var current_deck_entries: Array = []
 var can_close_selection_without_choice: bool = false
 var _recipe_resolver = null
+var _connection_line_presenter = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -72,6 +74,12 @@ func _get_recipe_resolver():
 	if _recipe_resolver == null:
 		_recipe_resolver = CraftRecipeResolverScript.new()
 	return _recipe_resolver
+
+
+func _get_connection_line_presenter():
+	if _connection_line_presenter == null:
+		_connection_line_presenter = CraftConnectionLinePresenterScript.new()
+	return _connection_line_presenter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -725,20 +733,15 @@ func _position_result_description_panel() -> void:
 
 
 func _update_connection_lines() -> void:
-	if slot_preview_cards[SLOT_1] == null or slot_preview_cards[SLOT_2] == null or result_preview_card == null:
-		connection_lines.points = PackedVector2Array()
-		return
-
-	var slot1_center = slot1.position + (slot1.size * 0.5)
-	var slot2_center = slot2.position + (slot2.size * 0.5)
-	var result_center = result_slot.position + (result_slot.size * 0.5)
-
-	connection_lines.points = PackedVector2Array([
-		slot1_center,
-		result_center,
-		slot2_center,
-		result_center,
-	])
+	_get_connection_line_presenter().update_connection_lines(
+		connection_lines,
+		slot_preview_cards[SLOT_1],
+		slot_preview_cards[SLOT_2],
+		result_preview_card,
+		slot1,
+		slot2,
+		result_slot
+	)
 
 
 func _get_slot_anchor(slot_index: int) -> Control:

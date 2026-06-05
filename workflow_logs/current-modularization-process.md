@@ -2921,3 +2921,50 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## CraftReward.gd 第二批合成连接线表现拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆合成面板槽位之间的连接线显示。它只根据主卡槽、副卡槽和结果槽是否已有预览卡，更新 `Line2D.points`；不判断配方，不创建卡牌，也不修改合成选择状态。
+
+目标函数范围：
+```text
+_update_connection_lines()
+```
+
+当前触碰的外部节点和接口：
+```text
+connection_lines.points
+slot1.position / slot1.size
+slot2.position / slot2.size
+result_slot.position / result_slot.size
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/CraftConnectionLinePresenter.gd
+```
+
+模块边界：
+- `CraftConnectionLinePresenter.gd` 只负责合成面板槽位之间的连接线显示。
+- 它不判断配方，不创建卡牌，也不修改合成选择状态。
+- `CraftReward.gd` 保留 `_update_connection_lines()` 旧入口，内部转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+连接线清空、三个槽位中心点计算和 PackedVector2Array 组装现在由 CraftConnectionLinePresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
