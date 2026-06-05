@@ -12,6 +12,7 @@ var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/ShopPricingPresenter.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/ShopEraWeightSelector.gd")
+const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/ShopGlobalNodeFinder.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -80,6 +81,7 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 var tooltip_presenter: CardTooltipPresenter = null
 var _pricing_presenter = null
 var _era_weight_selector = null
+var _global_node_finder = null
 
 
 func _get_pricing_presenter():
@@ -92,6 +94,12 @@ func _get_era_weight_selector():
 	if _era_weight_selector == null:
 		_era_weight_selector = ShopEraWeightSelectorScript.new()
 	return _era_weight_selector
+
+
+func _get_global_node_finder():
+	if _global_node_finder == null:
+		_global_node_finder = ShopGlobalNodeFinderScript.new()
+	return _global_node_finder
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -561,51 +569,15 @@ func _get_cards_by_era(era: int) -> Array[String]:
 
 ## 查找 global_clock 单例
 func _find_global_clock() -> Node:
-	# 方案1: 直接从 /root 读取 autoload。
-	if has_node("/root/GlobalClock"):
-		return get_node("/root/GlobalClock")
-	
-	# 方案2: 从场景根节点递归查找
-	var scene_root = get_tree().root
-	var found = _find_node_with_script_recursive(scene_root, "global_clock.gd")
-	if found:
-		return found
-	
-	# 方案3: 兼容不同命名风格
-	var by_name = scene_root.find_child("GlobalClock", true, false)
-	if by_name:
-		return by_name
-	return scene_root.find_child("global_clock", true, false)
+	return _get_global_node_finder().find_global_clock(self)
 
 ## 查找 global_timecoin 单例
 func _find_global_timecoin() -> Node:
-	# 方案1: 直接从 /root 读取 autoload。
-	if has_node("/root/GlobalTimecoin"):
-		return get_node("/root/GlobalTimecoin")
-	
-	# 方案2: 从场景根节点递归查找
-	var scene_root = get_tree().root
-	var found = _find_node_with_script_recursive(scene_root, "global_timecoin.gd")
-	if found:
-		return found
-	
-	# 方案3: 兼容不同命名风格
-	var by_name = scene_root.find_child("GlobalTimecoin", true, false)
-	if by_name:
-		return by_name
-	return scene_root.find_child("global_timecoin", true, false)
+	return _get_global_node_finder().find_global_timecoin(self)
 
 ## 递归查找包含指定脚本的节点 (模仿 TimelineManager)
 func _find_node_with_script_recursive(root: Node, script_name: String) -> Node:
-	if root.get_script() and script_name in root.get_script().resource_path:
-		return root
-	
-	for child in root.get_children():
-		var found = _find_node_with_script_recursive(child, script_name)
-		if found:
-			return found
-	
-	return null
+	return _get_global_node_finder().find_node_with_script_recursive(root, script_name)
 
 ## ==========================================
 ## ★ 公共接口方法

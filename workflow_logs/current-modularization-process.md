@@ -512,6 +512,56 @@ Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
 
+## ShopManager.gd 第三批全局节点查找拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆商店查找全局单例节点的桥接逻辑。它只负责按 autoload 名称、脚本路径和兼容节点名找到 `GlobalClock` 与 `GlobalTimecoin`；不读取时代值，不消费时间币，也不处理购买、刷新或升级。
+
+目标函数范围：
+```text
+_find_global_clock()
+_find_global_timecoin()
+_find_node_with_script_recursive(root, script_name)
+```
+
+当前触碰的数据和接口：
+```text
+owner.has_node()
+owner.get_node()
+owner.get_tree().root
+find_child()
+get_script().resource_path
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/ShopGlobalNodeFinder.gd
+```
+
+模块边界：
+- `ShopGlobalNodeFinder.gd` 只负责查找商店依赖的全局节点。
+- 它不读取 `clock.era`，不调用 `consume_timecoins()`，也不处理商店业务流程。
+- `ShopManager.gd` 保留 `_find_global_clock()`、`_find_global_timecoin()` 和 `_find_node_with_script_recursive()` 旧入口，内部转发给新模块，降低调用面变化。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+GlobalClock 与 GlobalTimecoin 的 autoload 查找、脚本递归查找和兼容命名查找现在由 ShopGlobalNodeFinder 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
 已知旧噪声：
 
 ```text
