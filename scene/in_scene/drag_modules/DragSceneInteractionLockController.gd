@@ -24,3 +24,11 @@ func restore_after_drag(hex_map: Node, timeline_ui: Control) -> void:
 
 	if is_instance_valid(timeline_ui):
 		timeline_ui.mouse_filter = Control.MOUSE_FILTER_PASS
+
+
+func lock_for_placement_animation(hex_map: Node, timeline_ui: Control) -> void:
+	if is_instance_valid(hex_map) and hex_map is Control:
+		hex_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	if is_instance_valid(timeline_ui):
+		timeline_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE

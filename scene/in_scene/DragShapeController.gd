@@ -838,12 +838,7 @@ func _play_placement_animation(grid_pos: Vector2i) -> void:
 	_get_placement_visual_state_preparer().prepare_for_placement(current_card)
 
 	# 禁用地块容器和时间轴UI的鼠标交互，防止意外触发
-	var hex_map = _get_hex_map()
-	if hex_map and hex_map is Control:
-		hex_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	if timeline_ui and timeline_ui is Control:
-		timeline_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_get_scene_interaction_lock_controller().lock_for_placement_animation(_get_hex_map(), timeline_ui)
 
 	var card_top_left: Vector2 = _get_placement_target_resolver().resolve_card_top_left(
 		timeline_ui,

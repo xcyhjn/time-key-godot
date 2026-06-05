@@ -3771,3 +3771,53 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十八批放置动画交互锁收口记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只收口放置动画期间的局内交互锁。它保留 `_play_placement_animation()` 旧入口，只把临时禁用 HexMap 和 TimelineUI 鼠标交互的逻辑交给已有 `DragSceneInteractionLockController`；不改拖拽开始锁、不改恢复路径、不播放动画，也不执行时间轴放置。
+
+目标函数范围：
+```text
+_play_placement_animation(grid_pos) 中的 HexMap / TimelineUI mouse_filter 写入
+DragSceneInteractionLockController.lock_for_placement_animation(...)
+```
+
+当前触碰的数据和节点：
+```text
+_get_hex_map()
+timeline_ui
+hex_map.mouse_filter
+timeline_ui.mouse_filter
+```
+
+### 调整模块
+
+```text
+scene/in_scene/drag_modules/DragSceneInteractionLockController.gd
+scene/in_scene/DragShapeController.gd
+```
+
+模块边界：
+- `DragSceneInteractionLockController.gd` 继续只负责拖拽和放置动画期间的交互开关。
+- 它不处理卡牌视觉状态、不更新预览，也不判断或执行放置。
+- `DragShapeController.gd` 继续负责决定何时进入放置动画，并保留旧 `_play_placement_animation()` 入口。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+放置动画期间对 HexMap 和 TimelineUI 的 mouse_filter 写入现在由 DragSceneInteractionLockController 统一维护。
+主脚本不再散落直接写交互锁状态。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
