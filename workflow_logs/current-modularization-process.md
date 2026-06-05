@@ -2254,3 +2254,56 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第四批卡牌形状解析拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆拖拽开始时的卡牌时间轴形状读取。
+不修改拖拽状态，不修改时间轴展开，不修改放置校验，也不修改 clear 卡牌执行逻辑。
+
+目标函数范围：
+
+```text
+start_dragging(card, target_tile) 中的 current_shape_coords 解析
+_convert_to_vector2i_array(raw_array)
+```
+
+当前触碰的外部节点和接口：
+
+```text
+TimelineClearEffectUtil.is_clear_card(card)
+TimelineClearEffectUtil.get_clear_shape_coords(card)
+card.timeline_shape_coords
+card.card_info["shape"]
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragCardShapeResolver.gd
+```
+
+模块边界：
+
+- `DragCardShapeResolver.gd` 只负责从卡牌数据读取时间轴形状坐标。
+- 它不启动拖拽，不修改卡牌节点，也不判断形状是否可以放置。
+- `DragShapeController.gd` 保留 `_convert_to_vector2i_array()` 旧入口，由旧入口转发给新模块，避免影响潜在旧调用点。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+clear 卡牌形状、已解析 timeline_shape_coords 和 card_info.shape 兜底转换已经由 DragCardShapeResolver 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

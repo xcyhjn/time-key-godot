@@ -9,6 +9,7 @@ const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineC
 const DragShapeNodeBridgeScript = preload("res://scene/in_scene/drag_modules/DragShapeNodeBridge.gd")
 const DragRejectTooltipControllerScript = preload("res://scene/in_scene/drag_modules/DragRejectTooltipController.gd")
 const DragTimelineGridPreviewPresenterScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridPreviewPresenter.gd")
+const DragCardShapeResolverScript = preload("res://scene/in_scene/drag_modules/DragCardShapeResolver.gd")
 
 # ==========================================
 # 信号
@@ -69,6 +70,7 @@ var discard_pile: Node  ## 弃牌区引用
 var _node_bridge = null
 var _reject_tooltip_controller = null
 var _grid_preview_presenter = null
+var _card_shape_resolver = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -98,6 +100,12 @@ func _get_grid_preview_presenter():
 	if _grid_preview_presenter == null:
 		_grid_preview_presenter = DragTimelineGridPreviewPresenterScript.new()
 	return _grid_preview_presenter
+
+
+func _get_card_shape_resolver():
+	if _card_shape_resolver == null:
+		_card_shape_resolver = DragCardShapeResolverScript.new()
+	return _card_shape_resolver
 
 
 ## 统一获取主面板 (MainBoard) 的快捷方法
@@ -132,6 +140,7 @@ func _ready() -> void:
 	_node_bridge = DragShapeNodeBridgeScript.new(self)
 	_reject_tooltip_controller = DragRejectTooltipControllerScript.new()
 	_grid_preview_presenter = DragTimelineGridPreviewPresenterScript.new()
+	_card_shape_resolver = DragCardShapeResolverScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -166,20 +175,7 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	current_target_tile = target_tile
 	is_timeline_clear_mode = TimelineClearEffectUtil.is_clear_card(card)
 
-	# ==========================================
-	# ★ 核心修复：优先读取卡牌已解析的标准坐标数组
-	# ==========================================
-	if is_timeline_clear_mode:
-		# clear 卡牌的普通 shape 可以是 "0"，真正的时间轴作用范围写在 effects.value。
-		# 这里改读 clear 专用范围，让 wind.json 能显示并处理 11,11，而不进入普通时间轴占位规则。
-		current_shape_coords = TimelineClearEffectUtil.get_clear_shape_coords(card)
-	elif _object_has_property(card, &"timeline_shape_coords") and card.timeline_shape_coords is Array and not card.timeline_shape_coords.is_empty():
-		# 直接同步卡牌内部已经由优化系统计算出的坐标
-		current_shape_coords = card.timeline_shape_coords.duplicate()
-	else:
-		# 兜底逻辑：如果卡牌没解析，再尝试读 card_info
-		var raw_shape = card.card_info.get("shape", [Vector2i(0, 0)])
-		current_shape_coords = _convert_to_vector2i_array(raw_shape)
+	current_shape_coords = _get_card_shape_resolver().resolve_shape_coords(card, is_timeline_clear_mode)
 
 	# 发射拖拽开始信号
 	drag_started.emit(card, current_shape_coords)
@@ -856,31 +852,7 @@ func _execute_timeline_clear(origin_pos: Vector2i) -> void:
 ## 将普通数组转换为Vector2i数组
 ## 支持多种输入格式：Vector2i、[x, y]数组、{x: value, y: value}字典
 func _convert_to_vector2i_array(raw_array: Array) -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-
-	for i in range(raw_array.size()):
-		var item = raw_array[i]
-		if item is Vector2i:
-			result.append(item)
-		elif item is Array and item.size() >= 2:
-			# 处理 [x, y] 格式的数组
-			var x = int(item[0])
-			var y = int(item[1])
-			var vec = Vector2i(x, y)
-			result.append(vec)
-		elif item is Dictionary and "x" in item and "y" in item:
-			# 处理 {x: value, y: value} 格式的字典
-			var x = int(item["x"])
-			var y = int(item["y"])
-			var vec = Vector2i(x, y)
-			result.append(vec)
-		else:
-			pass
-
-	if result.is_empty():
-		result.append(Vector2i(0, 0))
-
-	return result
+	return _get_card_shape_resolver().convert_to_vector2i_array(raw_array)
 
 ## 停止拖拽（右键取消时调用）
 
