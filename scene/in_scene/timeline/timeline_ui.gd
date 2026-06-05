@@ -8,6 +8,7 @@ const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modu
 const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridCellInteractionPresenter.gd")
 const TimelineGridPreviewPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridPreviewPresenter.gd")
 const TimelineManagerLocatorScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineManagerLocator.gd")
+const TimelineEnemyIntentOverlayPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineEnemyIntentOverlayPresenter.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -101,6 +102,7 @@ var _grid_builder = null
 var _grid_cell_interaction_presenter = null
 var _grid_preview_presenter = null
 var _timeline_manager_locator = null
+var _enemy_intent_overlay_presenter = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -145,6 +147,12 @@ func _get_timeline_manager_locator():
 	if _timeline_manager_locator == null:
 		_timeline_manager_locator = TimelineManagerLocatorScript.new()
 	return _timeline_manager_locator
+
+
+func _get_enemy_intent_overlay_presenter():
+	if _enemy_intent_overlay_presenter == null:
+		_enemy_intent_overlay_presenter = TimelineEnemyIntentOverlayPresenterScript.new()
+	return _enemy_intent_overlay_presenter
 
 
 ## 查找TimelineManager节点
@@ -392,13 +400,17 @@ func _on_action_placed(action: TimelineAction):
 		overlay.visible = false
 		overlay.color = Color.WHITE
 		if action.type == TimelineAction.Type.ENEMY:
-			var overlay_material = ShaderMaterial.new()
-			overlay_material.shader = enemy_intent_timeline_shader
-			overlay_material.set_shader_parameter("pulse_speed", enemy_intent_pulse_speed)
-			overlay_material.set_shader_parameter("min_alpha", enemy_intent_pulse_min_alpha)
-			overlay_material.set_shader_parameter("max_alpha", enemy_intent_pulse_max_alpha)
-			_configure_enemy_intent_timeline_material(overlay_material)
-			overlay.material = overlay_material
+			overlay.material = _get_enemy_intent_overlay_presenter().create_overlay_material(
+				enemy_intent_timeline_shader,
+				enemy_intent_pulse_speed,
+				enemy_intent_pulse_min_alpha,
+				enemy_intent_pulse_max_alpha,
+				enemy_intent_stripe_color,
+				enemy_intent_stripe_speed,
+				enemy_intent_stripe_density,
+				enemy_intent_stripe_width,
+				enemy_intent_stripe_strength
+			)
 		block.add_child(overlay)
 
 		shape_container.add_child(block)
@@ -680,28 +692,29 @@ func _strip_action_container_runtime_effects(node: Node) -> void:
 
 ## 对同一个敌人意图容器中的所有格子 overlay 统一设置显示状态与脉冲颜色。
 func _set_enemy_intent_overlay_visible(container: Control, visible: bool, color: Color) -> void:
-	for block in container.get_children():
-		if block is Panel:
-			var overlay = block.get_node_or_null("EnemyIntentOverlay")
-			if overlay and overlay is ColorRect:
-				overlay.visible = visible
-				if visible and overlay.material:
-					overlay.material.set_shader_parameter("pulse_color", color)
-					_configure_enemy_intent_timeline_material(overlay.material)
+	_get_enemy_intent_overlay_presenter().set_overlay_visible(
+		container,
+		visible,
+		color,
+		enemy_intent_stripe_color,
+		enemy_intent_stripe_speed,
+		enemy_intent_stripe_density,
+		enemy_intent_stripe_width,
+		enemy_intent_stripe_strength
+	)
 
 
 ## 将导出的时间轴意图条纹参数写入 shader。
 ## 核心逻辑：每个敌人意图格子的 Overlay 都独立持有 ShaderMaterial，hover 时统一刷新参数即可。
 func _configure_enemy_intent_timeline_material(material: Material) -> void:
-	if not (material is ShaderMaterial):
-		return
-
-	var shader_material := material as ShaderMaterial
-	shader_material.set_shader_parameter("stripe_color", enemy_intent_stripe_color)
-	shader_material.set_shader_parameter("stripe_speed", enemy_intent_stripe_speed)
-	shader_material.set_shader_parameter("stripe_density", enemy_intent_stripe_density)
-	shader_material.set_shader_parameter("stripe_width", enemy_intent_stripe_width)
-	shader_material.set_shader_parameter("stripe_strength", enemy_intent_stripe_strength)
+	_get_enemy_intent_overlay_presenter().configure_material(
+		material,
+		enemy_intent_stripe_color,
+		enemy_intent_stripe_speed,
+		enemy_intent_stripe_density,
+		enemy_intent_stripe_width,
+		enemy_intent_stripe_strength
+	)
 
 
 # ==========================================

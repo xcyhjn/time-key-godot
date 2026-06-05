@@ -3418,3 +3418,58 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## timeline_ui.gd 第七批敌方意图 Overlay 表现拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `timeline_ui.gd` 中敌方意图 `EnemyIntentOverlay` 的材质创建、条纹 shader 参数写入和显示/隐藏。它不决定何时预览，不创建行动块，不修改 TimelineManager 数据，也不处理移除动画。
+
+目标函数范围：
+```text
+_on_action_placed(action) 中的敌方意图 overlay material 创建
+_set_enemy_intent_overlay_visible(container, visible, color)
+_configure_enemy_intent_timeline_material(material)
+```
+
+当前触碰的数据和节点：
+```text
+enemy_intent_timeline_shader
+enemy_intent_pulse_speed
+enemy_intent_pulse_min_alpha
+enemy_intent_pulse_max_alpha
+enemy_intent_stripe_color
+enemy_intent_stripe_speed
+enemy_intent_stripe_density
+enemy_intent_stripe_width
+enemy_intent_stripe_strength
+EnemyIntentOverlay
+```
+
+### 新增模块
+
+```text
+scene/in_scene/timeline/ui_modules/TimelineEnemyIntentOverlayPresenter.gd
+```
+
+模块边界：
+- `TimelineEnemyIntentOverlayPresenter.gd` 只负责时间轴敌方意图 Overlay 的材质和显示状态。
+- 它不创建行动块，不修改 TimelineManager 数据，也不决定何时进入或退出预览。
+- `timeline_ui.gd` 保留 `_set_enemy_intent_overlay_visible()` 和 `_configure_enemy_intent_timeline_material()` 旧入口，并继续负责预览状态字段。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+敌方意图 overlay 的 ShaderMaterial 创建、pulse 参数写入、条纹参数刷新和批量显示/隐藏现在由 TimelineEnemyIntentOverlayPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
