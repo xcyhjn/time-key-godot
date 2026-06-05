@@ -3,6 +3,7 @@ extends Control
 const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
 const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/TimelineActionShapeVisual.gd")
 const TimelineExpandVisualControllerScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineExpandVisualController.gd")
+const TimelineLayoutControllerScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineLayoutController.gd")
 const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridBuilder.gd")
 const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridCellInteractionPresenter.gd")
 
@@ -93,6 +94,7 @@ var enemy_intent_preview_tween: Tween = null
 var _timeline_intro_has_played: bool = false
 var _timeline_intro_in_progress: bool = false
 var _expand_visual_controller = null
+var _layout_controller = null
 var _grid_builder = null
 var _grid_cell_interaction_presenter = null
 
@@ -109,6 +111,12 @@ func _get_expand_visual_controller():
 	if _expand_visual_controller == null:
 		_expand_visual_controller = TimelineExpandVisualControllerScript.new()
 	return _expand_visual_controller
+
+
+func _get_layout_controller():
+	if _layout_controller == null:
+		_layout_controller = TimelineLayoutControllerScript.new()
+	return _layout_controller
 
 
 func _get_grid_builder():
@@ -155,31 +163,16 @@ func _find_timeline_manager() -> TimelineManager:
 
 ## 应用调试用的offset设置
 func _apply_anchor_layout() -> void:
-	
-	# 1. 强制使用 Godot 原生预设：顶部居中
-	set_anchors_preset(Control.PRESET_CENTER_TOP, true)
-	
-	# 2. 动态计算网格的【真实物理宽度】和【真实物理高度】
-	var actual_width = (grid_width * slot_size) + ((grid_width - 1) * spacing)
-	var actual_height = (grid_height * slot_size) + ((grid_height - 1) * spacing)
-	var effective_top_offset = margin_top_preset + top_reserved_space
-	
-	# 3. 设置精确的偏移量（完美贴身包裹，彻底解决偏左问题）
-	offset_left = -actual_width / 2.0
-	offset_right = actual_width / 2.0
-	offset_top = effective_top_offset
-	offset_bottom = effective_top_offset + actual_height
-	
-	# 4. 强制底层立刻刷新布局，防止 size 计算滞后
-	force_update_transform()
-	
-	# 5. 精确设置缩放中心为【自身顶部正中心】
-	pivot_offset = Vector2(actual_width / 2.0, 0.0)
-	
-	# 6. 确保内部网格背景贴死左上角 (消除内部误差)
-	if is_instance_valid(grid_background):
-		grid_background.position = Vector2.ZERO
-		grid_background.size = size
+	_get_layout_controller().apply_anchor_layout(
+		self,
+		grid_background,
+		grid_width,
+		grid_height,
+		slot_size,
+		spacing,
+		margin_top_preset,
+		top_reserved_space
+	)
 
 
 ## 外部接口：设置顶部需要额外避让的像素高度。

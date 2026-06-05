@@ -3267,3 +3267,56 @@ git diff --check 通过，仅有既有 CRLF/LF 提示。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## timeline_ui.gd 第四批顶部锚点布局拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `timeline_ui.gd` 的顶部锚点布局逻辑。它只根据网格宽高、格子尺寸、间距和顶部预留空间计算 TimelineUI 的锚点偏移、缩放中心和 `GridBackground` 对齐；不创建行动块，不处理展开动画，也不读取 TimelineManager 数据。
+
+目标函数范围：
+```text
+_apply_anchor_layout()
+set_top_reserved_space(px) 仍保留旧入口并继续调用 _apply_anchor_layout()
+```
+
+当前触碰的数据和节点：
+```text
+grid_background
+grid_width
+grid_height
+slot_size
+spacing
+margin_top_preset
+top_reserved_space
+offset_left / offset_right / offset_top / offset_bottom
+pivot_offset
+```
+
+### 新增模块
+
+```text
+scene/in_scene/timeline/ui_modules/TimelineLayoutController.gd
+```
+
+模块边界：
+- `TimelineLayoutController.gd` 只负责 TimelineUI 的顶部锚点布局和背景网格对齐。
+- 它不创建行动块，不处理展开动画，也不读取 TimelineManager 数据。
+- `timeline_ui.gd` 保留 `_apply_anchor_layout()` 旧入口，原有 `_ready()`、展开/收起回调和 `set_top_reserved_space()` 仍通过旧入口触发布局刷新。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+TimelineUI 锚点预设、物理宽高计算、offset 写入、pivot 设置和 GridBackground 对齐现在由 TimelineLayoutController 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
