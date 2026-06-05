@@ -21,6 +21,7 @@ const DragRejectAnimationRunnerScript = preload("res://scene/in_scene/drag_modul
 const DragFreeDragPresenterScript = preload("res://scene/in_scene/drag_modules/DragFreeDragPresenter.gd")
 const DragPlacementVisualStatePreparerScript = preload("res://scene/in_scene/drag_modules/DragPlacementVisualStatePreparer.gd")
 const DragPlacementTargetResolverScript = preload("res://scene/in_scene/drag_modules/DragPlacementTargetResolver.gd")
+const DragPlacementAnimationRunnerScript = preload("res://scene/in_scene/drag_modules/DragPlacementAnimationRunner.gd")
 
 # ==========================================
 # 信号
@@ -93,6 +94,7 @@ var _reject_animation_runner = null
 var _free_drag_presenter = null
 var _placement_visual_state_preparer = null
 var _placement_target_resolver = null
+var _placement_animation_runner = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -194,6 +196,12 @@ func _get_placement_target_resolver():
 	if _placement_target_resolver == null:
 		_placement_target_resolver = DragPlacementTargetResolverScript.new()
 	return _placement_target_resolver
+
+
+func _get_placement_animation_runner():
+	if _placement_animation_runner == null:
+		_placement_animation_runner = DragPlacementAnimationRunnerScript.new()
+	return _placement_animation_runner
 
 
 ## 统一获取主面板 (MainBoard) 的快捷方法
@@ -848,18 +856,12 @@ func _play_placement_animation(grid_pos: Vector2i) -> void:
 		get_global_mouse_position()
 	)
 
-	# 创建放置动画：飞向网格位置并适当缩小
-	var tw = create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(current_card, "global_position", card_top_left, 0.3) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(current_card, "scale", Vector2(0.9, 0.9), 0.3) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(current_card, "modulate:a", 0.7, 0.3) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-
-	# 动画完成后执行实际放置逻辑
-	tw.finished.connect(_finish_placement.bind(grid_pos))
+	_get_placement_animation_runner().play_placement_animation(
+		current_card,
+		card_top_left,
+		_finish_placement.bind(grid_pos),
+		func(): return create_tween()
+	)
 
 
 ## 完成放置（动画结束后调用）

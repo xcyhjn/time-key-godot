@@ -3821,3 +3821,55 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十九批放置动画播放拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆卡牌放置动画的 tween 播放表现。它保留 `_play_placement_animation()` 旧入口，只把卡牌飞向时间轴格子、缩放、透明度变化和完成回调连接交给新模块；不改变放置校验，不创建 `TimelineAction`，不调用 `timeline_manager.place_action()`，也不处理卡牌进入弃牌区或返回手牌。
+
+目标函数范围：
+
+```text
+_play_placement_animation(grid_pos) 中的 create_tween、三条 tween_property 和 finished 回调连接
+```
+
+当前触碰的数据和节点：
+
+```text
+current_card
+card_top_left
+create_tween()
+_finish_placement.bind(grid_pos)
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragPlacementAnimationRunner.gd
+```
+
+模块边界：
+
+- `DragPlacementAnimationRunner.gd` 只负责播放卡牌飞向时间轴格子的放置动画。
+- 它不判断放置是否合法，不执行时间轴放置，也不改变卡牌归属或拖拽状态。
+- `DragShapeController.gd` 继续负责进入放置动画前的状态准备、交互锁、目标位置计算和动画结束后的实际放置流程。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+放置动画的目标位置、缩放、透明度 tween 和完成信号连接现在由 DragPlacementAnimationRunner 统一维护。
+主脚本不再直接拼装放置动画 tween，只保留“何时播放”和“播放完做什么”的编排职责。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
