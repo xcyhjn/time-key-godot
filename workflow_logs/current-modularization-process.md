@@ -2679,3 +2679,54 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十二批目标效果预览拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆拖拽目标效果预览的显示和清理。它只把当前目标地块、伤害数值转交给敌人节点或血条管理器，不生成预览文案，不执行卡牌效果，也不改变拖拽、放置或动画状态。
+
+目标函数范围：
+```text
+_trigger_enemy_effect_preview(damage_amount)
+_clear_effect_preview()
+_get_enemy_on_tile(tile)
+_get_health_bar_manager()
+```
+
+当前触碰的外部节点和接口：
+```text
+target_enemy.show_card_effect_preview(damage_amount)
+target_enemy.clear_card_effect_preview()
+HealthBarManager.preview_damage_effect(damage_amount)
+HealthBarManager.clear_preview_effect()
+get_nodes_in_group("health_bar_manager")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragEffectPreviewPresenter.gd
+```
+
+模块边界：
+- `DragEffectPreviewPresenter.gd` 只负责拖拽目标效果预览的显示和清理。
+- 它保留原有敌人查询占位行为，暂不补充地块到敌人的实际映射。
+- `DragShapeController.gd` 保留 `_trigger_enemy_effect_preview()`、`_clear_effect_preview()`、`_get_enemy_on_tile()` 和 `_get_health_bar_manager()` 旧入口，内部转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+敌人预览触发、敌人预览清理、血条预览触发、血条预览清理和血条管理器查找现在由 DragEffectPreviewPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

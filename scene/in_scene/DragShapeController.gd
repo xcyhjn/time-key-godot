@@ -16,6 +16,7 @@ const DragTimelineUiStateControllerScript = preload("res://scene/in_scene/drag_m
 const DragTimelineGridCoordinateResolverScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridCoordinateResolver.gd")
 const DragSceneInteractionLockControllerScript = preload("res://scene/in_scene/drag_modules/DragSceneInteractionLockController.gd")
 const DragCardEffectPreviewTextResolverScript = preload("res://scene/in_scene/drag_modules/DragCardEffectPreviewTextResolver.gd")
+const DragEffectPreviewPresenterScript = preload("res://scene/in_scene/drag_modules/DragEffectPreviewPresenter.gd")
 
 # ==========================================
 # 信号
@@ -83,6 +84,7 @@ var _timeline_ui_state_controller = null
 var _timeline_grid_coordinate_resolver = null
 var _scene_interaction_lock_controller = null
 var _card_effect_preview_text_resolver = null
+var _effect_preview_presenter = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -156,6 +158,12 @@ func _get_card_effect_preview_text_resolver():
 	return _card_effect_preview_text_resolver
 
 
+func _get_effect_preview_presenter():
+	if _effect_preview_presenter == null:
+		_effect_preview_presenter = DragEffectPreviewPresenterScript.new(self)
+	return _effect_preview_presenter
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -195,6 +203,7 @@ func _ready() -> void:
 	_timeline_grid_coordinate_resolver = DragTimelineGridCoordinateResolverScript.new()
 	_scene_interaction_lock_controller = DragSceneInteractionLockControllerScript.new()
 	_card_effect_preview_text_resolver = DragCardEffectPreviewTextResolverScript.new()
+	_effect_preview_presenter = DragEffectPreviewPresenterScript.new(self)
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -490,30 +499,12 @@ func _get_card_damage_amount() -> int:
 
 ## 触发敌人效果预览
 func _trigger_enemy_effect_preview(damage_amount: int) -> void:
-	# 获取当前地块上的敌人
-	var target_enemy = _get_enemy_on_tile(current_target_tile)
-
-	if target_enemy and target_enemy.has_method("show_card_effect_preview"):
-		# 触发敌人变红效果
-		target_enemy.show_card_effect_preview(damage_amount)
-
-	# 触发血条预览效果
-	var health_manager = _get_health_bar_manager()
-	if health_manager and health_manager.has_method("preview_damage_effect"):
-		health_manager.preview_damage_effect(damage_amount)
+	_get_effect_preview_presenter().trigger_preview(current_target_tile, damage_amount)
 
 
 ## 清除效果预览
 func _clear_effect_preview() -> void:
-	# 清除敌人预览效果
-	var target_enemy = _get_enemy_on_tile(current_target_tile)
-	if target_enemy and target_enemy.has_method("clear_card_effect_preview"):
-		target_enemy.clear_card_effect_preview()
-
-	# 清除血条预览效果
-	var health_manager = _get_health_bar_manager()
-	if health_manager and health_manager.has_method("clear_preview_effect"):
-		health_manager.clear_preview_effect()
+	_get_effect_preview_presenter().clear_preview(current_target_tile)
 
 
 ## 停止拖拽并重置状态（右键取消或放置失败时调用）
@@ -605,31 +596,12 @@ func _cancel_selection() -> void:
 
 ## 获取地块上的敌人
 func _get_enemy_on_tile(tile: Node) -> Node:
-	if not tile:
-		return null
-
-	# 这里需要根据你的项目结构来获取地块上的敌人
-	# 暂时返回null，需要根据实际项目结构实现
-	return null
+	return _get_effect_preview_presenter().get_enemy_on_tile(tile)
 
 
 ## 获取血条管理器
 func _get_health_bar_manager() -> Node:
-	var scene_root = get_tree().current_scene
-	if not scene_root:
-		return null
-
-	# 查找血条管理器节点
-	var health_manager = scene_root.get_node_or_null("HealthBarManager")
-	if health_manager:
-		return health_manager
-
-	# 如果找不到，尝试通过组名查找
-	var managers = get_tree().get_nodes_in_group("health_bar_manager")
-	if not managers.is_empty():
-		return managers[0]
-
-	return null
+	return _get_effect_preview_presenter().get_health_bar_manager()
 
 
 ## 处理自由拖拽逻辑（鼠标不在时间轴上时）
