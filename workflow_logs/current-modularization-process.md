@@ -3523,3 +3523,57 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十三批放置校验收口记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只收口拖拽时间轴放置校验的调用路径。它让时间轴 hover 预览和鼠标确认放置都走已有的 `DragPlacementQueryService`，不修改拖拽状态机，不创建 `TimelineAction`，也不改放置动画或卡牌回手流程。
+
+目标函数范围：
+```text
+_handle_timeline_hover(mouse_pos)
+try_place_shape()
+_is_placement_valid(grid_pos)
+DragPlacementQueryService.is_placement_valid(...)
+```
+
+当前触碰的数据和节点：
+```text
+timeline_ui
+timeline_manager
+current_shape_coords
+is_timeline_clear_mode
+hover_grid_pos / origin_pos
+TimelineClearEffectUtil
+```
+
+### 调整内容
+
+```text
+scene/in_scene/DragShapeController.gd
+scene/in_scene/drag_modules/DragPlacementQueryService.gd
+```
+
+模块边界：
+- `DragPlacementQueryService.gd` 继续只回答“指定格子是否可放置”，不执行放置，不创建行动，也不修改时间轴或卡牌状态。
+- `DragShapeController.gd` 保留 `_is_placement_valid()` 旧入口，并让 hover 预览与确认放置都通过旧入口转发给服务。
+- clear 类即时卡牌的边界判断不再被 `timeline_manager` 有效性提前拦截，保持旧逻辑只依赖时间轴网格尺寸。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+hover 预览和确认放置里直接调用 TimelineClearEffectUtil / timeline_manager.is_placement_valid 的判断，现在统一收口到 DragPlacementQueryService。
+这样后续修改拖拽放置规则时，只需要维护一个查询入口。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```

@@ -384,11 +384,11 @@ func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 	var is_valid = true
 	var drag_visual_state: int = 0
 	if is_timeline_clear_mode:
-		is_valid = is_in_grid_bounds and TimelineClearEffectUtil.is_origin_in_bounds(current_shape_coords, hover_grid_pos, grid_width, grid_height)
+		is_valid = is_in_grid_bounds and _is_placement_valid(hover_grid_pos)
 		if is_valid and TimelineClearEffectUtil.has_overlap(timeline_manager, current_shape_coords, hover_grid_pos):
 			drag_visual_state = 2
-	elif timeline_manager and is_in_grid_bounds:
-		is_valid = timeline_manager.is_placement_valid(current_shape_coords, hover_grid_pos)
+	elif is_in_grid_bounds:
+		is_valid = _is_placement_valid(hover_grid_pos)
 	else:
 		is_valid = false
 	drag_visual_state = 1 if not is_valid else drag_visual_state
@@ -733,14 +733,9 @@ func try_place_shape() -> void:
 		pass
 
 	# 验证并放置
-	if is_timeline_clear_mode:
-		var clear_grid_width = timeline_ui.grid_width if _object_has_property(timeline_ui, &"grid_width") else max_grid_x
-		var clear_grid_height = timeline_ui.grid_height if _object_has_property(timeline_ui, &"grid_height") else max_grid_y
-		if TimelineClearEffectUtil.is_origin_in_bounds(current_shape_coords, origin_pos, clear_grid_width, clear_grid_height):
-			_execute_timeline_clear(origin_pos)
-		else:
-			_play_reject_animation()
-	elif timeline_manager and timeline_manager.is_placement_valid(current_shape_coords, origin_pos):
+	if is_timeline_clear_mode and _is_placement_valid(origin_pos):
+		_execute_timeline_clear(origin_pos)
+	elif not is_timeline_clear_mode and _is_placement_valid(origin_pos):
 		_place_action(origin_pos)
 	else:
 		_play_reject_animation()
