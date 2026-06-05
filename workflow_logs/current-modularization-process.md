@@ -3577,3 +3577,53 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十四批拒绝动画拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆拖拽放置失败时的拒绝动画。它保留 `_play_reject_animation()` 旧入口，只把卡牌横向抖动、拒绝提示显示和 2 秒后隐藏提示交给新模块；不判断放置合法性，不结束拖拽，不创建 `TimelineAction`，也不移动卡牌到手牌或弃牌区。
+
+目标函数范围：
+```text
+_play_reject_animation()
+```
+
+当前触碰的数据和节点：
+```text
+current_card
+cursor_tooltip
+create_tween()
+get_tree().create_timer()
+_show_reject_tooltip(message)
+_hide_reject_tooltip()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragRejectAnimationRunner.gd
+```
+
+模块边界：
+- `DragRejectAnimationRunner.gd` 只负责拖拽放置失败时的卡牌抖动动画和提示隐藏计时。
+- 它不判断是否可放置，不结束拖拽，也不修改时间轴、卡牌归属或回合状态。
+- `DragShapeController.gd` 保留 `_play_reject_animation()` 旧入口，并通过 `Callable` 传入提示、tween 和 timer 的创建方式。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+拒绝动画的卡牌横向抖动、提示显示和延迟隐藏现在由 DragRejectAnimationRunner 统一维护。
+主脚本仍决定什么时候拒绝放置，新模块只执行表现。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```

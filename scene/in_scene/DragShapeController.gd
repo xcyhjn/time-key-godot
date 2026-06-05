@@ -17,6 +17,7 @@ const DragTimelineGridCoordinateResolverScript = preload("res://scene/in_scene/d
 const DragSceneInteractionLockControllerScript = preload("res://scene/in_scene/drag_modules/DragSceneInteractionLockController.gd")
 const DragCardEffectPreviewTextResolverScript = preload("res://scene/in_scene/drag_modules/DragCardEffectPreviewTextResolver.gd")
 const DragEffectPreviewPresenterScript = preload("res://scene/in_scene/drag_modules/DragEffectPreviewPresenter.gd")
+const DragRejectAnimationRunnerScript = preload("res://scene/in_scene/drag_modules/DragRejectAnimationRunner.gd")
 
 # ==========================================
 # 信号
@@ -85,6 +86,7 @@ var _timeline_grid_coordinate_resolver = null
 var _scene_interaction_lock_controller = null
 var _card_effect_preview_text_resolver = null
 var _effect_preview_presenter = null
+var _reject_animation_runner = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -164,6 +166,12 @@ func _get_effect_preview_presenter():
 	return _effect_preview_presenter
 
 
+func _get_reject_animation_runner():
+	if _reject_animation_runner == null:
+		_reject_animation_runner = DragRejectAnimationRunnerScript.new()
+	return _reject_animation_runner
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -204,6 +212,7 @@ func _ready() -> void:
 	_scene_interaction_lock_controller = DragSceneInteractionLockControllerScript.new()
 	_card_effect_preview_text_resolver = DragCardEffectPreviewTextResolverScript.new()
 	_effect_preview_presenter = DragEffectPreviewPresenterScript.new(self)
+	_reject_animation_runner = DragRejectAnimationRunnerScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -800,22 +809,13 @@ func _hide_reject_tooltip() -> void:
 
 ## 播放拒绝动画
 func _play_reject_animation() -> void:
-	if not is_instance_valid(current_card):
-		return
-
-	# 显示"无法放置"提示
-	_show_reject_tooltip("无法放置")
-
-	var tw = create_tween()
-	var orig_x = current_card.position.x
-	tw.tween_property(current_card, "position:x", orig_x - 10, 0.05)
-	tw.tween_property(current_card, "position:x", orig_x + 10, 0.05)
-	tw.tween_property(current_card, "position:x", orig_x, 0.05)
-
-	# ★ 已修改：动画完成后不返回手牌，保持拖拽状态
-	# 添加一个计时器，2秒后自动隐藏提示
-	var timer = get_tree().create_timer(2.0)
-	timer.timeout.connect(_hide_reject_tooltip)
+	_get_reject_animation_runner().play_reject_animation(
+		current_card,
+		_show_reject_tooltip,
+		_hide_reject_tooltip,
+		func(): return create_tween(),
+		func(seconds: float): return get_tree().create_timer(seconds)
+	)
 
 
 ## 播放放置动画
