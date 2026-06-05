@@ -10,6 +10,7 @@ const DragShapeNodeBridgeScript = preload("res://scene/in_scene/drag_modules/Dra
 const DragRejectTooltipControllerScript = preload("res://scene/in_scene/drag_modules/DragRejectTooltipController.gd")
 const DragTimelineGridPreviewPresenterScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridPreviewPresenter.gd")
 const DragCardShapeResolverScript = preload("res://scene/in_scene/drag_modules/DragCardShapeResolver.gd")
+const DragTimelineGridMouseFilterControllerScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridMouseFilterController.gd")
 
 # ==========================================
 # 信号
@@ -71,6 +72,7 @@ var _node_bridge = null
 var _reject_tooltip_controller = null
 var _grid_preview_presenter = null
 var _card_shape_resolver = null
+var _grid_mouse_filter_controller = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -108,6 +110,12 @@ func _get_card_shape_resolver():
 	return _card_shape_resolver
 
 
+func _get_grid_mouse_filter_controller():
+	if _grid_mouse_filter_controller == null:
+		_grid_mouse_filter_controller = DragTimelineGridMouseFilterControllerScript.new()
+	return _grid_mouse_filter_controller
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -141,6 +149,7 @@ func _ready() -> void:
 	_reject_tooltip_controller = DragRejectTooltipControllerScript.new()
 	_grid_preview_presenter = DragTimelineGridPreviewPresenterScript.new()
 	_card_shape_resolver = DragCardShapeResolverScript.new()
+	_grid_mouse_filter_controller = DragTimelineGridMouseFilterControllerScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -1080,29 +1089,11 @@ func end_dragging_success() -> void:
 
 ## 禁用时间轴网格单元格鼠标交互
 func _disable_grid_cells_mouse_filter() -> void:
-	if not timeline_ui or not _object_has_property(timeline_ui, &"grid_cells"):
-		return
-	
-	var grid_cells = timeline_ui.grid_cells
-	if not (grid_cells is Dictionary):
-		return
-	
-	for cell in grid_cells.values():
-		if cell is Control:
-			cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_get_grid_mouse_filter_controller().disable_grid_cells(timeline_ui)
 
 ## 恢复时间轴网格单元格鼠标交互
 func _restore_grid_cells_mouse_filter() -> void:
-	if not timeline_ui or not _object_has_property(timeline_ui, &"grid_cells"):
-		return
-	
-	var grid_cells = timeline_ui.grid_cells
-	if not (grid_cells is Dictionary):
-		return
-	
-	for cell in grid_cells.values():
-		if cell is Control:
-			cell.mouse_filter = Control.MOUSE_FILTER_PASS
+	_get_grid_mouse_filter_controller().restore_grid_cells(timeline_ui)
 
 ## 将卡牌返回手牌
 func _return_card_to_hand(card: Node) -> void:
