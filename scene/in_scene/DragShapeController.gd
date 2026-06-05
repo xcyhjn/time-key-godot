@@ -13,6 +13,7 @@ const DragCardShapeResolverScript = preload("res://scene/in_scene/drag_modules/D
 const DragTimelineGridMouseFilterControllerScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridMouseFilterController.gd")
 const DragPlacementQueryServiceScript = preload("res://scene/in_scene/drag_modules/DragPlacementQueryService.gd")
 const DragTimelineUiStateControllerScript = preload("res://scene/in_scene/drag_modules/DragTimelineUiStateController.gd")
+const DragTimelineGridCoordinateResolverScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridCoordinateResolver.gd")
 
 # ==========================================
 # 信号
@@ -77,6 +78,7 @@ var _card_shape_resolver = null
 var _grid_mouse_filter_controller = null
 var _placement_query_service = null
 var _timeline_ui_state_controller = null
+var _timeline_grid_coordinate_resolver = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -132,6 +134,12 @@ func _get_timeline_ui_state_controller():
 	return _timeline_ui_state_controller
 
 
+func _get_timeline_grid_coordinate_resolver():
+	if _timeline_grid_coordinate_resolver == null:
+		_timeline_grid_coordinate_resolver = DragTimelineGridCoordinateResolverScript.new()
+	return _timeline_grid_coordinate_resolver
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -168,6 +176,7 @@ func _ready() -> void:
 	_grid_mouse_filter_controller = DragTimelineGridMouseFilterControllerScript.new()
 	_placement_query_service = DragPlacementQueryServiceScript.new()
 	_timeline_ui_state_controller = DragTimelineUiStateControllerScript.new()
+	_timeline_grid_coordinate_resolver = DragTimelineGridCoordinateResolverScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -329,23 +338,13 @@ func _process(_delta: float) -> void:
 ## 更新时间轴网格预览（蓝色/红色高亮）
 func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 	# ★ 修复缩放导致的鼠标网格吸附错位：使用 get_local_mouse_position() 自动剔除父级缩放变换
-	var local_mouse = timeline_ui.grid_background.get_local_mouse_position()
-
-	# 计算网格坐标 - 从timeline_ui获取实际的格子大小和间距，确保与UI设置一致
-	var ui_slot_size = timeline_ui.slot_size if _object_has_property(timeline_ui, &"slot_size") else slot_size
-	var ui_spacing = timeline_ui.spacing if _object_has_property(timeline_ui, &"spacing") else spacing
-	var cell_size = ui_slot_size + ui_spacing
-	var grid_x = int(local_mouse.x / cell_size)
-	var grid_y = int(local_mouse.y / cell_size)
-	var hover_grid_pos = Vector2i(grid_x, grid_y)
+	var grid_info: Dictionary = _get_timeline_grid_coordinate_resolver().resolve_hover(timeline_ui, slot_size, spacing)
+	var hover_grid_pos: Vector2i = grid_info["grid_pos"]
 	
 	# ★ 边界检查：确保网格坐标在合理范围内（包括负坐标保护）
-	var grid_width = timeline_ui.grid_width if _object_has_property(timeline_ui, &"grid_width") else 12
-	var grid_height = timeline_ui.grid_height if _object_has_property(timeline_ui, &"grid_height") else 3
-	var is_in_grid_bounds = (grid_x >= 0 and grid_x < grid_width and grid_y >= 0 and grid_y < grid_height)
-	# ★ 额外保护：防止在网格左侧或上方悬浮时产生负数数组越界
-	if local_mouse.x < 0 or local_mouse.y < 0:
-		is_in_grid_bounds = false
+	var grid_width: int = grid_info["grid_width"]
+	var grid_height: int = grid_info["grid_height"]
+	var is_in_grid_bounds: bool = grid_info["is_in_bounds"]
 	
 	# ★ 修复编译错误：声明未使用的变量（原网格吸附相关变量）
 	# 变量已移除，网格吸附功能已取消
@@ -365,9 +364,7 @@ func _handle_timeline_hover(mouse_pos: Vector2) -> void:
 	var is_valid = true
 	var drag_visual_state: int = 0
 	if is_timeline_clear_mode:
-		var grid_width_for_clear = timeline_ui.grid_width if _object_has_property(timeline_ui, &"grid_width") else 12
-		var grid_height_for_clear = timeline_ui.grid_height if _object_has_property(timeline_ui, &"grid_height") else 3
-		is_valid = is_in_grid_bounds and TimelineClearEffectUtil.is_origin_in_bounds(current_shape_coords, hover_grid_pos, grid_width_for_clear, grid_height_for_clear)
+		is_valid = is_in_grid_bounds and TimelineClearEffectUtil.is_origin_in_bounds(current_shape_coords, hover_grid_pos, grid_width, grid_height)
 		if is_valid and TimelineClearEffectUtil.has_overlap(timeline_manager, current_shape_coords, hover_grid_pos):
 			drag_visual_state = 2
 	elif timeline_manager and is_in_grid_bounds:
@@ -786,27 +783,18 @@ func try_place_shape() -> void:
 
 	# ★ 修复实际放置判定：与 _handle_timeline_hover 保持一致的坐标计算
 	# 使用 get_local_mouse_position() 自动剔除父级缩放变换，解决视觉预览正确但实际放置位置偏移的 Bug
-	var local_mouse = timeline_ui.grid_background.get_local_mouse_position()
-	
-	# ★ 负数越界保护：防止在网格左侧或上方悬浮时产生无效坐标
-	if local_mouse.x < 0 or local_mouse.y < 0:
-		_play_reject_animation()
-		return
-	
-	# 从timeline_ui获取实际的格子大小和间距，确保与UI设置一致
-	var ui_slot_size = timeline_ui.slot_size if "slot_size" in timeline_ui else slot_size
-	var ui_spacing = timeline_ui.spacing if "spacing" in timeline_ui else spacing
-	var cell_size = ui_slot_size + ui_spacing
-	
-	var grid_x = int(local_mouse.x / cell_size)
-	var grid_y = int(local_mouse.y / cell_size)
-	var origin_pos = Vector2i(grid_x, grid_y)
-	
-	# ★ 边界检查：确保计算的网格坐标在合理范围内
 	var max_grid_x = 12  # TimelineManager.GRID_WIDTH
 	var max_grid_y = 3   # TimelineManager.GRID_HEIGHT
+	var grid_info: Dictionary = _get_timeline_grid_coordinate_resolver().resolve_fixed_bounds(
+		timeline_ui,
+		slot_size,
+		spacing,
+		max_grid_x,
+		max_grid_y
+	)
+	var origin_pos: Vector2i = grid_info["grid_pos"]
 	
-	if grid_x < 0 or grid_x >= max_grid_x or grid_y < 0 or grid_y >= max_grid_y:
+	if not grid_info["is_in_bounds"]:
 		_play_reject_animation()
 		return
 	

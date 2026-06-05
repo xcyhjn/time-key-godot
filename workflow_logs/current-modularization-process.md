@@ -2521,3 +2521,57 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第九批时间轴网格坐标解析拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆“时间轴本地鼠标位置换算成网格坐标和边界状态”的重复计算。
+不判断卡牌形状是否合法，不更新预览，不执行放置，也不改变 hover 和实际放置的后续判定流程。
+
+目标函数范围：
+
+```text
+_handle_timeline_hover(mouse_pos) 中的 timeline_ui.grid_background 本地坐标换算
+try_place_shape() 中的 timeline_ui.grid_background 本地坐标换算
+```
+
+当前触碰的外部节点和接口：
+
+```text
+timeline_ui.grid_background.get_local_mouse_position()
+timeline_ui.slot_size
+timeline_ui.spacing
+timeline_ui.grid_width
+timeline_ui.grid_height
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragTimelineGridCoordinateResolver.gd
+```
+
+模块边界：
+
+- `DragTimelineGridCoordinateResolver.gd` 只负责把时间轴本地鼠标位置换算成网格坐标和边界状态。
+- 它不判断卡牌形状是否合法，不更新预览，也不执行放置。
+- `DragShapeController.gd` 仍负责 hover 合法性、clear 卡牌边界判断、普通卡牌放置判断和拒绝动画。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+hover 预览和实际放置入口里重复的 slot_size、spacing、grid 坐标和边界计算已经由 DragTimelineGridCoordinateResolver 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
