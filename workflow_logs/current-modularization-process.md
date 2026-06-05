@@ -2359,3 +2359,55 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第六批放置查询拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆供外部或时间轴可视化器调用的放置合法性查询入口。
+不修改 `try_place_shape()` 的实际放置判定，不创建 `TimelineAction`，不修改时间轴数据，也不触发卡牌效果。
+
+目标函数范围：
+
+```text
+_is_placement_valid(grid_pos)
+```
+
+当前触碰的外部节点和接口：
+
+```text
+timeline_manager.is_placement_valid(current_shape_coords, grid_pos)
+TimelineClearEffectUtil.is_origin_in_bounds(...)
+timeline_ui.grid_width
+timeline_ui.grid_height
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragPlacementQueryService.gd
+```
+
+模块边界：
+
+- `DragPlacementQueryService.gd` 只负责回答当前拖拽形状在指定时间轴格子是否可用。
+- 它不执行放置，不创建 `TimelineAction`，也不修改时间轴或卡牌状态。
+- `DragShapeController.gd` 保留 `_is_placement_valid()` 旧入口，内部转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+普通卡牌放置查询和 clear 卡牌边界查询已经由 DragPlacementQueryService 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

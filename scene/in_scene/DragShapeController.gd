@@ -11,6 +11,7 @@ const DragRejectTooltipControllerScript = preload("res://scene/in_scene/drag_mod
 const DragTimelineGridPreviewPresenterScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridPreviewPresenter.gd")
 const DragCardShapeResolverScript = preload("res://scene/in_scene/drag_modules/DragCardShapeResolver.gd")
 const DragTimelineGridMouseFilterControllerScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridMouseFilterController.gd")
+const DragPlacementQueryServiceScript = preload("res://scene/in_scene/drag_modules/DragPlacementQueryService.gd")
 
 # ==========================================
 # 信号
@@ -73,6 +74,7 @@ var _reject_tooltip_controller = null
 var _grid_preview_presenter = null
 var _card_shape_resolver = null
 var _grid_mouse_filter_controller = null
+var _placement_query_service = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -116,6 +118,12 @@ func _get_grid_mouse_filter_controller():
 	return _grid_mouse_filter_controller
 
 
+func _get_placement_query_service():
+	if _placement_query_service == null:
+		_placement_query_service = DragPlacementQueryServiceScript.new()
+	return _placement_query_service
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -150,6 +158,7 @@ func _ready() -> void:
 	_grid_preview_presenter = DragTimelineGridPreviewPresenterScript.new()
 	_card_shape_resolver = DragCardShapeResolverScript.new()
 	_grid_mouse_filter_controller = DragTimelineGridMouseFilterControllerScript.new()
+	_placement_query_service = DragPlacementQueryServiceScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -1128,15 +1137,13 @@ func _return_card_to_hand(card: Node) -> void:
 
 ## 检查放置是否有效（公共方法，供时间轴可视化器调用）
 func _is_placement_valid(grid_pos: Vector2i) -> bool:
-	if not timeline_manager or current_shape_coords.is_empty():
-		return false
-
-	if is_timeline_clear_mode:
-		var grid_width = timeline_ui.grid_width if _object_has_property(timeline_ui, &"grid_width") else 12
-		var grid_height = timeline_ui.grid_height if _object_has_property(timeline_ui, &"grid_height") else 3
-		return TimelineClearEffectUtil.is_origin_in_bounds(current_shape_coords, grid_pos, grid_width, grid_height)
-
-	return timeline_manager.is_placement_valid(current_shape_coords, grid_pos)
+	return _get_placement_query_service().is_placement_valid(
+		timeline_ui,
+		timeline_manager,
+		current_shape_coords,
+		grid_pos,
+		is_timeline_clear_mode
+	)
 
 ## ==========================================
 ## ★ 强制打断拖拽（供外部事件、回合结束时调用）
