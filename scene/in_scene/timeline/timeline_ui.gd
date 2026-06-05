@@ -4,6 +4,7 @@ const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent
 const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/TimelineActionShapeVisual.gd")
 const TimelineExpandVisualControllerScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineExpandVisualController.gd")
 const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridBuilder.gd")
+const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridCellInteractionPresenter.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -93,6 +94,7 @@ var _timeline_intro_has_played: bool = false
 var _timeline_intro_in_progress: bool = false
 var _expand_visual_controller = null
 var _grid_builder = null
+var _grid_cell_interaction_presenter = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -113,6 +115,12 @@ func _get_grid_builder():
 	if _grid_builder == null:
 		_grid_builder = TimelineGridBuilderScript.new()
 	return _grid_builder
+
+
+func _get_grid_cell_interaction_presenter():
+	if _grid_cell_interaction_presenter == null:
+		_grid_cell_interaction_presenter = TimelineGridCellInteractionPresenterScript.new()
+	return _grid_cell_interaction_presenter
 
 
 ## 查找TimelineManager节点
@@ -717,9 +725,7 @@ func _configure_enemy_intent_timeline_material(material: Material) -> void:
 # ==========================================
 func _on_grid_cell_gui_input(event: InputEvent, cell_index: int) -> void:
 	if event is InputEventMouseButton and event.pressed:
-		var grid_x = cell_index % grid_width
-		var grid_y = cell_index / grid_width
-		var grid_pos = Vector2i(grid_x, grid_y)
+		var grid_pos = _get_grid_cell_interaction_presenter().get_grid_pos(cell_index, grid_width)
 
 
 		# 发射信号，通知其他系统这个网格被点击了
@@ -733,39 +739,19 @@ func _on_grid_cell_gui_input(event: InputEvent, cell_index: int) -> void:
 
 
 func _on_grid_cell_mouse_entered(cell_index: int) -> void:
-	var grid_x = cell_index % grid_width
-	var grid_y = cell_index / grid_width
-	var grid_pos = Vector2i(grid_x, grid_y)
+	var grid_pos = _get_grid_cell_interaction_presenter().get_grid_pos(cell_index, grid_width)
 
 	# 高亮显示这个网格单元
-	var cell = grid_cells.get(grid_pos)
-	if cell and cell is Panel:
-		# 使用StyleBox设置悬停颜色
-		var style = cell.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-		if not style:
-			style = StyleBoxFlat.new()
-		style.bg_color = grid_cell_hover_color
-		style.set_border_width_all(0)
-		cell.add_theme_stylebox_override("panel", style)
+	_get_grid_cell_interaction_presenter().apply_cell_color(grid_cells, grid_pos, grid_cell_hover_color)
 
 	emit_signal("grid_cell_hovered", grid_pos, true)
 
 
 func _on_grid_cell_mouse_exited(cell_index: int) -> void:
-	var grid_x = cell_index % grid_width
-	var grid_y = cell_index / grid_width
-	var grid_pos = Vector2i(grid_x, grid_y)
+	var grid_pos = _get_grid_cell_interaction_presenter().get_grid_pos(cell_index, grid_width)
 
 	# 恢复网格单元颜色
-	var cell = grid_cells.get(grid_pos)
-	if cell and cell is Panel:
-		# 使用StyleBox恢复原始颜色
-		var style = cell.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-		if not style:
-			style = StyleBoxFlat.new()
-		style.bg_color = grid_cell_default_color
-		style.set_border_width_all(0)
-		cell.add_theme_stylebox_override("panel", style)
+	_get_grid_cell_interaction_presenter().apply_cell_color(grid_cells, grid_pos, grid_cell_default_color)
 
 	emit_signal("grid_cell_hovered", grid_pos, false)
 

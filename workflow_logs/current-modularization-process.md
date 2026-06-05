@@ -2827,3 +2827,51 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## timeline_ui.gd 第三批网格格子交互表现拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆空背景格子的交互表现辅助逻辑：把 `cell_index` 换算成 `grid_pos`，并在鼠标进入/离开时切换空格子的 hover/default 样式。它不发射业务信号，不处理拖拽预览，不读取 `TimelineManager`，也不创建行动方块。
+
+目标函数范围：
+```text
+_on_grid_cell_gui_input(event, cell_index) 中的 cell_index 到 grid_pos 换算
+_on_grid_cell_mouse_entered(cell_index) 中的 hover 样式切换
+_on_grid_cell_mouse_exited(cell_index) 中的 default 样式恢复
+```
+
+当前触碰的外部节点和接口：
+```text
+grid_cells
+Panel.add_theme_stylebox_override()
+StyleBoxFlat.bg_color
+```
+
+### 新增模块
+
+```text
+scene/in_scene/timeline/ui_modules/TimelineGridCellInteractionPresenter.gd
+```
+
+模块边界：
+- `TimelineGridCellInteractionPresenter.gd` 只负责 TimelineUI 空背景格子的坐标换算和 hover 样式。
+- 它不发射业务信号，不处理拖拽预览，也不读取 TimelineManager 数据。
+- `timeline_ui.gd` 继续负责发射 `grid_cell_clicked`、`grid_cell_right_clicked` 和 `grid_cell_hovered` 信号。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+三处重复的 cell_index 到 Vector2i 网格坐标换算，以及鼠标进入/离开里重复的 StyleBoxFlat 复制和颜色设置，现在由 TimelineGridCellInteractionPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
