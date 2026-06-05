@@ -2,6 +2,7 @@ extends Control
 
 const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
 const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/TimelineActionShapeVisual.gd")
+const TimelineExpandVisualControllerScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineExpandVisualController.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -89,6 +90,7 @@ var current_enemy_intent_preview_action: TimelineAction = null
 var enemy_intent_preview_tween: Tween = null
 var _timeline_intro_has_played: bool = false
 var _timeline_intro_in_progress: bool = false
+var _expand_visual_controller = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -97,6 +99,12 @@ signal grid_cell_hovered(grid_pos: Vector2i, is_hovering: bool)
 
 # 如果需要跨脚本调用，可以在这里注入 manager 引用
 var timeline_manager: TimelineManager
+
+
+func _get_expand_visual_controller():
+	if _expand_visual_controller == null:
+		_expand_visual_controller = TimelineExpandVisualControllerScript.new()
+	return _expand_visual_controller
 
 
 ## 查找TimelineManager节点
@@ -208,27 +216,7 @@ func _ready():
 
 ## 创建背景遮罩（参考RewardManager的BackgroundMask）
 func _create_background_mask() -> void:
-	# 如果已经存在遮罩节点，直接返回
-	if background_mask:
-		return
-
-	# 创建遮罩节点
-	background_mask = ColorRect.new()
-	background_mask.name = "BackgroundMask"
-
-	# 使用预设全屏锚点（自动填充全屏）
-	background_mask.anchors_preset = Control.PRESET_FULL_RECT
-	background_mask.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	background_mask.grow_vertical = Control.GROW_DIRECTION_BOTH
-
-	background_mask.color = mask_color
-	background_mask.z_index = mask_layer  # 设置遮罩层级
-	background_mask.mouse_filter = Control.MOUSE_FILTER_IGNORE  # 遮罩不拦截鼠标事件
-	background_mask.visible = false  # 初始隐藏
-
-	# 添加到场景中（作为第一个子节点，位于最底层）
-	add_child(background_mask)
-	move_child(background_mask, 0)
+	background_mask = _get_expand_visual_controller().create_background_mask(self, mask_color, mask_layer)
 
 
 
@@ -486,23 +474,15 @@ func toggle_expand():
 	is_expanded = !is_expanded
 	var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	
-	# 控制遮罩显示/隐藏 (逻辑不变)
-	if background_mask:
-		if is_expanded:
-			background_mask.visible = true
-			background_mask.modulate = Color.TRANSPARENT
-			tw.parallel().tween_property(background_mask, "modulate", Color.WHITE, anim_duration * 0.5)
-		else:
-			tw.parallel().tween_property(background_mask, "modulate", Color.TRANSPARENT, anim_duration * 0.5)
-			tw.tween_callback(func():
-				if background_mask and not is_expanded:
-					background_mask.visible = false
-			)
+	_get_expand_visual_controller().animate_background_mask(
+		tw,
+		background_mask,
+		is_expanded,
+		anim_duration,
+		func(): return not is_expanded
+	)
 	
-	# 控制地图交互 (逻辑不变)
-	var map_node = get_tree().root.find_child("map", true, false)
-	if map_node and map_node is Control:
-		map_node.mouse_filter = Control.MOUSE_FILTER_IGNORE if is_expanded else Control.MOUSE_FILTER_PASS
+	_get_expand_visual_controller().set_map_interaction_for_expand(self, is_expanded)
 	
 	# ★ 核心动画：只需改变 scale，位置交给 Anchor 和 Pivot 自动管理！
 	if is_expanded:
@@ -838,12 +818,13 @@ func collapse() -> void:
 	is_expanded = false
 	var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	
-	if background_mask and background_mask.visible:
-		tw.parallel().tween_property(background_mask, "modulate", Color.TRANSPARENT, anim_duration * 0.5)
-		tw.tween_callback(func():
-			if background_mask and not is_expanded:
-				background_mask.visible = false
-		)
+	_get_expand_visual_controller().animate_background_mask(
+		tw,
+		background_mask,
+		false,
+		anim_duration,
+		func(): return not is_expanded
+	)
 	
 	# 仅缩放回归即可
 	tw.parallel().tween_property(self, "scale", Vector2.ONE, anim_duration)

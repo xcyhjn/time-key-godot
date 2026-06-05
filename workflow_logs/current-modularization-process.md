@@ -2730,3 +2730,51 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## timeline_ui.gd 第一批展开遮罩表现拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `timeline_ui.gd` 展开和收起时的 UI 表现面：背景遮罩创建、遮罩淡入淡出、展开时地图鼠标交互过滤。它不处理时间轴行动数据，不创建行动方块，不改变敌人意图 shader，也不参与拖拽放置判断。
+
+目标函数范围：
+```text
+_create_background_mask()
+toggle_expand() 中的背景遮罩和地图交互分支
+collapse() 中的背景遮罩分支
+```
+
+当前触碰的外部节点和接口：
+```text
+BackgroundMask
+map.mouse_filter
+Tween.tween_property()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/timeline/ui_modules/TimelineExpandVisualController.gd
+```
+
+模块边界：
+- `TimelineExpandVisualController.gd` 只负责 TimelineUI 展开/收起时的遮罩和地图交互表现。
+- 它不处理时间轴行动数据，不创建行动方块，也不参与拖拽放置判断。
+- `timeline_ui.gd` 保留 `_create_background_mask()`、`toggle_expand()` 和 `collapse()` 旧入口，内部转发背景遮罩与地图交互细节。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+展开和强制收起里重复的 BackgroundMask 淡出隐藏逻辑，以及展开时的 map.mouse_filter 切换，现在由 TimelineExpandVisualController 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
