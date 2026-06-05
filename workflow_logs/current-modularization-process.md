@@ -3627,3 +3627,52 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十五批自由拖拽表现拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆普通拖拽时卡牌跟随鼠标的表现逻辑。它保留 `_handle_free_drag()` 旧入口，只把非 clear 模式下的卡牌位置计算、位置写入和拖拽 shader 状态恢复交给新模块；不处理 clear 模式预览清理，不判断放置合法性，也不修改时间轴、手牌或弃牌区。
+
+目标函数范围：
+```text
+_handle_free_drag(mouse_pos) 的普通拖拽分支
+```
+
+当前触碰的数据和节点：
+```text
+current_card
+drag_offset
+mouse_pos
+card.global_position
+card.material.is_invalid
+card.material.drag_visual_state
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragFreeDragPresenter.gd
+```
+
+模块边界：
+- `DragFreeDragPresenter.gd` 只负责普通拖拽时让卡牌自由跟随鼠标并恢复拖拽视觉状态。
+- 它不处理 clear 模式预览，不判断放置合法性，也不修改时间轴、手牌或弃牌区。
+- `DragShapeController.gd` 保留 `_handle_free_drag()` 旧入口，并继续负责 clear 模式离开时间轴后的预览清理。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+普通自由拖拽的中心点到左上角换算、global_position 写入和无效放置 shader 状态清理现在由 DragFreeDragPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```

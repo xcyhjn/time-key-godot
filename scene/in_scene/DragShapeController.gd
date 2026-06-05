@@ -18,6 +18,7 @@ const DragSceneInteractionLockControllerScript = preload("res://scene/in_scene/d
 const DragCardEffectPreviewTextResolverScript = preload("res://scene/in_scene/drag_modules/DragCardEffectPreviewTextResolver.gd")
 const DragEffectPreviewPresenterScript = preload("res://scene/in_scene/drag_modules/DragEffectPreviewPresenter.gd")
 const DragRejectAnimationRunnerScript = preload("res://scene/in_scene/drag_modules/DragRejectAnimationRunner.gd")
+const DragFreeDragPresenterScript = preload("res://scene/in_scene/drag_modules/DragFreeDragPresenter.gd")
 
 # ==========================================
 # 信号
@@ -87,6 +88,7 @@ var _scene_interaction_lock_controller = null
 var _card_effect_preview_text_resolver = null
 var _effect_preview_presenter = null
 var _reject_animation_runner = null
+var _free_drag_presenter = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -172,6 +174,12 @@ func _get_reject_animation_runner():
 	return _reject_animation_runner
 
 
+func _get_free_drag_presenter():
+	if _free_drag_presenter == null:
+		_free_drag_presenter = DragFreeDragPresenterScript.new()
+	return _free_drag_presenter
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -213,6 +221,7 @@ func _ready() -> void:
 	_card_effect_preview_text_resolver = DragCardEffectPreviewTextResolverScript.new()
 	_effect_preview_presenter = DragEffectPreviewPresenterScript.new(self)
 	_reject_animation_runner = DragRejectAnimationRunnerScript.new()
+	_free_drag_presenter = DragFreeDragPresenterScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -622,21 +631,7 @@ func _handle_free_drag(mouse_pos: Vector2) -> void:
 		_clear_timeline_grid_preview()
 		return
 
-	# 计算卡牌中心的目标位置（保持鼠标相对于卡牌中心的偏移）
-	var target_center = mouse_pos - drag_offset
-	
-	# 将卡牌中心位置转换为左上角位置
-	var card_top_left = target_center
-	if current_card.has_method("get_size"):
-		var card_size = current_card.get_size()
-		var card_scale = current_card.scale
-		card_top_left -= card_size * card_scale / 2
-
-	
-	current_card.global_position = card_top_left
-	if current_card.material:
-		current_card.material.set_shader_parameter("is_invalid", false)
-		current_card.material.set_shader_parameter("drag_visual_state", 0)
+	_get_free_drag_presenter().update_free_drag(current_card, mouse_pos, drag_offset)
 
 # ==========================================
 # 输入处理
