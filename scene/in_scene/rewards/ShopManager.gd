@@ -10,6 +10,7 @@ signal reward_scene_close_requested(scene_instance: Node)
 var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
+const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/ShopPricingPresenter.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -76,6 +77,13 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 
 ## 商店页面只保留 Tooltip 触发职责，UI 构建与定位交给共享 presenter。
 var tooltip_presenter: CardTooltipPresenter = null
+var _pricing_presenter = null
+
+
+func _get_pricing_presenter():
+	if _pricing_presenter == null:
+		_pricing_presenter = ShopPricingPresenterScript.new()
+	return _pricing_presenter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -524,14 +532,12 @@ func _consume_timecoins(amount: int) -> bool:
 
 ## 根据卡牌位置计算价格
 func _calculate_card_price(slot_index: int) -> int:
-	# 简单策略: 基础价格 + 位置偏移
-	# 可以修改为更复杂的定价策略
-	return base_price + (slot_index * 5)
+	return _get_pricing_presenter().calculate_card_price(slot_index, base_price)
 
 ## 更新侧边栏价格显示
 func _update_price_display():
-	var refresh_cost = refresh_base_cost + (refresh_count * price_increment)
-	var upgrade_cost = upgrade_base_cost + (upgrade_count * price_increment)
+	var refresh_cost = _get_pricing_presenter().calculate_refresh_cost(refresh_base_cost, refresh_count, price_increment)
+	var upgrade_cost = _get_pricing_presenter().calculate_upgrade_cost(upgrade_base_cost, upgrade_count, price_increment)
 	
 	# 调试输出：显示详细价格信息
 	print("💰 价格更新 - 刷新: %d (基数: %d + 计数: %d × 增量: %d), 升级: %d (基数: %d + 计数: %d × 增量: %d)" % [
@@ -540,17 +546,7 @@ func _update_price_display():
 	])
 	
 	# 更新 UI 标签显示当前价格
-	if label_refresh_cost:
-		label_refresh_cost.text = "%d时间币" % refresh_cost
-		print("✅ label_refresh_cost 已更新 (位于 UpgradeGroup)")
-	else:
-		print("❌ label_refresh_cost 为 null!")
-	
-	if label_upgrade_cost:
-		label_upgrade_cost.text = "%d时间币" % upgrade_cost
-		print("✅ label_upgrade_cost 已更新 (位于 RefreshGroup)")
-	else:
-		print("❌ label_upgrade_cost 为 null!")
+	_get_pricing_presenter().update_price_labels(label_refresh_cost, label_upgrade_cost, refresh_cost, upgrade_cost)
 	
 	# ✅ 标签位置已修正：label_refresh_cost 在 RefreshGroup 中，label_upgrade_cost 在 UpgradeGroup 中
 

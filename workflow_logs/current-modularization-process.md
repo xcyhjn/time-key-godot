@@ -3016,3 +3016,55 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## ShopManager.gd 第一批商店定价显示拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `ShopManager.gd` 的商店定价与侧边栏价格标签显示。它只计算商品价格、刷新费用、升级费用，并写入价格 Label 文案；不消费时间币，不生成商品，也不处理购买、刷新或升级流程。
+
+目标函数范围：
+```text
+_calculate_card_price(slot_index)
+_update_price_display()
+```
+
+当前触碰的数据和节点：
+```text
+base_price
+price_increment
+refresh_base_cost
+upgrade_base_cost
+refresh_count
+upgrade_count
+label_refresh_cost
+label_upgrade_cost
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/ShopPricingPresenter.gd
+```
+
+模块边界：
+- `ShopPricingPresenter.gd` 只负责商店价格计算和价格标签显示。
+- 它不消费时间币，不生成商品，也不处理购买或刷新升级流程。
+- `ShopManager.gd` 保留 `_calculate_card_price()` 和 `_update_price_display()` 旧入口，内部转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+商品价格、刷新费用、升级费用和两个价格标签的文案写入现在由 ShopPricingPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
