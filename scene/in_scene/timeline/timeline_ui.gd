@@ -7,6 +7,7 @@ const TimelineLayoutControllerScript = preload("res://scene/in_scene/timeline/ui
 const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridBuilder.gd")
 const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridCellInteractionPresenter.gd")
 const TimelineGridPreviewPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridPreviewPresenter.gd")
+const TimelineManagerLocatorScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineManagerLocator.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -99,6 +100,7 @@ var _layout_controller = null
 var _grid_builder = null
 var _grid_cell_interaction_presenter = null
 var _grid_preview_presenter = null
+var _timeline_manager_locator = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -139,34 +141,15 @@ func _get_grid_preview_presenter():
 	return _grid_preview_presenter
 
 
+func _get_timeline_manager_locator():
+	if _timeline_manager_locator == null:
+		_timeline_manager_locator = TimelineManagerLocatorScript.new()
+	return _timeline_manager_locator
+
+
 ## 查找TimelineManager节点
 func _find_timeline_manager() -> TimelineManager:
-	# 方法1：通过场景树查找
-	var tree = get_tree()
-	if tree:
-		# 查找所有TimelineManager节点
-		var managers = tree.get_nodes_in_group("TimelineManager")
-		if not managers.is_empty():
-			return managers[0] as TimelineManager
-		
-		# 通过节点名查找
-		var found = tree.root.find_child("TimelineManager", true, false)
-		if found:
-			return found as TimelineManager
-	
-	# 方法2：通过父节点查找
-	var parent = get_parent()
-	while parent:
-		if parent is TimelineManager:
-			return parent as TimelineManager
-		parent = parent.get_parent()
-	
-	# 方法3：通过全局查找
-	for node in get_tree().get_nodes_in_group("managers"):
-		if node is TimelineManager:
-			return node as TimelineManager
-	
-	return null
+	return _get_timeline_manager_locator().find_timeline_manager(self)
 
 
 ## 应用调试用的offset设置

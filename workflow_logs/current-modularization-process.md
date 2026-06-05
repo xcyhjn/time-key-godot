@@ -3370,3 +3370,51 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## timeline_ui.gd 第六批 TimelineManager 查找拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `timeline_ui.gd` 查找 `TimelineManager` 的桥接逻辑。它保留 `_find_timeline_manager()` 旧入口，只把按分组、节点名、父节点链和 managers 分组兜底查找的逻辑交给新模块；不读取时间轴数据，不连接信号，也不创建或移除行动块。
+
+目标函数范围：
+```text
+_find_timeline_manager()
+```
+
+当前触碰的数据和接口：
+```text
+get_tree()
+get_nodes_in_group("TimelineManager")
+find_child("TimelineManager", true, false)
+get_parent()
+get_nodes_in_group("managers")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/timeline/ui_modules/TimelineManagerLocator.gd
+```
+
+模块边界：
+- `TimelineManagerLocator.gd` 只负责为 TimelineUI 查找 TimelineManager 节点。
+- 它不读取 TimelineManager 的 grid，不连接 action_placed 或 timeline_cleared，也不创建行动块。
+- `timeline_ui.gd` 保留 `_find_timeline_manager()` 旧入口，`_ready()` 中的信号连接仍由主脚本负责。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+TimelineManager 的分组查找、节点名查找、父节点链查找和 managers 分组兜底查找现在由 TimelineManagerLocator 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
