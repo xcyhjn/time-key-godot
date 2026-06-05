@@ -3,6 +3,7 @@ extends Control
 const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
 const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/TimelineActionShapeVisual.gd")
 const TimelineExpandVisualControllerScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineExpandVisualController.gd")
+const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridBuilder.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -91,6 +92,7 @@ var enemy_intent_preview_tween: Tween = null
 var _timeline_intro_has_played: bool = false
 var _timeline_intro_in_progress: bool = false
 var _expand_visual_controller = null
+var _grid_builder = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -105,6 +107,12 @@ func _get_expand_visual_controller():
 	if _expand_visual_controller == null:
 		_expand_visual_controller = TimelineExpandVisualControllerScript.new()
 	return _expand_visual_controller
+
+
+func _get_grid_builder():
+	if _grid_builder == null:
+		_grid_builder = TimelineGridBuilderScript.new()
+	return _grid_builder
 
 
 ## 查找TimelineManager节点
@@ -221,37 +229,17 @@ func _create_background_mask() -> void:
 
 
 func _init_background_grid():
-	grid_background.columns = grid_width  # 如果用 GridContainer，设置列数为12
-	grid_background.add_theme_constant_override("h_separation", spacing)
-	grid_background.add_theme_constant_override("v_separation", spacing)
-
-	grid_cells.clear()
-
-	for i in range(grid_width * grid_height):
-		var slot = Panel.new()
-		slot.custom_minimum_size = Vector2(slot_size, slot_size)
-		
-		# 创建默认样式：半透明深灰色背景，无边框
-		var default_style = StyleBoxFlat.new()
-		default_style.bg_color = grid_cell_default_color
-		default_style.set_border_width_all(0)
-		slot.add_theme_stylebox_override("panel", default_style)
-
-		# 启用鼠标交互
-		slot.mouse_filter = Control.MOUSE_FILTER_PASS
-
-		# 连接鼠标事件
-		slot.gui_input.connect(_on_grid_cell_gui_input.bind(i))
-		slot.mouse_entered.connect(_on_grid_cell_mouse_entered.bind(i))
-		slot.mouse_exited.connect(_on_grid_cell_mouse_exited.bind(i))
-
-		grid_background.add_child(slot)
-
-		# 计算并存储网格坐标
-		var grid_x = i % grid_width
-		var grid_y = i / grid_width
-		var grid_pos = Vector2i(grid_x, grid_y)
-		grid_cells[grid_pos] = slot
+	grid_cells = _get_grid_builder().build_background_grid(
+		grid_background,
+		grid_width,
+		grid_height,
+		slot_size,
+		spacing,
+		grid_cell_default_color,
+		_on_grid_cell_gui_input,
+		_on_grid_cell_mouse_entered,
+		_on_grid_cell_mouse_exited
+	)
 
 
 ## 初始化时间轴入场动画子节点。

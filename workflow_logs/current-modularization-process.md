@@ -2778,3 +2778,52 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## timeline_ui.gd 第二批背景网格构建拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `timeline_ui.gd` 的空背景网格初始化：设置 GridContainer 间距、创建空 Panel 格子、绑定格子鼠标信号，并返回 `grid_cells` 字典。它不处理 hover 状态，不更新拖拽预览，不创建时间轴行动方块，也不触碰敌人意图表现。
+
+目标函数范围：
+```text
+_init_background_grid()
+```
+
+当前触碰的外部节点和接口：
+```text
+GridBackground.columns
+GridBackground.add_theme_constant_override()
+Panel.gui_input
+Panel.mouse_entered
+Panel.mouse_exited
+grid_cells
+```
+
+### 新增模块
+
+```text
+scene/in_scene/timeline/ui_modules/TimelineGridBuilder.gd
+```
+
+模块边界：
+- `TimelineGridBuilder.gd` 只负责创建 TimelineUI 的空背景格子。
+- 它不处理 hover 状态，不更新拖拽预览，也不创建时间轴行动方块。
+- `timeline_ui.gd` 保留 `_init_background_grid()` 旧入口，内部转发给新模块并接收新的 `grid_cells` 字典。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+背景网格创建、默认格子样式、鼠标信号绑定和坐标字典填充现在由 TimelineGridBuilder 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
