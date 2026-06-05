@@ -2575,3 +2575,55 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十批场景交互锁拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆拖拽期间局内地图和时间轴 UI 的交互锁定/恢复。
+不处理卡牌状态，不更新预览，不判断放置，也不执行放置动画。
+
+目标函数范围：
+
+```text
+start_dragging(card, target_tile) 中的 HexMap 输入锁定和视觉锁定
+_restore_mouse_filters()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+hex_map.set_tiles_interactive(false/true)
+hex_map.set_visuals_locked(true/false)
+timeline_ui.mouse_filter
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragSceneInteractionLockController.gd
+```
+
+模块边界：
+
+- `DragSceneInteractionLockController.gd` 只负责拖拽期间局内场景交互的锁定和恢复。
+- 它不处理卡牌状态，不更新预览，也不判断或执行放置。
+- `DragShapeController.gd` 仍负责决定何时锁定和恢复，并继续单独恢复时间轴网格单元格的 mouse_filter。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+HexMap 输入/视觉锁定与时间轴 UI mouse_filter 恢复现在由 DragSceneInteractionLockController 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

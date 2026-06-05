@@ -14,6 +14,7 @@ const DragTimelineGridMouseFilterControllerScript = preload("res://scene/in_scen
 const DragPlacementQueryServiceScript = preload("res://scene/in_scene/drag_modules/DragPlacementQueryService.gd")
 const DragTimelineUiStateControllerScript = preload("res://scene/in_scene/drag_modules/DragTimelineUiStateController.gd")
 const DragTimelineGridCoordinateResolverScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridCoordinateResolver.gd")
+const DragSceneInteractionLockControllerScript = preload("res://scene/in_scene/drag_modules/DragSceneInteractionLockController.gd")
 
 # ==========================================
 # 信号
@@ -79,6 +80,7 @@ var _grid_mouse_filter_controller = null
 var _placement_query_service = null
 var _timeline_ui_state_controller = null
 var _timeline_grid_coordinate_resolver = null
+var _scene_interaction_lock_controller = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -140,6 +142,12 @@ func _get_timeline_grid_coordinate_resolver():
 	return _timeline_grid_coordinate_resolver
 
 
+func _get_scene_interaction_lock_controller():
+	if _scene_interaction_lock_controller == null:
+		_scene_interaction_lock_controller = DragSceneInteractionLockControllerScript.new()
+	return _scene_interaction_lock_controller
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -177,6 +185,7 @@ func _ready() -> void:
 	_placement_query_service = DragPlacementQueryServiceScript.new()
 	_timeline_ui_state_controller = DragTimelineUiStateControllerScript.new()
 	_timeline_grid_coordinate_resolver = DragTimelineGridCoordinateResolverScript.new()
+	_scene_interaction_lock_controller = DragSceneInteractionLockControllerScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -222,14 +231,7 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	# - 真正需要禁用的是普通网格单元格点击，因此仍然保留 _disable_grid_cells_mouse_filter()。
 	_get_timeline_ui_state_controller().enter_drag_mode(timeline_ui)
 	
-	var hex_map = _get_hex_map()
-	if hex_map and hex_map.has_method("set_tiles_interactive"):
-		hex_map.set_tiles_interactive(false)
-		# 锁定地块视觉状态，防止鼠标退出信号清除高亮和消融效果
-		if hex_map.has_method("set_visuals_locked"):
-			hex_map.set_visuals_locked(true)
-	else:
-		pass
+	_get_scene_interaction_lock_controller().lock_for_drag(_get_hex_map(), timeline_ui)
 
 	# 禁用网格单元格鼠标交互
 	_disable_grid_cells_mouse_filter()
@@ -608,17 +610,7 @@ func _end_dragging() -> void:
 
 ## 恢复鼠标过滤
 func _restore_mouse_filters() -> void:
-	# 恢复地块容器鼠标交互
-	var hex_map = _get_hex_map()
-	if hex_map and hex_map.has_method("set_tiles_interactive"):
-		hex_map.set_tiles_interactive(true)
-		# 解锁地块视觉状态，允许鼠标悬停事件恢复正常
-		if hex_map.has_method("set_visuals_locked"):
-			hex_map.set_visuals_locked(false)
-
-	# 恢复时间轴UI鼠标交互
-	if timeline_ui and timeline_ui is Control:
-		timeline_ui.mouse_filter = Control.MOUSE_FILTER_PASS
+	_get_scene_interaction_lock_controller().restore_after_drag(_get_hex_map(), timeline_ui)
 
 	# 恢复网格单元格鼠标交互
 	_restore_grid_cells_mouse_filter()
