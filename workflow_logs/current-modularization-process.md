@@ -3068,3 +3068,51 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## ShopManager.gd 第二批时代权重选择拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆商店根据权重随机选择目标时代的规则。它只根据基础时代和四个权重返回目标时代；不读取 CardDataPool，不创建卡牌，也不处理商店刷新、升级或购买。
+
+目标函数范围：
+```text
+_select_card_by_era_weight(base_era) 中的 era_weights 构建、无效时代过滤、总权重计算和随机时代选择
+```
+
+当前触碰的数据：
+```text
+base_era
+weight_previous_era
+weight_current_era
+weight_next_era
+weight_next_next_era
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/ShopEraWeightSelector.gd
+```
+
+模块边界：
+- `ShopEraWeightSelector.gd` 只负责根据商店权重随机选择目标时代。
+- 它不读取 CardDataPool，不创建卡牌，也不处理商店刷新或购买。
+- `ShopManager.gd` 仍负责根据选中的时代调用 `_get_cards_by_era()` 并从卡池里随机取卡。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+时代权重表构建、无效时代过滤、总权重计算和随机时代命中逻辑现在由 ShopEraWeightSelector 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

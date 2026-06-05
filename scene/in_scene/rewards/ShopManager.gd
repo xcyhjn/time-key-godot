@@ -11,6 +11,7 @@ var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/ShopPricingPresenter.gd")
+const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/ShopEraWeightSelector.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -78,12 +79,19 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 ## 商店页面只保留 Tooltip 触发职责，UI 构建与定位交给共享 presenter。
 var tooltip_presenter: CardTooltipPresenter = null
 var _pricing_presenter = null
+var _era_weight_selector = null
 
 
 func _get_pricing_presenter():
 	if _pricing_presenter == null:
 		_pricing_presenter = ShopPricingPresenterScript.new()
 	return _pricing_presenter
+
+
+func _get_era_weight_selector():
+	if _era_weight_selector == null:
+		_era_weight_selector = ShopEraWeightSelectorScript.new()
+	return _era_weight_selector
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -279,40 +287,17 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 
 ## 基于时代的权重选择卡牌ID
 func _select_card_by_era_weight(base_era: int) -> String:
-	# 计算加权时代
-	var era_weights = {
-		base_era - 1: weight_previous_era,    # 前一个时代: 5%
-		base_era: weight_current_era,         # 当前时代: 85%
-		base_era + 1: weight_next_era,        # 下一个时代: 9%
-		base_era + 2: weight_next_next_era    # 下两个时代: 1%
-	}
-	
-	# 确保时代不小于1
-	for era in era_weights.keys():
-		if era < 1:
-			era_weights.erase(era)
-			# 将权重重新分配给其他有效时代
-			# 这里简化处理：如果时代小于1，跳过该权重
-	
-	# 规范化权重 (确保总和为1)
-	var total_weight = 0.0
-	for weight in era_weights.values():
-		total_weight += weight
-	
-	if total_weight <= 0:
+	var selected_era = _get_era_weight_selector().select_era(
+		base_era,
+		weight_previous_era,
+		weight_current_era,
+		weight_next_era,
+		weight_next_next_era
+	)
+
+	if selected_era < 1:
 		return ""
-	
-	# 随机选择时代
-	var rand_val = randf() * total_weight
-	var cumulative = 0.0
-	var selected_era = base_era  # 默认值
-	
-	for era in era_weights:
-		cumulative += era_weights[era]
-		if rand_val <= cumulative:
-			selected_era = era
-			break
-	
+
 	print("权重选择 - 基础时代: %d, 选中时代: %d" % [base_era, selected_era])
 	
 	# ★ 这里需要对接你的卡牌数据系统
