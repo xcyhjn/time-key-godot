@@ -4,6 +4,7 @@ signal reward_scene_close_requested(scene_instance: Node)
 
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
+const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/CraftRecipeResolver.gd")
 
 enum CraftMode {
 	BOARD,
@@ -61,9 +62,16 @@ var current_result_card_id: String = ""
 var current_deck_cards: Array = []
 var current_deck_entries: Array = []
 var can_close_selection_without_choice: bool = false
+var _recipe_resolver = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
+
+
+func _get_recipe_resolver():
+	if _recipe_resolver == null:
+		_recipe_resolver = CraftRecipeResolverScript.new()
+	return _recipe_resolver
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -764,15 +772,7 @@ func _get_current_deck_card_ids() -> Array[String]:
 
 
 func _get_recipe_result(card_a_id: String, card_b_id: String) -> String:
-	var key_ab = "%s_%s" % [card_a_id, card_b_id]
-	if CRAFTING_RECIPES.has(key_ab):
-		return CRAFTING_RECIPES[key_ab]
-
-	var key_ba = "%s_%s" % [card_b_id, card_a_id]
-	if CRAFTING_RECIPES.has(key_ba):
-		return CRAFTING_RECIPES[key_ba]
-
-	return ""
+	return _get_recipe_resolver().get_recipe_result(card_a_id, card_b_id, CRAFTING_RECIPES)
 
 
 func _has_clickable_entry(entries: Array) -> bool:

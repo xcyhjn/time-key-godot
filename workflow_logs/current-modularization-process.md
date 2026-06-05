@@ -2875,3 +2875,49 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## CraftReward.gd 第一批合成配方查询拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `CraftReward.gd` 的合成配方查询规则。它只根据两张卡牌 id 和配方表返回结果卡牌 id，不修改牌库，不创建卡牌，也不处理合成界面的选择状态。
+
+目标函数范围：
+```text
+_get_recipe_result(card_a_id, card_b_id)
+```
+
+当前触碰的数据：
+```text
+CRAFTING_RECIPES
+card_a_id
+card_b_id
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/CraftRecipeResolver.gd
+```
+
+模块边界：
+- `CraftRecipeResolver.gd` 只负责合成配方查询。
+- 它不修改牌库，不创建卡牌，也不处理合成界面的选择状态。
+- `CraftReward.gd` 保留 `_get_recipe_result()` 旧入口，内部转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+正向 key 与反向 key 的配方查询现在由 CraftRecipeResolver 统一维护，后续新增配方查询规则时不用进入主 UI 脚本。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
