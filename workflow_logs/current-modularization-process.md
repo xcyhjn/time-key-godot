@@ -2201,3 +2201,56 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第三批时间轴预览转发拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆时间轴拖拽网格预览的转发入口。
+不修改鼠标坐标换算，不修改放置合法性判断，不创建 `TimelineAction`，也不统一所有拖拽生命周期里的 preview 清理点。
+
+目标函数范围：
+
+```text
+_update_timeline_grid_preview(grid_pos, is_valid)
+```
+
+当前触碰的外部节点和接口：
+
+```text
+timeline_ui.update_grid_preview(shape_coords, grid_pos, is_valid)
+TimelineClearEffectUtil.update_preview(timeline_ui, timeline_manager, shape_coords, grid_pos)
+timeline_manager
+current_shape_coords
+is_timeline_clear_mode
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragTimelineGridPreviewPresenter.gd
+```
+
+模块边界：
+
+- `DragTimelineGridPreviewPresenter.gd` 只负责把拖拽形状预览转发给时间轴 UI。
+- 它不计算鼠标坐标，不判断放置是否合法，也不创建 `TimelineAction`。
+- `DragShapeController.gd` 保留 `_update_timeline_grid_preview()` 旧入口，由旧入口传入当前 shape、grid 坐标、合法性和 clear 模式。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+普通卡牌预览和 clear 卡牌预览的分支转发已经由 DragTimelineGridPreviewPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

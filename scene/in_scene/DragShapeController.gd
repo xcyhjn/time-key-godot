@@ -8,6 +8,7 @@ extends Node2D
 const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
 const DragShapeNodeBridgeScript = preload("res://scene/in_scene/drag_modules/DragShapeNodeBridge.gd")
 const DragRejectTooltipControllerScript = preload("res://scene/in_scene/drag_modules/DragRejectTooltipController.gd")
+const DragTimelineGridPreviewPresenterScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridPreviewPresenter.gd")
 
 # ==========================================
 # 信号
@@ -67,6 +68,7 @@ var cursor_tooltip: RichTextLabel
 var discard_pile: Node  ## 弃牌区引用
 var _node_bridge = null
 var _reject_tooltip_controller = null
+var _grid_preview_presenter = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -90,6 +92,12 @@ func _get_reject_tooltip_controller():
 	if _reject_tooltip_controller == null:
 		_reject_tooltip_controller = DragRejectTooltipControllerScript.new()
 	return _reject_tooltip_controller
+
+
+func _get_grid_preview_presenter():
+	if _grid_preview_presenter == null:
+		_grid_preview_presenter = DragTimelineGridPreviewPresenterScript.new()
+	return _grid_preview_presenter
 
 
 ## 统一获取主面板 (MainBoard) 的快捷方法
@@ -123,6 +131,7 @@ func _find_project_node() -> Node:
 func _ready() -> void:
 	_node_bridge = DragShapeNodeBridgeScript.new(self)
 	_reject_tooltip_controller = DragRejectTooltipControllerScript.new()
+	_grid_preview_presenter = DragTimelineGridPreviewPresenterScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -434,22 +443,14 @@ func _deferred_position_tooltip() -> void:
 
 ## 更新时间轴网格预览
 func _update_timeline_grid_preview(grid_pos: Vector2i, is_valid: bool) -> void:
-	if not timeline_ui or not current_shape_coords:
-		return
-
-	if is_timeline_clear_mode:
-		TimelineClearEffectUtil.update_preview(timeline_ui, timeline_manager, current_shape_coords, grid_pos)
-		return
-	
-	# 检查timeline_ui是否有update_grid_preview方法
-	if timeline_ui.has_method("update_grid_preview"):
-		# 获取卡牌的形状信息（如果卡牌有专门的方法）
-		var shape_coords = current_shape_coords
-		
-		# 调用timeline_ui更新网格预览
-		timeline_ui.update_grid_preview(shape_coords, grid_pos, is_valid)
-	else:
-		pass
+	_get_grid_preview_presenter().update_preview(
+		timeline_ui,
+		timeline_manager,
+		current_shape_coords,
+		grid_pos,
+		is_valid,
+		is_timeline_clear_mode
+	)
 
 
 ## 获取卡牌效果预览文本
