@@ -3676,3 +3676,49 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十六批放置前视觉状态拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆卡牌进入放置动画前的视觉状态准备。它保留 `_play_placement_animation()` 旧入口，只把禁用当前卡牌鼠标输入、清除无效放置 shader 标记交给新模块；不计算目标格位置，不播放飞行动画，不执行时间轴放置，也不改变卡牌归属。
+
+目标函数范围：
+```text
+_play_placement_animation(grid_pos) 中的卡牌状态准备分支
+```
+
+当前触碰的数据和节点：
+```text
+current_card.mouse_filter
+current_card.material.is_invalid
+current_card.material.drag_visual_state
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragPlacementVisualStatePreparer.gd
+```
+
+模块边界：
+- `DragPlacementVisualStatePreparer.gd` 只负责卡牌进入放置动画前的视觉状态准备。
+- 它不计算目标格位置，不播放飞行动画，也不执行时间轴放置或卡牌归属变更。
+- `DragShapeController.gd` 继续负责放置动画的目标点计算、场景交互锁定和实际放置收尾。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+放置动画前的鼠标输入禁用和拖拽 shader 状态清理现在由 DragPlacementVisualStatePreparer 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```

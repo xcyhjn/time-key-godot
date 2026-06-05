@@ -19,6 +19,7 @@ const DragCardEffectPreviewTextResolverScript = preload("res://scene/in_scene/dr
 const DragEffectPreviewPresenterScript = preload("res://scene/in_scene/drag_modules/DragEffectPreviewPresenter.gd")
 const DragRejectAnimationRunnerScript = preload("res://scene/in_scene/drag_modules/DragRejectAnimationRunner.gd")
 const DragFreeDragPresenterScript = preload("res://scene/in_scene/drag_modules/DragFreeDragPresenter.gd")
+const DragPlacementVisualStatePreparerScript = preload("res://scene/in_scene/drag_modules/DragPlacementVisualStatePreparer.gd")
 
 # ==========================================
 # 信号
@@ -89,6 +90,7 @@ var _card_effect_preview_text_resolver = null
 var _effect_preview_presenter = null
 var _reject_animation_runner = null
 var _free_drag_presenter = null
+var _placement_visual_state_preparer = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -180,6 +182,12 @@ func _get_free_drag_presenter():
 	return _free_drag_presenter
 
 
+func _get_placement_visual_state_preparer():
+	if _placement_visual_state_preparer == null:
+		_placement_visual_state_preparer = DragPlacementVisualStatePreparerScript.new()
+	return _placement_visual_state_preparer
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -222,6 +230,7 @@ func _ready() -> void:
 	_effect_preview_presenter = DragEffectPreviewPresenterScript.new(self)
 	_reject_animation_runner = DragRejectAnimationRunnerScript.new()
 	_free_drag_presenter = DragFreeDragPresenterScript.new()
+	_placement_visual_state_preparer = DragPlacementVisualStatePreparerScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -817,13 +826,7 @@ func _play_reject_animation() -> void:
 func _play_placement_animation(grid_pos: Vector2i) -> void:
 	is_placing = true
 
-	# 禁用卡牌鼠标交互，防止与其他元素碰撞
-	if is_instance_valid(current_card):
-		current_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# 移除无效状态着色器
-		if current_card.material:
-			current_card.material.set_shader_parameter("is_invalid", false)
-			current_card.material.set_shader_parameter("drag_visual_state", 0)
+	_get_placement_visual_state_preparer().prepare_for_placement(current_card)
 
 	# 禁用地块容器和时间轴UI的鼠标交互，防止意外触发
 	var hex_map = _get_hex_map()
