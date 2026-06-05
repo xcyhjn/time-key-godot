@@ -2144,3 +2144,60 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第二批拒绝提示拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆拖拽放置失败时的拒绝提示。
+不修改放置合法性判断，不修改卡牌抖动动画，不修改拖拽状态，也不改变 2 秒后隐藏提示的调度方式。
+
+目标函数范围：
+
+```text
+_show_reject_tooltip(message)
+_update_reject_tooltip_position()
+_hide_reject_tooltip()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+cursor_tooltip.text
+cursor_tooltip.size
+cursor_tooltip.show()
+cursor_tooltip.hide()
+cursor_tooltip.global_position
+get_global_mouse_position()
+get_viewport_rect().size
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragRejectTooltipController.gd
+```
+
+模块边界：
+
+- `DragRejectTooltipController.gd` 只负责拖拽拒绝提示的文本、位置和显隐。
+- 它不判断放置是否合法，不播放卡牌抖动动画，也不修改拖拽状态。
+- `DragShapeController.gd` 保留 `_show_reject_tooltip()`、`_update_reject_tooltip_position()` 和 `_hide_reject_tooltip()` 旧入口，由旧入口转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+拒绝提示的 BBCode 文本、尺寸重置、屏幕边界定位和隐藏逻辑已经由 DragRejectTooltipController 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

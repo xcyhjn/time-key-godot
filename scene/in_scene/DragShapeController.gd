@@ -7,6 +7,7 @@ extends Node2D
 
 const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
 const DragShapeNodeBridgeScript = preload("res://scene/in_scene/drag_modules/DragShapeNodeBridge.gd")
+const DragRejectTooltipControllerScript = preload("res://scene/in_scene/drag_modules/DragRejectTooltipController.gd")
 
 # ==========================================
 # 信号
@@ -65,6 +66,7 @@ var timeline_manager: Node  ## TimelineManager 实例
 var cursor_tooltip: RichTextLabel
 var discard_pile: Node  ## 弃牌区引用
 var _node_bridge = null
+var _reject_tooltip_controller = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -82,6 +84,12 @@ func _get_node_bridge():
 	if _node_bridge == null:
 		_node_bridge = DragShapeNodeBridgeScript.new(self)
 	return _node_bridge
+
+
+func _get_reject_tooltip_controller():
+	if _reject_tooltip_controller == null:
+		_reject_tooltip_controller = DragRejectTooltipControllerScript.new()
+	return _reject_tooltip_controller
 
 
 ## 统一获取主面板 (MainBoard) 的快捷方法
@@ -114,6 +122,7 @@ func _find_project_node() -> Node:
 
 func _ready() -> void:
 	_node_bridge = DragShapeNodeBridgeScript.new(self)
+	_reject_tooltip_controller = DragRejectTooltipControllerScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -877,13 +886,7 @@ func _convert_to_vector2i_array(raw_array: Array) -> Array[Vector2i]:
 
 ## 显示拒绝放置提示
 func _show_reject_tooltip(message: String = "无法放置") -> void:
-	if not is_instance_valid(cursor_tooltip):
-		return
-	
-	# 设置提示文本和样式
-	cursor_tooltip.text = "[color=#ff5555]" + message + "[/color]"
-	cursor_tooltip.size = Vector2.ZERO  # 重置尺寸
-	cursor_tooltip.show()
+	_get_reject_tooltip_controller().show_tooltip(cursor_tooltip, message)
 	
 	# 更新提示框位置跟随鼠标
 	call_deferred("_update_reject_tooltip_position")
@@ -891,33 +894,16 @@ func _show_reject_tooltip(message: String = "无法放置") -> void:
 
 ## 更新拒绝提示位置
 func _update_reject_tooltip_position() -> void:
-	if not is_instance_valid(cursor_tooltip):
-		return
-	
-	var mouse_pos = get_global_mouse_position()
-	var screen_size = get_viewport_rect().size
-	
-	# 计算提示框位置
-	var tooltip_width = cursor_tooltip.size.x
-	var tooltip_height = cursor_tooltip.size.y
-	
-	var target_x = mouse_pos.x + 20
-	var target_y = mouse_pos.y - 30
-	
-	# 边界检查：防止提示框超出屏幕
-	if target_x + tooltip_width > screen_size.x:
-		target_x = mouse_pos.x - tooltip_width - 20
-	
-	if target_y + tooltip_height > screen_size.y:
-		target_y = screen_size.y - tooltip_height - 10
-	
-	cursor_tooltip.global_position = Vector2(target_x, target_y)
+	_get_reject_tooltip_controller().update_position(
+		cursor_tooltip,
+		get_global_mouse_position(),
+		get_viewport_rect().size
+	)
 
 
 ## 隐藏拒绝放置提示
 func _hide_reject_tooltip() -> void:
-	if is_instance_valid(cursor_tooltip):
-		cursor_tooltip.hide()
+	_get_reject_tooltip_controller().hide_tooltip(cursor_tooltip)
 
 
 ## 播放拒绝动画
