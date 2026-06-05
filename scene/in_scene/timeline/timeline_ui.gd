@@ -9,6 +9,7 @@ const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene
 const TimelineGridPreviewPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridPreviewPresenter.gd")
 const TimelineManagerLocatorScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineManagerLocator.gd")
 const TimelineEnemyIntentOverlayPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineEnemyIntentOverlayPresenter.gd")
+const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineBlockPlacementAnimator.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -103,6 +104,7 @@ var _grid_cell_interaction_presenter = null
 var _grid_preview_presenter = null
 var _timeline_manager_locator = null
 var _enemy_intent_overlay_presenter = null
+var _block_placement_animator = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -153,6 +155,12 @@ func _get_enemy_intent_overlay_presenter():
 	if _enemy_intent_overlay_presenter == null:
 		_enemy_intent_overlay_presenter = TimelineEnemyIntentOverlayPresenterScript.new()
 	return _enemy_intent_overlay_presenter
+
+
+func _get_block_placement_animator():
+	if _block_placement_animator == null:
+		_block_placement_animator = TimelineBlockPlacementAnimatorScript.new()
+	return _block_placement_animator
 
 
 ## 查找TimelineManager节点
@@ -755,30 +763,11 @@ func _on_grid_cell_mouse_exited(cell_index: int) -> void:
 
 ## 动画：时间轴方格放置后变蓝色效果
 func _animate_block_placement(block: Panel, target_color: Color) -> void:
-	if not is_instance_valid(block):
-		return
-
-	# 获取block的StyleBox并创建副本（避免修改共享资源）
-	var original_style = block.get_theme_stylebox("panel") as StyleBoxFlat
-	if not original_style:
-		return
-
-	# 创建独立副本
-	var style = original_style.duplicate() as StyleBoxFlat
-	block.add_theme_stylebox_override("panel", style)
-
-	# 设置初始状态：透明
-	var transparent_color = Color(target_color.r, target_color.g, target_color.b, 0.0)
-	style.bg_color = transparent_color
-	style.border_color = Color.BLACK
-
-	# 创建补间动画：使用tween_property直接对bg_color进行补间
-	var tw = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(style, "bg_color", target_color, 0.5)
-
-	# 添加轻微的缩放动画
-	block.scale = Vector2(0.8, 0.8)
-	tw.parallel().tween_property(block, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_get_block_placement_animator().animate_block_placement(
+		block,
+		target_color,
+		func(): return create_tween()
+	)
 
 
 ## 强制收起时间轴（用于卡牌放置后自动返回上方）

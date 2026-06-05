@@ -3473,3 +3473,53 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## timeline_ui.gd 第八批行动方格放置动画拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆单个时间轴行动方格的放置入场动画。它保留 `_animate_block_placement()` 旧入口，只把复制独立 StyleBox、设置透明初始色、补间到目标色和缩放弹入动画交给新模块；不创建行动容器，不修改 TimelineManager 数据，也不处理敌方意图入场动画。
+
+目标函数范围：
+```text
+_animate_block_placement(block, target_color)
+```
+
+当前触碰的数据和节点：
+```text
+block.get_theme_stylebox("panel")
+StyleBoxFlat.duplicate()
+block.add_theme_stylebox_override("panel", style)
+style.bg_color
+style.border_color
+create_tween()
+block.scale
+```
+
+### 新增模块
+
+```text
+scene/in_scene/timeline/ui_modules/TimelineBlockPlacementAnimator.gd
+```
+
+模块边界：
+- `TimelineBlockPlacementAnimator.gd` 只负责单个时间轴行动方格的放置入场动画。
+- 它不创建行动容器，不修改 TimelineManager 数据，也不处理敌方意图入场动画。
+- `timeline_ui.gd` 保留 `_animate_block_placement()` 旧入口，并通过 `Callable` 传入 `create_tween()`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+行动方格放置时的样式副本创建、透明初始色、背景色 tween 和缩放 tween 现在由 TimelineBlockPlacementAnimator 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
