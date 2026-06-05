@@ -2058,3 +2058,31 @@ ObjectDB / RID / resource 退出提示仍会出现。
 
 如果继续拆，需要优先建立更完整的回合结束、胜利中断、奖励页返回和场景切换回归路径。
 在没有这类回归保护前，不建议继续从 `in_scene.gd` 里机械抽函数。
+
+## AI 接力操作说明更新记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批不改游戏逻辑，只更新接力说明，让后续 AI 可以沿用 `HexMap` 和 `in_scene.gd` 的拆分经验继续处理其他大文件。
+
+### 更新文件
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+```
+
+### 更新内容
+
+- 总结 `hex_map.gd` 和 `in_scene.gd` 当前模块化状态。
+- 明确 `in_scene.gd` 低风险小块已经基本拆完，后续不建议继续机械拆。
+- 增加目标文件分析模板、待拆清单模板、每批拆分规则、验证命令和退出标准。
+- 列出下一阶段更值得优化解耦的文件：`DragShapeController.gd`、`timeline_ui.gd`、奖励脚本、`out_scene_map_exp.gd`、`tile.gd`、`custom_card.gd` 等。
+- 增加可直接复制给下一位 AI 的接力 prompt。
+
+### 回归检查
+
+```text
+本批只改 Markdown，运行 git diff --check 即可。
+```
