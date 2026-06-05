@@ -3722,3 +3722,52 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第十七批放置目标位置解析拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆卡牌放置动画的目标位置计算。它保留 `_play_placement_animation()` 旧入口，只把时间轴目标格中心点、`float_offset` 和目标卡牌缩放下的左上角位置计算交给新模块；不锁定交互，不播放 tween，不连接完成回调，也不执行时间轴放置。
+
+目标函数范围：
+```text
+_play_placement_animation(grid_pos) 中的 card_top_left 计算分支
+```
+
+当前触碰的数据和节点：
+```text
+timeline_ui.grid_cells
+timeline_ui.scale
+current_card.get_size()
+float_offset
+get_global_mouse_position()
+grid_pos
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragPlacementTargetResolver.gd
+```
+
+模块边界：
+- `DragPlacementTargetResolver.gd` 只负责计算卡牌放置动画的目标左上角位置。
+- 它不锁定交互，不播放动画，也不执行时间轴放置或卡牌归属变更。
+- `DragShapeController.gd` 继续负责创建 tween、设置动画参数和连接 `_finish_placement()`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+时间轴格子中心点读取、视觉尺寸换算、兜底鼠标位置和目标卡牌缩放下的左上角计算现在由 DragPlacementTargetResolver 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```

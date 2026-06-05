@@ -20,6 +20,7 @@ const DragEffectPreviewPresenterScript = preload("res://scene/in_scene/drag_modu
 const DragRejectAnimationRunnerScript = preload("res://scene/in_scene/drag_modules/DragRejectAnimationRunner.gd")
 const DragFreeDragPresenterScript = preload("res://scene/in_scene/drag_modules/DragFreeDragPresenter.gd")
 const DragPlacementVisualStatePreparerScript = preload("res://scene/in_scene/drag_modules/DragPlacementVisualStatePreparer.gd")
+const DragPlacementTargetResolverScript = preload("res://scene/in_scene/drag_modules/DragPlacementTargetResolver.gd")
 
 # ==========================================
 # 信号
@@ -91,6 +92,7 @@ var _effect_preview_presenter = null
 var _reject_animation_runner = null
 var _free_drag_presenter = null
 var _placement_visual_state_preparer = null
+var _placement_target_resolver = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -188,6 +190,12 @@ func _get_placement_visual_state_preparer():
 	return _placement_visual_state_preparer
 
 
+func _get_placement_target_resolver():
+	if _placement_target_resolver == null:
+		_placement_target_resolver = DragPlacementTargetResolverScript.new()
+	return _placement_target_resolver
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -231,6 +239,7 @@ func _ready() -> void:
 	_reject_animation_runner = DragRejectAnimationRunnerScript.new()
 	_free_drag_presenter = DragFreeDragPresenterScript.new()
 	_placement_visual_state_preparer = DragPlacementVisualStatePreparerScript.new()
+	_placement_target_resolver = DragPlacementTargetResolverScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -836,24 +845,13 @@ func _play_placement_animation(grid_pos: Vector2i) -> void:
 	if timeline_ui and timeline_ui is Control:
 		timeline_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# ★ 修复缩放导致的卡牌放置动画飞偏：直接使用 grid_cells 字典获取精准位置
-	var grid_cell_center = Vector2.ZERO
-	if _object_has_property(timeline_ui, &"grid_cells") and timeline_ui.grid_cells.has(grid_pos):
-		var target_cell = timeline_ui.grid_cells[grid_pos]
-		# target_cell.global_position 是绝对精准的（已包含所有父级变换）
-		# size 乘以 timeline_ui 的实际 scale 获取真实视觉大小
-		var actual_cell_size = target_cell.size * timeline_ui.scale
-		grid_cell_center = target_cell.global_position + (actual_cell_size / 2.0) + float_offset
-	else:
-		# 兜底方案：使用鼠标位置（理论上不应该发生）
-		grid_cell_center = get_global_mouse_position()
-	
-	# 将卡牌中心位置转换为左上角位置（注意卡牌的目标 scale 是 0.9）
-	var card_top_left = grid_cell_center
-	if current_card.has_method("get_size"):
-		var card_size = current_card.get_size()
-		var target_card_scale = Vector2(0.9, 0.9)  # 卡牌动画目标缩放
-		card_top_left -= card_size * target_card_scale / 2
+	var card_top_left: Vector2 = _get_placement_target_resolver().resolve_card_top_left(
+		timeline_ui,
+		current_card,
+		grid_pos,
+		float_offset,
+		get_global_mouse_position()
+	)
 
 	# 创建放置动画：飞向网格位置并适当缩小
 	var tw = create_tween()
