@@ -12,6 +12,7 @@ const DragTimelineGridPreviewPresenterScript = preload("res://scene/in_scene/dra
 const DragCardShapeResolverScript = preload("res://scene/in_scene/drag_modules/DragCardShapeResolver.gd")
 const DragTimelineGridMouseFilterControllerScript = preload("res://scene/in_scene/drag_modules/DragTimelineGridMouseFilterController.gd")
 const DragPlacementQueryServiceScript = preload("res://scene/in_scene/drag_modules/DragPlacementQueryService.gd")
+const DragTimelineUiStateControllerScript = preload("res://scene/in_scene/drag_modules/DragTimelineUiStateController.gd")
 
 # ==========================================
 # 信号
@@ -75,6 +76,7 @@ var _grid_preview_presenter = null
 var _card_shape_resolver = null
 var _grid_mouse_filter_controller = null
 var _placement_query_service = null
+var _timeline_ui_state_controller = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -124,6 +126,12 @@ func _get_placement_query_service():
 	return _placement_query_service
 
 
+func _get_timeline_ui_state_controller():
+	if _timeline_ui_state_controller == null:
+		_timeline_ui_state_controller = DragTimelineUiStateControllerScript.new()
+	return _timeline_ui_state_controller
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -159,6 +167,7 @@ func _ready() -> void:
 	_card_shape_resolver = DragCardShapeResolverScript.new()
 	_grid_mouse_filter_controller = DragTimelineGridMouseFilterControllerScript.new()
 	_placement_query_service = DragPlacementQueryServiceScript.new()
+	_timeline_ui_state_controller = DragTimelineUiStateControllerScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -198,21 +207,11 @@ func start_dragging(card: Control, target_tile: Node) -> void:
 	# 发射拖拽开始信号
 	drag_started.emit(card, current_shape_coords)
 
-	# ★ 允许时间轴点击缩放（卡牌选中时）
-	if timeline_ui and timeline_ui.has_method("set_allow_click_to_expand"):
-		timeline_ui.set_allow_click_to_expand(true)
-
-	# 唤起时间轴
-	if timeline_ui.has_method("toggle_expand"):
-		timeline_ui.is_expanded = false
-		timeline_ui.toggle_expand()
-
 	# 关键修复：
 	# - 不再整体禁用 TimelineUI 的鼠标交互。
 	# - 否则时间轴上的敌人意图方格将完全收不到 hover，无法在拖拽阶段联动回地图。
 	# - 真正需要禁用的是普通网格单元格点击，因此仍然保留 _disable_grid_cells_mouse_filter()。
-	if timeline_ui and timeline_ui is Control:
-		timeline_ui.mouse_filter = Control.MOUSE_FILTER_PASS
+	_get_timeline_ui_state_controller().enter_drag_mode(timeline_ui)
 	
 	var hex_map = _get_hex_map()
 	if hex_map and hex_map.has_method("set_tiles_interactive"):
@@ -573,16 +572,8 @@ func _end_dragging() -> void:
 		elif timeline_ui.has_method("clear_grid_preview"):
 			timeline_ui.clear_grid_preview()
 	
-	# 收起时间轴（优先使用collapse方法，确保遮罩隐藏）
-	if timeline_ui:
-		if timeline_ui.has_method("collapse"):
-			timeline_ui.collapse()
-		elif timeline_ui.has_method("toggle_expand"):
-			timeline_ui.toggle_expand()
-		
-		# ★ 禁用时间轴点击缩放（卡牌拖拽结束）
-		if timeline_ui.has_method("set_allow_click_to_expand"):
-			timeline_ui.set_allow_click_to_expand(false)
+	# 收起时间轴并禁用点击缩放。
+	_get_timeline_ui_state_controller().exit_drag_mode(timeline_ui)
 
 	# 隐藏提示
 	if is_instance_valid(cursor_tooltip):
@@ -1091,8 +1082,7 @@ func end_dragging_success() -> void:
 			_return_card_to_hand(current_card)
 
 	# 收起时间轴
-	if timeline_ui.has_method("collapse"):
-		timeline_ui.collapse()
+	_get_timeline_ui_state_controller().collapse(timeline_ui)
 
 
 

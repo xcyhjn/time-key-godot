@@ -2411,3 +2411,58 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第七批时间轴 UI 状态拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆拖拽期间时间轴 UI 的展开、收起和点击展开开关。
+不修改预览格子，不判断放置是否合法，不移动卡牌，也不触发卡牌效果。
+
+目标函数范围：
+
+```text
+start_dragging(card, target_tile) 中的时间轴展开与 mouse_filter 设置
+_end_dragging() 中的时间轴收起与点击展开禁用
+end_dragging_success() 中的时间轴收起
+```
+
+当前触碰的外部节点和接口：
+
+```text
+timeline_ui.set_allow_click_to_expand(...)
+timeline_ui.toggle_expand()
+timeline_ui.collapse()
+timeline_ui.mouse_filter
+timeline_ui.is_expanded
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragTimelineUiStateController.gd
+```
+
+模块边界：
+
+- `DragTimelineUiStateController.gd` 只负责拖拽期间时间轴 UI 的展开、收起和点击展开开关。
+- 它不处理预览格子，不判断放置是否合法，也不移动卡牌。
+- `DragShapeController.gd` 仍负责何时进入或退出拖拽模式。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+拖拽开始、取消拖拽和成功结束拖拽中的时间轴展开/收起调用已经由 DragTimelineUiStateController 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
