@@ -7,6 +7,7 @@ var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
 const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/CraftRecipeResolver.gd")
 const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/CraftConnectionLinePresenter.gd")
 const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/CraftResultDescriptionPanelPresenter.gd")
+const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/CraftSlotPreviewLayoutPresenter.gd")
 
 enum CraftMode {
 	BOARD,
@@ -67,6 +68,7 @@ var can_close_selection_without_choice: bool = false
 var _recipe_resolver = null
 var _connection_line_presenter = null
 var _result_description_panel_presenter = null
+var _slot_preview_layout_presenter = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -88,6 +90,12 @@ func _get_result_description_panel_presenter():
 	if _result_description_panel_presenter == null:
 		_result_description_panel_presenter = CraftResultDescriptionPanelPresenterScript.new()
 	return _result_description_panel_presenter
+
+
+func _get_slot_preview_layout_presenter():
+	if _slot_preview_layout_presenter == null:
+		_slot_preview_layout_presenter = CraftSlotPreviewLayoutPresenterScript.new()
+	return _slot_preview_layout_presenter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -733,23 +741,20 @@ func _get_slot_anchor(slot_index: int) -> Control:
 
 
 func _apply_preview_padding() -> void:
-	_apply_padding_to_anchor(slot1_anchor)
-	_apply_padding_to_anchor(slot2_anchor)
-	_apply_padding_to_anchor(result_anchor)
+	_get_slot_preview_layout_presenter().apply_preview_padding(
+		slot1_anchor,
+		slot2_anchor,
+		result_anchor,
+		slot_preview_padding
+	)
 
 
 func _apply_padding_to_anchor(anchor: Control) -> void:
-	anchor.offset_left = slot_preview_padding.x
-	anchor.offset_top = slot_preview_padding.y
-	anchor.offset_right = -slot_preview_padding.x
-	anchor.offset_bottom = -slot_preview_padding.y
+	_get_slot_preview_layout_presenter().apply_padding_to_anchor(anchor, slot_preview_padding)
 
 
 func _get_anchor_preview_size(anchor: Control) -> Vector2:
-	var size = anchor.size
-	if size == Vector2.ZERO:
-		return card_display_size
-	return size
+	return _get_slot_preview_layout_presenter().get_anchor_preview_size(anchor, card_display_size)
 
 
 func _get_current_deck_card_ids() -> Array[String]:

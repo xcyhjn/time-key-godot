@@ -3166,3 +3166,53 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## CraftReward.gd 第四批槽位预览布局拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆合成槽位预览锚点的布局辅助逻辑。它只负责给主卡槽、副卡槽和结果槽的 `CardAnchor` 应用边距，并在锚点尺寸未初始化时返回默认卡牌尺寸；不创建预览卡，不读取合成配方，也不修改槽位选择状态。
+
+目标函数范围：
+```text
+_apply_preview_padding()
+_apply_padding_to_anchor(anchor)
+_get_anchor_preview_size(anchor)
+```
+
+当前触碰的数据和节点：
+```text
+slot1_anchor
+slot2_anchor
+result_anchor
+slot_preview_padding
+card_display_size
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/CraftSlotPreviewLayoutPresenter.gd
+```
+
+模块边界：
+- `CraftSlotPreviewLayoutPresenter.gd` 只负责合成槽位预览锚点的边距和尺寸兜底。
+- 它不创建预览卡，不读取合成配方，也不修改 `slot_entries`、`slot_preview_cards` 或 `current_result_card_id`。
+- `CraftReward.gd` 保留 `_apply_preview_padding()`、`_apply_padding_to_anchor()` 和 `_get_anchor_preview_size()` 旧入口，内部转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+三个槽位锚点的 padding 写入和预览尺寸兜底现在由 CraftSlotPreviewLayoutPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 CRLF/LF 提示。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
