@@ -466,6 +466,10 @@ func _update_timeline_grid_preview(grid_pos: Vector2i, is_valid: bool) -> void:
 	)
 
 
+func _clear_timeline_grid_preview() -> void:
+	_get_grid_preview_presenter().clear_preview(timeline_ui, is_timeline_clear_mode)
+
+
 ## 获取卡牌效果预览文本
 func _get_card_effect_preview_text() -> String:
 	if not current_card:
@@ -566,11 +570,7 @@ func _end_dragging() -> void:
 	# 清除时间轴网格预览。
 	# clear 类即时卡牌会额外生成一层覆盖在已有行动方格上方的蓝/绿/红预览，
 	# 因此这里统一走专用清理接口；普通卡牌仍然只清理原本的网格预览。
-	if timeline_ui:
-		if is_timeline_clear_mode:
-			TimelineClearEffectUtil.clear_preview(timeline_ui)
-		elif timeline_ui.has_method("clear_grid_preview"):
-			timeline_ui.clear_grid_preview()
+	_clear_timeline_grid_preview()
 	
 	# 收起时间轴并禁用点击缩放。
 	_get_timeline_ui_state_controller().exit_drag_mode(timeline_ui)
@@ -686,7 +686,7 @@ func _handle_free_drag(mouse_pos: Vector2) -> void:
 	if is_timeline_clear_mode and timeline_ui:
 		# clear 预览是即时效果的临时示意，鼠标离开时间轴后必须立刻清掉。
 		# 这里不能只调用 clear_grid_preview()，因为重叠绿色需要一层盖在已有行动上方的预览节点。
-		TimelineClearEffectUtil.clear_preview(timeline_ui)
+		_clear_timeline_grid_preview()
 		return
 
 	# 计算卡牌中心的目标位置（保持鼠标相对于卡牌中心的偏移）
@@ -849,7 +849,7 @@ func _execute_timeline_clear(origin_pos: Vector2i) -> void:
 	if timeline_ui:
 		# clear 的蓝/绿/红示意格包含覆盖层，确认施放前先完整移除，
 		# 之后被命中的原有时间占位方格会各自播放渐隐下落动画。
-		TimelineClearEffectUtil.clear_preview(timeline_ui)
+		_clear_timeline_grid_preview()
 	_clear_effect_preview()
 
 	TimelineClearEffectUtil.execute(origin_pos, current_shape_coords, timeline_manager, timeline_ui)
@@ -994,8 +994,7 @@ func _finish_placement(grid_pos: Vector2i) -> void:
 	_trigger_card_effect()
 	
 	# 清除时间轴网格预览
-	if timeline_ui and timeline_ui.has_method("clear_grid_preview"):
-		timeline_ui.clear_grid_preview()
+	_clear_timeline_grid_preview()
 
 	# 放置完成后清理
 	end_dragging_success()
@@ -1145,11 +1144,7 @@ func force_cancel_drag() -> void:
 	
 	# 清除时间轴预览网格与高亮。
 	# clear 模式可能存在额外覆盖层，强制打断时也要一并清理。
-	if timeline_ui:
-		if is_timeline_clear_mode:
-			TimelineClearEffectUtil.clear_preview(timeline_ui)
-		elif timeline_ui.has_method("clear_grid_preview"):
-			timeline_ui.clear_grid_preview()
+	_clear_timeline_grid_preview()
 	_clear_effect_preview()
 	
 	# 隐式调用内部清理逻辑，将卡牌移回手牌容器

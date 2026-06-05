@@ -2466,3 +2466,58 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## DragShapeController.gd 第八批时间轴预览清理拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只统一时间轴拖拽预览的清理入口。
+不改变清理发生的时机，不修改 clear 卡牌执行，不修改普通卡牌放置流程，也不修改卡牌效果预览清理。
+
+目标函数范围：
+
+```text
+_end_dragging() 中的时间轴预览清理
+_handle_free_drag(mouse_pos) 中 clear 模式离开时间轴后的预览清理
+_execute_timeline_clear(origin_pos) 中确认施放前的预览清理
+_finish_placement(grid_pos) 中普通放置成功后的预览清理
+force_cancel_drag() 中强制打断时的预览清理
+```
+
+当前触碰的外部节点和接口：
+
+```text
+TimelineClearEffectUtil.clear_preview(timeline_ui)
+timeline_ui.clear_grid_preview()
+is_timeline_clear_mode
+```
+
+### 更新模块
+
+```text
+scene/in_scene/drag_modules/DragTimelineGridPreviewPresenter.gd
+```
+
+模块边界：
+
+- `DragTimelineGridPreviewPresenter.gd` 继续只负责时间轴拖拽预览的显示与清理转发。
+- 它不决定什么时候清理，不执行 clear 卡牌效果，也不修改卡牌或时间轴数据。
+- `DragShapeController.gd` 新增 `_clear_timeline_grid_preview()` 旧内部入口，用于统一转发清理请求。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+clear 卡牌覆盖层清理和普通 grid preview 清理的重复分支已经由 DragTimelineGridPreviewPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```

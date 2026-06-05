@@ -26,3 +26,13 @@ func update_preview(
 
 	if timeline_ui.has_method("update_grid_preview"):
 		timeline_ui.update_grid_preview(shape_coords, grid_pos, is_valid)
+
+
+func clear_preview(timeline_ui: Control, is_timeline_clear_mode: bool) -> void:
+	if not is_instance_valid(timeline_ui):
+		return
+
+	if is_timeline_clear_mode:
+		TimelineClearEffectUtil.clear_preview(timeline_ui)
+	elif timeline_ui.has_method("clear_grid_preview"):
+		timeline_ui.clear_grid_preview()
