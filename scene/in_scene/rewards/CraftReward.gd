@@ -6,6 +6,7 @@ var CardManager = preload("res://addons/card-framework/card_manager.gd")
 var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
 const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/CraftRecipeResolver.gd")
 const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/CraftConnectionLinePresenter.gd")
+const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/CraftResultDescriptionPanelPresenter.gd")
 
 enum CraftMode {
 	BOARD,
@@ -65,6 +66,7 @@ var current_deck_entries: Array = []
 var can_close_selection_without_choice: bool = false
 var _recipe_resolver = null
 var _connection_line_presenter = null
+var _result_description_panel_presenter = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -80,6 +82,12 @@ func _get_connection_line_presenter():
 	if _connection_line_presenter == null:
 		_connection_line_presenter = CraftConnectionLinePresenterScript.new()
 	return _connection_line_presenter
+
+
+func _get_result_description_panel_presenter():
+	if _result_description_panel_presenter == null:
+		_result_description_panel_presenter = CraftResultDescriptionPanelPresenterScript.new()
+	return _result_description_panel_presenter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -670,31 +678,7 @@ func _update_result_description() -> void:
 
 
 func _setup_result_description_panel() -> void:
-	if not is_instance_valid(result_description_panel) or not is_instance_valid(result_description_label):
-		return
-
-	result_description_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	result_description_panel.custom_minimum_size = Vector2.ZERO
-	result_description_panel.size = Vector2.ZERO
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.12, 0.95)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.8, 0.6, 0.2, 1.0)
-	style.set_corner_radius_all(6)
-	result_description_panel.add_theme_stylebox_override("panel", style)
-
-	result_description_label.custom_minimum_size = Vector2.ZERO
-	result_description_label.fit_content = true
-	result_description_label.scroll_active = false
-	result_description_label.bbcode_enabled = true
-	result_description_label.clip_contents = false
-	result_description_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	result_description_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	result_description_label.add_theme_color_override("default_color", Color(0.95, 0.95, 0.95, 1.0))
+	_get_result_description_panel_presenter().setup_panel(result_description_panel, result_description_label)
 
 
 func _position_result_description_panel() -> void:

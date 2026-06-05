@@ -2968,3 +2968,51 @@ git diff --check 通过。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
 ```
+
+## CraftReward.gd 第三批结果描述面板样式拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆合成结果描述面板的基础样式配置。它只配置 `PanelContainer` 和 `RichTextLabel` 的样式、尺寸策略和文本颜色；不读取卡牌描述，不计算面板位置，也不改变合成状态。
+
+目标函数范围：
+```text
+_setup_result_description_panel()
+```
+
+当前触碰的外部节点和接口：
+```text
+result_description_panel
+result_description_label
+StyleBoxFlat
+add_theme_stylebox_override()
+add_theme_color_override()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/CraftResultDescriptionPanelPresenter.gd
+```
+
+模块边界：
+- `CraftResultDescriptionPanelPresenter.gd` 只负责合成结果描述面板的基础样式配置。
+- 它不读取卡牌描述，不计算面板位置，也不改变合成状态。
+- `CraftReward.gd` 保留 `_setup_result_description_panel()` 旧入口，内部转发给新模块。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+结果描述面板的 panel 样式、label 尺寸策略、BBCode 开关和默认文字颜色现在由 CraftResultDescriptionPanelPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
