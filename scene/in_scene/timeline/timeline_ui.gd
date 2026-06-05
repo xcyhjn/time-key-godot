@@ -6,6 +6,7 @@ const TimelineExpandVisualControllerScript = preload("res://scene/in_scene/timel
 const TimelineLayoutControllerScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineLayoutController.gd")
 const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridBuilder.gd")
 const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridCellInteractionPresenter.gd")
+const TimelineGridPreviewPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridPreviewPresenter.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -97,6 +98,7 @@ var _expand_visual_controller = null
 var _layout_controller = null
 var _grid_builder = null
 var _grid_cell_interaction_presenter = null
+var _grid_preview_presenter = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -129,6 +131,12 @@ func _get_grid_cell_interaction_presenter():
 	if _grid_cell_interaction_presenter == null:
 		_grid_cell_interaction_presenter = TimelineGridCellInteractionPresenterScript.new()
 	return _grid_cell_interaction_presenter
+
+
+func _get_grid_preview_presenter():
+	if _grid_preview_presenter == null:
+		_grid_preview_presenter = TimelineGridPreviewPresenterScript.new()
+	return _grid_preview_presenter
 
 
 ## 查找TimelineManager节点
@@ -803,93 +811,22 @@ func collapse() -> void:
 
 ## 更新网格预览：根据形状和位置显示蓝色/红色格子，并检测敌人意图
 func update_grid_preview(shape_coords: Array[Vector2i], origin_pos: Vector2i, is_valid: bool) -> void:
-	# 首先清除所有预览效果
-	clear_grid_preview()
-	
-	# 如果没有形状数据，直接返回
-	if shape_coords.is_empty():
-		return
-	
-	# 计算形状覆盖的所有格子
-	var covered_cells: Array[Vector2i] = []
-	var all_in_bounds = true
-	
-	for coord in shape_coords:
-		var cell_pos = Vector2i(origin_pos.x + coord.x, origin_pos.y + coord.y)
-		covered_cells.append(cell_pos)
-		
-		# 检查是否在网格边界内
-		if cell_pos.x < 0 or cell_pos.x >= grid_width or cell_pos.y < 0 or cell_pos.y >= grid_height:
-			all_in_bounds = false
-	
-	# 检查是否有任何覆盖的单元格被敌人意图占据
-	var overlaps_enemy_intent = false
-	if timeline_manager:
-		for cell_pos in covered_cells:
-			if timeline_manager.grid.has(cell_pos):
-				var action = timeline_manager.grid[cell_pos] as TimelineAction
-				if action and action.type == TimelineAction.Type.ENEMY:
-					overlaps_enemy_intent = true
-					break
-	
-	# 确定预览样式
-	var is_preview_valid = is_valid and all_in_bounds
-	var is_enemy_overlap = overlaps_enemy_intent
-	
-	# 更新格子样式
-	for cell_pos in covered_cells:
-		# 检查是否在网格边界内
-		if cell_pos.x >= 0 and cell_pos.x < grid_width and cell_pos.y >= 0 and cell_pos.y < grid_height:
-			if cell_pos in grid_cells:
-				var cell = grid_cells[cell_pos] as Panel
-				if not cell:
-					continue
-				
-				# 获取或创建样式
-				var style = cell.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-				if not style:
-					style = StyleBoxFlat.new()
-				
-				# 根据状态设置样式
-				if is_preview_valid:
-					# 有效位置：蓝色填充，无边框
-					style.bg_color = Color.SKY_BLUE
-					style.set_border_width_all(0)
-				elif is_enemy_overlap:
-					# 敌人意图重叠：红色网格状（红色边框，透明背景）
-					style.bg_color = Color.TRANSPARENT
-					style.set_border_width_all(2)
-					style.border_color = Color.INDIAN_RED
-				else:
-					# 无效位置：红色填充，无边框
-					style.bg_color = Color.INDIAN_RED
-					style.set_border_width_all(0)
-				
-				cell.add_theme_stylebox_override("panel", style)
-				
-				# 添加轻微动画
-				var tw = create_tween()
-				cell.scale = Vector2(0.9, 0.9)
-				tw.tween_property(cell, "scale", Vector2.ONE, 0.15)
-		else:
-			# 部分格子越界，整体标记为红色
-			pass
-	
+	_get_grid_preview_presenter().update_grid_preview(
+		grid_cells,
+		timeline_manager,
+		shape_coords,
+		origin_pos,
+		is_valid,
+		grid_width,
+		grid_height,
+		grid_cell_default_color,
+		func(): return create_tween()
+	)
 
 
 ## 清除所有网格预览效果
 func clear_grid_preview() -> void:
-	for cell_pos in grid_cells.keys():
-		var cell = grid_cells[cell_pos] as Panel
-		if cell:
-			# 恢复原始样式：半透明深灰色背景，无边框
-			var style = cell.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-			if not style:
-				style = StyleBoxFlat.new()
-			style.bg_color = grid_cell_default_color
-			style.set_border_width_all(0)
-			cell.add_theme_stylebox_override("panel", style)
-			cell.scale = Vector2.ONE
+	_get_grid_preview_presenter().clear_grid_preview(grid_cells, grid_cell_default_color)
 
 
 ## 清除时间轴UI（用于回合结束）

@@ -3320,3 +3320,53 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## timeline_ui.gd 第五批网格预览样式拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `timeline_ui.gd` 的空背景格子拖拽预览样式。它根据拖拽形状、原点、边界和敌方意图占用情况给 `grid_cells` 写入蓝色、红色或红色边框预览，并负责清理预览样式；不修改 TimelineManager 数据，不创建行动块，也不处理卡牌放置规则。
+
+目标函数范围：
+```text
+update_grid_preview(shape_coords, origin_pos, is_valid)
+clear_grid_preview()
+```
+
+当前触碰的数据和节点：
+```text
+grid_cells
+timeline_manager.grid
+grid_width
+grid_height
+grid_cell_default_color
+create_tween()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/timeline/ui_modules/TimelineGridPreviewPresenter.gd
+```
+
+模块边界：
+- `TimelineGridPreviewPresenter.gd` 只负责 TimelineUI 空背景格子的拖拽预览样式。
+- 它不修改 TimelineManager 数据，不创建行动块，也不处理卡牌放置规则。
+- `timeline_ui.gd` 保留 `update_grid_preview()` 和 `clear_grid_preview()` 旧入口，供 DragShapeController 和 TimelineClearEffect 继续调用。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+覆盖格子计算、边界判断、敌方意图重叠检测、预览颜色写入、缩放 tween 和清理默认样式现在由 TimelineGridPreviewPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
