@@ -3216,3 +3216,54 @@ git diff --check 通过，仅有既有 CRLF/LF 提示。
 Godot 项目 headless 检查未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## CraftReward.gd 第五批结果描述定位拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆合成结果描述面板的尺寸计算和屏幕内定位。它保留 `_position_result_description_panel()` 作为旧入口，只把重置尺寸、等待布局帧、计算面板宽高和左右/底部防溢出逻辑交给新模块；不写入描述文本，不配置面板样式，也不修改合成结果或槽位状态。
+
+目标函数范围：
+```text
+_position_result_description_panel()
+```
+
+当前触碰的数据和节点：
+```text
+result_description_panel
+result_description_label
+result_preview_card
+result_slot
+result_tooltip_offset_x
+result_tooltip_offset_y
+result_tooltip_max_width
+get_viewport().get_visible_rect().size
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/CraftResultDescriptionPositionPresenter.gd
+```
+
+模块边界：
+- `CraftResultDescriptionPositionPresenter.gd` 只负责合成结果描述面板的尺寸计算和屏幕内定位。
+- 它不写入描述文本，不配置面板样式，也不读取或修改 `current_result_card_id`。
+- `CraftReward.gd` 保留 `_position_result_description_panel()` 旧入口，并继续以 `await` 等待新模块完成两帧布局测量。
+
+### 本批删除或收口的重复点
+
+删除原因：
+```text
+结果描述面板的尺寸重置、文本最小宽度测量、面板宽高计算和屏幕边界修正现在由 CraftResultDescriptionPositionPresenter 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 CRLF/LF 提示。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```

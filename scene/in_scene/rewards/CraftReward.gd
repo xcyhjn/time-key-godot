@@ -8,6 +8,7 @@ const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/CraftRec
 const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/CraftConnectionLinePresenter.gd")
 const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/CraftResultDescriptionPanelPresenter.gd")
 const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/CraftSlotPreviewLayoutPresenter.gd")
+const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_scene/rewards/CraftResultDescriptionPositionPresenter.gd")
 
 enum CraftMode {
 	BOARD,
@@ -69,6 +70,7 @@ var _recipe_resolver = null
 var _connection_line_presenter = null
 var _result_description_panel_presenter = null
 var _slot_preview_layout_presenter = null
+var _result_description_position_presenter = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -96,6 +98,12 @@ func _get_slot_preview_layout_presenter():
 	if _slot_preview_layout_presenter == null:
 		_slot_preview_layout_presenter = CraftSlotPreviewLayoutPresenterScript.new()
 	return _slot_preview_layout_presenter
+
+
+func _get_result_description_position_presenter():
+	if _result_description_position_presenter == null:
+		_result_description_position_presenter = CraftResultDescriptionPositionPresenterScript.new()
+	return _result_description_position_presenter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -690,38 +698,16 @@ func _setup_result_description_panel() -> void:
 
 
 func _position_result_description_panel() -> void:
-	if not is_instance_valid(result_description_panel) or not is_instance_valid(result_preview_card):
-		return
-
-	result_description_label.custom_minimum_size = Vector2.ZERO
-	result_description_label.reset_size()
-	result_description_panel.reset_size()
-	await get_tree().process_frame
-
-	var screen_size = get_viewport().get_visible_rect().size
-	var content_size = result_description_label.get_combined_minimum_size()
-	var panel_w = min(max(content_size.x + 36.0, 160.0), float(result_tooltip_max_width))
-	result_description_label.custom_minimum_size = Vector2(panel_w - 36.0, 0.0)
-	result_description_label.reset_size()
-	result_description_panel.reset_size()
-	await get_tree().process_frame
-	content_size = result_description_label.get_combined_minimum_size()
-	var panel_h = max(content_size.y + 36.0, 64.0)
-
-	result_description_panel.size = Vector2(panel_w, panel_h)
-
-	var anchor_pos = result_slot.global_position
-	var anchor_size = result_slot.size
-	var panel_x = anchor_pos.x + anchor_size.x + result_tooltip_offset_x
-	var panel_y = anchor_pos.y + result_tooltip_offset_y
-
-	if panel_x + panel_w > screen_size.x:
-		panel_x = anchor_pos.x - panel_w - result_tooltip_offset_x
-
-	if panel_y + panel_h > screen_size.y - 4:
-		panel_y = screen_size.y - panel_h - 4
-
-	result_description_panel.global_position = Vector2(panel_x, panel_y)
+	await _get_result_description_position_presenter().position_panel(
+		result_description_panel,
+		result_description_label,
+		result_preview_card,
+		result_slot,
+		get_viewport().get_visible_rect().size,
+		result_tooltip_offset_x,
+		result_tooltip_offset_y,
+		result_tooltip_max_width
+	)
 
 
 func _update_connection_lines() -> void:
