@@ -6,6 +6,7 @@ extends Node2D
 ## 处理卡牌拖拽到时间轴的交互，包括旋转、网格吸附和放置验证
 
 const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
+const DragShapeNodeBridgeScript = preload("res://scene/in_scene/drag_modules/DragShapeNodeBridge.gd")
 
 # ==========================================
 # 信号
@@ -63,6 +64,7 @@ var timeline_ui: Control
 var timeline_manager: Node  ## TimelineManager 实例
 var cursor_tooltip: RichTextLabel
 var discard_pile: Node  ## 弃牌区引用
+var _node_bridge = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -76,48 +78,42 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 # ==========================================
 # 工具函数
 # ==========================================
+func _get_node_bridge():
+	if _node_bridge == null:
+		_node_bridge = DragShapeNodeBridgeScript.new(self)
+	return _node_bridge
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
-	return get_tree().get_first_node_in_group("MainBoard")
+	return _get_node_bridge().get_main_board()
 
 ## 获取卡牌管理器
 func _get_card_manager() -> Node:
-	var main = _get_main_board()
-	if main and main.get("manager_instance"):
-		return main.manager_instance
-	return null
+	return _get_node_bridge().get_card_manager()
 	
 ## 查找弃牌区
 func _find_discard_pile() -> Node:
-	var main = _get_main_board()
-	return main.discard_pile if main else null
+	return _get_node_bridge().find_discard_pile()
 		
 ## 查找玩家手牌
 func _find_player_hand() -> Node:
-	var main = _get_main_board()
-	if main and main.get("player_hand"):
-		return main.player_hand
-	return null
+	return _get_node_bridge().find_player_hand()
 	
 ## 获取HexMap管理器
 func _get_hex_map() -> Node:
-	var main = _get_main_board()
-	if main:
-		# Main 位于 ui/Main, HexMap 位于 map/HexMap
-		var hex_map = main.get_node_or_null("../../map/HexMap")
-		if hex_map:
-			return hex_map
-	return null
+	return _get_node_bridge().get_hex_map()
 	
 ## 查找project.gd节点（现在叫 in_scene.gd，即 MainBoard）
 func _find_project_node() -> Node:
-	return _get_main_board()
+	return _get_node_bridge().find_project_node()
 # ==========================================
 # 生命周期
 # ==========================================
 
 
 func _ready() -> void:
+	_node_bridge = DragShapeNodeBridgeScript.new(self)
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():

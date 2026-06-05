@@ -2086,3 +2086,61 @@ docs/ai-handoff-ultimate-operation-guide.md
 ```text
 本批只改 Markdown，运行 git diff --check 即可。
 ```
+
+## DragShapeController.gd 第一批节点桥接拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `DragShapeController.gd` 里的跨节点查找入口。
+不修改拖拽状态机、不修改时间轴 hover preview、不修改放置校验、不修改卡牌弃牌或回手流程。
+
+目标函数范围：
+
+```text
+_get_main_board()
+_get_card_manager()
+_find_discard_pile()
+_find_player_hand()
+_get_hex_map()
+_find_project_node()
+```
+
+当前触碰的外部节点和接口：
+
+```text
+MainBoard 分组
+main.manager_instance
+main.discard_pile
+main.player_hand
+../../map/HexMap
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/DragShapeNodeBridge.gd
+```
+
+模块边界：
+
+- `DragShapeNodeBridge.gd` 只负责 DragShapeController 需要的跨节点查找。
+- 它不缓存拖拽状态，不修改场景树，也不决定卡牌是否可以放置。
+- `DragShapeController.gd` 保留原有 `_get_*` 和 `_find_*` 旧入口，内部转发给 bridge，避免影响现有调用点。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+MainBoard、CardManager、弃牌区、手牌、HexMap 的查找路径已经由 DragShapeNodeBridge 统一维护。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 的错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Invalid call 或 Invalid access。
+```
