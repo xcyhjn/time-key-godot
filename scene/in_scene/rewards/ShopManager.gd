@@ -18,6 +18,7 @@ const RewardDraftCardFactoryScript = preload("res://scene/in_scene/rewards/facto
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
 const ShopItemSlotPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopItemSlotPresenter.gd")
 const ShopItemClearerScript = preload("res://scene/in_scene/rewards/presenters/ShopItemClearer.gd")
+const ShopPurchaseCardDetachPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPurchaseCardDetachPresenter.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopPurchaseValidatorScript = preload("res://scene/in_scene/rewards/rules/ShopPurchaseValidator.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
@@ -98,6 +99,7 @@ var _draft_card_factory = null
 var _pricing_presenter = null
 var _item_slot_presenter = null
 var _item_clearer = null
+var _purchase_card_detach_presenter = null
 var _era_weight_selector = null
 var _purchase_validator = null
 var _global_node_finder = null
@@ -136,6 +138,12 @@ func _get_item_clearer():
 	if _item_clearer == null:
 		_item_clearer = ShopItemClearerScript.new()
 	return _item_clearer
+
+
+func _get_purchase_card_detach_presenter():
+	if _purchase_card_detach_presenter == null:
+		_purchase_card_detach_presenter = ShopPurchaseCardDetachPresenterScript.new()
+	return _purchase_card_detach_presenter
 
 
 func _get_era_weight_selector():
@@ -421,20 +429,12 @@ func _on_shop_card_clicked(clicked_card: Control):
 	if not _get_purchase_validator().consume_price(str(clicked_card.card_id), price, Callable(self, "_consume_timecoins")):
 		return
 	
-	# 移除价格标签
-	price_data.label.queue_free()
-	
-	# ★ 核心步骤2: 剥离卡牌，准备飞入动画
-	var slot_container = price_data.container
-	var global_pos = clicked_card.global_position
-	slot_container.remove_child(clicked_card)
-	self.add_child(clicked_card)
-	clicked_card.global_position = global_pos
-	
-	# ★ 核心步骤2.5: 移除空容器（避免刷新时布局混乱）
-	if is_instance_valid(slot_container) and slot_container.get_parent():
-		slot_container.get_parent().remove_child(slot_container)
-	slot_container.queue_free()
+	_get_purchase_card_detach_presenter().detach_for_flight(
+		self,
+		clicked_card,
+		price_data.label,
+		price_data.container
+	)
 	
 	# ★ 核心步骤3: 红色拖影特效 (完全模仿 reward_manager)
 	_fly_to_deck_pile(clicked_card)
