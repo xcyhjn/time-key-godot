@@ -5,6 +5,7 @@ signal reward_scene_close_requested(scene_instance: Node)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
 const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd")
+const RewardDraftCardFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardDraftCardFactory.gd")
 const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/rules/CraftRecipeResolver.gd")
 const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftConnectionLinePresenter.gd")
 const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd")
@@ -75,6 +76,7 @@ var current_deck_cards: Array = []
 var current_deck_entries: Array = []
 var can_close_selection_without_choice: bool = false
 var _recipe_resolver = null
+var _draft_card_factory = null
 var _connection_line_presenter = null
 var _result_description_panel_presenter = null
 var _slot_preview_layout_presenter = null
@@ -96,6 +98,12 @@ func _get_recipe_resolver():
 	if _recipe_resolver == null:
 		_recipe_resolver = CraftRecipeResolverScript.new()
 	return _recipe_resolver
+
+
+func _get_draft_card_factory():
+	if _draft_card_factory == null:
+		_draft_card_factory = RewardDraftCardFactoryScript.new()
+	return _draft_card_factory
 
 
 func _get_connection_line_presenter():
@@ -392,9 +400,7 @@ func _build_selection_title(slot_index: int) -> String:
 
 
 func _create_selection_card(entry: Dictionary, temp_pile: Node) -> void:
-	var draft_card = draft_card_scene.instantiate()
-	draft_card.card_id = entry["card_id"]
-	draft_card.custom_set_size = card_display_size
+	var draft_card = _get_draft_card_factory().create_draft_card(draft_card_scene, entry["card_id"], card_display_size)
 
 	await _steal_card_data(entry["card_id"], draft_card, temp_pile)
 

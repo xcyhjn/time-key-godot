@@ -14,6 +14,7 @@ const RewardCardFlyToDeckAnimatorScript = preload("res://scene/in_scene/rewards/
 const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd")
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
+const RewardDraftCardFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardDraftCardFactory.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
 const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardTextureExtractor.gd")
@@ -68,6 +69,7 @@ var selected_draft_card: Control = null
 var tooltip_presenter: CardTooltipPresenter = null
 var _card_manager_locator = null
 var _tooltip_adapter = null
+var _draft_card_factory = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
 var _card_texture_extractor = null
@@ -88,6 +90,12 @@ func _get_tooltip_adapter():
 	if _tooltip_adapter == null:
 		_tooltip_adapter = RewardTooltipAdapterScript.new()
 	return _tooltip_adapter
+
+
+func _get_draft_card_factory():
+	if _draft_card_factory == null:
+		_draft_card_factory = RewardDraftCardFactoryScript.new()
+	return _draft_card_factory
 
 
 func _get_temp_pile_factory():
@@ -255,11 +263,7 @@ func _generate_candidate_cards():
 ## 创建单个 DraftCard 预览 (数据窃取)
 func _create_draft_card(card_id: String, temp_pile: Node):
 	# 创建商店专用轻量级 DraftCard
-	var draft_card = draft_card_scene.instantiate()
-	draft_card.card_id = card_id
-	
-	# ★ 应用自定义尺寸设置
-	draft_card.custom_set_size = card_display_size
+	var draft_card = _get_draft_card_factory().create_draft_card(draft_card_scene, card_id, card_display_size)
 	
 	# ★ 核心步骤: 数据窃取 - 从真实卡牌提取属性
 	await _steal_card_data(card_id, draft_card, temp_pile)

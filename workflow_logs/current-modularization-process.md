@@ -4475,6 +4475,76 @@ ShopManager 的商品生成周边已经拆出调试日志、商品位 UI 构建�
 
 下一批建议谨慎评估 `_generate_shop_items()` 内单个商品生成编排。若要继续拆，建议只抽“创建并准备 shop_card”的 async helper，保留 UI 登记和信号连接在 ShopManager；如果风险偏高，则转向购买流程中的价格验证和卡牌剥离动画前准备。
 
+## 奖励页第十六批 DraftCard 基础工厂拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆四个奖励页面中重复的轻量 DraftCard 基础初始化逻辑。新模块只负责 `instantiate()`、写入 `card_id` 和 `custom_set_size`；不读取真实卡牌数据，不加入页面容器，不连接点击信号，也不改变商店商品生成、奖励选择、删除或合成流程。
+
+目标函数范围：
+
+```text
+AcquireReward.gd::_create_draft_card(card_id, temp_pile)
+RemoveReward.gd::_create_deck_card_display(card_id, temp_pile)
+CraftReward.gd::_create_selection_card(entry, temp_pile)
+ShopManager.gd::_generate_shop_items()
+```
+
+当前触碰的数据和节点：
+
+```text
+draft_card_scene
+card_id
+card_display_size
+DraftCard.card_id
+DraftCard.custom_set_size
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/factory/RewardDraftCardFactory.gd
+```
+
+模块边界：
+
+- `RewardDraftCardFactory.gd` 只负责创建奖励页使用的轻量 DraftCard 并写入基础展示尺寸。
+- 它不读取真实卡牌数据，不加入页面容器，也不连接点击信号。
+- CraftReward 的 `_create_preview_card()` 使用 `preview_size` 和 tooltip 分支，本批保留原地，不混入基础列表卡工厂。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+AcquireReward、RemoveReward、CraftReward 和 ShopManager 原本重复维护 DraftCard 实例化、card_id 写入和 custom_set_size 写入。
+现在这些基础初始化由 RewardDraftCardFactory 统一维护，页面继续负责数据窃取、容器挂载和交互连接。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/acquire_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+奖励页通用卡牌创建链路继续收口：真实卡牌生成、DraftCard 数据填充、真实卡牌清理、临时牌堆、卡面读取、描述读取和基础 DraftCard 初始化都已模块化。ShopManager 的单商品生成编排风险进一步降低。
+
+当前剩余可拆点包括 CraftReward 预览卡创建、ShopManager 购买流程、ShopManager 单商品生成 async helper，以及价格/时代日志继续收口。
+
+### 下一步打算
+
+下一批建议优先评估 ShopManager 购买流程 `_on_shop_card_clicked()`：可以先拆“购买前价格验证和时间币消费”或“购买后卡牌剥离准备”之一，不建议一次拆完整购买流程。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06

@@ -14,6 +14,7 @@ const RewardCardFlyToDeckAnimatorScript = preload("res://scene/in_scene/rewards/
 const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd")
 const ShopDebugLoggerScript = preload("res://scene/in_scene/rewards/diagnostics/ShopDebugLogger.gd")
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
+const RewardDraftCardFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardDraftCardFactory.gd")
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
 const ShopItemSlotPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopItemSlotPresenter.gd")
 const ShopItemClearerScript = preload("res://scene/in_scene/rewards/presenters/ShopItemClearer.gd")
@@ -92,6 +93,7 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 
 ## 商店页面只保留 Tooltip 触发职责，UI 构建与定位交给共享 presenter。
 var tooltip_presenter: CardTooltipPresenter = null
+var _draft_card_factory = null
 var _pricing_presenter = null
 var _item_slot_presenter = null
 var _item_clearer = null
@@ -114,6 +116,12 @@ func _get_pricing_presenter():
 	if _pricing_presenter == null:
 		_pricing_presenter = ShopPricingPresenterScript.new()
 	return _pricing_presenter
+
+
+func _get_draft_card_factory():
+	if _draft_card_factory == null:
+		_draft_card_factory = RewardDraftCardFactoryScript.new()
+	return _draft_card_factory
 
 
 func _get_item_slot_presenter():
@@ -304,11 +312,7 @@ func _generate_shop_items():
 			card_id = "default_card"  # 回退默认值
 		
 		# 创建商店专用轻量级 DraftCard
-		var shop_card = draft_card_scene.instantiate()
-		shop_card.card_id = card_id
-		
-		# ★ 应用自定义尺寸设置
-		shop_card.custom_set_size = card_display_size
+		var shop_card = _get_draft_card_factory().create_draft_card(draft_card_scene, card_id, card_display_size)
 		
 		# ★ 核心步骤3: 数据窃取 - 从真实卡牌提取属性
 		await _steal_card_data(card_id, shop_card, temp_pile)
