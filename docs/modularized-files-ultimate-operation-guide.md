@@ -549,6 +549,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要删除真实牌组数据，不关闭奖励页，也不生成新的卡牌。
 - 改进：如果清理前需要播放批量退场动画，先新增动画 runner，再由主流程决定何时调用 cleaner。
 
+#### `scene/in_scene/rewards/presenters/RemoveConfirmedCardUiCleaner.gd`
+
+- 用途：确认删除动画完成后，从牌组网格移除已删除卡牌，释放节点并清空选中展示区域。
+- 维护：不要删除真实牌组数据，不设置奖励提交状态，也不关闭奖励页。
+- 改进：如果确认删除后需要更复杂的退场表现，先拆动画 runner，本模块只负责最终 UI 清理。
+
 #### `scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd`
 
 - 用途：初始化、显示和隐藏奖励页卡牌 tooltip。
@@ -987,7 +993,7 @@ _refresh_result_preview()
 
 ### RemoveReward 继续清理页面专属小边界
 
-`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip、牌组同步和只读牌组来源模块。删除页专属的牌组卡牌单选 presenter、牌组显示清理 cleaner 和删牌数据处理规则也已经拆出。
+`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip、牌组同步和只读牌组来源模块。删除页专属的牌组卡牌单选 presenter、牌组显示清理 cleaner、删牌数据处理规则和确认删除后的 UI 清理也已经拆出。
 
 下一步可继续扫描：
 
@@ -995,7 +1001,7 @@ _refresh_result_preview()
 _on_confirm_pressed()
 ```
 
-下一步不要急着拆完整确认删除动画。它涉及动画闭包、UI 移除、奖励提交和关闭流程；如果继续拆，只能先拆动画完成后的 UI 清理，不要同时改真实删牌和关闭。
+下一步不要急着继续拆完整确认删除动画。它剩余部分主要是选择保护、按钮禁用、tween 创建、删牌入口、奖励提交和关闭流程，已经接近页面流程编排。除非后续要统一多个奖励页的确认动画，否则建议停止 RemoveReward，转向 ShopManager 或 CraftReward 的剩余边界。
 
 ### 不要急着继续拆 HexMap
 

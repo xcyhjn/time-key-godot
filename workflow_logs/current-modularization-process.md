@@ -6454,3 +6454,83 @@ CraftReward.gd 的选择条目读取牌组 ID 入口也已收口。
 下一批优先重新扫描 RemoveReward.gd::_on_confirm_pressed()，判断是否只能拆动画完成后的 UI 清理。
 如果该函数没有足够小的边界，就停止 RemoveReward，转向 ShopManager 或其他奖励页剩余点。
 ```
+
+## RemoveReward.gd 第四批确认删除后 UI 清理拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批继续按上一批计划扫描 `RemoveReward.gd::_on_confirm_pressed()`。该函数同时包含未选中保护、确认日志、按钮禁用、删除 tween、真实删牌、动画完成后的 UI 清理、奖励提交状态和关闭页面。完整拆确认流程会同时碰动画、数据、状态和页面关闭，风险偏大。因此本批只拆 tween 回调里“真实删牌之后、提交关闭之前”的 UI 清理，不碰 `_remove_card_from_deck()`，不碰 `set_meta("settlement_reward_committed", true)`，也不碰 `close()`。
+
+目标函数和轮廓：
+
+```text
+RemoveReward.gd::_on_confirm_pressed()
+RemoveReward.gd::_remove_card_from_deck(card_id)
+RemoveConfirmedCardUiCleaner.gd::cleanup_confirmed_card(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+selected_draft_card
+current_deck_cards
+deck_grid
+selected_card_display
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/RemoveConfirmedCardUiCleaner.gd
+```
+
+模块边界：
+
+- `RemoveConfirmedCardUiCleaner.gd` 只负责确认删除动画完成后的卡牌显示清理。
+- 它不删除真实牌组数据，不设置奖励提交状态，也不关闭奖励页。
+- `RemoveReward.gd` 保留 `_on_confirm_pressed()` 旧入口，并继续在 tween 回调里按原顺序先真实删牌，再调用 UI cleaner，最后提交并关闭。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+deck_grid.remove_child(selected_draft_card)、selected_draft_card.queue_free()、current_deck_cards.erase(selected_draft_card)、selected_card_display 子节点清空和 selected_draft_card 置空从 RemoveReward.gd 收口到 RemoveConfirmedCardUiCleaner。
+主脚本不再直接维护确认删除后的节点清理细节，只保留确认流程编排。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 RemoveConfirmedCardUiCleaner.gd 条目。
+当前优化方向已更新为 RemoveReward.gd 剩余确认流程接近页面编排，除非要统一确认动画，否则建议停止 RemoveReward，转向 ShopManager 或 CraftReward。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：119 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+remove_reward.tscn 仍输出既有的 CardManager 手动注入提示；in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+RemoveReward.gd 的牌组卡牌单选表现、牌组显示清理、删牌数据处理、只读牌组来源和确认删除后的 UI 清理都已拆出。
+_on_confirm_pressed() 仍保留未选中保护、按钮禁用、tween 创建、删牌入口、奖励提交和关闭页面这些页面流程编排。
+```
+
+下一步计划：
+
+```text
+本批验证通过后，优先停止继续拆 RemoveReward.gd。
+下一批转向 ShopManager 或 CraftReward 重新扫描剩余边界；如果没有足够小的风险面，再回到 DragShapeController 的完成流程优化。
+```

@@ -22,6 +22,7 @@ const RewardRealCardCleanerScript = preload("res://scene/in_scene/rewards/factor
 const RewardDraftCardDataApplierScript = preload("res://scene/in_scene/rewards/presenters/RewardDraftCardDataApplier.gd")
 const RemoveDeckCardSelectionPresenterScript = preload("res://scene/in_scene/rewards/presenters/RemoveDeckCardSelectionPresenter.gd")
 const RemoveDeckDisplayCleanerScript = preload("res://scene/in_scene/rewards/presenters/RemoveDeckDisplayCleaner.gd")
+const RemoveConfirmedCardUiCleanerScript = preload("res://scene/in_scene/rewards/presenters/RemoveConfirmedCardUiCleaner.gd")
 const RemoveDeckCardRemovalProcessorScript = preload("res://scene/in_scene/rewards/rules/RemoveDeckCardRemovalProcessor.gd")
 const RewardDeckCardIdProviderScript = preload("res://scene/in_scene/rewards/rules/RewardDeckCardIdProvider.gd")
 
@@ -85,6 +86,7 @@ var _draft_card_data_applier = null
 var _deck_sync_bridge = null
 var _deck_card_selection_presenter = null
 var _deck_display_cleaner = null
+var _confirmed_card_ui_cleaner = null
 var _deck_card_removal_processor = null
 var _deck_card_id_provider = null
 
@@ -159,6 +161,12 @@ func _get_deck_display_cleaner():
 	if _deck_display_cleaner == null:
 		_deck_display_cleaner = RemoveDeckDisplayCleanerScript.new()
 	return _deck_display_cleaner
+
+
+func _get_confirmed_card_ui_cleaner():
+	if _confirmed_card_ui_cleaner == null:
+		_confirmed_card_ui_cleaner = RemoveConfirmedCardUiCleanerScript.new()
+	return _confirmed_card_ui_cleaner
 
 
 func _get_deck_card_removal_processor():
@@ -392,16 +400,13 @@ func _on_confirm_pressed():
 		# ★ 核心数据操作: 从牌组中移除卡牌
 		_remove_card_from_deck(selected_draft_card.card_id)
 		
-		# 从显示中移除卡牌
-		deck_grid.remove_child(selected_draft_card)
-		selected_draft_card.queue_free()
-		current_deck_cards.erase(selected_draft_card)
-		
-		# 清空选中显示
-		for child in selected_card_display.get_children():
-			child.queue_free()
-		
-		selected_draft_card = null
+		var cleanup_state: Dictionary = _get_confirmed_card_ui_cleaner().cleanup_confirmed_card(
+			selected_draft_card,
+			current_deck_cards,
+			deck_grid,
+			selected_card_display
+		)
+		selected_draft_card = cleanup_state["selected_draft_card"] as Control
 		
 		# 确认删除后，本次建筑奖励已经被领取，随后直接返回收获界面。
 		set_meta("settlement_reward_committed", true)
