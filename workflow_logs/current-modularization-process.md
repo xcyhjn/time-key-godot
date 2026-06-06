@@ -5014,3 +5014,73 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
+
+## ShopManager.gd 第十七批购买价格校验拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆商店购买卡牌时的价格消费校验。它保留 `_on_shop_card_clicked()` 旧入口，只把“尝试扣除时间币”和“输出购买成败日志”交给新规则模块；不改刷新和升级的时间币消费，不移动卡牌节点，不释放商品槽，也不调整飞入牌库动画。
+
+目标函数范围：
+
+```text
+_on_shop_card_clicked(clicked_card) 中的价格验证、购买失败日志和购买成功日志
+```
+
+当前触碰的数据和节点：
+
+```text
+clicked_card.card_id
+price_data.price
+Callable(self, "_consume_timecoins")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/ShopPurchaseValidator.gd
+```
+
+模块边界：
+
+- `ShopPurchaseValidator.gd` 只负责商店购买前的价格消费校验与结果日志。
+- 它通过传入的 `Callable` 调用原有时间币消费入口，不直接查找 `global_timecoin`。
+- 它不移动卡牌，不修改商店商品列表，也不执行飞入牌库动画。
+- `ShopManager.gd` 继续负责编排购买流程、价格标签释放、商品槽清理和飞行动画入口。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+购买卡牌的时间币消费结果和成败日志现在由 ShopPurchaseValidator 统一维护。
+主脚本不再在购买流程中直接拼接价格校验日志，后续可继续拆分商品槽剥离和飞行动画编排。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 的购买流程已经把价格校验从后续卡牌节点迁移和飞行动画中分离出来。
+奖励页模块目录继续保持 animation、bridges、diagnostics、factory、presenters、rules 的归档结构。
+```
+
+下一步计划：
+
+```text
+继续检查 _on_shop_card_clicked(clicked_card) 中的商品槽剥离逻辑。
+下一批优先考虑只拆 price_data.label.queue_free()、slot_container.remove_child(clicked_card)、self.add_child(clicked_card) 和 global_position 恢复这一组“卡牌脱离商品槽准备飞行”的风险面。
+暂不触碰 _fly_to_deck_pile(card) 和 _on_fly_to_deck_finished(...) 的牌库同步逻辑。
+```

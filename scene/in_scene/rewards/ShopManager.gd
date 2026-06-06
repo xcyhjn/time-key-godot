@@ -19,6 +19,7 @@ const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/present
 const ShopItemSlotPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopItemSlotPresenter.gd")
 const ShopItemClearerScript = preload("res://scene/in_scene/rewards/presenters/ShopItemClearer.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
+const ShopPurchaseValidatorScript = preload("res://scene/in_scene/rewards/rules/ShopPurchaseValidator.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
@@ -98,6 +99,7 @@ var _pricing_presenter = null
 var _item_slot_presenter = null
 var _item_clearer = null
 var _era_weight_selector = null
+var _purchase_validator = null
 var _global_node_finder = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
@@ -140,6 +142,12 @@ func _get_era_weight_selector():
 	if _era_weight_selector == null:
 		_era_weight_selector = ShopEraWeightSelectorScript.new()
 	return _era_weight_selector
+
+
+func _get_purchase_validator():
+	if _purchase_validator == null:
+		_purchase_validator = ShopPurchaseValidatorScript.new()
+	return _purchase_validator
 
 
 func _get_global_node_finder():
@@ -410,13 +418,8 @@ func _on_shop_card_clicked(clicked_card: Control):
 	
 	var price = price_data.price
 	
-	# ★ 核心步骤1: 价格验证 - 调用 global_timecoin 消费时间币
-	if not _consume_timecoins(price):
-		print("购买失败: 时间币不足! 需要: %d, 当前余额不足" % price)
-		# 可以添加视觉反馈，如卡牌抖动或红色闪烁
+	if not _get_purchase_validator().consume_price(str(clicked_card.card_id), price, Callable(self, "_consume_timecoins")):
 		return
-	
-	print("成功购买卡牌 %s, 价格: %d 时间币" % [clicked_card.card_id, price])
 	
 	# 移除价格标签
 	price_data.label.queue_free()
