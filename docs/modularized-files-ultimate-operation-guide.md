@@ -471,6 +471,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要判断配方，不创建卡牌。
 - 改进：连接线样式可以继续资源化。
 
+#### `scene/in_scene/rewards/presenters/CraftPreviewCleanupPresenter.gd`
+
+- 用途：释放合成素材槽和结果槽预览卡节点，并返回结果预览清空状态。
+- 维护：不要创建预览卡，不刷新配方，不更新结果描述，也不修改牌组。
+- 改进：如果预览状态继续扩展，可以把返回字典改成更明确的状态对象。
+
 #### `scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd`
 
 - 用途：配置合成结果描述面板基础样式。
@@ -923,15 +929,16 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、连接线、结果描述样式/内容/定位、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可优先评估：
+`CraftReward.gd` 已经拆出配方查询、连接线、预览清理、结果描述样式/内容/定位、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可重新扫描剩余大函数：
 
 ```text
-_clear_all_previews()
-_clear_slot_preview()
-_clear_result_preview()
+_build_selection_entries()
+_create_selection_card()
+_refresh_result_preview()
+_apply_crafting_result_to_deck()
 ```
 
-这些预览清理函数都属于 UI 状态整理，风险低于 `_apply_crafting_result_to_deck()` 和 `_generate_selection_cards()`。
+这些函数开始涉及牌组数据、卡牌生成或合成结果，继续拆前要先列清楚调用顺序和回归路线。
 
 ### 不要急着继续拆 HexMap
 

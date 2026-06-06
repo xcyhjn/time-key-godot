@@ -13,6 +13,7 @@ const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewa
 const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPositionPresenter.gd")
 const CraftResultDescriptionContentPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionContentPresenter.gd")
 const CraftSlotPlaceholderPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd")
+const CraftPreviewCleanupPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftPreviewCleanupPresenter.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
@@ -85,6 +86,7 @@ var _slot_preview_layout_presenter = null
 var _result_description_position_presenter = null
 var _result_description_content_presenter = null
 var _slot_placeholder_presenter = null
+var _preview_cleanup_presenter = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
@@ -144,6 +146,12 @@ func _get_slot_placeholder_presenter():
 	if _slot_placeholder_presenter == null:
 		_slot_placeholder_presenter = CraftSlotPlaceholderPresenterScript.new()
 	return _slot_placeholder_presenter
+
+
+func _get_preview_cleanup_presenter():
+	if _preview_cleanup_presenter == null:
+		_preview_cleanup_presenter = CraftPreviewCleanupPresenterScript.new()
+	return _preview_cleanup_presenter
 
 
 func _get_tooltip_adapter():
@@ -715,23 +723,25 @@ func _clear_selection_deck() -> void:
 
 
 func _clear_all_previews() -> void:
-	_clear_slot_preview(SLOT_1)
-	_clear_slot_preview(SLOT_2)
-	_clear_result_preview()
+	var clear_state: Dictionary = _get_preview_cleanup_presenter().clear_all_previews(
+		slot_preview_cards,
+		result_preview_card,
+		SLOT_1,
+		SLOT_2
+	)
+	result_preview_card = clear_state["result_preview_card"] as Control
+	current_result_card_id = str(clear_state["current_result_card_id"])
+	_update_result_description()
 
 
 func _clear_slot_preview(slot_index: int) -> void:
-	var preview = slot_preview_cards[slot_index]
-	if is_instance_valid(preview):
-		preview.queue_free()
-	slot_preview_cards[slot_index] = null
+	_get_preview_cleanup_presenter().clear_slot_preview(slot_preview_cards, slot_index)
 
 
 func _clear_result_preview() -> void:
-	if is_instance_valid(result_preview_card):
-		result_preview_card.queue_free()
-	result_preview_card = null
-	current_result_card_id = ""
+	var clear_state: Dictionary = _get_preview_cleanup_presenter().clear_result_preview(result_preview_card)
+	result_preview_card = clear_state["result_preview_card"] as Control
+	current_result_card_id = str(clear_state["current_result_card_id"])
 	_update_result_description()
 
 

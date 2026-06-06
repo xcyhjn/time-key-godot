@@ -5709,3 +5709,88 @@ _refresh_slot_placeholders() 现在只保留旧入口转发，预览卡清理和
 下一批优先评估 CraftReward.gd 的 _clear_all_previews()、_clear_slot_preview() 和 _clear_result_preview()。
 如果继续拆，只收口预览卡 queue_free、引用清空和结果 id 清空；暂不碰 _refresh_result_preview() 的配方生成和 _apply_crafting_result_to_deck()。
 ```
+
+## CraftReward.gd 第八批预览清理拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆合成页预览卡清理。它保留 `_clear_all_previews()`、`_clear_slot_preview(slot_index)` 和 `_clear_result_preview()` 三个旧入口，只把素材槽预览卡释放、结果预览卡释放、结果预览引用清空和结果 id 清空交给新 presenter；不改 `_refresh_result_preview()` 的配方刷新，不创建预览卡，不改合成结果入库。
+
+目标函数和轮廓：
+
+```text
+CraftReward.gd::_clear_all_previews()
+CraftReward.gd::_clear_slot_preview(slot_index)
+CraftReward.gd::_clear_result_preview()
+CraftReward.gd::_refresh_result_preview()
+CraftPreviewCleanupPresenter.gd::clear_all_previews(...)
+CraftPreviewCleanupPresenter.gd::clear_slot_preview(...)
+CraftPreviewCleanupPresenter.gd::clear_result_preview(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+slot_preview_cards
+result_preview_card
+current_result_card_id
+SLOT_1
+SLOT_2
+_update_result_description()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/CraftPreviewCleanupPresenter.gd
+```
+
+模块边界：
+
+- `CraftPreviewCleanupPresenter.gd` 只负责释放预览卡节点，并返回结果预览清空状态。
+- 它不创建预览卡，不刷新配方，不更新结果描述，也不修改牌组。
+- `CraftReward.gd` 保留三个清理旧入口，并继续负责调用 `_update_result_description()`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+素材槽预览卡 queue_free、slot_preview_cards 清空、结果预览卡 queue_free、result_preview_card/current_result_card_id 清空从 CraftReward.gd 收口到 CraftPreviewCleanupPresenter。
+主脚本不再直接维护预览释放细节，只处理旧入口和结果描述刷新。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftPreviewCleanupPresenter.gd 条目。
+当前优化方向已更新为重新扫描 CraftReward.gd 剩余大函数。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：110 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的结果描述、槽位占位符、预览布局和预览清理都已拆出 presenter。
+预览清理旧入口仍在页面内，配方刷新、预览创建和合成结果入库未改。
+```
+
+下一步计划：
+
+```text
+下一批先重新扫描 CraftReward.gd 剩余函数体量和耦合，不直接拆。
+优先判断 _build_selection_entries()、_create_selection_card()、_refresh_result_preview()、_apply_crafting_result_to_deck() 哪个还有清晰小边界；如果风险偏高，就转向 RemoveReward.gd 或 ShopManager.gd 的剩余边界。
+```
