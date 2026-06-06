@@ -5794,3 +5794,88 @@ CraftReward.gd 的结果描述、槽位占位符、预览布局和预览清理�
 下一批先重新扫描 CraftReward.gd 剩余函数体量和耦合，不直接拆。
 优先判断 _build_selection_entries()、_create_selection_card()、_refresh_result_preview()、_apply_crafting_result_to_deck() 哪个还有清晰小边界；如果风险偏高，就转向 RemoveReward.gd 或 ShopManager.gd 的剩余边界。
 ```
+
+## CraftReward.gd 第九批选择标题文案拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批先重新扫描 `CraftReward.gd` 剩余大函数。`_build_selection_entries()`、`_create_selection_card()`、`_refresh_result_preview()` 和 `_apply_crafting_result_to_deck()` 已经涉及牌组条目、异步卡牌生成、配方刷新或牌组写入，不适合直接大拆。因此本批只拆低风险的 `_build_selection_title(slot_index)`，把合成选择面板标题文案交给新 presenter。
+
+目标函数和轮廓：
+
+```text
+CraftReward.gd::_build_selection_entries(slot_index)
+CraftReward.gd::_build_selection_title(slot_index)
+CraftReward.gd::_create_selection_card(entry, temp_pile)
+CraftReward.gd::_refresh_result_preview()
+CraftReward.gd::_apply_crafting_result_to_deck()
+CraftSelectionTitlePresenter.gd::build_selection_title(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+slot_index
+slot_entries
+SLOT_1
+SLOT_2
+select_slot_1_text
+select_slot_2_text
+selection_title_label
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/CraftSelectionTitlePresenter.gd
+```
+
+模块边界：
+
+- `CraftSelectionTitlePresenter.gd` 只负责根据当前槽位和已选槽位状态生成标题文案。
+- 它不生成选择卡，不排序牌组条目，不修改 pending 选择，也不写合成状态。
+- `CraftReward.gd` 保留 `_build_selection_title(slot_index)` 旧入口。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+当前槽位、另一槽位、重新选择文案、兼容提示文案和默认选择文案从 CraftReward.gd 收口到 CraftSelectionTitlePresenter。
+主脚本不再直接拼选择页标题，只在生成选择列表时写入 selection_title_label.text。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftSelectionTitlePresenter.gd 条目。
+当前优化方向已更新为评估 _build_selection_entries() 是否能拆纯规则返回状态。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：111 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的结果描述、槽位占位符、预览布局、预览清理和选择标题都已拆出 presenter。
+选择条目构建、选择卡创建、结果预览刷新和合成结果入库仍在主脚本内。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 _build_selection_entries() 是否可以拆成纯规则模块。
+如果继续拆，先设计返回值承载 ordered_entries、pending_selected_entry 和 can_close_selection_without_choice，避免新模块直接写主脚本状态。
+```

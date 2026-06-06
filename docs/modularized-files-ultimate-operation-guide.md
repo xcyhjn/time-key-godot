@@ -495,6 +495,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要写描述文本，不改合成状态。
 - 改进：屏幕边界逻辑可复用到其他浮层。
 
+#### `scene/in_scene/rewards/presenters/CraftSelectionTitlePresenter.gd`
+
+- 用途：根据当前选择槽位和已选槽位状态生成合成选择面板标题文案。
+- 维护：不要生成选择卡，不排序牌组条目，不修改合成状态。
+- 改进：标题文案后续可以资源化或接入本地化表。
+
 #### `scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd`
 
 - 用途：刷新合成素材槽和结果槽占位符的显隐与文案。
@@ -929,16 +935,15 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、连接线、预览清理、结果描述样式/内容/定位、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可重新扫描剩余大函数：
+`CraftReward.gd` 已经拆出配方查询、连接线、预览清理、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可重新扫描剩余大函数：
 
 ```text
-_build_selection_entries()
 _create_selection_card()
 _refresh_result_preview()
 _apply_crafting_result_to_deck()
 ```
 
-这些函数开始涉及牌组数据、卡牌生成或合成结果，继续拆前要先列清楚调用顺序和回归路线。
+`_build_selection_entries()` 还可以评估是否拆出纯规则入口，但它会写 `pending_selected_entry` 和 `can_close_selection_without_choice`，需要先设计返回状态。其余函数开始涉及卡牌生成或合成结果，继续拆前要先列清楚调用顺序和回归路线。
 
 ### 不要急着继续拆 HexMap
 

@@ -14,6 +14,7 @@ const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_sc
 const CraftResultDescriptionContentPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionContentPresenter.gd")
 const CraftSlotPlaceholderPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd")
 const CraftPreviewCleanupPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftPreviewCleanupPresenter.gd")
+const CraftSelectionTitlePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSelectionTitlePresenter.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
@@ -87,6 +88,7 @@ var _result_description_position_presenter = null
 var _result_description_content_presenter = null
 var _slot_placeholder_presenter = null
 var _preview_cleanup_presenter = null
+var _selection_title_presenter = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
@@ -152,6 +154,12 @@ func _get_preview_cleanup_presenter():
 	if _preview_cleanup_presenter == null:
 		_preview_cleanup_presenter = CraftPreviewCleanupPresenterScript.new()
 	return _preview_cleanup_presenter
+
+
+func _get_selection_title_presenter():
+	if _selection_title_presenter == null:
+		_selection_title_presenter = CraftSelectionTitlePresenterScript.new()
+	return _selection_title_presenter
 
 
 func _get_tooltip_adapter():
@@ -410,17 +418,14 @@ func _build_selection_entries(slot_index: int) -> Array:
 
 
 func _build_selection_title(slot_index: int) -> String:
-	var current_entry = slot_entries[slot_index]
-	var other_slot_index = SLOT_2 if slot_index == SLOT_1 else SLOT_1
-	var other_entry = slot_entries[other_slot_index]
-
-	if current_entry != null:
-		return "重新选择槽位 %d 卡牌（当前卡已置顶并高亮）" % slot_index
-
-	if other_entry != null:
-		return "请选择与槽位 %d 可融合的卡牌（可融合卡在前，不可融合卡已变暗）" % other_slot_index
-
-	return select_slot_1_text if slot_index == SLOT_1 else select_slot_2_text
+	return _get_selection_title_presenter().build_selection_title(
+		slot_index,
+		slot_entries,
+		SLOT_1,
+		SLOT_2,
+		select_slot_1_text,
+		select_slot_2_text
+	)
 
 
 func _create_selection_card(entry: Dictionary, temp_pile: Node) -> void:
