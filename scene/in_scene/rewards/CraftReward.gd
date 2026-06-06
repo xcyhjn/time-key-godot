@@ -12,6 +12,7 @@ const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_sc
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
+const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardTextureExtractor.gd")
 
 enum CraftMode {
 	BOARD,
@@ -77,6 +78,7 @@ var _result_description_position_presenter = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
+var _card_texture_extractor = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -128,6 +130,12 @@ func _get_card_description_extractor():
 	if _card_description_extractor == null:
 		_card_description_extractor = RewardCardDescriptionExtractorScript.new()
 	return _card_description_extractor
+
+
+func _get_card_texture_extractor():
+	if _card_texture_extractor == null:
+		_card_texture_extractor = RewardCardTextureExtractorScript.new()
+	return _card_texture_extractor
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -827,42 +835,7 @@ func _create_temp_pile() -> Pile:
 
 
 func _extract_front_texture(real_card: Node, card_id: String) -> Texture2D:
-	if real_card.has_node("FrontFace/TextureRect"):
-		var front_rect = real_card.get_node("FrontFace/TextureRect")
-		if front_rect is TextureRect and front_rect.texture != null:
-			return front_rect.texture
-
-	if _object_has_property(real_card, &"front_face_texture"):
-		var front_face_texture = real_card.get("front_face_texture")
-		if front_face_texture is TextureRect and front_face_texture.texture != null:
-			return front_face_texture.texture
-		if front_face_texture is Texture2D:
-			return front_face_texture
-
-	await get_tree().process_frame
-
-	if real_card.has_node("FrontFace/TextureRect"):
-		var delayed_front_rect = real_card.get_node("FrontFace/TextureRect")
-		if delayed_front_rect is TextureRect and delayed_front_rect.texture != null:
-			return delayed_front_rect.texture
-
-	if deck_manager and deck_manager.card_factory:
-		var preloaded_cards = deck_manager.card_factory.get("preloaded_cards")
-		if typeof(preloaded_cards) == TYPE_DICTIONARY and preloaded_cards.has(card_id):
-			var cached = preloaded_cards[card_id]
-			if typeof(cached) == TYPE_DICTIONARY and cached.has("texture") and cached["texture"] != null:
-				return cached["texture"]
-
-		var card_info = real_card.get("card_info")
-		if typeof(card_info) == TYPE_DICTIONARY and card_info.has("front_image"):
-			var asset_dir = deck_manager.card_factory.get("card_asset_dir")
-			if typeof(asset_dir) == TYPE_STRING and asset_dir != "":
-				var texture_path = asset_dir + "/" + str(card_info["front_image"])
-				var fallback_texture = load(texture_path) as Texture2D
-				if fallback_texture != null:
-					return fallback_texture
-
-	return null
+	return await _get_card_texture_extractor().extract_front_texture(real_card, card_id, deck_manager, self)
 
 
 func _extract_card_description(real_card: Node) -> String:

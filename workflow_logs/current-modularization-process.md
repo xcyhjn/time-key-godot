@@ -3719,6 +3719,79 @@ P1 奖励页拆分已推进四批：CardManager 定位器、Tooltip 适配器、
 
 下一批建议继续选择低到中风险的 `_extract_front_texture()`。它会触碰 `front_face_texture`、`preloaded_cards`、`card_info["front_image"]` 和 `card_asset_dir`，但仍可以保持旧入口转发，不碰真实卡牌创建与临时牌堆生命周期。`_steal_card_data()` 暂时排在后面，因为它同时包含 card_factory 创建、等待真实卡牌 ready、关键词复制、描述和贴图赋值，是更大的风险面。
 
+## 奖励页第五批卡面贴图提取拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆四个奖励页面重复的卡面贴图读取逻辑。保留各页面原有 `_extract_front_texture(real_card, card_id)` 入口，只把直接读取 `FrontFace/TextureRect`、读取 `front_face_texture`、等待一帧后再次读取、从 `preloaded_cards` 缓存回退、最后通过 `card_info["front_image"]` 与 `card_asset_dir` 加载资源这几步收口到统一提取器；不改变真实卡牌创建、关键词复制、描述读取、DraftCard 赋值、临时牌堆清理或飞入牌库流程。
+
+目标函数范围：
+
+```text
+AcquireReward.gd::_extract_front_texture(real_card, card_id)
+RemoveReward.gd::_extract_front_texture(real_card, card_id)
+CraftReward.gd::_extract_front_texture(real_card, card_id)
+ShopManager.gd::_extract_front_texture(real_card, card_id)
+```
+
+当前触碰的数据和节点：
+
+```text
+real_card
+FrontFace/TextureRect
+front_face_texture
+deck_manager.card_factory
+preloaded_cards
+card_info["front_image"]
+card_asset_dir
+owner.get_tree().process_frame
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/RewardCardTextureExtractor.gd
+```
+
+模块边界：
+
+- `RewardCardTextureExtractor.gd` 只负责从真实卡牌节点或卡牌工厂缓存中读取奖励页卡面贴图。
+- 它不创建真实卡牌，不修改 DraftCard，不复制关键词，也不参与奖励确认、商店购买、合成、移除或飞入动画。
+- 四个奖励页继续保留旧 `_extract_front_texture(real_card, card_id)` 入口，调用点保持不变。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+四个奖励页原本重复维护 FrontFace/TextureRect 读取、front_face_texture 回退、等待一帧后二次读取、preloaded_cards 缓存读取和 front_image 路径加载。
+现在这些重复读取步骤由 RewardCardTextureExtractor 统一维护，各页面只传入真实卡牌节点、card_id、deck_manager 和自身 owner。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/acquire_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+P1 奖励页共享读取链路继续收口：CardManager 定位、Tooltip 适配、临时牌堆创建、卡牌描述提取、卡面贴图提取都已完成。四个奖励页的高重复 `_extract_card_description()` 与 `_extract_front_texture()` 已变成旧入口转发，页面主体更接近“流程编排”职责。
+
+当前仍未拆的主要风险面是 `_steal_card_data()`、飞入牌库动画、奖励页页面状态清理与 ShopManager 商品生成/价格刷新细节。`_object_has_property()` 仍被关键词、时代、贴图和合成结果描述读取使用，暂时保留。
+
+### 下一步打算
+
+下一批建议开始评估 `_steal_card_data()`，但不要一次把四页全部逻辑改成大模块。更稳妥的路径是先提取“真实卡牌创建与等待 ready”的小助手，保留关键词、描述、贴图赋值和临时牌堆清理由原页面处理；如果这一步验证稳定，再继续提取 DraftCard 数据填充器。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06
