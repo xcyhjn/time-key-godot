@@ -25,6 +25,7 @@ const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/p
 const RewardRealCardSpawnerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardSpawner.gd")
 const RewardRealCardCleanerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardCleaner.gd")
 const RewardDraftCardDataApplierScript = preload("res://scene/in_scene/rewards/presenters/RewardDraftCardDataApplier.gd")
+const RewardDeckCardIdProviderScript = preload("res://scene/in_scene/rewards/rules/RewardDeckCardIdProvider.gd")
 
 enum CraftMode {
 	BOARD,
@@ -103,6 +104,7 @@ var _real_card_spawner = null
 var _real_card_cleaner = null
 var _draft_card_data_applier = null
 var _deck_sync_bridge = null
+var _deck_card_id_provider = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -232,6 +234,12 @@ func _get_deck_sync_bridge():
 	if _deck_sync_bridge == null:
 		_deck_sync_bridge = RewardDeckSyncBridgeScript.new()
 	return _deck_sync_bridge
+
+
+func _get_deck_card_id_provider():
+	if _deck_card_id_provider == null:
+		_deck_card_id_provider = RewardDeckCardIdProviderScript.new()
+	return _deck_card_id_provider
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -791,9 +799,7 @@ func _get_anchor_preview_size(anchor: Control) -> Vector2:
 
 
 func _get_current_deck_card_ids() -> Array[String]:
-	if deck_manager and deck_manager.has_method("get_deck_card_ids"):
-		return deck_manager.get_deck_card_ids()
-	return GlobalDB.player_deck.duplicate()
+	return _get_deck_card_id_provider().get_current_deck_card_ids(deck_manager)
 
 
 func _get_recipe_result(card_a_id: String, card_b_id: String) -> String:

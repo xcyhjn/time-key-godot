@@ -6372,3 +6372,85 @@ RemoveReward.gd 的牌组卡牌单选表现、牌组显示清理和删牌数据�
 下一批优先评估 _get_current_deck_card_ids() 是否值得和 CraftReward.gd 合并成奖励页共用只读牌组来源模块。
 如果继续拆 _on_confirm_pressed()，需要先拆动画完成后的 UI 清理，不要同时改真实删牌和关闭流程。
 ```
+
+## 奖励页共用只读牌组来源拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批继续按上一批计划评估 `_get_current_deck_card_ids()`。`RemoveReward.gd` 和 `CraftReward.gd` 都有相同的只读牌组来源逻辑：优先调用 `deck_manager.get_deck_card_ids()`，否则读取 `GlobalDB.player_deck.duplicate()`。这块不生成卡牌、不写牌组、不触发动画，适合抽成奖励页共用规则模块。本批不碰 `RemoveReward.gd::_on_confirm_pressed()`，也不碰 `CraftReward.gd::_refresh_result_preview()`。
+
+目标函数和轮廓：
+
+```text
+RemoveReward.gd::_get_current_deck_card_ids()
+CraftReward.gd::_get_current_deck_card_ids()
+RemoveReward.gd::_generate_deck_display()
+CraftReward.gd::_build_selection_entries(slot_index)
+RewardDeckCardIdProvider.gd::get_current_deck_card_ids(deck_manager)
+```
+
+当前触碰的数据和接口：
+
+```text
+deck_manager.get_deck_card_ids()
+GlobalDB.player_deck.duplicate()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/RewardDeckCardIdProvider.gd
+```
+
+模块边界：
+
+- `RewardDeckCardIdProvider.gd` 只负责读取当前牌组卡牌 ID 列表。
+- 它不修改牌组，不创建卡牌，也不同步运行时抽牌堆。
+- `RemoveReward.gd` 和 `CraftReward.gd` 保留 `_get_current_deck_card_ids()` 旧入口，内部转发给 provider。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+RemoveReward.gd 和 CraftReward.gd 重复的 deck_manager.get_deck_card_ids 优先读取、GlobalDB.player_deck.duplicate 回退读取，收口到 RewardDeckCardIdProvider。
+两个页面仍各自决定怎么使用返回的 ID：删除页生成可删卡牌，合成页生成选择条目。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 RewardDeckCardIdProvider.gd 条目。
+当前优化方向已更新为 RemoveReward.gd 只剩确认删除动画相关边界，CraftReward.gd 仍剩异步结果预览和牌组写入。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：118 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+remove_reward.tscn 仍输出既有的 CardManager 手动注入提示；in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+奖励页只读牌组来源已共用。
+RemoveReward.gd 的牌组卡牌单选表现、牌组显示清理、删牌数据处理都已拆出。
+CraftReward.gd 的选择条目读取牌组 ID 入口也已收口。
+```
+
+下一步计划：
+
+```text
+下一批优先重新扫描 RemoveReward.gd::_on_confirm_pressed()，判断是否只能拆动画完成后的 UI 清理。
+如果该函数没有足够小的边界，就停止 RemoveReward，转向 ShopManager 或其他奖励页剩余点。
+```

@@ -611,6 +611,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要同步运行时抽牌堆，不关闭奖励页，也不处理删除动画或 UI 节点。
 - 改进：如果 deck_manager 接口稳定，可以把日志和 GlobalDB 回退进一步收口。
 
+#### `scene/in_scene/rewards/rules/RewardDeckCardIdProvider.gd`
+
+- 用途：为奖励页读取当前牌组卡牌 ID 列表，优先使用 `deck_manager.get_deck_card_ids()`，否则回退到 `GlobalDB.player_deck`。
+- 维护：不要修改牌组，不创建卡牌，也不同步运行时抽牌堆。
+- 改进：如果奖励页后续需要过滤临时卡或锁定卡，可以让调用方传入过滤规则，不要把页面状态写进 provider。
+
 #### `scene/in_scene/rewards/rules/ShopEraWeightSelector.gd`
 
 - 用途：根据商店权重随机选择目标时代。
@@ -971,7 +977,7 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可重新扫描剩余大函数：
+`CraftReward.gd` 已经拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块。下一步可重新扫描剩余大函数：
 
 ```text
 _refresh_result_preview()
@@ -981,16 +987,15 @@ _refresh_result_preview()
 
 ### RemoveReward 继续清理页面专属小边界
 
-`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip 和牌组同步模块。删除页专属的牌组卡牌单选 presenter、牌组显示清理 cleaner 和删牌数据处理规则也已经拆出。
+`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip、牌组同步和只读牌组来源模块。删除页专属的牌组卡牌单选 presenter、牌组显示清理 cleaner 和删牌数据处理规则也已经拆出。
 
 下一步可继续扫描：
 
 ```text
 _on_confirm_pressed()
-_get_current_deck_card_ids()
 ```
 
-下一步不要急着拆确认删除动画。`_get_current_deck_card_ids()` 只是只读牌组来源，风险低于 `_on_confirm_pressed()`；但它和 `CraftReward.gd` 有重复，继续前要先判断是否要做奖励页共用牌组读取模块。
+下一步不要急着拆完整确认删除动画。它涉及动画闭包、UI 移除、奖励提交和关闭流程；如果继续拆，只能先拆动画完成后的 UI 清理，不要同时改真实删牌和关闭。
 
 ### 不要急着继续拆 HexMap
 

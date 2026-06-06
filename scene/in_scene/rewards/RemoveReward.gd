@@ -23,6 +23,7 @@ const RewardDraftCardDataApplierScript = preload("res://scene/in_scene/rewards/p
 const RemoveDeckCardSelectionPresenterScript = preload("res://scene/in_scene/rewards/presenters/RemoveDeckCardSelectionPresenter.gd")
 const RemoveDeckDisplayCleanerScript = preload("res://scene/in_scene/rewards/presenters/RemoveDeckDisplayCleaner.gd")
 const RemoveDeckCardRemovalProcessorScript = preload("res://scene/in_scene/rewards/rules/RemoveDeckCardRemovalProcessor.gd")
+const RewardDeckCardIdProviderScript = preload("res://scene/in_scene/rewards/rules/RewardDeckCardIdProvider.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -85,6 +86,7 @@ var _deck_sync_bridge = null
 var _deck_card_selection_presenter = null
 var _deck_display_cleaner = null
 var _deck_card_removal_processor = null
+var _deck_card_id_provider = null
 
 
 func _get_card_manager_locator():
@@ -163,6 +165,12 @@ func _get_deck_card_removal_processor():
 	if _deck_card_removal_processor == null:
 		_deck_card_removal_processor = RemoveDeckCardRemovalProcessorScript.new()
 	return _deck_card_removal_processor
+
+
+func _get_deck_card_id_provider():
+	if _deck_card_id_provider == null:
+		_deck_card_id_provider = RewardDeckCardIdProviderScript.new()
+	return _deck_card_id_provider
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -411,16 +419,7 @@ func _remove_card_from_deck(card_id: String):
 
 ## 获取当前牌组卡牌ID列表 (需要对接你的牌组管理系统)
 func _get_current_deck_card_ids() -> Array[String]:
-	# ★ 这里需要对接你的牌组管理系统
-	# 示例: 假设 deck_manager 有 get_deck_card_ids 方法
-	if deck_manager and deck_manager.has_method("get_deck_card_ids"):
-		return deck_manager.get_deck_card_ids()
-	
-	# 备用方案: 直接读取当前项目的全局牌组。
-	if GlobalDB:
-		return GlobalDB.player_deck.duplicate()
-
-	return []
+	return _get_deck_card_id_provider().get_current_deck_card_ids(deck_manager)
 
 ## ==========================================
 ## ★ 工具函数
