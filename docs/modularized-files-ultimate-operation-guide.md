@@ -537,6 +537,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要创建真实卡牌，不清理临时牌堆。
 - 改进：写入字段可继续集中成明确 data 字典。
 
+#### `scene/in_scene/rewards/presenters/RemoveDeckCardSelectionPresenter.gd`
+
+- 用途：处理删除奖励页牌组卡牌的单选、取消选择和确认/返回按钮状态。
+- 维护：不要删除卡牌，不创建卡牌，也不修改 `GlobalDB` 或运行时牌组。
+- 改进：如果删除奖励页未来支持多选，可以把返回值改成选中集合。
+
 #### `scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd`
 
 - 用途：初始化、显示和隐藏奖励页卡牌 tooltip。
@@ -949,7 +955,7 @@ _update_price_display()
 open_shop()
 ```
 
-如果继续处理商店，优先只评估 `_generate_shop_items()` 的单个商品生成编排；不要同时改商品生成、时代偏移和价格显示。更稳的下一步是继续清理 `CraftReward.gd` 的页面专属小边界。
+如果继续处理商店，优先只评估 `_generate_shop_items()` 的单个商品生成编排；不要同时改商品生成、时代偏移和价格显示。更稳的下一步是继续清理奖励页的页面专属小边界。
 
 ### CraftReward 继续清理页面专属小边界
 
@@ -960,6 +966,20 @@ _refresh_result_preview()
 ```
 
 `_refresh_result_preview()` 仍涉及异步预览卡创建。`_apply_crafting_result_to_deck()` 只剩 GlobalDB 写入、追加结果卡和运行时抽牌堆同步，继续拆前要先评估是否会和 RemoveReward 的牌组写入规则重复。
+
+### RemoveReward 继续清理页面专属小边界
+
+`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip 和牌组同步模块。本轮新增了删除页专属的牌组卡牌单选 presenter。
+
+下一步可继续扫描：
+
+```text
+_clear_deck_display()
+_on_confirm_pressed()
+_remove_card_from_deck()
+```
+
+优先级上，`_clear_deck_display()` 只涉及节点释放和状态清空，风险低于确认删除动画和牌组写入。`_remove_card_from_deck()` 与 `CraftReward.gd` 的 GlobalDB 写入有相似边界，但会影响实际删牌结果，拆前要单独评估 deck_manager 与 GlobalDB 的兼容路径。
 
 ### 不要急着继续拆 HexMap
 

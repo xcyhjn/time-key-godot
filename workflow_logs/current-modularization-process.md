@@ -6124,3 +6124,86 @@ _apply_crafting_result_to_deck() 仍保留 GlobalDB 删除、结果卡追加和�
 下一批优先重新评估 CraftReward.gd 是否还适合继续拆。
 如果 _refresh_result_preview() 和 GlobalDB 写入都没有足够小的边界，就转向 RemoveReward.gd 或重新扫描 ShopManager.gd 剩余点。
 ```
+
+## RemoveReward.gd 第一批牌组卡牌选择表现拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批先从 `CraftReward.gd` 转向 `RemoveReward.gd` 重新扫描。合成页剩余的 `_refresh_result_preview()` 涉及异步预览卡创建，`_apply_crafting_result_to_deck()` 剩余部分涉及真实牌组写入，继续硬拆风险偏高。因此本批只拆删除奖励页的 `_on_deck_card_clicked(clicked_card)`，把牌组卡牌单选、再次点击取消选择、确认按钮和返回按钮状态交给新 presenter。
+
+目标函数和轮廓：
+
+```text
+RemoveReward.gd::_on_deck_card_clicked(clicked_card)
+RemoveReward.gd::_on_confirm_pressed()
+RemoveReward.gd::_remove_card_from_deck(card_id)
+RemoveReward.gd::_clear_deck_display()
+RemoveDeckCardSelectionPresenter.gd::apply_selection(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+clicked_card
+selected_draft_card
+current_deck_cards
+btn_confirm
+btn_back
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/RemoveDeckCardSelectionPresenter.gd
+```
+
+模块边界：
+
+- `RemoveDeckCardSelectionPresenter.gd` 只负责删除奖励页牌组卡牌的单选表现和按钮状态。
+- 它不删除卡牌，不创建卡牌，也不修改牌组数据。
+- `RemoveReward.gd` 保留 `_on_deck_card_clicked(clicked_card)` 旧入口，只接收 presenter 返回的当前选中卡牌。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+selected_draft_card 判断、所有当前牌组卡 set_selected、确认按钮禁用/启用和返回按钮禁用/启用从 RemoveReward.gd 收口到 RemoveDeckCardSelectionPresenter。
+主脚本不再直接维护单选表现，只保留删除页点击入口和后续确认删除流程。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 RemoveDeckCardSelectionPresenter.gd 条目。
+当前优化方向已更新为评估 RemoveReward.gd 的 _clear_deck_display()、_on_confirm_pressed() 和 _remove_card_from_deck()。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：115 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+remove_reward.tscn 仍输出既有的 CardManager 手动注入提示；in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+RemoveReward.gd 的牌组卡牌点击单选表现已拆出 presenter。
+确认删除动画、实际删除数据写入、显示清理仍在主脚本内。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 _clear_deck_display()，它只涉及节点释放和状态清空，风险低于 _on_confirm_pressed() 和 _remove_card_from_deck()。
+暂不同时拆确认删除动画和 GlobalDB/deck_manager 写入。
+```

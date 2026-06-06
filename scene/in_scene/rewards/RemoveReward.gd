@@ -20,6 +20,7 @@ const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/p
 const RewardRealCardSpawnerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardSpawner.gd")
 const RewardRealCardCleanerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardCleaner.gd")
 const RewardDraftCardDataApplierScript = preload("res://scene/in_scene/rewards/presenters/RewardDraftCardDataApplier.gd")
+const RemoveDeckCardSelectionPresenterScript = preload("res://scene/in_scene/rewards/presenters/RemoveDeckCardSelectionPresenter.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -79,6 +80,7 @@ var _real_card_spawner = null
 var _real_card_cleaner = null
 var _draft_card_data_applier = null
 var _deck_sync_bridge = null
+var _deck_card_selection_presenter = null
 
 
 func _get_card_manager_locator():
@@ -139,6 +141,12 @@ func _get_deck_sync_bridge():
 	if _deck_sync_bridge == null:
 		_deck_sync_bridge = RewardDeckSyncBridgeScript.new()
 	return _deck_sync_bridge
+
+
+func _get_deck_card_selection_presenter():
+	if _deck_card_selection_presenter == null:
+		_deck_card_selection_presenter = RemoveDeckCardSelectionPresenterScript.new()
+	return _deck_card_selection_presenter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -323,25 +331,13 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 
 ## 牌组卡牌点击事件 (单选)
 func _on_deck_card_clicked(clicked_card: Control):
-	# 再次点击当前选中的卡牌时取消删除选择。
-	# 取消后不产生任何操作，退出按钮恢复可用，确认按钮不可用。
-	if selected_draft_card == clicked_card:
-		selected_draft_card = null
-		for card in current_deck_cards:
-			card.set_selected(false)
-		btn_confirm.disabled = true
-		btn_back.disabled = false
-		return
-
-	selected_draft_card = clicked_card
-	
-	# 更新所有卡牌的选中状态
-	for card in current_deck_cards:
-		card.set_selected(card == clicked_card)
-	
-	# 启用确认按钮
-	btn_confirm.disabled = false
-	btn_back.disabled = true
+	selected_draft_card = _get_deck_card_selection_presenter().apply_selection(
+		clicked_card,
+		selected_draft_card,
+		current_deck_cards,
+		btn_confirm,
+		btn_back
+	)
 
 ## 返回按钮
 func _on_back_pressed():
