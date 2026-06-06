@@ -6534,3 +6534,86 @@ _on_confirm_pressed() 仍保留未选中保护、按钮禁用、tween 创建、�
 本批验证通过后，优先停止继续拆 RemoveReward.gd。
 下一批转向 ShopManager 或 CraftReward 重新扫描剩余边界；如果没有足够小的风险面，再回到 DragShapeController 的完成流程优化。
 ```
+
+## ShopManager.gd 商品槽注册拆分记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批按上一批计划转向 `ShopManager.gd`，先用 `rg` 扫描函数、变量和信号轮廓，再细读 `_generate_shop_items()`。该函数仍把生成锁、清理、依赖检查、时代读取、临时牌堆、选卡、草稿卡创建、数据窃取、定价、商品槽包装、加入网格、记录映射和购买点击绑定串在一起。完整拆单个商品生成会同时碰异步数据窃取和选卡规则，风险偏大。因此本批只拆“已构建商品槽的注册与点击绑定”，不碰选卡、价格、真实卡牌数据和购买流程。
+
+目标函数和轮廓：
+
+```text
+ShopManager.gd::_generate_shop_items()
+ShopItemSlotPresenter.gd::build_slot(shop_card, price)
+ShopItemRegistry.gd::register_item(...)
+ShopManager.gd::_on_shop_card_clicked(clicked_card)
+```
+
+当前触碰的数据和节点：
+
+```text
+shop_grid
+shop_cards
+card_price_map
+shop_card
+slot_data
+_on_shop_card_clicked
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/ShopItemRegistry.gd
+```
+
+模块边界：
+
+- `ShopItemRegistry.gd` 只负责注册已构建好的商店商品槽和购买点击信号。
+- 它不选择卡牌，不计算价格，也不读取或修改牌组数据。
+- `ShopManager.gd` 继续负责商品生成循环、卡牌数据准备、价格计算和购买回调本身。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+shop_grid.add_child(slot_data["container"])、shop_cards.append(shop_card)、card_price_map[shop_card] = slot_data 和 shop_card.card_clicked.connect(...) 从 ShopManager.gd 收口到 ShopItemRegistry。
+主脚本不再直接维护商品槽登记细节，生成循环只保留“生成并注册”的编排。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 ShopItemRegistry.gd 条目。
+当前优化方向已更新为 ShopManager 剩余重点只评估单个商品生成编排；如果需要传入过多成员，就停止 ShopManager，转向 CraftReward 或 DragShapeController。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：120 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 已拆出价格展示、商品清理、商品槽包装、商品槽注册、购买前消费校验、购买卡脱离、购买记录移除、刷新/升级费用处理、CardDataPool 桥接、全局节点查找、tooltip、临时牌堆和真实卡牌数据提取等模块。
+_generate_shop_items() 仍保留生成锁、依赖检查、时代读取、临时牌堆生命周期、选卡、草稿卡创建、数据窃取、定价和循环编排。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 _generate_shop_items() 的单个商品生成编排是否能拆成小模块。
+如果单个商品生成模块需要传入 draft_card_factory、temp_pile、deck_manager、价格、UI 注册、异步数据提取等过多状态，就停止 ShopManager，转向 CraftReward 的剩余边界或 DragShapeController 的完成流程。
+```

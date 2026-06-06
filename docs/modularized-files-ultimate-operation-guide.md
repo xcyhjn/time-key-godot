@@ -573,6 +573,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要选择卡牌，不消费时间币。
 - 改进：价格标签样式可以资源化。
 
+#### `scene/in_scene/rewards/presenters/ShopItemRegistry.gd`
+
+- 用途：把已构建好的商品槽加入商店网格，记录商品卡和价格数据，并绑定购买点击信号。
+- 维护：不要选择卡牌，不计算价格，也不要读取或修改牌组数据。
+- 改进：如果以后商品槽需要统一埋点或可购买状态标记，可让本模块返回注册结果，由主流程决定后续动作。
+
 #### `scene/in_scene/rewards/presenters/ShopPricingPresenter.gd`
 
 - 用途：计算商店价格并更新价格标签。
@@ -971,7 +977,7 @@ git diff --check
 
 ### 评估 ShopManager 剩余边界
 
-`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算和 CardDataPool 读取桥接都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，继续拆收益很低。
+`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接和商品槽注册都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，继续拆收益很低。
 
 ```text
 _generate_shop_items()
@@ -979,7 +985,7 @@ _update_price_display()
 open_shop()
 ```
 
-如果继续处理商店，优先只评估 `_generate_shop_items()` 的单个商品生成编排；不要同时改商品生成、时代偏移和价格显示。更稳的下一步是继续清理奖励页的页面专属小边界。
+如果继续处理商店，优先只评估 `_generate_shop_items()` 的单个商品生成编排；不要同时改商品生成、时代偏移和价格显示。若单商品生成需要传入过多成员，就停止 ShopManager，转向 CraftReward 或 DragShapeController。
 
 ### CraftReward 继续清理页面专属小边界
 

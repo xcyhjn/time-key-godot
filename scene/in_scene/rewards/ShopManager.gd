@@ -18,6 +18,7 @@ const RewardDraftCardFactoryScript = preload("res://scene/in_scene/rewards/facto
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
 const ShopItemSlotPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopItemSlotPresenter.gd")
 const ShopItemClearerScript = preload("res://scene/in_scene/rewards/presenters/ShopItemClearer.gd")
+const ShopItemRegistryScript = preload("res://scene/in_scene/rewards/presenters/ShopItemRegistry.gd")
 const ShopPurchaseCardDetachPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPurchaseCardDetachPresenter.gd")
 const ShopPurchasedItemRecordRemoverScript = preload("res://scene/in_scene/rewards/presenters/ShopPurchasedItemRecordRemover.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
@@ -103,6 +104,7 @@ var _draft_card_factory = null
 var _pricing_presenter = null
 var _item_slot_presenter = null
 var _item_clearer = null
+var _item_registry = null
 var _purchase_card_detach_presenter = null
 var _purchased_item_record_remover = null
 var _era_weight_selector = null
@@ -146,6 +148,12 @@ func _get_item_clearer():
 	if _item_clearer == null:
 		_item_clearer = ShopItemClearerScript.new()
 	return _item_clearer
+
+
+func _get_item_registry():
+	if _item_registry == null:
+		_item_registry = ShopItemRegistryScript.new()
+	return _item_registry
 
 
 func _get_purchase_card_detach_presenter():
@@ -368,15 +376,14 @@ func _generate_shop_items():
 		var price = _calculate_card_price(i)
 		var slot_data = _get_item_slot_presenter().build_slot(shop_card, price)
 		
-		# 添加到商店网格
-		shop_grid.add_child(slot_data["container"])
-		
-		# 记录映射关系
-		shop_cards.append(shop_card)
-		card_price_map[shop_card] = slot_data
-		
-		# 绑定卡牌点击事件 (购买)
-		shop_card.card_clicked.connect(_on_shop_card_clicked)
+		_get_item_registry().register_item(
+			shop_grid,
+			shop_cards,
+			card_price_map,
+			shop_card,
+			slot_data,
+			Callable(self, "_on_shop_card_clicked")
+		)
 	
 	# ★ 核心步骤4: 资源回收 - 销毁幽灵牌堆
 	temp_pile.queue_free()
