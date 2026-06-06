@@ -12,6 +12,7 @@ var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
+const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -60,6 +61,7 @@ var selected_draft_card: Control = null
 var tooltip_presenter: CardTooltipPresenter = null
 var _card_manager_locator = null
 var _tooltip_adapter = null
+var _temp_pile_factory = null
 
 
 func _get_card_manager_locator():
@@ -72,6 +74,12 @@ func _get_tooltip_adapter():
 	if _tooltip_adapter == null:
 		_tooltip_adapter = RewardTooltipAdapterScript.new()
 	return _tooltip_adapter
+
+
+func _get_temp_pile_factory():
+	if _temp_pile_factory == null:
+		_temp_pile_factory = RewardTempPileFactoryScript.new()
+	return _temp_pile_factory
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -416,12 +424,7 @@ func _get_current_era() -> int:
 
 
 func _create_temp_pile() -> Pile:
-	if deck_manager == null:
-		push_error("AcquireReward: 无法创建临时牌堆，deck_manager 为空")
-		return null
-	var temp_pile = preload("res://addons/card-framework/pile.tscn").instantiate() as Pile
-	deck_manager.add_child(temp_pile)
-	return temp_pile
+	return _get_temp_pile_factory().create_temp_pile(deck_manager, "AcquireReward")
 
 
 func _extract_front_texture(real_card: Node, card_id: String) -> Texture2D:

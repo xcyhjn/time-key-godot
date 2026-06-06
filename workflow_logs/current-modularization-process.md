@@ -3578,6 +3578,76 @@ Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误�
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
 
+## 奖励页第三批临时牌堆工厂拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆四个奖励页面重复的临时幽灵牌堆创建逻辑。保留各页面原有 `_create_temp_pile()` 入口，只把空 `deck_manager` 检查、`pile.tscn` 实例化和挂到 `deck_manager` 子节点这三步收口到统一工厂；不改变卡牌数据生成、奖励选择、商店购买、合成结果或移除流程。
+
+目标函数范围：
+
+```text
+AcquireReward.gd::_create_temp_pile()
+RemoveReward.gd::_create_temp_pile()
+CraftReward.gd::_create_temp_pile()
+ShopManager.gd::_create_temp_pile()
+```
+
+当前触碰的数据和节点：
+
+```text
+deck_manager
+res://addons/card-framework/pile.tscn
+临时 Pile 子节点
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/factory/RewardTempPileFactory.gd
+```
+
+模块边界：
+
+- `RewardTempPileFactory.gd` 只负责为奖励页面创建临时幽灵牌堆。
+- 它不生成卡牌，不读取卡牌数据，也不决定奖励页面的选择、确认、购买或合成流程。
+- 四个奖励页继续保留旧 `_create_temp_pile()` 入口，后续调用点无需同时迁移，降低本批风险面。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+四个奖励页原本重复维护 deck_manager 空值检查、pile.tscn 实例化和 add_child 挂载逻辑。
+现在这些重复创建步骤由 RewardTempPileFactory 统一维护，各页面只传入自己的 deck_manager 和日志标签。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/acquire_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+P0 已完成：`.obsidian/` 已加入忽略，`in_scene.tscn` 中调试按钮可见性修改已提交。
+
+文件夹归档已完成：`drag_modules`、`timeline/ui_modules` 和 `rewards` 下已拆出的模块已按 animation、bridges、coordinates、factory、grid、layout、presenters、rules、ui 等职责归档，整体结构开始对齐 hex map 的分类方式。
+
+P1 奖励页拆分已推进三批：已完成奖励页 CardManager 定位器、Tooltip 适配器、临时牌堆工厂拆分。当前四个奖励页仍保留旧入口，外部行为应保持不变。
+
+### 下一步打算
+
+下一批优先评估奖励页重复的卡牌数据与卡面素材提取逻辑。候选风险面是 `_steal_card_data()`、`_extract_front_texture()` 和 `_extract_card_description()`，其中 `_steal_card_data()` 涉及真实卡牌实例、异步等待和临时牌堆清理，风险更高；更稳妥的下一批可能先拆 `_extract_front_texture()` 与描述提取，继续维持一次只碰一个清晰风险面。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06
