@@ -8,6 +8,7 @@ const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges
 const RewardDraftCardFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardDraftCardFactory.gd")
 const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/rules/CraftRecipeResolver.gd")
 const CraftSelectionEntryBuilderScript = preload("res://scene/in_scene/rewards/rules/CraftSelectionEntryBuilder.gd")
+const CraftResultDeckIndexResolverScript = preload("res://scene/in_scene/rewards/rules/CraftResultDeckIndexResolver.gd")
 const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftConnectionLinePresenter.gd")
 const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd")
 const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPreviewLayoutPresenter.gd")
@@ -83,6 +84,7 @@ var current_deck_entries: Array = []
 var can_close_selection_without_choice: bool = false
 var _recipe_resolver = null
 var _selection_entry_builder = null
+var _result_deck_index_resolver = null
 var _draft_card_factory = null
 var _connection_line_presenter = null
 var _result_description_panel_presenter = null
@@ -116,6 +118,12 @@ func _get_selection_entry_builder():
 	if _selection_entry_builder == null:
 		_selection_entry_builder = CraftSelectionEntryBuilderScript.new()
 	return _selection_entry_builder
+
+
+func _get_result_deck_index_resolver():
+	if _result_deck_index_resolver == null:
+		_result_deck_index_resolver = CraftResultDeckIndexResolverScript.new()
+	return _result_deck_index_resolver
 
 
 func _get_draft_card_factory():
@@ -602,12 +610,7 @@ func _claim_result_card() -> void:
 
 
 func _apply_crafting_result_to_deck() -> void:
-	var remove_indices := [
-		slot_entries[SLOT_1]["deck_index"],
-		slot_entries[SLOT_2]["deck_index"],
-	]
-	remove_indices.sort()
-	remove_indices.reverse()
+	var remove_indices: Array[int] = _get_result_deck_index_resolver().get_remove_indices(slot_entries, SLOT_1, SLOT_2)
 
 	for idx in remove_indices:
 		if idx >= 0 and idx < GlobalDB.player_deck.size():

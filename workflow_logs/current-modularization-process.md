@@ -6044,3 +6044,83 @@ _create_selection_card() 仍保留 DraftCard 创建、异步数据复制和节�
 下一批优先重新评估 _refresh_result_preview() 是否还有不涉及 await 的小边界。
 如果风险仍高，就转向 _apply_crafting_result_to_deck() 的牌组索引计算，或转向 RemoveReward.gd。
 ```
+
+## CraftReward.gd 第十二批合成结果移除索引规则拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批先评估 `_refresh_result_preview()` 和 `_apply_crafting_result_to_deck()`。`_refresh_result_preview()` 仍涉及异步预览卡创建和结果槽挂载，暂不拆。本批只拆 `_apply_crafting_result_to_deck()` 中“根据两个合成槽位计算需要倒序移除的牌组索引”，不改 `GlobalDB.player_deck.remove_at()`、追加结果卡或运行时抽牌堆同步。
+
+目标函数和轮廓：
+
+```text
+CraftReward.gd::_refresh_result_preview()
+CraftReward.gd::_apply_crafting_result_to_deck()
+CraftResultDeckIndexResolver.gd::get_remove_indices(slot_entries, slot_1, slot_2)
+```
+
+当前触碰的数据和节点：
+
+```text
+slot_entries
+SLOT_1
+SLOT_2
+deck_index
+remove_indices
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/CraftResultDeckIndexResolver.gd
+```
+
+模块边界：
+
+- `CraftResultDeckIndexResolver.gd` 只负责计算合成结果写回前要移除的倒序索引。
+- 它不修改 `GlobalDB`，不添加结果卡，也不同步运行时抽牌堆。
+- `CraftReward.gd` 继续负责牌组删除、结果卡追加和 `RewardDeckSyncBridge` 同步。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+两个槽位 deck_index 收集、排序和 reverse 从 CraftReward.gd 收口到 CraftResultDeckIndexResolver。
+主脚本不再直接维护倒序移除索引计算，只处理牌组写入动作。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftResultDeckIndexResolver.gd 条目。
+当前优化方向已更新为评估 _refresh_result_preview() 和 GlobalDB 写入是否还值得继续拆。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：114 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的合成结果写回索引计算已拆成纯规则模块。
+_apply_crafting_result_to_deck() 仍保留 GlobalDB 删除、结果卡追加和运行时抽牌堆同步。
+```
+
+下一步计划：
+
+```text
+下一批优先重新评估 CraftReward.gd 是否还适合继续拆。
+如果 _refresh_result_preview() 和 GlobalDB 写入都没有足够小的边界，就转向 RemoveReward.gd 或重新扫描 ShopManager.gd 剩余点。
+```

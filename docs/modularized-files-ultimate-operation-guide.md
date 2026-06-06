@@ -581,6 +581,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要修改牌库，不创建卡牌，不改合成选择状态。
 - 改进：配方表可以资源化，减少硬编码字典。
 
+#### `scene/in_scene/rewards/rules/CraftResultDeckIndexResolver.gd`
+
+- 用途：计算合成结果写回前需要从牌组移除的倒序索引。
+- 维护：不要修改 `GlobalDB`，不要添加结果卡，也不同步运行时抽牌堆。
+- 改进：后续可和删除奖励页的牌组索引规则统一。
+
 #### `scene/in_scene/rewards/rules/CraftSelectionEntryBuilder.gd`
 
 - 用途：生成合成选择列表条目，并返回 pending 选择和可直接返回状态建议。
@@ -947,14 +953,13 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、选择条目构建、选择卡状态、连接线、预览清理、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可重新扫描剩余大函数：
+`CraftReward.gd` 已经拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可重新扫描剩余大函数：
 
 ```text
 _refresh_result_preview()
-_apply_crafting_result_to_deck()
 ```
 
-这些函数开始涉及结果预览刷新或合成结果入库，继续拆前要先列清楚调用顺序和回归路线。
+`_refresh_result_preview()` 仍涉及异步预览卡创建。`_apply_crafting_result_to_deck()` 只剩 GlobalDB 写入、追加结果卡和运行时抽牌堆同步，继续拆前要先评估是否会和 RemoveReward 的牌组写入规则重复。
 
 ### 不要急着继续拆 HexMap
 
