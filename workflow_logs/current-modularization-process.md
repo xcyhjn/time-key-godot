@@ -6617,3 +6617,66 @@ _generate_shop_items() 仍保留生成锁、依赖检查、时代读取、临时
 下一批优先评估 _generate_shop_items() 的单个商品生成编排是否能拆成小模块。
 如果单个商品生成模块需要传入 draft_card_factory、temp_pile、deck_manager、价格、UI 注册、异步数据提取等过多状态，就停止 ShopManager，转向 CraftReward 的剩余边界或 DragShapeController 的完成流程。
 ```
+
+## 接力说明当前状态刷新记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批只执行文档状态刷新，不改代码。上一轮盘点确认 `docs/ai-handoff-ultimate-operation-guide.md` 里部分行数、优先级表和接力 prompt 仍停留在早期状态，例如还建议从 `DragShapeController.gd` 的节点桥接、时间轴 hover preview、拒绝 tooltip，以及奖励页通用 CardManager/tooltip/数据提取开始。这些边界目前已经完成，继续保留旧建议会误导后续接力。
+
+目标文件：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+```
+
+当前只读复核结果：
+
+```text
+已拆模块总数：120
+docs/modularized-files-ultimate-operation-guide.md 覆盖缺失：0
+hex_map.gd：约 2093 行
+in_scene.gd：约 1238 行
+DragShapeController.gd：约 1054 行
+timeline_ui.gd：约 837 行
+CraftReward.gd：约 901 行
+ShopManager.gd：约 684 行
+RemoveReward.gd：约 492 行
+AcquireReward.gd：约 480 行
+```
+
+### 文档改动
+
+```text
+刷新 docs/ai-handoff-ultimate-operation-guide.md 的当前状态一览。
+刷新后续优先优化文件表，把 ShopManager、CraftReward、DragShapeController、timeline_ui 和 out_scene_map_exp 的下一阶段目标改成当前真实剩余边界。
+刷新 DragShapeController、timeline_ui 和奖励脚本的后续拆分建议，移除已经完成的首批建议。
+刷新接力 prompt，避免下一位 AI 重复拆已完成模块。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+本批只改 Markdown，未运行 Godot headless。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+项目模块化文档体系保持为 docs 下 3 份总结性说明。
+docs/modularized-files-ultimate-operation-guide.md 继续作为所有拆分模块的使用维护总手册。
+workflow_logs/current-modularization-process.md 继续记录每批过程。
+```
+
+下一步计划：
+
+```text
+本批验证通过后，下一批优先评估 ShopManager.gd::_generate_shop_items() 的单个商品生成编排。
+如果 ShopManager 单商品生成需要传入过多状态，就停止 ShopManager，转向 CraftReward.gd::_refresh_result_preview() 或 DragShapeController.gd 的放置完成流程。
+```

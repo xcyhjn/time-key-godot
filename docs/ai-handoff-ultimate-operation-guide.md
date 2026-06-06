@@ -1,6 +1,6 @@
 # AI 接力模块化解耦操作说明
 
-日期：2026-06-06
+日期：2026-06-07
 
 ## 这份文档给后续 AI 使用
 
@@ -21,16 +21,16 @@ D:/godot/时之钥/时之钥
 
 ## 当前状态一览
 
-当前模块化工作已经完成两条主线：
+当前模块化工作已经完成多条主线。当前已拆模块共 `120` 个，`docs/modularized-files-ultimate-operation-guide.md` 对这些模块的覆盖缺失数为 `0`。
 
 | 文件 | 当前状态 | 接下来怎么处理 |
 | --- | --- | --- |
-| `scene/in_scene/hex_map.gd` | 已完成一轮系统性拆分，主文件仍较大，但已经更接近地图 composition root。 | 不要把规则、表现、节点查找重新塞回主文件。新增地图逻辑优先放入 `hex_map_modules/`。 |
-| `scene/in_scene/in_scene.gd` | 已完成 21 批拆分，当前约 1238 行，`in_scene_modules/` 下已有 32 个 `.gd` 模块。 | 低风险小块基本拆完。剩余主要是 `_ready()`、配置组装、回合推进、场景切换 wrapper 和信号回调。继续拆前先建立更完整回归路径。 |
-| `scene/in_scene/DragShapeController.gd` | 约 1213 行，下一阶段最值得优先处理。 | 先拆节点查找、拖拽 tooltip、时间轴 hover 预览、放置校验等低风险边界。 |
-| `scene/in_scene/timeline/timeline_ui.gd` | 约 967 行，UI 绘制、行动块表现、hover、清理动画混在一起。 | 先拆布局和 grid presenter，再拆行动块视觉与清理动画。 |
-| `scene/in_scene/rewards/*.gd` | 奖励页脚本重复较多，CardManager 查找、草稿卡构建、tooltip、飞行动画重复。 | 优先提取共用奖励卡牌展示、卡牌数据提取和 CardManager locator。 |
-| `scene/out_scene/out_scene_map_exp.gd` | 局外地图主控约 853 行，房间结算、移动、镜头、切场景耦合。 | 等局内和奖励脚本稳定后，按局外地图流程拆。 |
+| `scene/in_scene/hex_map.gd` | 约 2093 行，`hex_map_modules/` 下已有 31 个模块，已进入地图 composition root 维护阶段。 | 不要为了降行数继续机械拆。新增地图规则、表现或桥接时优先进入现有 `hex_map_modules/` 分类。 |
+| `scene/in_scene/in_scene.gd` | 约 1238 行，`in_scene_modules/` 下已有 32 个模块，低风险小块基本拆完。 | 剩余主要是 `_ready()`、配置组装、回合推进、场景切换 wrapper 和信号回调。继续拆前先补更完整回归路径。 |
+| `scene/in_scene/DragShapeController.gd` | 约 1054 行，`drag_modules/` 下已有 16 个模块，节点桥接、拒绝提示、时间轴预览、放置校验、场景交互锁等已拆。 | 后续只评估放置完成流程等清晰边界；先写清时间轴行动创建、卡牌归属变化和 UI 恢复再拆。 |
+| `scene/in_scene/timeline/timeline_ui.gd` | 约 837 行，已拆布局、背景网格、预览样式、TimelineManager 查找、敌方意图 overlay 和放置动画等。 | 可继续评估行动块表现、清理动画和剩余 hover 流程；不要重写时间轴数据规则。 |
+| `scene/in_scene/rewards/*.gd` | 奖励页已拆出 41 个模块。Acquire/Remove 已接近页面编排；Shop 和 Craft 仍有少量高风险剩余边界。 | 优先评估 `ShopManager.gd::_generate_shop_items()` 的单个商品生成编排；其次评估 `CraftReward.gd::_refresh_result_preview()`。 |
+| `scene/out_scene/out_scene_map_exp.gd` | 约 853 行，局外地图主控尚未进入系统性拆分。 | 等奖励页、拖拽和时间轴剩余边界稳定后，再按局外地图流程拆。 |
 
 不要继续优先拆 `addons/dialogic/` 或其他插件目录，除非明确是在改插件行为。插件大文件不计入当前项目解耦优先级。
 
@@ -247,92 +247,57 @@ git commit -m "<类型>: <本批清晰描述>"
 
 | 优先级 | 文件 | 当前问题 | 首批建议 |
 | --- | --- | --- | --- |
-| 1 | `scene/in_scene/DragShapeController.gd` | 拖拽状态、节点查找、时间轴 hover、tooltip、放置校验、拒绝动画、放置动画和卡牌归还混在一起。 | 先拆 `DragShapeNodeBridge.gd`、`DragTimelineHoverController.gd`、`DragRejectTooltipController.gd`。 |
-| 2 | `scene/in_scene/timeline/timeline_ui.gd` | 时间轴布局、背景格子、行动块视觉、hover、敌方意图 preview、清理动画、grid preview 混在一个 UI 脚本里。 | 先拆 `TimelineLayoutController.gd`、`TimelineGridPresenter.gd`、`TimelineGridPreviewPresenter.gd`。 |
-| 3 | `scene/in_scene/rewards/CraftReward.gd` | 合成规则、牌组选择、预览卡生成、结果描述、tooltip、CardManager 查找都在奖励页里。 | 先拆 `CraftRecipeRules.gd`、`RewardCardDataExtractor.gd`、`CraftSlotPreviewPresenter.gd`。 |
-| 4 | `scene/in_scene/rewards/ShopManager.gd` | 商店库存生成、时代权重、价格、购买动画、tooltip、CardManager 查找耦合。 | 先拆 `ShopInventoryGenerator.gd`、`ShopPricingService.gd`、`RewardCardDataExtractor.gd`。 |
-| 5 | `scene/in_scene/rewards/AcquireReward.gd` 和 `RemoveReward.gd` | 与商店和合成页重复 CardManager 查找、临时 pile、草稿卡生成、tooltip。 | 先抽共用 `RewardCardFactoryAdapter.gd` 和 `RewardTooltipAdapter.gd`。 |
-| 6 | `scene/out_scene/out_scene_map_exp.gd` | 局外地图初始化、房间结算、tier 推进、章节揭示动画、移动、切场景在一个主控里。 | 先拆 `OutSceneGlobalStateBridge.gd`、`RoomResolutionController.gd`、`OutSceneSceneSwitchController.gd`。 |
-| 7 | `scene/in_scene/tile.gd` | 地貌规则、状态组件、结算奖励、敌人意图、血量、贴图选择和 timeline shape 混在一个实体脚本里。 | 先拆 `TileTimelineShapeParser.gd`、`TileSettlementRewardAdapter.gd`、`TileIntentAdapter.gd`。 |
-| 8 | `scene/card/custom_card.gd` | 卡牌数据解析、形状解析、选中视觉、tooltip、效果范围和出牌逻辑耦合。 | 先拆 `CardShapeParser.gd`、`CardSelectionVisualController.gd`、`CardEffectRangeService.gd`。 |
-| 9 | `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | 引用查找、hover phase 判断、tooltip、关键词 tooltip、地图和时间轴表现耦合。 | 先拆 `EnemyIntentReferenceBridge.gd`、`EnemyIntentTooltipPresenter.gd`、`EnemyIntentHoverPhaseGuard.gd`。 |
-| 10 | `scene/in_scene/timeline/TimelineManager.gd` | 时间轴规则核心较集中，但敌人意图候选、排序、落点选择还可拆。 | 等 `timeline_ui.gd` 稳定后，再拆 `EnemyIntentPlacementService.gd`。 |
-| 11 | `scene/in_scene/timecoin_ui.gd` | 全局 Timecoin 查找、数值显示、获得/消耗/警告动画、沙漏 shader 混在 UI 脚本里。 | 先拆 `TimecoinGlobalBridge.gd` 和 `TimecoinAnimationRunner.gd`。 |
+| 1 | `scene/in_scene/rewards/ShopManager.gd` | `_generate_shop_items()` 仍串联生成锁、依赖检查、时代读取、临时牌堆、选卡、草稿卡创建、异步数据提取、定价和循环编排。 | 只评估“单个商品生成编排”是否能拆。若需要传入过多异步和 UI 状态，就停止 ShopManager。 |
+| 2 | `scene/in_scene/rewards/CraftReward.gd` | `_refresh_result_preview()` 仍涉及异步预览卡创建；`_apply_crafting_result_to_deck()` 剩余真实牌组写入和同步。 | 优先评估 `_refresh_result_preview()` 是否有单一表现边界；暂不同时改牌组写入。 |
+| 3 | `scene/in_scene/DragShapeController.gd` | 低风险查找、tooltip、预览、校验和交互锁已拆，剩余主要是放置完成流程。 | 先梳理 `_finish_placement()` 或等价流程的数据流，再拆卡牌归属变化之外的 UI 收尾小边界。 |
+| 4 | `scene/in_scene/timeline/timeline_ui.gd` | 布局、网格、预览、overlay 和放置动画已拆，剩余行动块表现与清理动画仍有耦合。 | 优先评估行动块视觉或清理动画中的单一 presenter，不动 TimelineManager 数据。 |
+| 5 | `scene/out_scene/out_scene_map_exp.gd` | 局外地图初始化、房间结算、tier 推进、章节揭示动画、移动、切场景在一个主控里。 | 等奖励页和拖拽剩余边界稳定后，先拆房间结算 payload 消费，不动地图移动。 |
+| 6 | `scene/in_scene/tile.gd` | 地貌规则、状态组件、结算奖励、敌人意图、血量、贴图选择和 timeline shape 混在一个实体脚本里。 | 先拆纯解析或适配小边界，例如 timeline shape 解析，不动实体生命周期。 |
+| 7 | `scene/card/custom_card.gd` | 卡牌数据解析、形状解析、选中视觉、tooltip、效果范围和出牌逻辑耦合。 | 先拆形状解析或选中视觉，避免直接改出牌逻辑。 |
+| 8 | `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | 引用查找、hover phase 判断、tooltip、关键词 tooltip、地图和时间轴表现耦合。 | 先拆引用查找或 tooltip presenter，不动地图/时间轴联动规则。 |
+| 9 | `scene/in_scene/timeline/TimelineManager.gd` | 时间轴规则核心较集中，但敌人意图候选、排序、落点选择还可拆。 | 等 `timeline_ui.gd` 剩余表现稳定后，再拆敌人意图落点选择服务。 |
+| 10 | `scene/in_scene/timecoin_ui.gd` | 全局 Timecoin 查找、数值显示、获得/消耗/警告动画、沙漏 shader 混在 UI 脚本里。 | 先拆全局查找和动画 runner，保持数值来源不变。 |
 
 ## 各重点文件的第一批低风险拆法
 
 ### DragShapeController.gd
 
-第一批只建议拆节点查找和引用解析：
+已拆低风险边界包括节点桥接、拒绝提示、时间轴预览转发、卡牌形状解析、网格鼠标过滤、放置查询、时间轴 UI 状态、预览清理、网格坐标解析、场景交互锁、卡牌效果预览文本和目标效果预览。
+
+下一批如果继续处理拖拽，优先评估放置完成流程：
 
 ```text
-scene/in_scene/drag_modules/DragShapeNodeBridge.gd
+_finish_placement() 或等价的确认放置收尾流程
 ```
 
-接管：
-
-- `_get_main_board()`
-- `_get_card_manager()`
-- `_find_discard_pile()`
-- `_find_player_hand()`
-- `_get_hex_map()`
-- `_find_project_node()`
-
-不要在第一批动拖拽状态机、放置校验或动画。
-
-第二批再拆时间轴 hover preview：
-
-```text
-scene/in_scene/drag_modules/DragTimelineHoverController.gd
-```
-
-接管 `_handle_timeline_hover()` 中的鼠标转 grid、合法性查询、preview 更新。不要创建 `TimelineAction`。
-
-第三批可拆拒绝 tooltip：
-
-```text
-scene/in_scene/drag_modules/DragRejectTooltipController.gd
-```
-
-接管 `_show_reject_tooltip()`、`_update_reject_tooltip_position()`、`_hide_reject_tooltip()`。
+先写清楚时间轴行动创建、卡牌从手牌到弃牌或时间轴的归属变化、地图输入恢复和 UI 预览清理分别由谁负责。不要把卡牌归属变化和 UI 清理一次性合并到新模块。
 
 ### timeline_ui.gd
 
-第一批优先拆布局：
+已拆低风险边界包括展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay 和行动方格放置动画。
+
+下一批如果继续处理时间轴 UI，优先评估：
 
 ```text
-scene/in_scene/timeline/ui_modules/TimelineLayoutController.gd
+行动块视觉 presenter
+或 清理动画 runner
 ```
 
-接管 `_apply_anchor_layout()`、`set_top_reserved_space()` 中纯布局计算。不要动行动块容器和动画。
-
-第二批拆背景格子创建：
-
-```text
-scene/in_scene/timeline/ui_modules/TimelineGridPresenter.gd
-```
-
-接管 `_init_background_grid()` 和单格 signal 绑定。保留 `grid_cell_clicked` 等旧 signal。
-
-第三批拆 grid preview：
-
-```text
-scene/in_scene/timeline/ui_modules/TimelineGridPreviewPresenter.gd
-```
-
-接管 `update_grid_preview()`、`clear_grid_preview()`。
+不要在同一批修改 TimelineManager 数据结构、敌人意图规则和行动块表现。
 
 ### 奖励脚本
 
-奖励脚本不要单文件单独发明三套工具。先抽共用模块：
+奖励页已经抽出 CardManager 查找、tooltip、临时牌堆、真实卡牌生成/清理、DraftCard 数据写入、贴图和描述提取、牌组同步、只读牌组来源，以及 Shop、Craft、Remove 的多个页面专属模块。
+
+下一批奖励页优先级：
 
 ```text
-scene/in_scene/rewards/reward_modules/RewardCardManagerLocator.gd
-scene/in_scene/rewards/reward_modules/RewardCardDataExtractor.gd
-scene/in_scene/rewards/reward_modules/RewardTooltipAdapter.gd
+1. ShopManager.gd::_generate_shop_items() 的单个商品生成编排
+2. CraftReward.gd::_refresh_result_preview() 的异步预览表现边界
+3. 如果上述两个都需要传入过多状态，就停止奖励页，转向 DragShapeController.gd
 ```
 
-第一批优先抽 `RewardCardDataExtractor.gd`，因为 `AcquireReward.gd`、`RemoveReward.gd`、`CraftReward.gd`、`ShopManager.gd` 都有临时 pile、偷取真实卡牌数据、提取贴图和描述的重复逻辑。
+`AcquireReward.gd` 和 `RemoveReward.gd` 当前不建议继续硬拆。它们剩余部分主要是页面流程编排、确认提交和关闭逻辑。
 
 ### out_scene_map_exp.gd
 
@@ -380,13 +345,12 @@ scene/out_scene/out_scene_modules/RoomResolutionController.gd
 
 先分析目标文件，再列待拆清单，最后每批只拆 1 个清晰风险面，最多触碰 3 到 4 个风险点。不要直接改代码。
 
-当前 in_scene.gd 已完成 21 批拆分，低风险小块基本拆完，不要继续机械拆它。下一阶段优先处理：
-1. scene/in_scene/DragShapeController.gd
-2. scene/in_scene/timeline/timeline_ui.gd
-3. scene/in_scene/rewards/CraftReward.gd
-4. scene/in_scene/rewards/ShopManager.gd
-5. scene/in_scene/rewards/AcquireReward.gd 和 RemoveReward.gd
-6. scene/out_scene/out_scene_map_exp.gd
+当前已拆模块共 120 个，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd 或 RemoveReward.gd。下一阶段优先处理：
+1. scene/in_scene/rewards/ShopManager.gd 的 _generate_shop_items() 单个商品生成编排评估
+2. scene/in_scene/rewards/CraftReward.gd 的 _refresh_result_preview() 异步预览边界评估
+3. scene/in_scene/DragShapeController.gd 的放置完成流程评估
+4. scene/in_scene/timeline/timeline_ui.gd 的行动块表现或清理动画评估
+5. scene/out_scene/out_scene_map_exp.gd 的房间结算 payload 消费拆分
 
 工作方式：
 - 先用 rg 输出目标文件函数、变量、信号轮廓。
@@ -399,5 +363,5 @@ scene/out_scene/out_scene_modules/RoomResolutionController.gd
 - 清理临时日志。
 - 每批单独 commit。
 
-优先从 DragShapeController.gd 的低风险模块开始，例如节点桥接、时间轴 hover preview 或拒绝 tooltip。不要一开始重写拖拽状态机、放置动画或卡牌效果触发。
+优先从 ShopManager.gd::_generate_shop_items() 的单个商品生成编排开始评估。如果该模块需要传入 draft_card_factory、temp_pile、deck_manager、价格、UI 注册和异步数据提取等过多状态，就停止 ShopManager，转向 CraftReward.gd 或 DragShapeController.gd。不要重复拆已经完成的节点桥接、tooltip、CardManager 查找、临时牌堆、DraftCard 数据写入和只读牌组来源模块。
 ```
