@@ -575,6 +575,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要修改牌库，不创建卡牌，不改合成选择状态。
 - 改进：配方表可以资源化，减少硬编码字典。
 
+#### `scene/in_scene/rewards/rules/CraftSelectionEntryBuilder.gd`
+
+- 用途：生成合成选择列表条目，并返回 pending 选择和可直接返回状态建议。
+- 维护：不要创建卡牌节点，不写主脚本状态，不处理按钮或选择面板 UI。
+- 改进：返回字典后续可换成更明确的状态对象。
+
 #### `scene/in_scene/rewards/rules/ShopEraWeightSelector.gd`
 
 - 用途：根据商店权重随机选择目标时代。
@@ -935,7 +941,7 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、连接线、预览清理、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可重新扫描剩余大函数：
+`CraftReward.gd` 已经拆出配方查询、选择条目构建、连接线、预览清理、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可重新扫描剩余大函数：
 
 ```text
 _create_selection_card()
@@ -943,7 +949,7 @@ _refresh_result_preview()
 _apply_crafting_result_to_deck()
 ```
 
-`_build_selection_entries()` 还可以评估是否拆出纯规则入口，但它会写 `pending_selected_entry` 和 `can_close_selection_without_choice`，需要先设计返回状态。其余函数开始涉及卡牌生成或合成结果，继续拆前要先列清楚调用顺序和回归路线。
+这些函数开始涉及异步卡牌生成、结果预览刷新或合成结果入库，继续拆前要先列清楚调用顺序和回归路线。
 
 ### 不要急着继续拆 HexMap
 

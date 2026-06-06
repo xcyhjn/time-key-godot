@@ -7,6 +7,7 @@ var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
 const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd")
 const RewardDraftCardFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardDraftCardFactory.gd")
 const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/rules/CraftRecipeResolver.gd")
+const CraftSelectionEntryBuilderScript = preload("res://scene/in_scene/rewards/rules/CraftSelectionEntryBuilder.gd")
 const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftConnectionLinePresenter.gd")
 const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd")
 const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPreviewLayoutPresenter.gd")
@@ -80,6 +81,7 @@ var current_deck_cards: Array = []
 var current_deck_entries: Array = []
 var can_close_selection_without_choice: bool = false
 var _recipe_resolver = null
+var _selection_entry_builder = null
 var _draft_card_factory = null
 var _connection_line_presenter = null
 var _result_description_panel_presenter = null
@@ -106,6 +108,12 @@ func _get_recipe_resolver():
 	if _recipe_resolver == null:
 		_recipe_resolver = CraftRecipeResolverScript.new()
 	return _recipe_resolver
+
+
+func _get_selection_entry_builder():
+	if _selection_entry_builder == null:
+		_selection_entry_builder = CraftSelectionEntryBuilderScript.new()
+	return _selection_entry_builder
 
 
 func _get_draft_card_factory():
@@ -367,54 +375,17 @@ func _generate_selection_cards(slot_index: int) -> void:
 
 func _build_selection_entries(slot_index: int) -> Array:
 	var deck_ids: Array[String] = _get_current_deck_card_ids()
-	var other_slot_index = SLOT_2 if slot_index == SLOT_1 else SLOT_1
-	var current_entry = slot_entries[slot_index]
-	var other_entry = slot_entries[other_slot_index]
-	var base_entries: Array = []
-
-	for i in range(deck_ids.size()):
-		if other_entry != null and i == other_entry["deck_index"]:
-			continue
-
-		base_entries.append({
-			"deck_index": i,
-			"card_id": deck_ids[i],
-			"disabled": false,
-			"dimmed": false,
-			"selected": false,
-		})
-
-	if current_entry != null:
-		var ordered_entries: Array = []
-		for entry in base_entries:
-			if entry["deck_index"] == current_entry["deck_index"]:
-				entry["selected"] = true
-				pending_selected_entry = _copy_entry(entry)
-				ordered_entries.append(entry)
-				break
-		for entry in base_entries:
-			if current_entry == null or entry["deck_index"] != current_entry["deck_index"]:
-				ordered_entries.append(entry)
-		return ordered_entries
-
-	if other_entry != null:
-		var compatible_entries: Array = []
-		var incompatible_entries: Array = []
-
-		for entry in base_entries:
-			if _get_recipe_result(other_entry["card_id"], entry["card_id"]) != "":
-				compatible_entries.append(entry)
-			else:
-				entry["disabled"] = true
-				entry["dimmed"] = true
-				incompatible_entries.append(entry)
-
-		if compatible_entries.is_empty():
-			can_close_selection_without_choice = true
-
-		return compatible_entries + incompatible_entries
-
-	return base_entries
+	var build_result: Dictionary = _get_selection_entry_builder().build_selection_entries(
+		slot_index,
+		deck_ids,
+		slot_entries,
+		SLOT_1,
+		SLOT_2,
+		Callable(self, "_get_recipe_result")
+	)
+	pending_selected_entry = build_result["pending_selected_entry"] as Dictionary
+	can_close_selection_without_choice = bool(build_result["can_close_selection_without_choice"])
+	return build_result["entries"] as Array
 
 
 func _build_selection_title(slot_index: int) -> String:

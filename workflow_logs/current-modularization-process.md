@@ -5879,3 +5879,87 @@ CraftReward.gd 的结果描述、槽位占位符、预览布局、预览清理�
 下一批优先评估 _build_selection_entries() 是否可以拆成纯规则模块。
 如果继续拆，先设计返回值承载 ordered_entries、pending_selected_entry 和 can_close_selection_without_choice，避免新模块直接写主脚本状态。
 ```
+
+## CraftReward.gd 第十批选择条目构建规则拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `_build_selection_entries(slot_index)` 的纯规则部分。新模块接收当前槽位、牌组 id、两个槽位状态和配方查询入口，返回选择条目、pending 选择建议和是否允许无选择返回；主脚本继续负责把状态写回 `pending_selected_entry`、`can_close_selection_without_choice` 和 `current_deck_entries`。
+
+目标函数和轮廓：
+
+```text
+CraftReward.gd::_build_selection_entries(slot_index)
+CraftReward.gd::_get_current_deck_card_ids()
+CraftReward.gd::_get_recipe_result(card_a_id, card_b_id)
+CraftReward.gd::_copy_entry(entry)
+CraftSelectionEntryBuilder.gd::build_selection_entries(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+deck_ids
+slot_entries
+pending_selected_entry
+can_close_selection_without_choice
+SLOT_1
+SLOT_2
+Callable(self, "_get_recipe_result")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/CraftSelectionEntryBuilder.gd
+```
+
+模块边界：
+
+- `CraftSelectionEntryBuilder.gd` 只负责生成选择条目和状态建议。
+- 它不创建卡牌节点，不写主脚本状态，不处理按钮或选择面板 UI。
+- `CraftReward.gd` 保留 `_build_selection_entries(slot_index)` 旧入口，并继续负责状态写回。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+基础条目生成、另一槽位排除、当前槽位置顶/高亮、兼容条目排序、不兼容条目 disabled/dimmed 和无兼容项状态建议从 CraftReward.gd 收口到 CraftSelectionEntryBuilder。
+主脚本不再直接维护选择条目构建细节，只接收 entries、pending_selected_entry 和 can_close_selection_without_choice。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftSelectionEntryBuilder.gd 条目。
+当前优化方向已更新为重新评估选择卡创建、结果预览刷新和合成结果入库。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：112 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的选择条目构建已拆成纯规则模块，主脚本保留状态写回。
+选择卡创建、结果预览刷新和合成结果入库仍在主脚本内。
+```
+
+下一步计划：
+
+```text
+下一批先重新评估 _create_selection_card() 和 _refresh_result_preview()。
+如果继续拆，优先找不涉及 await 或牌组写入的小边界；如果都偏高风险，就转向 RemoveReward.gd 或 ShopManager.gd。
+```
