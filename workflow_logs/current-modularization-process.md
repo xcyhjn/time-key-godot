@@ -4137,6 +4137,72 @@ P1 奖励页新增卡牌流程已经拆成：飞入视觉动画、入库同步�
 
 下一批建议评估 RemoveReward 与 CraftReward 的 `sync_runtime_deck_from_global` 片段，目标只拆“已修改 GlobalDB/player_deck 后刷新运行时抽牌堆和 UI”的同步 helper，不碰移除卡牌和合成配方写入。
 
+## 奖励页第十一批运行时抽牌堆同步拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆删除奖励页和合成奖励页在牌组数据已经变更后重复的运行时抽牌堆同步逻辑。保留 RemoveReward 的移除策略和 CraftReward 的合成结果写入策略，只把 `MainBoard` 查找、`sync_runtime_deck_from_global(main.deck_pile)` 和 `update_counts_and_ui()` 收口到已有 `RewardDeckSyncBridge`。
+
+目标函数范围：
+
+```text
+RemoveReward.gd::_remove_card_from_deck(card_id)
+CraftReward.gd::_apply_crafting_result_to_deck()
+RewardDeckSyncBridge.gd::sync_runtime_deck(owner, deck_manager)
+```
+
+当前触碰的数据和节点：
+
+```text
+MainBoard
+main.deck_pile
+deck_manager.sync_runtime_deck_from_global(main.deck_pile)
+main.update_counts_and_ui()
+```
+
+### 调整模块
+
+```text
+scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd
+```
+
+模块边界：
+
+- `RewardDeckSyncBridge.gd` 继续只负责奖励页和局内抽牌堆之间的同步桥接。
+- 新增 `sync_runtime_deck(owner, deck_manager)` 只刷新运行时抽牌堆和 UI，不修改 `GlobalDB.player_deck`。
+- RemoveReward 和 CraftReward 仍各自决定如何移除、添加或替换牌组数据。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+RemoveReward 和 CraftReward 原本重复维护 MainBoard 查找、deck_pile 判空、sync_runtime_deck_from_global 和 update_counts_and_ui。
+现在运行时抽牌堆刷新由 RewardDeckSyncBridge.sync_runtime_deck 统一维护，页面只负责自己的牌组数据变更。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+P1 奖励页的牌组同步桥接已经覆盖新增卡牌、删除卡牌和合成结果三类流程。页面本身保留业务决策，bridge 只负责跨节点同步，边界比较清楚。
+
+当前奖励页剩余可拆点开始偏向页面专属逻辑：ShopManager 的商品生成、刷新/升级价格显示，RemoveReward 的删除选择 UI，CraftReward 的合成状态和结果面板刷新。共享基础设施拆分已经接近一个阶段性收口点。
+
+### 下一步打算
+
+下一步先做全局扫描，重新列 P1/P2 优先级：确认奖励页是否还值得继续拆，还是该转向 ShopManager 页面专属流程、CraftReward 状态机化，或回到 in_scene 其他模块的文件管理与耦合点优化。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06

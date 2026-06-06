@@ -10,6 +10,7 @@ signal reward_scene_close_requested(scene_instance: Node)
 var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
+const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd")
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
@@ -75,6 +76,7 @@ var _card_texture_extractor = null
 var _real_card_spawner = null
 var _real_card_cleaner = null
 var _draft_card_data_applier = null
+var _deck_sync_bridge = null
 
 
 func _get_card_manager_locator():
@@ -123,6 +125,12 @@ func _get_draft_card_data_applier():
 	if _draft_card_data_applier == null:
 		_draft_card_data_applier = RewardDraftCardDataApplierScript.new()
 	return _draft_card_data_applier
+
+
+func _get_deck_sync_bridge():
+	if _deck_sync_bridge == null:
+		_deck_sync_bridge = RewardDeckSyncBridgeScript.new()
+	return _deck_sync_bridge
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -397,16 +405,7 @@ func _remove_card_from_deck(card_id: String):
 			GlobalDB.player_deck.erase(card_id)
 			print("✅ 已从 GlobalDB.player_deck 移除卡牌: %s" % card_id)
 
-	var main = get_tree().get_first_node_in_group("MainBoard")
-	if (
-		deck_manager
-		and deck_manager.has_method("sync_runtime_deck_from_global")
-		and main
-		and main.deck_pile
-	):
-		deck_manager.sync_runtime_deck_from_global(main.deck_pile)
-		if main.has_method("update_counts_and_ui"):
-			main.update_counts_and_ui()
+	_get_deck_sync_bridge().sync_runtime_deck(self, deck_manager)
 
 ## 获取当前牌组卡牌ID列表 (需要对接你的牌组管理系统)
 func _get_current_deck_card_ids() -> Array[String]:

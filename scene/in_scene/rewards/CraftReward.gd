@@ -4,6 +4,7 @@ signal reward_scene_close_requested(scene_instance: Node)
 
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
+const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd")
 const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/rules/CraftRecipeResolver.gd")
 const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftConnectionLinePresenter.gd")
 const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd")
@@ -85,6 +86,7 @@ var _card_texture_extractor = null
 var _real_card_spawner = null
 var _real_card_cleaner = null
 var _draft_card_data_applier = null
+var _deck_sync_bridge = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -160,6 +162,12 @@ func _get_draft_card_data_applier():
 	if _draft_card_data_applier == null:
 		_draft_card_data_applier = RewardDraftCardDataApplierScript.new()
 	return _draft_card_data_applier
+
+
+func _get_deck_sync_bridge():
+	if _deck_sync_bridge == null:
+		_deck_sync_bridge = RewardDeckSyncBridgeScript.new()
+	return _deck_sync_bridge
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -609,16 +617,7 @@ func _apply_crafting_result_to_deck() -> void:
 
 	GlobalDB.player_deck.append(current_result_card_id)
 
-	var main = get_tree().get_first_node_in_group("MainBoard")
-	if (
-		deck_manager
-		and deck_manager.has_method("sync_runtime_deck_from_global")
-		and main
-		and main.deck_pile
-	):
-		deck_manager.sync_runtime_deck_from_global(main.deck_pile)
-		if main.has_method("update_counts_and_ui"):
-			main.update_counts_and_ui()
+	_get_deck_sync_bridge().sync_runtime_deck(self, deck_manager)
 
 
 func _on_back_pressed() -> void:
