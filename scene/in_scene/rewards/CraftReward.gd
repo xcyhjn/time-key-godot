@@ -15,6 +15,7 @@ const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewar
 const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardTextureExtractor.gd")
 const RewardRealCardSpawnerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardSpawner.gd")
 const RewardRealCardCleanerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardCleaner.gd")
+const RewardDraftCardDataApplierScript = preload("res://scene/in_scene/rewards/presenters/RewardDraftCardDataApplier.gd")
 
 enum CraftMode {
 	BOARD,
@@ -83,6 +84,7 @@ var _card_description_extractor = null
 var _card_texture_extractor = null
 var _real_card_spawner = null
 var _real_card_cleaner = null
+var _draft_card_data_applier = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -152,6 +154,12 @@ func _get_real_card_cleaner():
 	if _real_card_cleaner == null:
 		_real_card_cleaner = RewardRealCardCleanerScript.new()
 	return _real_card_cleaner
+
+
+func _get_draft_card_data_applier():
+	if _draft_card_data_applier == null:
+		_draft_card_data_applier = RewardDraftCardDataApplierScript.new()
+	return _draft_card_data_applier
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -832,14 +840,13 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node) -> 
 	if not real_card:
 		return
 
-	draft_card.raw_description = await _extract_card_description(real_card)
-
-	if _object_has_property(real_card, &"active_keywords") and real_card.get("active_keywords") is Array:
-		draft_card.active_keywords = real_card.get("active_keywords").duplicate()
-
-	var front_texture = await _extract_front_texture(real_card, card_id)
-	if front_texture != null:
-		draft_card.texture = front_texture
+	await _get_draft_card_data_applier().apply_data(
+		draft_card,
+		real_card,
+		card_id,
+		Callable(self, "_extract_card_description"),
+		Callable(self, "_extract_front_texture")
+	)
 
 	_get_real_card_cleaner().cleanup_real_card(temp_pile, real_card)
 

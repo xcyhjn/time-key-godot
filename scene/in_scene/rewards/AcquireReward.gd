@@ -17,6 +17,7 @@ const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewar
 const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardTextureExtractor.gd")
 const RewardRealCardSpawnerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardSpawner.gd")
 const RewardRealCardCleanerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardCleaner.gd")
+const RewardDraftCardDataApplierScript = preload("res://scene/in_scene/rewards/presenters/RewardDraftCardDataApplier.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -70,6 +71,7 @@ var _card_description_extractor = null
 var _card_texture_extractor = null
 var _real_card_spawner = null
 var _real_card_cleaner = null
+var _draft_card_data_applier = null
 
 
 func _get_card_manager_locator():
@@ -112,6 +114,12 @@ func _get_real_card_cleaner():
 	if _real_card_cleaner == null:
 		_real_card_cleaner = RewardRealCardCleanerScript.new()
 	return _real_card_cleaner
+
+
+func _get_draft_card_data_applier():
+	if _draft_card_data_applier == null:
+		_draft_card_data_applier = RewardDraftCardDataApplierScript.new()
+	return _draft_card_data_applier
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -268,17 +276,14 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 		print("警告: 无法为卡牌 %s 创建真实实例" % card_id)
 		return
 	
-	# 1. 提取卡牌描述文本
-	draft_card.raw_description = await _extract_card_description(real_card)
-	
-	# 2. 提取关键词词条
-	if _object_has_property(real_card, &"active_keywords") and real_card.get("active_keywords") is Array:
-		draft_card.active_keywords = real_card.get("active_keywords").duplicate()
-	
-	# 3. 偷取真牌贴图
-	var front_texture = await _extract_front_texture(real_card, card_id)
-	if front_texture != null:
-		draft_card.texture = front_texture
+	# 1-3. 提取描述、关键词和真牌贴图
+	await _get_draft_card_data_applier().apply_data(
+		draft_card,
+		real_card,
+		card_id,
+		Callable(self, "_extract_card_description"),
+		Callable(self, "_extract_front_texture")
+	)
 	
 	# 4. 从牌堆移除临时卡牌
 	_get_real_card_cleaner().cleanup_real_card(temp_pile, real_card)
