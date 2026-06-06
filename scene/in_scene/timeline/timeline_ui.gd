@@ -2,14 +2,14 @@ extends Control
 
 const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
 const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/TimelineActionShapeVisual.gd")
-const TimelineExpandVisualControllerScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineExpandVisualController.gd")
-const TimelineLayoutControllerScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineLayoutController.gd")
-const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridBuilder.gd")
-const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridCellInteractionPresenter.gd")
-const TimelineGridPreviewPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineGridPreviewPresenter.gd")
-const TimelineManagerLocatorScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineManagerLocator.gd")
-const TimelineEnemyIntentOverlayPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineEnemyIntentOverlayPresenter.gd")
-const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/TimelineBlockPlacementAnimator.gd")
+const TimelineExpandVisualControllerScript = preload("res://scene/in_scene/timeline/ui_modules/layout/TimelineExpandVisualController.gd")
+const TimelineLayoutControllerScript = preload("res://scene/in_scene/timeline/ui_modules/layout/TimelineLayoutController.gd")
+const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/grid/TimelineGridBuilder.gd")
+const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/grid/TimelineGridCellInteractionPresenter.gd")
+const TimelineGridPreviewPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/grid/TimelineGridPreviewPresenter.gd")
+const TimelineManagerLocatorScript = preload("res://scene/in_scene/timeline/ui_modules/bridges/TimelineManagerLocator.gd")
+const TimelineEnemyIntentOverlayPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd")
+const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致

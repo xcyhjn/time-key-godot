@@ -4,11 +4,11 @@ signal reward_scene_close_requested(scene_instance: Node)
 
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 var draft_card_scene = preload("res://scene/card/DraftCard.tscn")
-const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/CraftRecipeResolver.gd")
-const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/CraftConnectionLinePresenter.gd")
-const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/CraftResultDescriptionPanelPresenter.gd")
-const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/CraftSlotPreviewLayoutPresenter.gd")
-const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_scene/rewards/CraftResultDescriptionPositionPresenter.gd")
+const CraftRecipeResolverScript = preload("res://scene/in_scene/rewards/rules/CraftRecipeResolver.gd")
+const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftConnectionLinePresenter.gd")
+const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd")
+const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPreviewLayoutPresenter.gd")
+const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPositionPresenter.gd")
 
 enum CraftMode {
 	BOARD,

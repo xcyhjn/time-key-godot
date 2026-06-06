@@ -10,9 +10,9 @@ signal reward_scene_close_requested(scene_instance: Node)
 var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
-const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/ShopPricingPresenter.gd")
-const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/ShopEraWeightSelector.gd")
-const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/ShopGlobalNodeFinder.gd")
+const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
+const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
+const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接

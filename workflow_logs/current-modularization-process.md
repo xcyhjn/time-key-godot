@@ -3578,6 +3578,62 @@ Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误�
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
 
+## in_scene 已拆模块文件夹归档记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只整理已经拆出的模块目录，让 `scene/in_scene` 下的非 HexMap 模块更接近 `hex_map_modules/` 的职责分层。它只移动文件并更新 `preload()` 路径，不改模块内部逻辑，不改变主脚本公共入口，也不继续拆新职责。
+
+### 归档后的目录职责
+
+```text
+scene/in_scene/drag_modules/bridges      拖拽系统节点桥接
+scene/in_scene/drag_modules/rules        拖拽形状、放置校验和文本解析规则
+scene/in_scene/drag_modules/coordinates  拖拽时间轴坐标和放置目标坐标计算
+scene/in_scene/drag_modules/presenters   拖拽视觉表现与预览
+scene/in_scene/drag_modules/ui           拖拽期间 UI 和交互开关
+scene/in_scene/drag_modules/animation    拖拽拒绝动画与放置动画
+
+scene/in_scene/timeline/ui_modules/bridges     TimelineUI 外部引用定位
+scene/in_scene/timeline/ui_modules/layout      TimelineUI 布局与展开收起表现
+scene/in_scene/timeline/ui_modules/grid        TimelineUI 网格构建、输入和预览
+scene/in_scene/timeline/ui_modules/presenters  TimelineUI 敌人意图覆盖表现
+scene/in_scene/timeline/ui_modules/animation   TimelineUI 行动块动画
+
+scene/in_scene/rewards/bridges      奖励页外部节点查找桥接
+scene/in_scene/rewards/rules        奖励页规则和权重选择
+scene/in_scene/rewards/presenters   奖励页 UI 表现模块
+```
+
+### 本批触碰范围
+
+```text
+DragShapeController.gd 的 drag_modules preload 路径
+timeline_ui.gd 的 timeline/ui_modules preload 路径
+CraftReward.gd 和 ShopManager.gd 的奖励辅助模块 preload 路径
+已拆辅助模块的文件位置
+```
+
+### 暂不处理
+
+```text
+in_scene_modules/ 已经有 bridges/cards/ui/turn/settlement/scene_flow 分层，本批不移动。
+奖励页主脚本 AcquireReward.gd、RemoveReward.gd、CraftReward.gd、ShopManager.gd 仍留在 rewards 根目录。
+后续 P1 新增共用模块时，直接放入 rewards/bridges、rewards/rules 或 rewards/presenters。
+```
+
+### 回归检查
+
+```text
+旧 flat preload 路径检查通过，未发现已移动辅助模块仍被旧路径引用。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call、Invalid access 或 hides a global script class。
+Godot 加载奖励页 craft_reward、shop、acquire_reward、remove_reward 场景退出码均为 0，错误筛选未出现脚本解析、编译或旧全局类缓存冲突。
+```
+
 ## DragShapeController.gd 第十四批拒绝动画拆分记录
 
 日期：2026-06-06
