@@ -11,6 +11,7 @@ var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 const RewardCardFlyToDeckAnimatorScript = preload("res://scene/in_scene/rewards/animation/RewardCardFlyToDeckAnimator.gd")
+const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd")
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
@@ -74,6 +75,7 @@ var _real_card_spawner = null
 var _real_card_cleaner = null
 var _draft_card_data_applier = null
 var _fly_to_deck_animator = null
+var _deck_sync_bridge = null
 
 
 func _get_card_manager_locator():
@@ -128,6 +130,12 @@ func _get_fly_to_deck_animator():
 	if _fly_to_deck_animator == null:
 		_fly_to_deck_animator = RewardCardFlyToDeckAnimatorScript.new()
 	return _fly_to_deck_animator
+
+
+func _get_deck_sync_bridge():
+	if _deck_sync_bridge == null:
+		_deck_sync_bridge = RewardDeckSyncBridgeScript.new()
+	return _deck_sync_bridge
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -375,20 +383,7 @@ func _fly_to_deck_pile(card: Control):
 
 func _on_fly_to_deck_finished(card_id: String) -> void:
 	# ★ 核心数据打通：先写入全局牌组，再同步刷新当前局内抽牌堆。
-	if deck_manager != null and deck_manager.has_method("add_card_to_deck"):
-		deck_manager.add_card_to_deck(card_id)
-
-	var main = get_tree().get_first_node_in_group("MainBoard")
-	if (
-		deck_manager != null
-		and deck_manager.has_method("sync_runtime_deck_from_global")
-		and main
-		and main.deck_pile
-	):
-		deck_manager.sync_runtime_deck_from_global(main.deck_pile)
-		if main.has_method("update_counts_and_ui"):
-			main.update_counts_and_ui()
-		print("✅ 已成功将 %s 加入全局牌组并同步抽牌堆！" % card_id)
+	_get_deck_sync_bridge().add_card_and_sync(self, deck_manager, card_id)
 
 	# 只有确认并完成数据写入后，才标记本次建筑奖励已被领取。
 	set_meta("settlement_reward_committed", true)

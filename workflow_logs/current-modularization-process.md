@@ -4071,6 +4071,72 @@ P1 奖励页共享模块继续完善：奖励卡牌数据窃取链路、卡牌�
 
 下一批优先评估 `add_card_to_deck` 与 `sync_runtime_deck_from_global` 的重复同步逻辑。如果两页完全一致，可以只抽 `RewardDeckSyncBridge`，让页面继续处理关闭和商店列表移除；如果有隐性差异，就转向 ShopManager 内部商品生成流程拆分。
 
+## 奖励页第十批新增卡牌入库同步拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆获取奖励页和商店页在飞入动画完成后重复的“新增卡牌写入 deck_manager 并同步局内抽牌堆”逻辑。保留两个页面各自的 `_on_fly_to_deck_finished(...)` 入口，奖励页关闭、领取标记、商店列表移除和价格映射清理仍留在原页面中。
+
+目标函数范围：
+
+```text
+AcquireReward.gd::_on_fly_to_deck_finished(card_id)
+ShopManager.gd::_on_fly_to_deck_finished(card_id, card)
+```
+
+当前触碰的数据和节点：
+
+```text
+deck_manager.add_card_to_deck(card_id)
+MainBoard
+main.deck_pile
+deck_manager.sync_runtime_deck_from_global(main.deck_pile)
+main.update_counts_and_ui()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd
+```
+
+模块边界：
+
+- `RewardDeckSyncBridge.gd` 只负责奖励页把新增卡牌写入 `deck_manager` 并同步局内抽牌堆。
+- 它不关闭奖励页，不修改商店列表，也不处理移除或合成的牌组变更。
+- RemoveReward 与 CraftReward 里也有运行时抽牌堆同步，但它们属于移除/合成后的牌组变更，本批不混入。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+AcquireReward 和 ShopManager 原本重复维护 add_card_to_deck、MainBoard 查找、sync_runtime_deck_from_global、update_counts_and_ui 和成功日志。
+现在新增卡牌入库同步由 RewardDeckSyncBridge 统一维护，页面只负责动画完成后的页面专属收尾。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/acquire_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+P1 奖励页新增卡牌流程已经拆成：飞入视觉动画、入库同步、页面专属收尾三段。AcquireReward 和 ShopManager 的重复主体进一步减少，`bridges` 目录现在承担 CardManager 定位、商店全局节点查找和奖励牌组同步三类跨节点桥接职责。
+
+当前仍保留在页面内的同步逻辑主要是 RemoveReward 和 CraftReward 的“牌组变更后同步运行时抽牌堆”。它和新增卡牌入库不同，不应直接复用本批 bridge，下一步需要单独看是否能抽一个更泛用的 runtime deck sync helper。
+
+### 下一步打算
+
+下一批建议评估 RemoveReward 与 CraftReward 的 `sync_runtime_deck_from_global` 片段，目标只拆“已修改 GlobalDB/player_deck 后刷新运行时抽牌堆和 UI”的同步 helper，不碰移除卡牌和合成配方写入。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06
