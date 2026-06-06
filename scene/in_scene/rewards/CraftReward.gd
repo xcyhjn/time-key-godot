@@ -14,6 +14,7 @@ const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factor
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
 const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardTextureExtractor.gd")
 const RewardRealCardSpawnerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardSpawner.gd")
+const RewardRealCardCleanerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardCleaner.gd")
 
 enum CraftMode {
 	BOARD,
@@ -81,6 +82,7 @@ var _temp_pile_factory = null
 var _card_description_extractor = null
 var _card_texture_extractor = null
 var _real_card_spawner = null
+var _real_card_cleaner = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -144,6 +146,12 @@ func _get_real_card_spawner():
 	if _real_card_spawner == null:
 		_real_card_spawner = RewardRealCardSpawnerScript.new()
 	return _real_card_spawner
+
+
+func _get_real_card_cleaner():
+	if _real_card_cleaner == null:
+		_real_card_cleaner = RewardRealCardCleanerScript.new()
+	return _real_card_cleaner
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -833,8 +841,7 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node) -> 
 	if front_texture != null:
 		draft_card.texture = front_texture
 
-	temp_pile.remove_card(real_card)
-	real_card.queue_free()
+	_get_real_card_cleaner().cleanup_real_card(temp_pile, real_card)
 
 
 func _create_temp_pile() -> Pile:

@@ -16,6 +16,7 @@ const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factor
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
 const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardTextureExtractor.gd")
 const RewardRealCardSpawnerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardSpawner.gd")
+const RewardRealCardCleanerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardCleaner.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -68,6 +69,7 @@ var _temp_pile_factory = null
 var _card_description_extractor = null
 var _card_texture_extractor = null
 var _real_card_spawner = null
+var _real_card_cleaner = null
 
 
 func _get_card_manager_locator():
@@ -104,6 +106,12 @@ func _get_real_card_spawner():
 	if _real_card_spawner == null:
 		_real_card_spawner = RewardRealCardSpawnerScript.new()
 	return _real_card_spawner
+
+
+func _get_real_card_cleaner():
+	if _real_card_cleaner == null:
+		_real_card_cleaner = RewardRealCardCleanerScript.new()
+	return _real_card_cleaner
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -273,8 +281,7 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 		draft_card.texture = front_texture
 	
 	# 4. 从牌堆移除临时卡牌
-	temp_pile.remove_card(real_card)
-	real_card.queue_free()
+	_get_real_card_cleaner().cleanup_real_card(temp_pile, real_card)
 
 ## ==========================================
 ## ★ 事件处理
