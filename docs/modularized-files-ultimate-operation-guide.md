@@ -531,6 +531,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要消费时间币，不播放飞行动画，不写入或同步牌库。
 - 改进：如果商品槽脱离前需要反馈动画，应单独新增动画模块。
 
+#### `scene/in_scene/rewards/presenters/ShopPurchasedItemRecordRemover.gd`
+
+- 用途：购买飞行动画完成后，从 `shop_cards` 和 `card_price_map` 移除已购卡牌记录。
+- 维护：不要写入牌组，不同步抽牌堆，也不要释放或移动卡牌节点。
+- 改进：如果购买完成后需要更多统计或埋点，优先让本模块返回结果，再由商店主流程决定后续动作。
+
 ### rules
 
 #### `scene/in_scene/rewards/rules/CraftRecipeResolver.gd`
@@ -811,6 +817,7 @@ ShopPurchaseValidator
 -> ShopPurchaseCardDetachPresenter
 -> RewardCardFlyToDeckAnimator
 -> RewardDeckSyncBridge
+-> ShopPurchasedItemRecordRemover
 ```
 
 维护要求：
@@ -819,6 +826,7 @@ ShopPurchaseValidator
 - 改卡牌从商品槽脱离，看 `ShopPurchaseCardDetachPresenter.gd`。
 - 改飞行动画，看 `RewardCardFlyToDeckAnimator.gd`。
 - 改写入牌组和同步抽牌堆，看 `RewardDeckSyncBridge.gd`。
+- 改已购商品记录移除，看 `ShopPurchasedItemRecordRemover.gd`。
 
 ## 固定回归清单
 

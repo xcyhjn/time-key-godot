@@ -19,6 +19,7 @@ const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/present
 const ShopItemSlotPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopItemSlotPresenter.gd")
 const ShopItemClearerScript = preload("res://scene/in_scene/rewards/presenters/ShopItemClearer.gd")
 const ShopPurchaseCardDetachPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPurchaseCardDetachPresenter.gd")
+const ShopPurchasedItemRecordRemoverScript = preload("res://scene/in_scene/rewards/presenters/ShopPurchasedItemRecordRemover.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopPurchaseValidatorScript = preload("res://scene/in_scene/rewards/rules/ShopPurchaseValidator.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
@@ -100,6 +101,7 @@ var _pricing_presenter = null
 var _item_slot_presenter = null
 var _item_clearer = null
 var _purchase_card_detach_presenter = null
+var _purchased_item_record_remover = null
 var _era_weight_selector = null
 var _purchase_validator = null
 var _global_node_finder = null
@@ -144,6 +146,12 @@ func _get_purchase_card_detach_presenter():
 	if _purchase_card_detach_presenter == null:
 		_purchase_card_detach_presenter = ShopPurchaseCardDetachPresenterScript.new()
 	return _purchase_card_detach_presenter
+
+
+func _get_purchased_item_record_remover():
+	if _purchased_item_record_remover == null:
+		_purchased_item_record_remover = ShopPurchasedItemRecordRemoverScript.new()
+	return _purchased_item_record_remover
 
 
 func _get_era_weight_selector():
@@ -459,11 +467,7 @@ func _on_fly_to_deck_finished(card_id: String, card: Control) -> void:
 	# ★ 核心数据打通：先写入全局牌组，再同步刷新当前局内抽牌堆。
 	_get_deck_sync_bridge().add_card_and_sync(self, deck_manager, card_id)
 
-	# 从商店列表中移除
-	var idx = shop_cards.find(card)
-	if idx != -1:
-		shop_cards.remove_at(idx)
-		card_price_map.erase(card)
+	_get_purchased_item_record_remover().remove_record(card, shop_cards, card_price_map)
 
 ## ==========================================
 ## ★ 商店管理操作

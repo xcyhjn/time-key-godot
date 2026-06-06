@@ -5223,3 +5223,79 @@ git diff --check 通过，仅有既有 LF/CRLF 提示。
 继续回到代码拆分主线时，优先处理 ShopManager.gd 的购买完成边界。
 建议下一批只拆 _on_fly_to_deck_finished(card_id, card) 中的商店记录移除，暂不改 RewardDeckSyncBridge.add_card_and_sync(...)。
 ```
+
+## ShopManager.gd 第十九批购买完成记录移除拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆购买飞行动画完成后的商店记录移除。它保留 `_on_fly_to_deck_finished(card_id, card)` 旧入口，只把 `shop_cards` 和 `card_price_map` 中已购卡牌的记录清理交给新 presenter；不改 `RewardDeckSyncBridge.add_card_and_sync(...)`，不移动或释放卡牌节点，也不调整飞行动画。
+
+目标函数范围：
+
+```text
+_on_fly_to_deck_finished(card_id, card) 中 shop_cards.find(card)、shop_cards.remove_at(idx)、card_price_map.erase(card)
+```
+
+当前触碰的数据和节点：
+
+```text
+card
+shop_cards
+card_price_map
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/ShopPurchasedItemRecordRemover.gd
+```
+
+模块边界：
+
+- `ShopPurchasedItemRecordRemover.gd` 只负责购买完成后从商店记录集合中移除已购卡牌。
+- 它不写入牌组，不同步局内抽牌堆，也不释放或移动卡牌节点。
+- `ShopManager.gd` 继续负责编排购买完成顺序，先同步牌库，再移除商店记录。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+购买完成后的 shop_cards/card_price_map 清理从 ShopManager.gd 收口到 ShopPurchasedItemRecordRemover。
+主脚本不再直接维护这组记录集合的删除细节，只保留购买完成后的流程顺序。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 ShopPurchasedItemRecordRemover.gd 条目。
+商店购买流程链路已更新为 ShopPurchaseValidator -> ShopPurchaseCardDetachPresenter -> RewardCardFlyToDeckAnimator -> RewardDeckSyncBridge -> ShopPurchasedItemRecordRemover。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：104 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 的购买路径已经拆出价格校验、商品槽脱离、飞行动画播放、牌库同步桥接和商店记录移除。
+_on_fly_to_deck_finished(card_id, card) 现在只保留购买完成后的流程编排。
+```
+
+下一步计划：
+
+```text
+下一批优先重新评估 ShopManager.gd 购买路径是否已经足够薄。
+如果购买路径不再适合继续拆，则转向 _on_refresh_pressed() 和 _on_upgrade_pressed() 的价格计算、时间币消费和日志边界，每批只拆一个风险面。
+```
