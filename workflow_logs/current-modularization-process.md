@@ -4203,6 +4203,79 @@ P1 奖励页的牌组同步桥接已经覆盖新增卡牌、删除卡牌和合�
 
 下一步先做全局扫描，重新列 P1/P2 优先级：确认奖励页是否还值得继续拆，还是该转向 ShopManager 页面专属流程、CraftReward 状态机化，或回到 in_scene 其他模块的文件管理与耦合点优化。
 
+## 奖励页第十二批商店调试日志收口记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只收口 `ShopManager.gd` 中初始化和商品生成阶段的调试输出。默认仍然打印同样的日志内容，保持运行行为和排查信息不变；不改变商品生成、时代权重、价格计算、购买扣费、刷新升级或 CardManager 查找逻辑。
+
+目标函数范围：
+
+```text
+ShopManager.gd::_ready()
+ShopManager.gd::_generate_shop_items()
+```
+
+当前触碰的数据和节点：
+
+```text
+shop_slots_count
+shop_columns
+shop_grid.columns
+base_price
+price_increment
+refresh_base_cost
+upgrade_base_cost
+label_refresh_cost
+label_upgrade_cost
+shop_grid.get_child_count()
+current_era
+local_era_offset
+shop_cards.size()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/diagnostics/ShopDebugLogger.gd
+```
+
+模块边界：
+
+- `ShopDebugLogger.gd` 只负责商店页面初始化和商品生成阶段的调试输出。
+- 它不计算价格，不生成商品，也不改变商店流程。
+- 本批只替换初始化/生成阶段的调试日志；购买提示、警告、价格更新日志和 CardManager 查找日志暂时保留在 ShopManager 中。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+ShopManager 的初始化和商品生成调试输出原本散落在流程中，增加了主流程阅读噪音。
+现在这些格式化输出由 ShopDebugLogger 统一维护，后续若要降噪或加开关，可以只改 diagnostics 模块。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+P1 奖励页共享模块已经基本完成，ShopManager 开始进入页面专属清理阶段。当前已新增 `diagnostics` 分类，用来承接不会改变游戏行为的调试与诊断输出。
+
+ShopManager 仍然是奖励页中最大的文件，剩余优化点主要包括商品生成流程、CardManager 查找日志、价格刷新日志和购买流程拆分。下一批应继续选择一个小风险面，避免把商店核心生成和购买逻辑混在一起。
+
+### 下一步打算
+
+下一批建议评估 `ShopManager.gd::_try_find_card_manager()` 的日志和查找流程。它当前有大量查找路径调试输出，可以先只收口到诊断模块或已有 `ShopGlobalNodeFinder` 风格的 bridge；不建议同时改商品生成。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06

@@ -12,6 +12,7 @@ var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 const RewardCardFlyToDeckAnimatorScript = preload("res://scene/in_scene/rewards/animation/RewardCardFlyToDeckAnimator.gd")
 const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges/RewardDeckSyncBridge.gd")
+const ShopDebugLoggerScript = preload("res://scene/in_scene/rewards/diagnostics/ShopDebugLogger.gd")
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
@@ -100,6 +101,7 @@ var _real_card_cleaner = null
 var _draft_card_data_applier = null
 var _fly_to_deck_animator = null
 var _deck_sync_bridge = null
+var _debug_logger = null
 
 
 func _get_pricing_presenter():
@@ -174,6 +176,12 @@ func _get_deck_sync_bridge():
 	return _deck_sync_bridge
 
 
+func _get_debug_logger():
+	if _debug_logger == null:
+		_debug_logger = ShopDebugLoggerScript.new()
+	return _debug_logger
+
+
 func _object_has_property(target: Object, property_name: StringName) -> bool:
 	if target == null:
 		return false
@@ -201,16 +209,9 @@ func _ready():
 		shop_grid.add_theme_constant_override("v_separation", card_spacing_y)
 	
 	# ★ 调试输出：检查初始布局参数
-	print("🛒 商店初始化 - shop_slots_count: %d, shop_columns: %d, 实际列数: %d" % [
-		shop_slots_count, shop_columns, shop_grid.columns if shop_grid else -1
-	])
-	print("🛒 导出参数检查 - base_price: %d, price_increment: %d, refresh_base_cost: %d, upgrade_base_cost: %d" % [
-		base_price, price_increment, refresh_base_cost, upgrade_base_cost
-	])
-	print("🛒 标签引用检查 - label_refresh_cost: %s, label_upgrade_cost: %s" % [
-		"有效" if label_refresh_cost else "null",
-		"有效" if label_upgrade_cost else "null"
-	])
+	_get_debug_logger().log_initial_layout(shop_slots_count, shop_columns, shop_grid.columns if shop_grid else -1)
+	_get_debug_logger().log_exported_prices(base_price, price_increment, refresh_base_cost, upgrade_base_cost)
+	_get_debug_logger().log_label_refs(label_refresh_cost != null, label_upgrade_cost != null)
 	
 	# ★ 延迟一帧确保所有节点完成初始化
 	await get_tree().process_frame
@@ -235,18 +236,18 @@ func _ready():
 ## 生成商店商品 (模仿 _on_acquire_pressed 的幽灵牌堆机制)
 func _generate_shop_items():
 	if _is_generating: 
-		print("🔄 商店生成已在进行中，跳过重复调用")
+		_get_debug_logger().log_generation_skipped()
 		return 
 	_is_generating = true
 	
 	# ★ 调试输出：清理前的状态
-	print("🔄 开始生成商店商品 - 清理前shop_grid子节点数: %d" % shop_grid.get_child_count())
+	_get_debug_logger().log_generation_start(shop_grid.get_child_count())
 	
 	# 清空现有商品
 	_clear_shop_items()
 	
 	# ★ 调试输出：清理后的状态
-	print("🧹 清理完成 - shop_grid子节点数: %d" % shop_grid.get_child_count())
+	_get_debug_logger().log_generation_cleanup(shop_grid.get_child_count())
 	
 	# 检查必要依赖
 	if not deck_manager or not deck_manager.card_factory:
@@ -255,15 +256,11 @@ func _generate_shop_items():
 		return
 	
 	# ★ 调试输出：检查布局参数
-	print("🔍 商店生成参数 - shop_slots_count: %d, shop_columns: %d, 实际列数: %d" % [
-		shop_slots_count, shop_columns, shop_grid.columns if shop_grid else -1
-	])
+	_get_debug_logger().log_generation_layout(shop_slots_count, shop_columns, shop_grid.columns if shop_grid else -1)
 	
 	# ★ 核心步骤1: 获取当前时代值
 	var current_era = _get_shop_era()
-	print("商店生成 - 基础时代: %d (全局时代: %d + 本地偏移: %d)" % [
-		current_era, _get_global_era(), local_era_offset
-	])
+	_get_debug_logger().log_generation_era(current_era, _get_global_era(), local_era_offset)
 	
 	# 创建临时幽灵牌堆 (完全隐形)
 	var temp_pile = _create_temp_pile()
@@ -273,9 +270,9 @@ func _generate_shop_items():
 	temp_pile.visible = false
 	
 	# 生成所有商品位
-	print("📊 开始生成商品位，总数: %d，当前循环索引: 0 到 %d" % [shop_slots_count, shop_slots_count - 1])
+	_get_debug_logger().log_slot_generation_start(shop_slots_count)
 	for i in range(shop_slots_count):
-		print("  🔸 生成商品位 %d/%d" % [i + 1, shop_slots_count])
+		_get_debug_logger().log_slot_generation(i, shop_slots_count)
 		# ★ 核心步骤2: 根据时代权重随机选择卡牌ID
 		var card_id = _select_card_by_era_weight(current_era)
 		if card_id == "":
@@ -323,9 +320,7 @@ func _generate_shop_items():
 	temp_pile.queue_free()
 	
 	# ★ 调试输出：生成完成后的状态
-	print("✅ 商店商品生成完成 - 生成数量: %d, 实际shop_grid子节点数: %d, shop_cards记录数: %d" % [
-		shop_slots_count, shop_grid.get_child_count(), shop_cards.size()
-	])
+	_get_debug_logger().log_generation_done(shop_slots_count, shop_grid.get_child_count(), shop_cards.size())
 	
 	_is_generating = false # 释放锁
 
