@@ -21,6 +21,7 @@ const RewardRealCardSpawnerScript = preload("res://scene/in_scene/rewards/factor
 const RewardRealCardCleanerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardCleaner.gd")
 const RewardDraftCardDataApplierScript = preload("res://scene/in_scene/rewards/presenters/RewardDraftCardDataApplier.gd")
 const RemoveDeckCardSelectionPresenterScript = preload("res://scene/in_scene/rewards/presenters/RemoveDeckCardSelectionPresenter.gd")
+const RemoveDeckDisplayCleanerScript = preload("res://scene/in_scene/rewards/presenters/RemoveDeckDisplayCleaner.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -81,6 +82,7 @@ var _real_card_cleaner = null
 var _draft_card_data_applier = null
 var _deck_sync_bridge = null
 var _deck_card_selection_presenter = null
+var _deck_display_cleaner = null
 
 
 func _get_card_manager_locator():
@@ -147,6 +149,12 @@ func _get_deck_card_selection_presenter():
 	if _deck_card_selection_presenter == null:
 		_deck_card_selection_presenter = RemoveDeckCardSelectionPresenterScript.new()
 	return _deck_card_selection_presenter
+
+
+func _get_deck_display_cleaner():
+	if _deck_display_cleaner == null:
+		_deck_display_cleaner = RemoveDeckDisplayCleanerScript.new()
+	return _deck_display_cleaner
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -426,22 +434,13 @@ func _get_current_deck_card_ids() -> Array[String]:
 
 ## 清空牌组显示
 func _clear_deck_display():
-	# 清空所有动态生成的卡牌
-	for card in current_deck_cards:
-		if is_instance_valid(card):
-			card.queue_free()
-	
-	current_deck_cards.clear()
-	selected_draft_card = null
-	original_deck_card_ids.clear()
-	
-	# 清空网格容器
-	for child in deck_grid.get_children():
-		child.queue_free()
-	
-	# 清空选中显示区域
-	for child in selected_card_display.get_children():
-		child.queue_free()
+	var clear_state: Dictionary = _get_deck_display_cleaner().clear_deck_display(
+		current_deck_cards,
+		original_deck_card_ids,
+		deck_grid,
+		selected_card_display
+	)
+	selected_draft_card = clear_state["selected_draft_card"] as Control
 
 
 func _create_temp_pile() -> Pile:

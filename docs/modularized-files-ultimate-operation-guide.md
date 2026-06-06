@@ -543,6 +543,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要删除卡牌，不创建卡牌，也不修改 `GlobalDB` 或运行时牌组。
 - 改进：如果删除奖励页未来支持多选，可以把返回值改成选中集合。
 
+#### `scene/in_scene/rewards/presenters/RemoveDeckDisplayCleaner.gd`
+
+- 用途：清空删除奖励页的牌组卡牌节点、选中展示节点和展示状态。
+- 维护：不要删除真实牌组数据，不关闭奖励页，也不生成新的卡牌。
+- 改进：如果清理前需要播放批量退场动画，先新增动画 runner，再由主流程决定何时调用 cleaner。
+
 #### `scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd`
 
 - 用途：初始化、显示和隐藏奖励页卡牌 tooltip。
@@ -969,17 +975,16 @@ _refresh_result_preview()
 
 ### RemoveReward 继续清理页面专属小边界
 
-`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip 和牌组同步模块。本轮新增了删除页专属的牌组卡牌单选 presenter。
+`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip 和牌组同步模块。删除页专属的牌组卡牌单选 presenter 和牌组显示清理 cleaner 也已经拆出。
 
 下一步可继续扫描：
 
 ```text
-_clear_deck_display()
 _on_confirm_pressed()
 _remove_card_from_deck()
 ```
 
-优先级上，`_clear_deck_display()` 只涉及节点释放和状态清空，风险低于确认删除动画和牌组写入。`_remove_card_from_deck()` 与 `CraftReward.gd` 的 GlobalDB 写入有相似边界，但会影响实际删牌结果，拆前要单独评估 deck_manager 与 GlobalDB 的兼容路径。
+下一步不要急着同时拆确认删除动画和牌组写入。`_remove_card_from_deck()` 与 `CraftReward.gd` 的 GlobalDB 写入有相似边界，但会影响实际删牌结果，拆前要单独评估 deck_manager 与 GlobalDB 的兼容路径。
 
 ### 不要急着继续拆 HexMap
 

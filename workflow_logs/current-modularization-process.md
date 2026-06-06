@@ -6207,3 +6207,86 @@ RemoveReward.gd 的牌组卡牌点击单选表现已拆出 presenter。
 下一批优先评估 _clear_deck_display()，它只涉及节点释放和状态清空，风险低于 _on_confirm_pressed() 和 _remove_card_from_deck()。
 暂不同时拆确认删除动画和 GlobalDB/deck_manager 写入。
 ```
+
+## RemoveReward.gd 第二批牌组显示清理拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批继续处理 `RemoveReward.gd`，先用 `rg` 扫描 `_clear_deck_display()`、`_on_confirm_pressed()` 和 `_remove_card_from_deck()`。确认删除动画与牌组写入都涉及真实删除结果，不适合和清屏一起拆。因此本批只拆 `_clear_deck_display()` 的显示节点释放和展示状态清空。
+
+目标函数和轮廓：
+
+```text
+RemoveReward.gd::_clear_deck_display()
+RemoveReward.gd::open()
+RemoveReward.gd::close()
+RemoveReward.gd::_generate_deck_display()
+RemoveDeckDisplayCleaner.gd::clear_deck_display(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+current_deck_cards
+selected_draft_card
+original_deck_card_ids
+deck_grid
+selected_card_display
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/RemoveDeckDisplayCleaner.gd
+```
+
+模块边界：
+
+- `RemoveDeckDisplayCleaner.gd` 只负责清空删除奖励页的牌组显示节点和展示状态。
+- 它不删除真实牌组数据，不关闭场景，也不生成新的卡牌。
+- `RemoveReward.gd` 保留 `_clear_deck_display()` 旧入口，只接收 cleaner 返回的 `selected_draft_card` 清空状态。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+current_deck_cards queue_free、current_deck_cards 清空、original_deck_card_ids 清空、deck_grid 子节点清空和 selected_card_display 子节点清空从 RemoveReward.gd 收口到 RemoveDeckDisplayCleaner。
+主脚本不再直接维护清屏细节，只保留 open/close/generate 调用旧入口。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 RemoveDeckDisplayCleaner.gd 条目。
+当前优化方向已更新为继续评估 RemoveReward.gd 的 _remove_card_from_deck() 与 _on_confirm_pressed()。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：116 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+remove_reward.tscn 仍输出既有的 CardManager 手动注入提示；in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+RemoveReward.gd 的牌组卡牌单选表现和牌组显示清理都已拆出。
+确认删除动画和实际删除数据写入仍在主脚本内。
+```
+
+下一步计划：
+
+```text
+下一批优先重新评估 _remove_card_from_deck() 是否能拆成删除规则/同步桥接的小边界。
+如果 deck_manager 与 GlobalDB 兼容路径仍不够清楚，就先停止 RemoveReward，转向其他奖励页或重新扫描 ShopManager。
+```
