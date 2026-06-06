@@ -15,6 +15,7 @@ const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/present
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
 const RewardCardTextureExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardTextureExtractor.gd")
+const RewardRealCardSpawnerScript = preload("res://scene/in_scene/rewards/factory/RewardRealCardSpawner.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -69,6 +70,7 @@ var _tooltip_adapter = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
 var _card_texture_extractor = null
+var _real_card_spawner = null
 
 
 func _get_card_manager_locator():
@@ -99,6 +101,12 @@ func _get_card_texture_extractor():
 	if _card_texture_extractor == null:
 		_card_texture_extractor = RewardCardTextureExtractorScript.new()
 	return _card_texture_extractor
+
+
+func _get_real_card_spawner():
+	if _real_card_spawner == null:
+		_real_card_spawner = RewardRealCardSpawnerScript.new()
+	return _real_card_spawner
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -255,19 +263,16 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 	if not deck_manager or not deck_manager.card_factory:
 		return
 	
-	# 让工厂真实生产一张牌
-	deck_manager.card_factory.create_card(card_id, temp_pile)
-	
-	# 等待一帧确保卡牌创建完成
-	await get_tree().process_frame
-	
 	# 安全检查：确保 temp_pile 仍然有效
 	if not is_instance_valid(temp_pile):
 		print("❌ _steal_card_data: temp_pile 已被释放，无法继续")
 		return
 	
 	# 获取刚创建的真实卡牌
-	var real_card = temp_pile._held_cards[-1] if temp_pile._held_cards.size() > 0 else null
+	var real_card = await _get_real_card_spawner().spawn_into_temp_pile(card_id, deck_manager.card_factory, temp_pile, self)
+	if not is_instance_valid(temp_pile):
+		print("❌ _steal_card_data: temp_pile 已被释放，无法继续")
+		return
 	if not real_card:
 		print("警告: 无法为卡牌 %s 创建真实实例" % card_id)
 		return

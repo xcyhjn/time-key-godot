@@ -3792,6 +3792,75 @@ P1 奖励页共享读取链路继续收口：CardManager 定位、Tooltip 适配
 
 下一批建议开始评估 `_steal_card_data()`，但不要一次把四页全部逻辑改成大模块。更稳妥的路径是先提取“真实卡牌创建与等待 ready”的小助手，保留关键词、描述、贴图赋值和临时牌堆清理由原页面处理；如果这一步验证稳定，再继续提取 DraftCard 数据填充器。
 
+## 奖励页第六批真实卡牌生成助手拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `_steal_card_data()` 里“让 card_factory 真实生产一张牌、等待一帧、从临时牌堆取回刚创建真实卡牌”的小片段。四个奖励页面继续保留 `_steal_card_data(card_id, draft_card, temp_pile)` 主入口，描述读取、关键词复制、贴图赋值、从临时牌堆移除真实卡牌和 `queue_free()` 清理都仍留在原页面中。
+
+目标函数范围：
+
+```text
+AcquireReward.gd::_steal_card_data(card_id, draft_card, temp_pile)
+RemoveReward.gd::_steal_card_data(card_id, draft_card, temp_pile)
+CraftReward.gd::_steal_card_data(card_id, draft_card, temp_pile)
+ShopManager.gd::_steal_card_data(card_id, draft_card, temp_pile)
+```
+
+当前触碰的数据和节点：
+
+```text
+deck_manager.card_factory
+card_factory.create_card(card_id, temp_pile)
+temp_pile._held_cards
+owner.get_tree().process_frame
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/factory/RewardRealCardSpawner.gd
+```
+
+模块边界：
+
+- `RewardRealCardSpawner.gd` 只负责把 `card_factory` 生成的真实卡牌临时放入奖励页幽灵牌堆，并返回刚创建的真实卡牌节点。
+- 它不复制描述、关键词或贴图，不修改 DraftCard，也不负责从临时牌堆移除真实卡牌。
+- 四个奖励页面保留各自的依赖检查和错误提示风格，避免本批顺手统一日志或改变失败分支表现。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+四个奖励页原本重复维护 card_factory.create_card、等待 process_frame、检查 temp_pile 是否还有效、从 temp_pile._held_cards 取最后一张真实卡牌。
+现在真实卡牌生成与取回由 RewardRealCardSpawner 统一维护，页面只在 _steal_card_data 中继续编排后续数据填充和清理。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/acquire_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+P1 奖励页拆分已经覆盖共享定位、Tooltip、临时牌堆创建、描述读取、贴图读取和真实卡牌生成取回。`_steal_card_data()` 仍在四个页面中，但内部最敏感的真实卡牌创建片段已经有独立模块承接，后续可以更安全地继续拆数据填充。
+
+当前未拆完的奖励页重复点主要剩下关键词复制、DraftCard 数据填充顺序、临时真实卡牌清理和奖励页飞入牌库动画。ShopManager 仍有商品生成、价格刷新和调试日志偏重的问题。
+
+### 下一步打算
+
+下一批建议评估“真实卡牌清理”或“DraftCard 数据填充”二选一。更稳的选择是先抽取 `RewardRealCardCleaner`，只收口 `temp_pile.remove_card(real_card)` 与 `real_card.queue_free()`；如果直接抽 DraftCard 数据填充器，会同时碰描述、关键词、贴图和赋值顺序，风险更高。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06
