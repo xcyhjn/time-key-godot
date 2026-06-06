@@ -10,6 +10,7 @@ signal reward_scene_close_requested(scene_instance: Node)
 var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
+const RewardCardFlyToDeckAnimatorScript = preload("res://scene/in_scene/rewards/animation/RewardCardFlyToDeckAnimator.gd")
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
@@ -96,6 +97,7 @@ var _card_texture_extractor = null
 var _real_card_spawner = null
 var _real_card_cleaner = null
 var _draft_card_data_applier = null
+var _fly_to_deck_animator = null
 
 
 func _get_pricing_presenter():
@@ -156,6 +158,12 @@ func _get_draft_card_data_applier():
 	if _draft_card_data_applier == null:
 		_draft_card_data_applier = RewardDraftCardDataApplierScript.new()
 	return _draft_card_data_applier
+
+
+func _get_fly_to_deck_animator():
+	if _fly_to_deck_animator == null:
+		_fly_to_deck_animator = RewardCardFlyToDeckAnimatorScript.new()
+	return _fly_to_deck_animator
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -423,68 +431,42 @@ func _on_shop_card_clicked(clicked_card: Control):
 
 ## 飞入牌库动画 (模仿 _on_confirm_pressed)
 func _fly_to_deck_pile(card: Control):
-	# 1. 创建红色尾焰 Line2D 拖影
-	var trail = Line2D.new()
-	trail.width = trail_width
-	trail.default_color = trail_color
-	trail.z_index = card.z_index - 1
-	
-	# 让拖影头部尖锐，尾部变细
-	var curve = Curve.new()
-	curve.add_point(Vector2(0, 0))
-	curve.add_point(Vector2(1, 1))
-	trail.width_curve = curve
-	self.add_child(trail)
-	
-	# 2. 飞行 Tween 动画 (飞向左下角抽牌堆)
 	var deck_target_pos = Vector2(100, get_viewport().get_visible_rect().size.y + 100)
-	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-	
-	tw.tween_property(card, "global_position", deck_target_pos, fly_duration)
-	tw.tween_property(card, "scale", Vector2.ZERO, fly_duration)
-	tw.tween_property(card, "rotation", PI * 2, fly_duration)  # 炫酷旋转
-	
-	# 3. 实时更新红尾焰轨迹
-	var trail_timer = Timer.new()
-	trail_timer.wait_time = 0.01
-	trail_timer.autostart = true
-	self.add_child(trail_timer)
-	
-	trail_timer.timeout.connect(func():
-		trail.add_point(card.global_position + card.size / 2)
-		# 保持拖影长度不超过 20 个点
-		if trail.get_point_count() > 20:
-			trail.remove_point(0)
+	var card_id := str(card.card_id)
+	_get_fly_to_deck_animator().play(
+		self,
+		card,
+		deck_target_pos,
+		fly_duration,
+		trail_color,
+		trail_width,
+		func():
+			_on_fly_to_deck_finished(card_id, card)
 	)
-	
-	# 4. 动画结束后的清理与实质数据添加
-	tw.chain().tween_callback(func():
-		trail_timer.queue_free()
-		trail.queue_free()
-		card.queue_free()
-		
-		# ★ 核心数据打通：先写入全局牌组，再同步刷新当前局内抽牌堆。
-		if deck_manager != null and deck_manager.has_method("add_card_to_deck"):
-			deck_manager.add_card_to_deck(card.card_id)
 
-		var main = get_tree().get_first_node_in_group("MainBoard")
-		if (
-			deck_manager != null
-			and deck_manager.has_method("sync_runtime_deck_from_global")
-			and main
-			and main.deck_pile
-		):
-			deck_manager.sync_runtime_deck_from_global(main.deck_pile)
-			if main.has_method("update_counts_and_ui"):
-				main.update_counts_and_ui()
-			print("✅ 已成功将 %s 加入全局牌组并同步抽牌堆！" % card.card_id)
-		
-		# 从商店列表中移除
-		var idx = shop_cards.find(card)
-		if idx != -1:
-			shop_cards.remove_at(idx)
-			card_price_map.erase(card)
-	)
+
+func _on_fly_to_deck_finished(card_id: String, card: Control) -> void:
+	# ★ 核心数据打通：先写入全局牌组，再同步刷新当前局内抽牌堆。
+	if deck_manager != null and deck_manager.has_method("add_card_to_deck"):
+		deck_manager.add_card_to_deck(card_id)
+
+	var main = get_tree().get_first_node_in_group("MainBoard")
+	if (
+		deck_manager != null
+		and deck_manager.has_method("sync_runtime_deck_from_global")
+		and main
+		and main.deck_pile
+	):
+		deck_manager.sync_runtime_deck_from_global(main.deck_pile)
+		if main.has_method("update_counts_and_ui"):
+			main.update_counts_and_ui()
+		print("✅ 已成功将 %s 加入全局牌组并同步抽牌堆！" % card_id)
+
+	# 从商店列表中移除
+	var idx = shop_cards.find(card)
+	if idx != -1:
+		shop_cards.remove_at(idx)
+		card_price_map.erase(card)
 
 ## ==========================================
 ## ★ 商店管理操作

@@ -4001,6 +4001,76 @@ P1 奖励页 `_steal_card_data()` 现在已经拆成真实卡牌生成、DraftCa
 
 下一批建议重新扫描奖励页剩余重复点。候选方向有两个：其一是奖励页飞入牌库动画，它仍可能在 AcquireReward 与 ShopManager 之间重复；其二是 ShopManager 商品生成与价格刷新流程，属于更偏页面专属的拆分。优先级上先查飞入动画是否同形，若风险面清晰再拆。
 
+## 奖励页第九批飞入牌库视觉动画拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆获取奖励页和商店页重复的卡牌飞入牌库视觉动画。保留 `_fly_to_deck_pile(card)` 旧入口，只把红色拖影、飞行 tween、缩放、旋转、拖影计时器和动画结束时的视觉节点清理交给统一动画 runner；不改变购买扣费、加入牌组、同步抽牌堆、商店列表移除或奖励页关闭流程。
+
+目标函数范围：
+
+```text
+AcquireReward.gd::_fly_to_deck_pile(card)
+ShopManager.gd::_fly_to_deck_pile(card)
+```
+
+当前触碰的数据和节点：
+
+```text
+card.global_position
+card.scale
+card.rotation
+Line2D 拖影
+Timer 拖影采样
+trail_color
+trail_width
+fly_duration
+动画完成回调
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/animation/RewardCardFlyToDeckAnimator.gd
+```
+
+模块边界：
+
+- `RewardCardFlyToDeckAnimator.gd` 只负责奖励页卡牌飞入牌库的视觉动画。
+- 它不写入牌组数据，不同步抽牌堆，也不决定奖励页关闭或商店状态。
+- `AcquireReward.gd` 与 `ShopManager.gd` 继续保留各自的完成回调，页面专属的入库、同步、关闭和商店列表移除逻辑不在本批迁移。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+AcquireReward 和 ShopManager 原本重复维护 Line2D 拖影、Curve 宽度曲线、飞行 tween、拖影 Timer 和视觉清理。
+现在这些视觉动画步骤由 RewardCardFlyToDeckAnimator 统一维护，页面只负责给出目标位置和动画完成后的业务回调。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/acquire_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+P1 奖励页共享模块继续完善：奖励卡牌数据窃取链路、卡牌飞入牌库视觉动画都已经模块化。奖励页目录新增 `animation` 分类，和此前的 `bridges`、`factory`、`presenters`、`rules` 形成更完整的文件归档。
+
+目前 AcquireReward 和 ShopManager 的飞入动画视觉重复已收口，但入库同步逻辑仍各自保留。该同步逻辑虽然重复，但涉及奖励页关闭和商店状态移除差异，下一批需要先分析是否能只抽“入库同步”这一小块。
+
+### 下一步打算
+
+下一批优先评估 `add_card_to_deck` 与 `sync_runtime_deck_from_global` 的重复同步逻辑。如果两页完全一致，可以只抽 `RewardDeckSyncBridge`，让页面继续处理关闭和商店列表移除；如果有隐性差异，就转向 ShopManager 内部商品生成流程拆分。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06
