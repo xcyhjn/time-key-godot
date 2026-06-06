@@ -5377,3 +5377,81 @@ _on_refresh_pressed() 现在只保留刷新结算结果判断、商品重新生�
 下一批优先拆 _on_upgrade_pressed() 中的升级费用计算、时间币消费、升级次数/时代偏移更新和日志。
 暂不改升级后的 _generate_shop_items() 和 _update_price_display()。
 ```
+
+## ShopManager.gd 第二十一批升级费用结算拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆升级时代按钮的费用结算。它保留 `_on_upgrade_pressed()` 旧入口，只把升级费用计算、时间币消费、失败/成功日志、升级次数结果和本地时代偏移结果交给新规则模块；不改升级成功后的商品生成，也不改价格标签刷新。
+
+目标函数范围：
+
+```text
+_on_upgrade_pressed() 中 upgrade_cost 计算、_consume_timecoins(upgrade_cost)、升级失败日志、upgrade_count += 1、local_era_offset += 1、时代升级成功日志
+```
+
+当前触碰的数据和节点：
+
+```text
+upgrade_base_cost
+upgrade_count
+price_increment
+local_era_offset
+Callable(self, "_consume_timecoins")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/ShopUpgradePurchaseProcessor.gd
+```
+
+模块边界：
+
+- `ShopUpgradePurchaseProcessor.gd` 只负责商店升级按钮的费用结算和升级状态结果。
+- 它不生成商品，不更新价格标签，也不读取或修改全局时代。
+- `ShopManager.gd` 继续负责升级成功后的 `_generate_shop_items()` 和 `_update_price_display()`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+升级时代的费用计算、时间币消费、升级次数递增和本地时代偏移递增从 ShopManager.gd 收口到 ShopUpgradePurchaseProcessor。
+主脚本不再直接拼升级费用日志，只接收结算结果并决定是否继续免费刷新商店。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 ShopUpgradePurchaseProcessor.gd 条目。
+当前优化方向已更新为重新评估 ShopManager.gd 剩余边界。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：106 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 的购买路径、刷新费用结算和升级费用结算都已经拆出。
+_on_upgrade_pressed() 现在只保留升级结算结果判断、状态写回、商品重新生成和价格显示更新。
+```
+
+下一步计划：
+
+```text
+下一批先重新扫描 ShopManager.gd 剩余函数体量和耦合，不直接继续拆。
+优先判断 _update_price_display()、_generate_shop_items()、open_shop() 哪个边界还值得拆；如果收益不高，转向奖励页其他大文件如 CraftReward.gd。
+```

@@ -23,6 +23,7 @@ const ShopPurchasedItemRecordRemoverScript = preload("res://scene/in_scene/rewar
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopPurchaseValidatorScript = preload("res://scene/in_scene/rewards/rules/ShopPurchaseValidator.gd")
 const ShopRefreshPurchaseProcessorScript = preload("res://scene/in_scene/rewards/rules/ShopRefreshPurchaseProcessor.gd")
+const ShopUpgradePurchaseProcessorScript = preload("res://scene/in_scene/rewards/rules/ShopUpgradePurchaseProcessor.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
@@ -106,6 +107,7 @@ var _purchased_item_record_remover = null
 var _era_weight_selector = null
 var _purchase_validator = null
 var _refresh_purchase_processor = null
+var _upgrade_purchase_processor = null
 var _global_node_finder = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
@@ -172,6 +174,12 @@ func _get_refresh_purchase_processor():
 	if _refresh_purchase_processor == null:
 		_refresh_purchase_processor = ShopRefreshPurchaseProcessorScript.new()
 	return _refresh_purchase_processor
+
+
+func _get_upgrade_purchase_processor():
+	if _upgrade_purchase_processor == null:
+		_upgrade_purchase_processor = ShopUpgradePurchaseProcessorScript.new()
+	return _upgrade_purchase_processor
 
 
 func _get_global_node_finder():
@@ -500,19 +508,18 @@ func _on_refresh_pressed():
 
 ## 升级时代
 func _on_upgrade_pressed():
-	var upgrade_cost = upgrade_base_cost + (upgrade_count * price_increment)
-	
-	# 验证时间币
-	if not _consume_timecoins(upgrade_cost):
-		print("升级失败: 时间币不足! 需要: %d" % upgrade_cost)
+	var result: Dictionary = _get_upgrade_purchase_processor().process_upgrade(
+		upgrade_base_cost,
+		upgrade_count,
+		price_increment,
+		local_era_offset,
+		Callable(self, "_consume_timecoins")
+	)
+	if not result.get("success", false):
 		return
-	
-	upgrade_count += 1
-	local_era_offset += 1
-	
-	print("时代升级成功! 消耗: %d 时间币, 升级次数: %d, 本地时代偏移: %d" % [
-		upgrade_cost, upgrade_count, local_era_offset
-	])
+
+	upgrade_count = result.get("upgrade_count", upgrade_count)
+	local_era_offset = result.get("local_era_offset", local_era_offset)
 	
 	# 免费刷新商店
 	_generate_shop_items()

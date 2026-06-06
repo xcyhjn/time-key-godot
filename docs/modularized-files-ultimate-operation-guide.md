@@ -563,6 +563,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要生成商品，不更新价格标签，也不要处理时代升级。
 - 改进：后续可和升级费用结算模块共享更小的费用消费 helper。
 
+#### `scene/in_scene/rewards/rules/ShopUpgradePurchaseProcessor.gd`
+
+- 用途：处理商店升级按钮的费用计算、时间币消费、升级次数和本地时代偏移结果。
+- 维护：不要生成商品，不更新价格标签，也不要读取或修改全局时代。
+- 改进：后续可和刷新费用结算模块共享更小的费用消费 helper。
+
 ## HexMap 拆分模块
 
 这些文件服务于 `scene/in_scene/hex_map.gd`。详细数据契约看 `docs/hex-map-ultimate-operation-guide.md`，这里只列每个文件的维护入口。
@@ -885,16 +891,17 @@ git diff --check
 
 ## 当前最值得继续优化的方向
 
-### 继续收口 ShopManager 的刷新和升级结算
+### 评估 ShopManager 剩余边界
 
-`ShopManager.gd` 的购买路径已经拆出价格校验、商品槽脱离、飞行动画、牌库同步和商店记录移除。下一步优先看刷新和升级按钮：
+`ShopManager.gd` 的购买路径、刷新费用结算和升级费用结算都已经拆出。下一步优先重新评估剩余函数，而不是继续按行数机械拆。
 
 ```text
-_on_refresh_pressed()
-_on_upgrade_pressed()
+_generate_shop_items()
+_update_price_display()
+open_shop()
 ```
 
-建议按“刷新费用结算”和“升级费用结算”分批处理，不要一次性同时改商品生成和时代偏移。
+如果继续处理商店，建议先看 `_update_price_display()` 是否可以只保留价格计算和标签更新的编排；不要同时改商品生成、时代偏移和 CardDataPool 读取。
 
 ### 不要急着继续拆 HexMap
 
