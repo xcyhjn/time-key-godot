@@ -13,6 +13,7 @@ var CardManager = preload("res://addons/card-framework/card_manager.gd")
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
+const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -65,6 +66,7 @@ var _title_base_position: Vector2 = Vector2.ZERO
 var _card_manager_locator = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
+var _card_description_extractor = null
 
 
 func _get_card_manager_locator():
@@ -83,6 +85,12 @@ func _get_temp_pile_factory():
 	if _temp_pile_factory == null:
 		_temp_pile_factory = RewardTempPileFactoryScript.new()
 	return _temp_pile_factory
+
+
+func _get_card_description_extractor():
+	if _card_description_extractor == null:
+		_card_description_extractor = RewardCardDescriptionExtractorScript.new()
+	return _card_description_extractor
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -456,25 +464,7 @@ func _extract_front_texture(real_card: Node, card_id: String) -> Texture2D:
 
 
 func _extract_card_description(real_card: Node) -> String:
-	if real_card.has_method("setup_card_data"):
-		real_card.setup_card_data()
-		await get_tree().process_frame
-
-	if real_card.has_method("get_parsed_description"):
-		var parsed = real_card.get_parsed_description()
-		if parsed != "":
-			return parsed
-
-	if _object_has_property(real_card, &"raw_description"):
-		var raw_description = real_card.get("raw_description")
-		if typeof(raw_description) == TYPE_STRING and raw_description != "":
-			return raw_description
-
-	var card_info = real_card.get("card_info")
-	if typeof(card_info) == TYPE_DICTIONARY and card_info.has("效果"):
-		return str(card_info.get("效果", ""))
-
-	return ""
+	return await _get_card_description_extractor().extract_description(real_card, self)
 
 ## 尝试自动查找 CardManager 节点
 func _try_find_card_manager():
