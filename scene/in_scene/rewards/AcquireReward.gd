@@ -10,6 +10,7 @@ signal reward_scene_close_requested(scene_instance: Node)
 var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
+const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -56,6 +57,13 @@ var selected_draft_card: Control = null
 
 ## 获取卡牌奖励页也复用通用 Tooltip presenter。
 var tooltip_presenter: CardTooltipPresenter = null
+var _card_manager_locator = null
+
+
+func _get_card_manager_locator():
+	if _card_manager_locator == null:
+		_card_manager_locator = RewardCardManagerLocatorScript.new()
+	return _card_manager_locator
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -470,41 +478,12 @@ func _extract_card_description(real_card: Node) -> String:
 
 ## 尝试自动查找 CardManager 节点
 func _try_find_card_manager():
-	# 方案1: 通过元数据查找 (CardManager 在 _ready() 中将自己注册到场景根)
-	var tree_root = get_tree().root
-	if tree_root and tree_root.has_meta("card_manager"):
-		var card_manager = tree_root.get_meta("card_manager")
-		if card_manager is CardManager:
-			deck_manager = card_manager
-			print("✅ AcquireReward: 通过场景根元数据找到 CardManager")
-			return
-	
-	# 方案2: 通过当前场景元数据查找
-	var scene_root = get_tree().current_scene
-	if scene_root and scene_root.has_meta("card_manager"):
-		var card_manager = scene_root.get_meta("card_manager")
-		if card_manager is CardManager:
-			deck_manager = card_manager
-			print("✅ AcquireReward: 通过当前场景元数据找到 CardManager")
-			return
-	
-	# 方案3: 通过父节点链查找 (如果 AcquireReward 是 CardManager 的子节点)
-	var parent = get_parent()
-	while parent:
-		if parent is CardManager:
-			deck_manager = parent
-			print("✅ AcquireReward: 通过父节点链找到 CardManager: %s" % parent.name)
-			return
-		parent = parent.get_parent()
-	
-	# 方案4: 通过节点名查找 (回退方案)
-	var scene_root_node = get_tree().root
-	var card_manager_node = scene_root_node.find_child("CardManager", true, false)
-	if card_manager_node and card_manager_node is CardManager:
-		deck_manager = card_manager_node
-		print("✅ AcquireReward: 通过节点名找到 CardManager: %s" % card_manager_node.name)
+	var card_manager = _get_card_manager_locator().find_card_manager(self, CardManager)
+	if card_manager != null:
+		deck_manager = card_manager
+		print("✅ AcquireReward: 自动找到 CardManager: %s" % card_manager.name)
 		return
-	
+
 	print("⚠️ AcquireReward: 未能自动找到 CardManager，需要手动调用 set_deck_manager()")
 
 ## ==========================================

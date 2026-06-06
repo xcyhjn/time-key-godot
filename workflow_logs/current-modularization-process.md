@@ -3634,6 +3634,62 @@ Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未
 Godot 加载奖励页 craft_reward、shop、acquire_reward、remove_reward 场景退出码均为 0，错误筛选未出现脚本解析、编译或旧全局类缓存冲突。
 ```
 
+## 奖励页第一批 CardManager 查找桥接拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `AcquireReward.gd` 和 `RemoveReward.gd` 中重复的 CardManager 自动查找逻辑。它保留两个页面原有 `_try_find_card_manager()` 入口，只把 root metadata、current_scene metadata、父节点链和节点名回退查找交给共用桥接模块；不生成奖励卡牌，不改确认获取或删除流程，也不移动卡牌到牌组。
+
+目标函数范围：
+
+```text
+AcquireReward.gd::_try_find_card_manager()
+RemoveReward.gd::_try_find_card_manager()
+```
+
+当前触碰的数据和节点：
+
+```text
+deck_manager
+get_tree().root
+get_tree().current_scene
+card_manager metadata
+CardManager 节点名回退查找
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd
+```
+
+模块边界：
+
+- `RewardCardManagerLocator.gd` 只负责奖励页面自动查找 CardManager。
+- 它不生成奖励卡牌，不修改牌组，也不处理奖励确认或退出流程。
+- `AcquireReward.gd` 和 `RemoveReward.gd` 继续保留旧查找入口，并负责把查找结果写入自身 `deck_manager`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+AcquireReward 和 RemoveReward 里重复的四段 CardManager 查找现在统一交给 RewardCardManagerLocator。
+后续奖励页如果继续接入 CardManager，可以复用同一个桥接模块，而不是继续复制父链和全树查找逻辑。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/acquire_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现脚本解析或编译类错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现脚本解析或编译类错误。
+```
+
 ## DragShapeController.gd 第十四批拒绝动画拆分记录
 
 日期：2026-06-06
