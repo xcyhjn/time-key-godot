@@ -5963,3 +5963,84 @@ CraftReward.gd 的选择条目构建已拆成纯规则模块，主脚本保留�
 下一批先重新评估 _create_selection_card() 和 _refresh_result_preview()。
 如果继续拆，优先找不涉及 await 或牌组写入的小边界；如果都偏高风险，就转向 RemoveReward.gd 或 ShopManager.gd。
 ```
+
+## CraftReward.gd 第十一批选择卡状态表现拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批先评估 `_create_selection_card()` 和 `_refresh_result_preview()`。`_refresh_result_preview()` 仍涉及配方刷新、异步预览卡创建、结果槽挂载和信号连接，暂不拆。本批只拆 `_create_selection_card(entry, temp_pile)` 中同步的选择卡视觉状态和点击入口，不碰 DraftCard 创建、`await _steal_card_data()`、`deck_grid.add_child()` 或 `current_deck_cards`。
+
+目标函数和轮廓：
+
+```text
+CraftReward.gd::_create_selection_card(entry, temp_pile)
+CraftReward.gd::_on_deck_card_clicked(clicked_card, entry)
+CraftSelectionCardStatePresenter.gd::apply_selection_card_state(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+draft_card
+entry.selected
+entry.dimmed
+entry.disabled
+incompatible_card_alpha
+Callable(self, "_on_deck_card_clicked")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/CraftSelectionCardStatePresenter.gd
+```
+
+模块边界：
+
+- `CraftSelectionCardStatePresenter.gd` 只负责选择列表卡牌的 selected、dimmed、disabled、hover、tooltip 和点击入口。
+- 它不创建卡牌，不读取真实卡数据，不写 pending 选择，也不修改牌组。
+- `CraftReward.gd` 继续负责异步数据读取、节点挂载和选择点击后的状态变更。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+选择卡 selected 显示、tooltip 开关、dimmed/hover 状态、disabled mouse_filter 和 card_clicked 连接从 CraftReward.gd 收口到 CraftSelectionCardStatePresenter。
+主脚本不再直接维护选择卡状态表现，只传入点击回调和 entry。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftSelectionCardStatePresenter.gd 条目。
+当前优化方向已更新为继续评估结果预览刷新和合成结果入库。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：113 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的选择条目构建、选择标题和选择卡状态表现都已拆出。
+_create_selection_card() 仍保留 DraftCard 创建、异步数据复制和节点挂载。
+```
+
+下一步计划：
+
+```text
+下一批优先重新评估 _refresh_result_preview() 是否还有不涉及 await 的小边界。
+如果风险仍高，就转向 _apply_crafting_result_to_deck() 的牌组索引计算，或转向 RemoveReward.gd。
+```

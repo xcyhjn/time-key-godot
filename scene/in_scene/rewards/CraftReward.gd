@@ -16,6 +16,7 @@ const CraftResultDescriptionContentPresenterScript = preload("res://scene/in_sce
 const CraftSlotPlaceholderPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd")
 const CraftPreviewCleanupPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftPreviewCleanupPresenter.gd")
 const CraftSelectionTitlePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSelectionTitlePresenter.gd")
+const CraftSelectionCardStatePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSelectionCardStatePresenter.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
@@ -91,6 +92,7 @@ var _result_description_content_presenter = null
 var _slot_placeholder_presenter = null
 var _preview_cleanup_presenter = null
 var _selection_title_presenter = null
+var _selection_card_state_presenter = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
@@ -168,6 +170,12 @@ func _get_selection_title_presenter():
 	if _selection_title_presenter == null:
 		_selection_title_presenter = CraftSelectionTitlePresenterScript.new()
 	return _selection_title_presenter
+
+
+func _get_selection_card_state_presenter():
+	if _selection_card_state_presenter == null:
+		_selection_card_state_presenter = CraftSelectionCardStatePresenterScript.new()
+	return _selection_card_state_presenter
 
 
 func _get_tooltip_adapter():
@@ -409,28 +417,12 @@ func _create_selection_card(entry: Dictionary, temp_pile: Node) -> void:
 	draft_card.set_meta("deck_index", entry["deck_index"])
 	draft_card.call_deferred("set", "original_scale", draft_card.scale)
 
-	if entry["selected"] and draft_card.has_method("set_selected"):
-		draft_card.set_selected(true)
-		if draft_card.has_method("set_tooltip_enabled"):
-			draft_card.set_tooltip_enabled(true)
-
-	if entry["dimmed"]:
-		if draft_card.has_method("set_dimmed"):
-			draft_card.set_dimmed(true, 1.0 - incompatible_card_alpha)
-		if draft_card.has_method("set_hover_effect_enabled"):
-			draft_card.set_hover_effect_enabled(false)
-	else:
-		if draft_card.has_method("set_dimmed"):
-			draft_card.set_dimmed(false)
-		if draft_card.has_method("set_hover_effect_enabled"):
-			draft_card.set_hover_effect_enabled(true)
-
-	if entry["disabled"]:
-		draft_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if draft_card.has_method("set_tooltip_enabled"):
-			draft_card.set_tooltip_enabled(false)
-	else:
-		draft_card.card_clicked.connect(_on_deck_card_clicked.bind(entry))
+	_get_selection_card_state_presenter().apply_selection_card_state(
+		draft_card,
+		entry,
+		incompatible_card_alpha,
+		Callable(self, "_on_deck_card_clicked")
+	)
 
 
 func _on_deck_card_clicked(clicked_card: Control, entry: Dictionary) -> void:
