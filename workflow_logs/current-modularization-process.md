@@ -5537,3 +5537,89 @@ _get_cards_by_era(era) 现在只保留旧入口转发，商品生成主流程仍
 下一批优先评估 _update_price_display() 是否值得继续薄化。
 如果它已经只是价格和标签的短编排，就不要为拆而拆，转向 CraftReward.gd 或其他奖励页大文件。
 ```
+
+## CraftReward.gd 第六批结果描述内容显示拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批先按上一批计划评估 `ShopManager.gd::_update_price_display()`，确认它已经通过 `ShopPricingPresenter` 维护刷新/升级费用计算和标签更新，继续拆收益很低。因此本批转向 `CraftReward.gd` 的低风险页面专属边界，只拆合成结果描述内容的读取、显示和隐藏。
+
+目标函数和轮廓：
+
+```text
+ShopManager.gd::_update_price_display()
+ShopPricingPresenter.gd::calculate_refresh_cost(...)
+ShopPricingPresenter.gd::calculate_upgrade_cost(...)
+ShopPricingPresenter.gd::update_price_labels(...)
+CraftReward.gd::_update_result_description()
+CraftReward.gd::_position_result_description_panel()
+CraftResultDescriptionContentPresenter.gd::update_result_description(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+result_preview_card
+result_description_panel
+result_description_label
+get_parsed_description()
+raw_description
+Callable(self, "_object_has_property")
+Callable(self, "_position_result_description_panel")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/CraftResultDescriptionContentPresenter.gd
+```
+
+模块边界：
+
+- `CraftResultDescriptionContentPresenter.gd` 只负责结果描述文本读取、Label 写入、Panel 显示或隐藏。
+- 它不配置面板样式，不计算面板位置，不修改合成结果、槽位状态或牌组。
+- `CraftReward.gd` 保留 `_update_result_description()` 旧入口，继续把定位交给 `_position_result_description_panel()` 和既有 PositionPresenter。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+结果预览卡说明文本读取、raw_description 兜底、默认“无效果文本”和面板显示隐藏从 CraftReward.gd 收口到 CraftResultDescriptionContentPresenter。
+主脚本不再直接维护结果说明内容显示细节，只保留旧入口转发和定位入口。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftResultDescriptionContentPresenter.gd 条目。
+当前优化方向已更新为 CraftReward.gd 页面专属小边界优先。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：108 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的合成结果描述面板已经拆成样式、内容和定位三个 presenter。
+_update_result_description() 现在只保留旧入口转发，合成状态和牌组写入未改。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 CraftReward.gd 的 _refresh_slot_placeholders()、_clear_all_previews()、_clear_slot_preview()、_clear_result_preview()。
+如果这些函数适合合并成预览清理/占位符 presenter，就只拆 UI 状态整理；暂不碰 _apply_crafting_result_to_deck() 和 _generate_selection_cards()。
+```

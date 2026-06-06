@@ -477,6 +477,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要读取卡牌描述，不计算位置。
 - 改进：与共享 tooltip 样式合并时，优先保持入口参数稳定。
 
+#### `scene/in_scene/rewards/presenters/CraftResultDescriptionContentPresenter.gd`
+
+- 用途：读取合成结果预览卡说明文本，并显示或隐藏结果描述面板。
+- 维护：不要计算面板位置，不配置面板样式，不修改合成状态。
+- 改进：如果卡牌说明数据结构稳定，可以减少 `raw_description` 兜底探测。
+
 #### `scene/in_scene/rewards/presenters/CraftResultDescriptionPositionPresenter.gd`
 
 - 用途：计算合成结果描述面板尺寸和屏幕内位置。
@@ -899,7 +905,7 @@ git diff --check
 
 ### 评估 ShopManager 剩余边界
 
-`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算和 CardDataPool 读取桥接都已经拆出。下一步优先重新评估剩余函数，而不是继续按行数机械拆。
+`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算和 CardDataPool 读取桥接都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，继续拆收益很低。
 
 ```text
 _generate_shop_items()
@@ -907,7 +913,20 @@ _update_price_display()
 open_shop()
 ```
 
-如果继续处理商店，建议先看 `_update_price_display()` 是否还有必要薄化；如果收益很小，就转向 `CraftReward.gd` 或其他奖励页大文件。不要同时改商品生成、时代偏移和价格显示。
+如果继续处理商店，优先只评估 `_generate_shop_items()` 的单个商品生成编排；不要同时改商品生成、时代偏移和价格显示。更稳的下一步是继续清理 `CraftReward.gd` 的页面专属小边界。
+
+### CraftReward 继续清理页面专属小边界
+
+`CraftReward.gd` 已经拆出配方查询、连接线、结果描述样式/内容/定位、槽位预览布局和奖励页通用卡牌读取模块。下一步可优先评估：
+
+```text
+_refresh_slot_placeholders()
+_clear_all_previews()
+_clear_slot_preview()
+_clear_result_preview()
+```
+
+这些函数都属于 UI 状态整理，风险低于 `_apply_crafting_result_to_deck()` 和 `_generate_selection_cards()`。
 
 ### 不要急着继续拆 HexMap
 

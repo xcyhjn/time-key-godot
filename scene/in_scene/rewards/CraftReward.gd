@@ -11,6 +11,7 @@ const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards
 const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd")
 const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPreviewLayoutPresenter.gd")
 const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPositionPresenter.gd")
+const CraftResultDescriptionContentPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionContentPresenter.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
@@ -81,6 +82,7 @@ var _connection_line_presenter = null
 var _result_description_panel_presenter = null
 var _slot_preview_layout_presenter = null
 var _result_description_position_presenter = null
+var _result_description_content_presenter = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
@@ -128,6 +130,12 @@ func _get_result_description_position_presenter():
 	if _result_description_position_presenter == null:
 		_result_description_position_presenter = CraftResultDescriptionPositionPresenterScript.new()
 	return _result_description_position_presenter
+
+
+func _get_result_description_content_presenter():
+	if _result_description_content_presenter == null:
+		_result_description_content_presenter = CraftResultDescriptionContentPresenterScript.new()
+	return _result_description_content_presenter
 
 
 func _get_tooltip_adapter():
@@ -734,24 +742,13 @@ func _refresh_slot_placeholders() -> void:
 
 
 func _update_result_description() -> void:
-	if not is_instance_valid(result_description_panel) or not is_instance_valid(result_description_label):
-		return
-
-	if is_instance_valid(result_preview_card):
-		var description_text = ""
-		if result_preview_card.has_method("get_parsed_description"):
-			description_text = result_preview_card.get_parsed_description()
-		elif _object_has_property(result_preview_card, &"raw_description"):
-			description_text = str(result_preview_card.get("raw_description"))
-
-		result_description_label.clear()
-		result_description_label.append_text(description_text if description_text != "" else "无效果文本")
-		result_description_panel.size = Vector2.ZERO
-		result_description_panel.show()
-		call_deferred("_position_result_description_panel")
-	else:
-		result_description_panel.hide()
-		result_description_label.clear()
+	_get_result_description_content_presenter().update_result_description(
+		result_preview_card,
+		result_description_panel,
+		result_description_label,
+		Callable(self, "_object_has_property"),
+		Callable(self, "_position_result_description_panel")
+	)
 
 
 func _setup_result_description_panel() -> void:
