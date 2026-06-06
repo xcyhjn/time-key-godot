@@ -6290,3 +6290,85 @@ RemoveReward.gd 的牌组卡牌单选表现和牌组显示清理都已拆出。
 下一批优先重新评估 _remove_card_from_deck() 是否能拆成删除规则/同步桥接的小边界。
 如果 deck_manager 与 GlobalDB 兼容路径仍不够清楚，就先停止 RemoveReward，转向其他奖励页或重新扫描 ShopManager。
 ```
+
+## RemoveReward.gd 第三批删牌数据处理拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批继续处理 `RemoveReward.gd`，先用 `rg` 扫描 `_remove_card_from_deck()`、`_get_current_deck_card_ids()`、`_on_confirm_pressed()`、`RewardDeckSyncBridge.sync_runtime_deck()` 和 `CraftReward.gd::_apply_crafting_result_to_deck()`。确认运行时抽牌堆同步已经由 `RewardDeckSyncBridge` 处理，确认删除动画仍涉及 UI 节点和关闭流程。因此本批只拆 `_remove_card_from_deck(card_id)` 里的删牌数据策略，不改同步桥、不改动画闭包、不改关闭流程。
+
+目标函数和轮廓：
+
+```text
+RemoveReward.gd::_remove_card_from_deck(card_id)
+RemoveReward.gd::_on_confirm_pressed()
+RemoveReward.gd::_get_current_deck_card_ids()
+RewardDeckSyncBridge.gd::sync_runtime_deck(owner, deck_manager)
+RemoveDeckCardRemovalProcessor.gd::remove_card_from_deck(deck_manager, card_id)
+```
+
+当前触碰的数据和接口：
+
+```text
+deck_manager.remove_card_from_deck(card_id)
+GlobalDB.player_deck.has(card_id)
+GlobalDB.player_deck.erase(card_id)
+RewardDeckSyncBridge.sync_runtime_deck(self, deck_manager)
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/RemoveDeckCardRemovalProcessor.gd
+```
+
+模块边界：
+
+- `RemoveDeckCardRemovalProcessor.gd` 只负责从牌组数据中移除一张指定卡。
+- 它不同步运行时抽牌堆，不关闭奖励页，也不处理删除动画或 UI 节点。
+- `RemoveReward.gd` 保留 `_remove_card_from_deck(card_id)` 旧入口，并继续在旧入口里调用 `RewardDeckSyncBridge.sync_runtime_deck(...)`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+deck_manager.remove_card_from_deck 优先路径、GlobalDB.player_deck 回退路径、第一张匹配卡删除和删牌日志从 RemoveReward.gd 收口到 RemoveDeckCardRemovalProcessor。
+主脚本不再直接维护删牌数据策略，只处理旧入口和运行时抽牌堆同步。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 RemoveDeckCardRemovalProcessor.gd 条目。
+当前优化方向已更新为评估 _get_current_deck_card_ids() 和 _on_confirm_pressed()。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：117 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+remove_reward.tscn 仍输出既有的 CardManager 手动注入提示；in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+RemoveReward.gd 的牌组卡牌单选表现、牌组显示清理和删牌数据处理都已拆出。
+确认删除动画和当前牌组 ID 读取仍在主脚本内。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 _get_current_deck_card_ids() 是否值得和 CraftReward.gd 合并成奖励页共用只读牌组来源模块。
+如果继续拆 _on_confirm_pressed()，需要先拆动画完成后的 UI 清理，不要同时改真实删牌和关闭流程。
+```

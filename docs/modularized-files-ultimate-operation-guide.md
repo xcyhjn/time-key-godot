@@ -605,6 +605,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要创建卡牌节点，不写主脚本状态，不处理按钮或选择面板 UI。
 - 改进：返回字典后续可换成更明确的状态对象。
 
+#### `scene/in_scene/rewards/rules/RemoveDeckCardRemovalProcessor.gd`
+
+- 用途：删除奖励页确认移除时，从 `deck_manager` 或 `GlobalDB.player_deck` 移除一张指定卡。
+- 维护：不要同步运行时抽牌堆，不关闭奖励页，也不处理删除动画或 UI 节点。
+- 改进：如果 deck_manager 接口稳定，可以把日志和 GlobalDB 回退进一步收口。
+
 #### `scene/in_scene/rewards/rules/ShopEraWeightSelector.gd`
 
 - 用途：根据商店权重随机选择目标时代。
@@ -975,16 +981,16 @@ _refresh_result_preview()
 
 ### RemoveReward 继续清理页面专属小边界
 
-`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip 和牌组同步模块。删除页专属的牌组卡牌单选 presenter 和牌组显示清理 cleaner 也已经拆出。
+`RemoveReward.gd` 已经复用奖励页通用的 CardManager 查找、临时牌堆、真实卡牌生成、真实卡牌清理、DraftCard 数据写入、tooltip 和牌组同步模块。删除页专属的牌组卡牌单选 presenter、牌组显示清理 cleaner 和删牌数据处理规则也已经拆出。
 
 下一步可继续扫描：
 
 ```text
 _on_confirm_pressed()
-_remove_card_from_deck()
+_get_current_deck_card_ids()
 ```
 
-下一步不要急着同时拆确认删除动画和牌组写入。`_remove_card_from_deck()` 与 `CraftReward.gd` 的 GlobalDB 写入有相似边界，但会影响实际删牌结果，拆前要单独评估 deck_manager 与 GlobalDB 的兼容路径。
+下一步不要急着拆确认删除动画。`_get_current_deck_card_ids()` 只是只读牌组来源，风险低于 `_on_confirm_pressed()`；但它和 `CraftReward.gd` 有重复，继续前要先判断是否要做奖励页共用牌组读取模块。
 
 ### 不要急着继续拆 HexMap
 
