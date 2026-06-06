@@ -9,6 +9,7 @@ const CraftConnectionLinePresenterScript = preload("res://scene/in_scene/rewards
 const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd")
 const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPreviewLayoutPresenter.gd")
 const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPositionPresenter.gd")
+const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 
 enum CraftMode {
 	BOARD,
@@ -71,6 +72,7 @@ var _connection_line_presenter = null
 var _result_description_panel_presenter = null
 var _slot_preview_layout_presenter = null
 var _result_description_position_presenter = null
+var _tooltip_adapter = null
 
 ## 合成页面内部也复用统一的卡牌 Hover Tooltip。
 var tooltip_presenter: CardTooltipPresenter = null
@@ -104,6 +106,12 @@ func _get_result_description_position_presenter():
 	if _result_description_position_presenter == null:
 		_result_description_position_presenter = CraftResultDescriptionPositionPresenterScript.new()
 	return _result_description_position_presenter
+
+
+func _get_tooltip_adapter():
+	if _tooltip_adapter == null:
+		_tooltip_adapter = RewardTooltipAdapterScript.new()
+	return _tooltip_adapter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -899,19 +907,12 @@ func _try_find_card_manager() -> void:
 ## 初始化共享 Tooltip presenter。
 ## 合成界面的 Hover 卡牌目前只显示主效果框，不显示关键词列。
 func _setup_tooltip_presenter() -> void:
-	if tooltip_presenter != null:
-		return
-	tooltip_presenter = CardTooltipPresenter.new(self, tooltip_config, false)
+	tooltip_presenter = _get_tooltip_adapter().ensure_presenter(tooltip_presenter, self, tooltip_config)
 
 
 func show_tooltip(card: Control) -> void:
-	_setup_tooltip_presenter()
-	tooltip_presenter.show_card_tooltip(card, {
-		"show_keywords": false,
-		"fallback_text": "无效果文本",
-	})
+	tooltip_presenter = _get_tooltip_adapter().show_card_tooltip(tooltip_presenter, self, tooltip_config, card)
 
 
 func hide_tooltip(_card: Control = null) -> void:
-	if tooltip_presenter != null:
-		tooltip_presenter.hide_tooltip()
+	_get_tooltip_adapter().hide_tooltip(tooltip_presenter)

@@ -13,6 +13,7 @@ var CardManager = preload("res://addons/card-framework/card_manager.gd")
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
+const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -82,6 +83,7 @@ var tooltip_presenter: CardTooltipPresenter = null
 var _pricing_presenter = null
 var _era_weight_selector = null
 var _global_node_finder = null
+var _tooltip_adapter = null
 
 
 func _get_pricing_presenter():
@@ -100,6 +102,12 @@ func _get_global_node_finder():
 	if _global_node_finder == null:
 		_global_node_finder = ShopGlobalNodeFinderScript.new()
 	return _global_node_finder
+
+
+func _get_tooltip_adapter():
+	if _tooltip_adapter == null:
+		_tooltip_adapter = RewardTooltipAdapterScript.new()
+	return _tooltip_adapter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -737,19 +745,12 @@ func _extract_card_description(real_card: Node) -> String:
 ## 初始化共享 Tooltip presenter。
 ## 商店场景不展示关键词列，因此第三个参数固定为 false。
 func _setup_tooltip_presenter() -> void:
-	if tooltip_presenter != null:
-		return
-	tooltip_presenter = CardTooltipPresenter.new(self, tooltip_config, false)
+	tooltip_presenter = _get_tooltip_adapter().ensure_presenter(tooltip_presenter, self, tooltip_config)
 
 # 显示tooltip (简化版，只显示效果文本)
 func show_tooltip(card: Control):
-	_setup_tooltip_presenter()
-	tooltip_presenter.show_card_tooltip(card, {
-		"show_keywords": false,
-		"fallback_text": "无效果文本",
-	})
+	tooltip_presenter = _get_tooltip_adapter().show_card_tooltip(tooltip_presenter, self, tooltip_config, card)
 
 # 隐藏tooltip
 func hide_tooltip(card: Control = null):
-	if tooltip_presenter != null:
-		tooltip_presenter.hide_tooltip()
+	_get_tooltip_adapter().hide_tooltip(tooltip_presenter)

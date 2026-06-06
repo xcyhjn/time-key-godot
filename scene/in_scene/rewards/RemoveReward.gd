@@ -11,6 +11,7 @@ var CardDataPool = preload("res://scene/global/CardDataPool.gd")
 ## CardManager 类型引用 (用于类型检查)
 var CardManager = preload("res://addons/card-framework/card_manager.gd")
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
+const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 
 ## ==========================================
 ## ★ 节点引用 - 必须在场景中正确连接
@@ -61,12 +62,19 @@ var original_deck_card_ids: Array[String] = []
 var tooltip_presenter: CardTooltipPresenter = null
 var _title_base_position: Vector2 = Vector2.ZERO
 var _card_manager_locator = null
+var _tooltip_adapter = null
 
 
 func _get_card_manager_locator():
 	if _card_manager_locator == null:
 		_card_manager_locator = RewardCardManagerLocatorScript.new()
 	return _card_manager_locator
+
+
+func _get_tooltip_adapter():
+	if _tooltip_adapter == null:
+		_tooltip_adapter = RewardTooltipAdapterScript.new()
+	return _tooltip_adapter
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -494,19 +502,12 @@ func set_deck_manager(manager):
 
 ## 初始化共享 Tooltip presenter。
 func _setup_tooltip_presenter() -> void:
-	if tooltip_presenter != null:
-		return
-	tooltip_presenter = CardTooltipPresenter.new(self, tooltip_config, false)
+	tooltip_presenter = _get_tooltip_adapter().ensure_presenter(tooltip_presenter, self, tooltip_config)
 
 # 显示tooltip
 func show_tooltip(card: Control):
-	_setup_tooltip_presenter()
-	tooltip_presenter.show_card_tooltip(card, {
-		"show_keywords": false,
-		"fallback_text": "无效果文本",
-	})
+	tooltip_presenter = _get_tooltip_adapter().show_card_tooltip(tooltip_presenter, self, tooltip_config, card)
 
 # 隐藏tooltip
 func hide_tooltip(card: Control = null):
-	if tooltip_presenter != null:
-		tooltip_presenter.hide_tooltip()
+	_get_tooltip_adapter().hide_tooltip(tooltip_presenter)

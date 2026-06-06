@@ -3690,6 +3690,68 @@ Godot 加载 res://scene/in_scene/rewards/remove_reward.tscn 退出码为 0，�
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现脚本解析或编译类错误。
 ```
 
+## 奖励页第二批 Tooltip 适配拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆四个奖励页面重复的卡牌 Tooltip 初始化、显示和隐藏逻辑。它保留 `AcquireReward.gd`、`RemoveReward.gd`、`CraftReward.gd` 和 `ShopManager.gd` 原有 `show_tooltip()` / `hide_tooltip()` 入口，只把通用 presenter 创建、统一显示参数和隐藏调用交给新模块；不判断奖励是否可领取，不读取或修改牌组，也不创建奖励卡牌。
+
+目标函数范围：
+
+```text
+_setup_tooltip_presenter()
+show_tooltip(card)
+hide_tooltip(card)
+```
+
+当前触碰的数据和节点：
+
+```text
+tooltip_presenter
+tooltip_config
+CardTooltipPresenter
+奖励页自身 CanvasLayer
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd
+```
+
+模块边界：
+
+- `RewardTooltipAdapter.gd` 只负责奖励页卡牌 Tooltip 的初始化、显示和隐藏。
+- 它不判断奖励是否可领取，不读取或修改牌组，也不创建奖励卡牌。
+- 四个奖励页继续保留旧 Tooltip 入口，外部 DraftCard / CustomCard 调用协议不变。
+
+### 当前优化进度
+
+```text
+P0 已完成：docs/.obsidian 已忽略，CombatVictoryDebugButton 默认隐藏已提交。
+in_scene 已拆模块归档已完成：drag/timeline/rewards 的辅助模块已经按职责目录整理。
+P1 奖励页共用能力已完成两批：CardManager locator 和 RewardTooltipAdapter。
+奖励页仍剩余重复点：临时牌堆创建、卡牌数据窃取、front texture/description 提取、飞入动画。
+```
+
+### 下一步打算
+
+```text
+下一批优先拆 RewardTempPileFactory，只收口 Acquire/Remove/Shop/Craft 中重复的 _create_temp_pile()。
+暂不碰 _steal_card_data()，因为它涉及 await、真实卡牌实例、贴图和描述提取，风险更高。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 acquire_reward、remove_reward、craft_reward、shop 四个奖励页退出码均为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现脚本解析或编译类错误。
+```
+
 ## DragShapeController.gd 第十四批拒绝动画拆分记录
 
 日期：2026-06-06
