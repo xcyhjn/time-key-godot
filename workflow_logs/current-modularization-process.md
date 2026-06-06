@@ -4409,6 +4409,72 @@ ShopManager 的页面专属拆分继续推进：初始化/生成日志、CardMan
 
 下一批建议评估 `_generate_shop_items()` 中“单个商品生成编排”：可以考虑抽一个只返回 `shop_card + price + slot_data` 的局部 helper，但它涉及 `await _steal_card_data()`，风险高于本批。更稳的替代方向是先收口 `_clear_shop_items()` 的清理日志和容器清理。
 
+## 奖励页第十五批商店商品清理拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `ShopManager.gd::_clear_shop_items()` 中清空商店商品 UI 和商品记录的逻辑。保留 `_clear_shop_items()` 旧入口，不改变商品生成、购买、价格计算、刷新升级或飞入牌库流程。
+
+目标函数范围：
+
+```text
+ShopManager.gd::_clear_shop_items()
+ShopItemClearer.gd::clear_items(shop_grid, shop_cards, card_price_map)
+ShopDebugLogger.gd::log_physical_cleanup(child_count)
+```
+
+当前触碰的数据和节点：
+
+```text
+shop_grid
+shop_grid.get_children()
+shop_cards
+card_price_map
+queue_free()
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/ShopItemClearer.gd
+```
+
+模块边界：
+
+- `ShopItemClearer.gd` 只负责清空商店商品 UI 和商品记录。
+- 它不生成商品，不计算价格，也不处理购买流程。
+- 清理完成后的日志继续交给 `ShopDebugLogger.gd`，保持诊断输出集中。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+ShopManager 原本直接遍历 shop_grid 子节点、remove_child、queue_free，并清空 shop_cards 与 card_price_map。
+现在清理细节由 ShopItemClearer 统一维护，主脚本只保留何时清理的流程入口。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+ShopManager 的商品生成周边已经拆出调试日志、商品位 UI 构建、商品清理三个小模块。主脚本仍负责核心生成顺序和购买流程，拆分边界稳定。
+
+当前 ShopManager 剩余较大的逻辑块是 `_generate_shop_items()` 的单商品生成编排、购买流程 `_on_shop_card_clicked()`、价格/时代相关提示输出，以及 `_get_cards_by_era()` 的数据源读取。
+
+### 下一步打算
+
+下一批建议谨慎评估 `_generate_shop_items()` 内单个商品生成编排。若要继续拆，建议只抽“创建并准备 shop_card”的 async helper，保留 UI 登记和信号连接在 ShopManager；如果风险偏高，则转向购买流程中的价格验证和卡牌剥离动画前准备。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06

@@ -48,6 +48,11 @@ func log_generation_cleanup(child_count: int) -> void:
 		print("🧹 清理完成 - shop_grid子节点数: %d" % child_count)
 
 
+func log_physical_cleanup(child_count: int) -> void:
+	if enabled:
+		print("🧹 已执行物理清理，容器当前子节点数: %d" % child_count)
+
+
 func log_generation_layout(shop_slots_count: int, shop_columns: int, actual_columns: int) -> void:
 	if not enabled:
 		return

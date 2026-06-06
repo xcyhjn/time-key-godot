@@ -16,6 +16,7 @@ const ShopDebugLoggerScript = preload("res://scene/in_scene/rewards/diagnostics/
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
 const ShopItemSlotPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopItemSlotPresenter.gd")
+const ShopItemClearerScript = preload("res://scene/in_scene/rewards/presenters/ShopItemClearer.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
@@ -93,6 +94,7 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 var tooltip_presenter: CardTooltipPresenter = null
 var _pricing_presenter = null
 var _item_slot_presenter = null
+var _item_clearer = null
 var _era_weight_selector = null
 var _global_node_finder = null
 var _tooltip_adapter = null
@@ -118,6 +120,12 @@ func _get_item_slot_presenter():
 	if _item_slot_presenter == null:
 		_item_slot_presenter = ShopItemSlotPresenterScript.new()
 	return _item_slot_presenter
+
+
+func _get_item_clearer():
+	if _item_clearer == null:
+		_item_clearer = ShopItemClearerScript.new()
+	return _item_clearer
 
 
 func _get_era_weight_selector():
@@ -380,18 +388,8 @@ func _select_card_by_era_weight(base_era: int) -> String:
 
 ## 清空商店商品
 func _clear_shop_items():
-	# 彻底清理 shop_grid 
-	for child in shop_grid.get_children():
-		if is_instance_valid(child):
-			# ★ 核心修复：先从容器移除，让 GridContainer 立即重新计算排版 
-			shop_grid.remove_child(child)
-			# 再销毁，释放内存 
-			child.queue_free()
-	
-	# 清理记录的数据 
-	shop_cards.clear()
-	card_price_map.clear()
-	print("🧹 已执行物理清理，容器当前子节点数: %d" % shop_grid.get_child_count())
+	_get_item_clearer().clear_items(shop_grid, shop_cards, card_price_map)
+	_get_debug_logger().log_physical_cleanup(shop_grid.get_child_count())
 
 ## ==========================================
 ## ★ 购买逻辑 - 核心"飞入"架构
