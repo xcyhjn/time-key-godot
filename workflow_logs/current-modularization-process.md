@@ -4276,6 +4276,74 @@ ShopManager 仍然是奖励页中最大的文件，剩余优化点主要包括�
 
 下一批建议评估 `ShopManager.gd::_try_find_card_manager()` 的日志和查找流程。它当前有大量查找路径调试输出，可以先只收口到诊断模块或已有 `ShopGlobalNodeFinder` 风格的 bridge；不建议同时改商品生成。
 
+## 奖励页第十三批商店 CardManager 定位复用记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只收口 `ShopManager.gd::_try_find_card_manager()` 中重复的 CardManager 查找路径和大量路径级调试输出。商店页面改为复用已有 `RewardCardManagerLocator.gd`，保留 `_try_find_card_manager()` 旧入口和找到后的 `deck_manager` 赋值，不改变商品生成、购买、价格、时代权重或 CardManager 注入方式。
+
+目标函数范围：
+
+```text
+ShopManager.gd::_try_find_card_manager()
+ShopManager.gd::_get_card_manager_locator()
+```
+
+当前触碰的数据和节点：
+
+```text
+CardManager
+deck_manager
+card_manager 元数据
+当前场景
+父节点链
+CardManager 节点名回退
+```
+
+### 调整模块
+
+```text
+scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd
+scene/in_scene/rewards/ShopManager.gd
+```
+
+模块边界：
+
+- `RewardCardManagerLocator.gd` 继续只负责奖励页面自动查找 CardManager。
+- `ShopManager.gd` 只保留“找到后赋值和输出结果级日志”的页面职责。
+- 本批不改 `ShopGlobalNodeFinder.gd`，也不改商店全局时代/时间币节点查找。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+ShopManager 原本单独维护一套 CardManager 查找路径，包括树根元数据、当前场景元数据、父节点链、节点名回退和遍历查找。
+这些查找路径和 AcquireReward/RemoveReward 已使用的 RewardCardManagerLocator 重复。
+现在 ShopManager 复用共享 locator，路径级日志收窄为找到/未找到和 card_factory 是否准备。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+ShopManager 的共享依赖定位已经和其他奖励页对齐，`bridges` 目录的职责更统一。商店页面的体积继续下降，路径级调试噪音减少，后续更容易看清真正的商店流程。
+
+当前剩余高价值优化点是 ShopManager 的商品生成流程拆分，以及 `ShopDebugLogger` 是否继续接管价格/购买/依赖查找日志。CraftReward 仍是奖励页中最大的文件，后续可考虑状态流拆分。
+
+### 下一步打算
+
+下一批建议评估 `ShopManager.gd::_generate_shop_items()` 的商品位创建流程。更稳的拆法是只抽“商品位 UI 构建器”，把 DraftCard、价格 Label、VBoxContainer 和映射字典写入分开；不碰时代选卡和临时牌堆数据窃取。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06
