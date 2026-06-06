@@ -12,6 +12,7 @@ const CraftResultDescriptionPanelPresenterScript = preload("res://scene/in_scene
 const CraftSlotPreviewLayoutPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPreviewLayoutPresenter.gd")
 const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionPositionPresenter.gd")
 const CraftResultDescriptionContentPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionContentPresenter.gd")
+const CraftSlotPlaceholderPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
@@ -83,6 +84,7 @@ var _result_description_panel_presenter = null
 var _slot_preview_layout_presenter = null
 var _result_description_position_presenter = null
 var _result_description_content_presenter = null
+var _slot_placeholder_presenter = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
@@ -136,6 +138,12 @@ func _get_result_description_content_presenter():
 	if _result_description_content_presenter == null:
 		_result_description_content_presenter = CraftResultDescriptionContentPresenterScript.new()
 	return _result_description_content_presenter
+
+
+func _get_slot_placeholder_presenter():
+	if _slot_placeholder_presenter == null:
+		_slot_placeholder_presenter = CraftSlotPlaceholderPresenterScript.new()
+	return _slot_placeholder_presenter
 
 
 func _get_tooltip_adapter():
@@ -728,17 +736,17 @@ func _clear_result_preview() -> void:
 
 
 func _refresh_slot_placeholders() -> void:
-	slot1_placeholder.visible = slot_preview_cards[SLOT_1] == null
-	slot2_placeholder.visible = slot_preview_cards[SLOT_2] == null
-
-	if result_preview_card != null:
-		result_placeholder.visible = false
-	elif slot_entries[SLOT_1] != null and slot_entries[SLOT_2] != null:
-		result_placeholder.visible = true
-		result_placeholder.text = no_recipe_text
-	else:
-		result_placeholder.visible = true
-		result_placeholder.text = "结果槽"
+	_get_slot_placeholder_presenter().refresh_slot_placeholders(
+		slot1_placeholder,
+		slot2_placeholder,
+		result_placeholder,
+		slot_preview_cards,
+		slot_entries,
+		result_preview_card,
+		SLOT_1,
+		SLOT_2,
+		no_recipe_text
+	)
 
 
 func _update_result_description() -> void:

@@ -5623,3 +5623,89 @@ _update_result_description() 现在只保留旧入口转发，合成状态和牌
 下一批优先评估 CraftReward.gd 的 _refresh_slot_placeholders()、_clear_all_previews()、_clear_slot_preview()、_clear_result_preview()。
 如果这些函数适合合并成预览清理/占位符 presenter，就只拆 UI 状态整理；暂不碰 _apply_crafting_result_to_deck() 和 _generate_selection_cards()。
 ```
+
+## CraftReward.gd 第七批槽位占位符显示拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `CraftReward.gd::_refresh_slot_placeholders()` 的占位符显隐和结果槽文案。它保留旧入口，只把素材槽占位符、结果槽占位符和“无配方/结果槽”文案刷新交给新 presenter；不创建或释放预览卡，不判断配方，不改合成选择状态。
+
+目标函数和轮廓：
+
+```text
+CraftReward.gd::_refresh_slot_placeholders()
+CraftReward.gd::_clear_all_previews()
+CraftReward.gd::_clear_slot_preview(slot_index)
+CraftReward.gd::_clear_result_preview()
+CraftSlotPlaceholderPresenter.gd::refresh_slot_placeholders(...)
+```
+
+当前触碰的数据和节点：
+
+```text
+slot1_placeholder
+slot2_placeholder
+result_placeholder
+slot_preview_cards
+slot_entries
+result_preview_card
+SLOT_1
+SLOT_2
+no_recipe_text
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd
+```
+
+模块边界：
+
+- `CraftSlotPlaceholderPresenter.gd` 只负责合成素材槽和结果槽占位符的显隐与文案。
+- 它不创建或释放预览卡，不判断配方，不修改合成选择状态。
+- `CraftReward.gd` 保留 `_refresh_slot_placeholders()` 旧入口，继续由页面状态变更点主动调用。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+素材槽占位符 visible、结果槽 visible 和结果槽文案从 CraftReward.gd 收口到 CraftSlotPlaceholderPresenter。
+主脚本不再直接维护占位符显示细节，只保留旧入口转发。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftSlotPlaceholderPresenter.gd 条目。
+当前优化方向已更新为继续评估 CraftReward.gd 的预览清理函数。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：109 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的合成结果描述面板和槽位占位符显示都已拆出 presenter。
+_refresh_slot_placeholders() 现在只保留旧入口转发，预览卡清理和合成状态未改。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 CraftReward.gd 的 _clear_all_previews()、_clear_slot_preview() 和 _clear_result_preview()。
+如果继续拆，只收口预览卡 queue_free、引用清空和结果 id 清空；暂不碰 _refresh_result_preview() 的配方生成和 _apply_crafting_result_to_deck()。
+```

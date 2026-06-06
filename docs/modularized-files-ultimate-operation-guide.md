@@ -489,6 +489,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要写描述文本，不改合成状态。
 - 改进：屏幕边界逻辑可复用到其他浮层。
 
+#### `scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd`
+
+- 用途：刷新合成素材槽和结果槽占位符的显隐与文案。
+- 维护：不要创建或释放预览卡，不判断配方，不修改合成选择状态。
+- 改进：如果槽位数量扩展，可以把两个固定槽位改成列表输入。
+
 #### `scene/in_scene/rewards/presenters/CraftSlotPreviewLayoutPresenter.gd`
 
 - 用途：设置合成槽位预览锚点边距和尺寸兜底。
@@ -917,16 +923,15 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、连接线、结果描述样式/内容/定位、槽位预览布局和奖励页通用卡牌读取模块。下一步可优先评估：
+`CraftReward.gd` 已经拆出配方查询、连接线、结果描述样式/内容/定位、槽位占位符、槽位预览布局和奖励页通用卡牌读取模块。下一步可优先评估：
 
 ```text
-_refresh_slot_placeholders()
 _clear_all_previews()
 _clear_slot_preview()
 _clear_result_preview()
 ```
 
-这些函数都属于 UI 状态整理，风险低于 `_apply_crafting_result_to_deck()` 和 `_generate_selection_cards()`。
+这些预览清理函数都属于 UI 状态整理，风险低于 `_apply_crafting_result_to_deck()` 和 `_generate_selection_cards()`。
 
 ### 不要急着继续拆 HexMap
 
