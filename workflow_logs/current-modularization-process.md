@@ -4344,6 +4344,71 @@ ShopManager 的共享依赖定位已经和其他奖励页对齐，`bridges` 目�
 
 下一批建议评估 `ShopManager.gd::_generate_shop_items()` 的商品位创建流程。更稳的拆法是只抽“商品位 UI 构建器”，把 DraftCard、价格 Label、VBoxContainer 和映射字典写入分开；不碰时代选卡和临时牌堆数据窃取。
 
+## 奖励页第十四批商店商品位 UI 构建拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆 `ShopManager.gd::_generate_shop_items()` 中重复占位较大的商品位 UI 包装逻辑。商店仍在原循环中选择卡牌、实例化 DraftCard、执行数据窃取、计算价格、写入 `shop_cards` 和 `card_price_map`，本批只把已准备好的 `shop_card` 包装成 `VBoxContainer + price Label`。
+
+目标函数范围：
+
+```text
+ShopManager.gd::_generate_shop_items()
+ShopItemSlotPresenter.gd::build_slot(shop_card, price)
+```
+
+当前触碰的数据和节点：
+
+```text
+shop_card
+VBoxContainer
+Label
+price
+card_price_map 的 label / price / container 结构
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/ShopItemSlotPresenter.gd
+```
+
+模块边界：
+
+- `ShopItemSlotPresenter.gd` 只负责把已准备好的商店 DraftCard 包装成商品位 UI。
+- 它不选择卡牌，不读取卡牌数据，也不处理购买或价格消费。
+- `ShopManager.gd` 继续负责把商品位加入 `shop_grid`、记录 `shop_cards`、写入 `card_price_map` 和连接购买点击信号。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+ShopManager 原本在商品生成循环中直接创建 VBoxContainer、配置价格 Label、挂载卡牌和价格标签。
+现在商品位 UI 结构由 ShopItemSlotPresenter 统一维护，主循环更专注于“选择卡牌 -> 准备卡牌数据 -> 登记商品”。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度
+
+ShopManager 的页面专属拆分继续推进：初始化/生成日志、CardManager 定位和商品位 UI 构建都已经拆出。商品生成主循环仍保留选卡、DraftCard 数据准备和登记逻辑，行为边界稳定。
+
+当前 ShopManager 剩余可拆点主要是商品生成循环中的“单个商品生成编排”、价格显示/刷新日志、购买流程和依赖查找/全局节点访问。下一批需要继续选最小风险面。
+
+### 下一步打算
+
+下一批建议评估 `_generate_shop_items()` 中“单个商品生成编排”：可以考虑抽一个只返回 `shop_card + price + slot_data` 的局部 helper，但它涉及 `await _steal_card_data()`，风险高于本批。更稳的替代方向是先收口 `_clear_shop_items()` 的清理日志和容器清理。
+
 ## in_scene 已拆模块文件夹归档记录
 
 日期：2026-06-06

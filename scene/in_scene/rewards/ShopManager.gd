@@ -15,6 +15,7 @@ const RewardDeckSyncBridgeScript = preload("res://scene/in_scene/rewards/bridges
 const ShopDebugLoggerScript = preload("res://scene/in_scene/rewards/diagnostics/ShopDebugLogger.gd")
 const RewardCardManagerLocatorScript = preload("res://scene/in_scene/rewards/bridges/RewardCardManagerLocator.gd")
 const ShopPricingPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopPricingPresenter.gd")
+const ShopItemSlotPresenterScript = preload("res://scene/in_scene/rewards/presenters/ShopItemSlotPresenter.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
@@ -91,6 +92,7 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 ## 商店页面只保留 Tooltip 触发职责，UI 构建与定位交给共享 presenter。
 var tooltip_presenter: CardTooltipPresenter = null
 var _pricing_presenter = null
+var _item_slot_presenter = null
 var _era_weight_selector = null
 var _global_node_finder = null
 var _tooltip_adapter = null
@@ -110,6 +112,12 @@ func _get_pricing_presenter():
 	if _pricing_presenter == null:
 		_pricing_presenter = ShopPricingPresenterScript.new()
 	return _pricing_presenter
+
+
+func _get_item_slot_presenter():
+	if _item_slot_presenter == null:
+		_item_slot_presenter = ShopItemSlotPresenterScript.new()
+	return _item_slot_presenter
 
 
 func _get_era_weight_selector():
@@ -297,29 +305,15 @@ func _generate_shop_items():
 		# ★ 核心步骤3: 数据窃取 - 从真实卡牌提取属性
 		await _steal_card_data(card_id, shop_card, temp_pile)
 		
-		# 创建商品位容器 (VBox: 上方卡牌，下方价格标签)
-		var slot_container = VBoxContainer.new()
-		slot_container.alignment = BoxContainer.ALIGNMENT_CENTER
-		
-		# 添加卡牌到容器
-		slot_container.add_child(shop_card)
-		
-		# 创建价格标签
-		var price_label = Label.new()
 		var price = _calculate_card_price(i)
-		price_label.text = "%d 时间币" % price
-		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		price_label.add_theme_font_size_override("font_size", 14)
-		price_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2, 1.0))  # 金色
-		
-		slot_container.add_child(price_label)
+		var slot_data = _get_item_slot_presenter().build_slot(shop_card, price)
 		
 		# 添加到商店网格
-		shop_grid.add_child(slot_container)
+		shop_grid.add_child(slot_data["container"])
 		
 		# 记录映射关系
 		shop_cards.append(shop_card)
-		card_price_map[shop_card] = {"label": price_label, "price": price, "container": slot_container}
+		card_price_map[shop_card] = slot_data
 		
 		# 绑定卡牌点击事件 (购买)
 		shop_card.card_clicked.connect(_on_shop_card_clicked)
