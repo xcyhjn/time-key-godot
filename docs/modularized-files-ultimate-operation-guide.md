@@ -635,6 +635,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要读取 `CardDataPool`，不创建卡牌，不处理刷新或购买。
 - 改进：权重配置可独立成资源，方便调试和测试。
 
+#### `scene/in_scene/rewards/rules/ShopGenerationDependencyGuard.gd`
+
+- 用途：检查商店生成前 `deck_manager` 和 `card_factory` 是否可用，并返回是否允许继续生成。
+- 维护：不要生成商品，不修改生成锁，也不要访问商店 UI。
+- 改进：如果未来还有更多生成前置条件，可以让调用方传入显式配置，避免读取页面状态。
+
 #### `scene/in_scene/rewards/rules/ShopPurchaseValidator.gd`
 
 - 用途：购买前调用时间币消费入口并输出成败日志。
@@ -977,15 +983,14 @@ git diff --check
 
 ### 评估 ShopManager 剩余边界
 
-`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接和商品槽注册都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，继续拆收益很低。
+`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接、商品槽注册和生成依赖检查都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，继续拆收益很低。
 
 ```text
 _generate_shop_items()
-_update_price_display()
 open_shop()
 ```
 
-如果继续处理商店，优先只评估 `_generate_shop_items()` 的单个商品生成编排；不要同时改商品生成、时代偏移和价格显示。若单商品生成需要传入过多成员，就停止 ShopManager，转向 CraftReward 或 DragShapeController。
+如果继续处理商店，本轮已经确认单个商品生成编排会牵动 `draft_card_factory`、`temp_pile`、`deck_manager`、价格、UI 注册和异步数据提取等过多状态，不建议硬拆。下一批只适合评估更小的生成前后边界，例如临时牌堆生命周期；如果仍然需要传入过多成员，就停止 ShopManager，转向 CraftReward 或 DragShapeController。
 
 ### CraftReward 继续清理页面专属小边界
 

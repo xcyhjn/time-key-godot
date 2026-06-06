@@ -21,7 +21,7 @@ D:/godot/时之钥/时之钥
 
 ## 当前状态一览
 
-当前模块化工作已经完成多条主线。当前已拆模块共 `120` 个，`docs/modularized-files-ultimate-operation-guide.md` 对这些模块的覆盖缺失数为 `0`。
+当前模块化工作已经完成多条主线。当前已拆模块共 `121` 个，`docs/modularized-files-ultimate-operation-guide.md` 对这些模块的覆盖缺失数为 `0`。
 
 | 文件 | 当前状态 | 接下来怎么处理 |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ D:/godot/时之钥/时之钥
 | `scene/in_scene/in_scene.gd` | 约 1238 行，`in_scene_modules/` 下已有 32 个模块，低风险小块基本拆完。 | 剩余主要是 `_ready()`、配置组装、回合推进、场景切换 wrapper 和信号回调。继续拆前先补更完整回归路径。 |
 | `scene/in_scene/DragShapeController.gd` | 约 1054 行，`drag_modules/` 下已有 16 个模块，节点桥接、拒绝提示、时间轴预览、放置校验、场景交互锁等已拆。 | 后续只评估放置完成流程等清晰边界；先写清时间轴行动创建、卡牌归属变化和 UI 恢复再拆。 |
 | `scene/in_scene/timeline/timeline_ui.gd` | 约 837 行，已拆布局、背景网格、预览样式、TimelineManager 查找、敌方意图 overlay 和放置动画等。 | 可继续评估行动块表现、清理动画和剩余 hover 流程；不要重写时间轴数据规则。 |
-| `scene/in_scene/rewards/*.gd` | 奖励页已拆出 41 个模块。Acquire/Remove 已接近页面编排；Shop 和 Craft 仍有少量高风险剩余边界。 | 优先评估 `ShopManager.gd::_generate_shop_items()` 的单个商品生成编排；其次评估 `CraftReward.gd::_refresh_result_preview()`。 |
+| `scene/in_scene/rewards/*.gd` | 奖励页已拆出 42 个模块。Acquire/Remove 已接近页面编排；Shop 生成前依赖检查已收口，Shop 和 Craft 仍有少量高风险剩余边界。 | Shop 单个商品生成编排已判断牵动状态过多，不建议硬拆；下一步优先评估 CraftReward，或只看 Shop 临时牌堆生命周期这类更小边界。 |
 | `scene/out_scene/out_scene_map_exp.gd` | 约 853 行，局外地图主控尚未进入系统性拆分。 | 等奖励页、拖拽和时间轴剩余边界稳定后，再按局外地图流程拆。 |
 
 不要继续优先拆 `addons/dialogic/` 或其他插件目录，除非明确是在改插件行为。插件大文件不计入当前项目解耦优先级。
@@ -247,8 +247,8 @@ git commit -m "<类型>: <本批清晰描述>"
 
 | 优先级 | 文件 | 当前问题 | 首批建议 |
 | --- | --- | --- | --- |
-| 1 | `scene/in_scene/rewards/ShopManager.gd` | `_generate_shop_items()` 仍串联生成锁、依赖检查、时代读取、临时牌堆、选卡、草稿卡创建、异步数据提取、定价和循环编排。 | 只评估“单个商品生成编排”是否能拆。若需要传入过多异步和 UI 状态，就停止 ShopManager。 |
-| 2 | `scene/in_scene/rewards/CraftReward.gd` | `_refresh_result_preview()` 仍涉及异步预览卡创建；`_apply_crafting_result_to_deck()` 剩余真实牌组写入和同步。 | 优先评估 `_refresh_result_preview()` 是否有单一表现边界；暂不同时改牌组写入。 |
+| 1 | `scene/in_scene/rewards/CraftReward.gd` | `_refresh_result_preview()` 仍涉及异步预览卡创建；`_apply_crafting_result_to_deck()` 剩余真实牌组写入和同步。 | 优先评估 `_refresh_result_preview()` 是否有单一表现边界；暂不同时改牌组写入。 |
+| 2 | `scene/in_scene/rewards/ShopManager.gd` | `_generate_shop_items()` 仍串联生成锁、时代读取、临时牌堆、选卡、草稿卡创建、异步数据提取、定价和循环编排；生成依赖检查已拆到 `ShopGenerationDependencyGuard.gd`。 | 单个商品生成编排会牵动过多异步和 UI 状态，不建议硬拆；仅可评估临时牌堆生命周期等更小边界。 |
 | 3 | `scene/in_scene/DragShapeController.gd` | 低风险查找、tooltip、预览、校验和交互锁已拆，剩余主要是放置完成流程。 | 先梳理 `_finish_placement()` 或等价流程的数据流，再拆卡牌归属变化之外的 UI 收尾小边界。 |
 | 4 | `scene/in_scene/timeline/timeline_ui.gd` | 布局、网格、预览、overlay 和放置动画已拆，剩余行动块表现与清理动画仍有耦合。 | 优先评估行动块视觉或清理动画中的单一 presenter，不动 TimelineManager 数据。 |
 | 5 | `scene/out_scene/out_scene_map_exp.gd` | 局外地图初始化、房间结算、tier 推进、章节揭示动画、移动、切场景在一个主控里。 | 等奖励页和拖拽剩余边界稳定后，先拆房间结算 payload 消费，不动地图移动。 |
@@ -292,8 +292,8 @@ _finish_placement() 或等价的确认放置收尾流程
 下一批奖励页优先级：
 
 ```text
-1. ShopManager.gd::_generate_shop_items() 的单个商品生成编排
-2. CraftReward.gd::_refresh_result_preview() 的异步预览表现边界
+1. CraftReward.gd::_refresh_result_preview() 的异步预览表现边界
+2. ShopManager.gd::_generate_shop_items() 的临时牌堆生命周期等更小生成边界
 3. 如果上述两个都需要传入过多状态，就停止奖励页，转向 DragShapeController.gd
 ```
 
@@ -345,9 +345,9 @@ scene/out_scene/out_scene_modules/RoomResolutionController.gd
 
 先分析目标文件，再列待拆清单，最后每批只拆 1 个清晰风险面，最多触碰 3 到 4 个风险点。不要直接改代码。
 
-当前已拆模块共 120 个，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd 或 RemoveReward.gd。下一阶段优先处理：
-1. scene/in_scene/rewards/ShopManager.gd 的 _generate_shop_items() 单个商品生成编排评估
-2. scene/in_scene/rewards/CraftReward.gd 的 _refresh_result_preview() 异步预览边界评估
+当前已拆模块共 121 个，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd 或 RemoveReward.gd。下一阶段优先处理：
+1. scene/in_scene/rewards/CraftReward.gd 的 _refresh_result_preview() 异步预览边界评估
+2. scene/in_scene/rewards/ShopManager.gd 的 _generate_shop_items() 临时牌堆生命周期等更小边界评估
 3. scene/in_scene/DragShapeController.gd 的放置完成流程评估
 4. scene/in_scene/timeline/timeline_ui.gd 的行动块表现或清理动画评估
 5. scene/out_scene/out_scene_map_exp.gd 的房间结算 payload 消费拆分
@@ -363,5 +363,5 @@ scene/out_scene/out_scene_modules/RoomResolutionController.gd
 - 清理临时日志。
 - 每批单独 commit。
 
-优先从 ShopManager.gd::_generate_shop_items() 的单个商品生成编排开始评估。如果该模块需要传入 draft_card_factory、temp_pile、deck_manager、价格、UI 注册和异步数据提取等过多状态，就停止 ShopManager，转向 CraftReward.gd 或 DragShapeController.gd。不要重复拆已经完成的节点桥接、tooltip、CardManager 查找、临时牌堆、DraftCard 数据写入和只读牌组来源模块。
+优先从 CraftReward.gd::_refresh_result_preview() 的异步预览表现边界开始评估。ShopManager.gd::_generate_shop_items() 的单个商品生成编排已经判断会传入 draft_card_factory、temp_pile、deck_manager、价格、UI 注册和异步数据提取等过多状态，不建议硬拆；若继续看 Shop，只评估临时牌堆生命周期等更小边界。不要重复拆已经完成的节点桥接、tooltip、CardManager 查找、临时牌堆、DraftCard 数据写入、生成依赖检查和只读牌组来源模块。
 ```

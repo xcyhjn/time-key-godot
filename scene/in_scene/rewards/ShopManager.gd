@@ -25,6 +25,7 @@ const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/
 const ShopPurchaseValidatorScript = preload("res://scene/in_scene/rewards/rules/ShopPurchaseValidator.gd")
 const ShopRefreshPurchaseProcessorScript = preload("res://scene/in_scene/rewards/rules/ShopRefreshPurchaseProcessor.gd")
 const ShopUpgradePurchaseProcessorScript = preload("res://scene/in_scene/rewards/rules/ShopUpgradePurchaseProcessor.gd")
+const ShopGenerationDependencyGuardScript = preload("res://scene/in_scene/rewards/rules/ShopGenerationDependencyGuard.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
 const ShopCardPoolBridgeScript = preload("res://scene/in_scene/rewards/bridges/ShopCardPoolBridge.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
@@ -111,6 +112,7 @@ var _era_weight_selector = null
 var _purchase_validator = null
 var _refresh_purchase_processor = null
 var _upgrade_purchase_processor = null
+var _generation_dependency_guard = null
 var _global_node_finder = null
 var _card_pool_bridge = null
 var _tooltip_adapter = null
@@ -190,6 +192,12 @@ func _get_upgrade_purchase_processor():
 	if _upgrade_purchase_processor == null:
 		_upgrade_purchase_processor = ShopUpgradePurchaseProcessorScript.new()
 	return _upgrade_purchase_processor
+
+
+func _get_generation_dependency_guard():
+	if _generation_dependency_guard == null:
+		_generation_dependency_guard = ShopGenerationDependencyGuardScript.new()
+	return _generation_dependency_guard
 
 
 func _get_global_node_finder():
@@ -338,8 +346,9 @@ func _generate_shop_items():
 	_get_debug_logger().log_generation_cleanup(shop_grid.get_child_count())
 	
 	# 检查必要依赖
-	if not deck_manager or not deck_manager.card_factory:
-		push_warning("ShopManager: deck_manager 或 card_factory 未设置! 商店将显示为空。请确保已调用 set_deck_manager() 或 CardManager 已在场景中。")
+	var dependency_result: Dictionary = _get_generation_dependency_guard().check_dependencies(deck_manager)
+	if not dependency_result[ShopGenerationDependencyGuardScript.CAN_GENERATE_KEY]:
+		push_warning(dependency_result[ShopGenerationDependencyGuardScript.WARNING_KEY])
 		_is_generating = false
 		return
 	

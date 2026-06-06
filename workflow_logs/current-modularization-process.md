@@ -6680,3 +6680,134 @@ workflow_logs/current-modularization-process.md 继续记录每批过程。
 本批验证通过后，下一批优先评估 ShopManager.gd::_generate_shop_items() 的单个商品生成编排。
 如果 ShopManager 单商品生成需要传入过多状态，就停止 ShopManager，转向 CraftReward.gd::_refresh_result_preview() 或 DragShapeController.gd 的放置完成流程。
 ```
+
+## ShopManager.gd 生成依赖检查拆分记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批只处理 `ShopManager.gd::_generate_shop_items()` 中的生成前依赖检查。上一批建议优先评估单个商品生成编排，但本轮扫描后确认它会同时牵动 `draft_card_factory`、`temp_pile`、`deck_manager`、价格、商品槽注册和异步数据提取，风险面过大，因此不把单个商品生成作为本批拆分目标。
+
+目标文件：
+
+```text
+scene/in_scene/rewards/ShopManager.gd
+scene/in_scene/rewards/rules/ShopGenerationDependencyGuard.gd
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+```
+
+`rg` 轮廓：
+
+```text
+ShopManager.gd::_generate_shop_items()
+ShopManager.gd::_get_generation_dependency_guard()
+ShopGenerationDependencyGuard.gd::check_dependencies(deck_manager)
+ShopManager.gd 相关变量：deck_manager、_is_generating、card_price_map、_draft_card_factory、_temp_pile_factory
+```
+
+### 当前职责与耦合点
+
+`ShopManager.gd` 当前仍是商店页面 composition root，负责打开商店、生成商品、购买商品、刷新、升级和关闭页面。
+
+`_generate_shop_items()` 的剩余耦合点：
+
+```text
+生成锁 _is_generating
+旧商品清理和布局日志
+生成前依赖检查
+商店时代读取
+临时牌堆生命周期
+按时代权重选卡
+DraftCard 创建
+异步真实卡数据提取
+价格计算
+商品槽包装和注册
+```
+
+### 待拆清单
+
+```text
+P1：CraftReward.gd::_refresh_result_preview() 的异步预览表现边界。
+P1：ShopManager.gd::_generate_shop_items() 的临时牌堆生命周期等更小边界；单个商品生成编排暂不硬拆。
+P2：DragShapeController.gd 放置完成流程，先写清时间轴行动创建、卡牌归属变化和 UI 恢复边界。
+P2：timeline_ui.gd 行动块表现或清理动画。
+P2：out_scene_map_exp.gd 房间结算 payload 消费。
+```
+
+### 本批风险面
+
+本批只抽出“生成前依赖检查”：
+
+```text
+deck_manager 是否存在
+deck_manager.card_factory 是否存在
+依赖缺失时由 ShopManager 保持原有 push_warning、释放 _is_generating 并 return
+```
+
+不触碰：
+
+```text
+商品生成循环
+临时牌堆创建和释放
+异步 _steal_card_data()
+价格计算和商品槽注册
+刷新、升级和购买流程
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/ShopGenerationDependencyGuard.gd
+```
+
+模块边界：
+
+- `ShopGenerationDependencyGuard.gd` 只负责判断生成前必要依赖是否可用。
+- 它返回 `can_generate` 和 `warning`，不直接输出日志，不修改生成锁，也不访问商店 UI。
+- `ShopManager.gd` 继续负责失败时 `push_warning`、释放 `_is_generating` 和提前返回。
+
+### 本批删除或收口的重复点
+
+```text
+deck_manager / card_factory 的条件判断和提示文案从 ShopManager.gd 收口到 ShopGenerationDependencyGuard.gd。
+主脚本保留控制流，避免新模块知道生成锁和页面流程。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 ShopGenerationDependencyGuard.gd 条目。
+docs/ai-handoff-ultimate-operation-guide.md 已刷新模块数量、Shop 剩余边界和下一步优先级。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：121 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 已拆出价格展示、商品清理、商品槽包装、商品槽注册、购买前消费校验、购买卡脱离、购买记录移除、刷新/升级费用处理、CardDataPool 桥接、全局节点查找、tooltip、临时牌堆、真实卡牌数据提取和生成依赖检查等模块。
+_generate_shop_items() 仍保留生成锁、旧商品清理、时代读取、临时牌堆生命周期、选卡、草稿卡创建、异步数据窃取、定价和商品注册循环。
+单个商品生成编排需要传入过多状态，暂不建议继续硬拆。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 CraftReward.gd::_refresh_result_preview() 的异步预览表现边界。
+如果继续看 ShopManager，只评估临时牌堆生命周期等更小边界；若仍需要传入过多成员，就停止 ShopManager。
+之后再评估 DragShapeController.gd 的放置完成流程或 timeline_ui.gd 的行动块表现。
+```
