@@ -5455,3 +5455,85 @@ _on_upgrade_pressed() 现在只保留升级结算结果判断、状态写回、�
 下一批先重新扫描 ShopManager.gd 剩余函数体量和耦合，不直接继续拆。
 优先判断 _update_price_display()、_generate_shop_items()、open_shop() 哪个边界还值得拆；如果收益不高，转向奖励页其他大文件如 CraftReward.gd。
 ```
+
+## ShopManager.gd 第二十二批 CardDataPool 读取桥接拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆商店按时代读取候选卡牌的桥接逻辑。它保留 `_get_cards_by_era(era)` 旧入口，只把 `CardDataPool.get_instance()`、`get_cards_by_era(era)` 调用、数量日志和旧 fallback 卡牌池交给新 bridge；不改时代权重选择、不改真实卡生成、不改商品槽 UI。
+
+目标函数和轮廓：
+
+```text
+ShopManager.gd::CardDataPool preload
+ShopManager.gd::_generate_shop_items()
+ShopManager.gd::_select_card_by_era_weight(base_era)
+ShopManager.gd::_get_cards_by_era(era)
+ShopCardPoolBridge.gd::get_cards_by_era(card_data_pool_script, era)
+```
+
+当前触碰的数据和节点：
+
+```text
+CardDataPool
+era
+CardDataPool.get_instance()
+card_data_pool.get_cards_by_era(era)
+fallback era_pools
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/bridges/ShopCardPoolBridge.gd
+```
+
+模块边界：
+
+- `ShopCardPoolBridge.gd` 只负责按时代读取 `CardDataPool` 候选卡牌，并保留旧 fallback。
+- 它不选择时代权重，不创建真实卡，不包装商品槽，不更新价格。
+- `ShopManager.gd` 继续负责 `_generate_shop_items()` 的完整商品生成编排。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+CardDataPool 单例读取、候选卡牌数量日志和 fallback 卡牌池从 ShopManager.gd 收口到 ShopCardPoolBridge。
+主脚本不再直接知道 CardDataPool 读取细节，只保留旧入口转发。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 ShopCardPoolBridge.gd 条目。
+当前优化方向已更新为评估 _update_price_display() 或转向 CraftReward.gd。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：107 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 的购买路径、刷新费用结算、升级费用结算和 CardDataPool 读取桥接都已经拆出。
+_get_cards_by_era(era) 现在只保留旧入口转发，商品生成主流程仍集中在 _generate_shop_items()。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 _update_price_display() 是否值得继续薄化。
+如果它已经只是价格和标签的短编排，就不要为拆而拆，转向 CraftReward.gd 或其他奖励页大文件。
+```

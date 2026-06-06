@@ -25,6 +25,7 @@ const ShopPurchaseValidatorScript = preload("res://scene/in_scene/rewards/rules/
 const ShopRefreshPurchaseProcessorScript = preload("res://scene/in_scene/rewards/rules/ShopRefreshPurchaseProcessor.gd")
 const ShopUpgradePurchaseProcessorScript = preload("res://scene/in_scene/rewards/rules/ShopUpgradePurchaseProcessor.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
+const ShopCardPoolBridgeScript = preload("res://scene/in_scene/rewards/bridges/ShopCardPoolBridge.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
 const RewardCardDescriptionExtractorScript = preload("res://scene/in_scene/rewards/presenters/RewardCardDescriptionExtractor.gd")
@@ -109,6 +110,7 @@ var _purchase_validator = null
 var _refresh_purchase_processor = null
 var _upgrade_purchase_processor = null
 var _global_node_finder = null
+var _card_pool_bridge = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
 var _card_description_extractor = null
@@ -186,6 +188,12 @@ func _get_global_node_finder():
 	if _global_node_finder == null:
 		_global_node_finder = ShopGlobalNodeFinderScript.new()
 	return _global_node_finder
+
+
+func _get_card_pool_bridge():
+	if _card_pool_bridge == null:
+		_card_pool_bridge = ShopCardPoolBridgeScript.new()
+	return _card_pool_bridge
 
 
 func _get_tooltip_adapter():
@@ -592,23 +600,7 @@ func _update_price_display():
 
 ## 根据时代获取卡牌ID列表 (对接 CardDataPool 系统)
 func _get_cards_by_era(era: int) -> Array[String]:
-	# ★ 重要: 使用 CardDataPool 单例获取卡牌ID列表
-	# CardDataPool 会自动跳过缺少时代和id的卡牌
-	var card_data_pool = CardDataPool.get_instance()
-	if card_data_pool:
-		var cards = card_data_pool.get_cards_by_era(era)
-		print("🃏 ShopManager: 从 CardDataPool 获取时代 %d 的卡牌，共 %d 张" % [era, cards.size()])
-		return cards
-	else:
-		push_error("❌ ShopManager: 无法获取 CardDataPool 单例")
-		# 备用方案: 返回硬编码的卡牌列表
-		var era_pools = {
-			1: ["1"],
-			2: ["2"],
-			3: ["3"],
-			4: [""]
-		}
-		return era_pools.get(era, [])
+	return _get_card_pool_bridge().get_cards_by_era(CardDataPool, era)
 
 ## ==========================================
 ## ★ 单例查找函数 (模仿 TimelineManager 中的查找逻辑)

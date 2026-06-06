@@ -417,6 +417,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要关闭奖励页，不修改商店列表。
 - 改进：后续可把“新增卡牌”和“同步运行时抽牌堆”拆成两个入口。
 
+#### `scene/in_scene/rewards/bridges/ShopCardPoolBridge.gd`
+
+- 用途：按时代从 `CardDataPool` 读取商店候选卡牌，并保留旧 fallback 卡牌池。
+- 维护：不要选择时代权重，不创建卡牌，不处理商品 UI。
+- 改进：fallback 卡牌池后续可以配置化，避免硬编码在桥接模块里。
+
 #### `scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd`
 
 - 用途：查找商店依赖的 `GlobalClock` 和 `global_timecoin`。
@@ -893,7 +899,7 @@ git diff --check
 
 ### 评估 ShopManager 剩余边界
 
-`ShopManager.gd` 的购买路径、刷新费用结算和升级费用结算都已经拆出。下一步优先重新评估剩余函数，而不是继续按行数机械拆。
+`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算和 CardDataPool 读取桥接都已经拆出。下一步优先重新评估剩余函数，而不是继续按行数机械拆。
 
 ```text
 _generate_shop_items()
@@ -901,7 +907,7 @@ _update_price_display()
 open_shop()
 ```
 
-如果继续处理商店，建议先看 `_update_price_display()` 是否可以只保留价格计算和标签更新的编排；不要同时改商品生成、时代偏移和 CardDataPool 读取。
+如果继续处理商店，建议先看 `_update_price_display()` 是否还有必要薄化；如果收益很小，就转向 `CraftReward.gd` 或其他奖励页大文件。不要同时改商品生成、时代偏移和价格显示。
 
 ### 不要急着继续拆 HexMap
 
