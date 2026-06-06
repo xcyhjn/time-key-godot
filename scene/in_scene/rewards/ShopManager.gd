@@ -22,6 +22,7 @@ const ShopPurchaseCardDetachPresenterScript = preload("res://scene/in_scene/rewa
 const ShopPurchasedItemRecordRemoverScript = preload("res://scene/in_scene/rewards/presenters/ShopPurchasedItemRecordRemover.gd")
 const ShopEraWeightSelectorScript = preload("res://scene/in_scene/rewards/rules/ShopEraWeightSelector.gd")
 const ShopPurchaseValidatorScript = preload("res://scene/in_scene/rewards/rules/ShopPurchaseValidator.gd")
+const ShopRefreshPurchaseProcessorScript = preload("res://scene/in_scene/rewards/rules/ShopRefreshPurchaseProcessor.gd")
 const ShopGlobalNodeFinderScript = preload("res://scene/in_scene/rewards/bridges/ShopGlobalNodeFinder.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
 const RewardTempPileFactoryScript = preload("res://scene/in_scene/rewards/factory/RewardTempPileFactory.gd")
@@ -104,6 +105,7 @@ var _purchase_card_detach_presenter = null
 var _purchased_item_record_remover = null
 var _era_weight_selector = null
 var _purchase_validator = null
+var _refresh_purchase_processor = null
 var _global_node_finder = null
 var _tooltip_adapter = null
 var _temp_pile_factory = null
@@ -164,6 +166,12 @@ func _get_purchase_validator():
 	if _purchase_validator == null:
 		_purchase_validator = ShopPurchaseValidatorScript.new()
 	return _purchase_validator
+
+
+func _get_refresh_purchase_processor():
+	if _refresh_purchase_processor == null:
+		_refresh_purchase_processor = ShopRefreshPurchaseProcessorScript.new()
+	return _refresh_purchase_processor
 
 
 func _get_global_node_finder():
@@ -475,15 +483,16 @@ func _on_fly_to_deck_finished(card_id: String, card: Control) -> void:
 
 ## 刷新商店
 func _on_refresh_pressed():
-	var refresh_cost = refresh_base_cost + (refresh_count * price_increment)
-	
-	# 验证时间币
-	if not _consume_timecoins(refresh_cost):
-		print("刷新失败: 时间币不足! 需要: %d" % refresh_cost)
+	var result: Dictionary = _get_refresh_purchase_processor().process_refresh(
+		refresh_base_cost,
+		refresh_count,
+		price_increment,
+		Callable(self, "_consume_timecoins")
+	)
+	if not result.get("success", false):
 		return
-	
-	refresh_count += 1
-	print("商店刷新成功! 消耗: %d 时间币, 刷新次数: %d" % [refresh_cost, refresh_count])
+
+	refresh_count = result.get("refresh_count", refresh_count)
 	
 	# 重新生成商品
 	_generate_shop_items()

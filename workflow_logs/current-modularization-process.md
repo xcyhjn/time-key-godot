@@ -5299,3 +5299,81 @@ _on_fly_to_deck_finished(card_id, card) 现在只保留购买完成后的流程�
 下一批优先重新评估 ShopManager.gd 购买路径是否已经足够薄。
 如果购买路径不再适合继续拆，则转向 _on_refresh_pressed() 和 _on_upgrade_pressed() 的价格计算、时间币消费和日志边界，每批只拆一个风险面。
 ```
+
+## ShopManager.gd 第二十批刷新费用结算拆分记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批只拆刷新商店按钮的费用结算。它保留 `_on_refresh_pressed()` 旧入口，只把刷新费用计算、时间币消费、失败/成功日志和下一次刷新次数结果交给新规则模块；不改升级按钮，不改商品生成，也不改价格标签刷新。
+
+目标函数范围：
+
+```text
+_on_refresh_pressed() 中 refresh_cost 计算、_consume_timecoins(refresh_cost)、刷新失败日志、refresh_count += 1、商店刷新成功日志
+```
+
+当前触碰的数据和节点：
+
+```text
+refresh_base_cost
+refresh_count
+price_increment
+Callable(self, "_consume_timecoins")
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/ShopRefreshPurchaseProcessor.gd
+```
+
+模块边界：
+
+- `ShopRefreshPurchaseProcessor.gd` 只负责商店刷新按钮的费用结算。
+- 它不生成商品，不更新价格标签，也不处理时代升级流程。
+- `ShopManager.gd` 继续负责刷新成功后的 `_generate_shop_items()` 和 `_update_price_display()`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+刷新商店的费用计算、时间币消费和刷新次数递增从 ShopManager.gd 收口到 ShopRefreshPurchaseProcessor。
+主脚本不再直接拼刷新费用日志，只接收结算结果并决定是否继续生成商品。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 ShopRefreshPurchaseProcessor.gd 条目。
+当前优化方向已更新为继续收口刷新和升级结算。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：105 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+首次加载 res://scene/in_scene/rewards/shop.tscn 时发现 `var result :=` 无法推断类型，已在本批改为 `var result: Dictionary`。
+Godot 项目 headless 检查退出码为 0，未出现本批脚本解析错误。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 的购买路径已经基本薄化，刷新按钮也已拆出费用结算。
+_on_refresh_pressed() 现在只保留刷新结算结果判断、商品重新生成和价格显示更新。
+```
+
+下一步计划：
+
+```text
+下一批优先拆 _on_upgrade_pressed() 中的升级费用计算、时间币消费、升级次数/时代偏移更新和日志。
+暂不改升级后的 _generate_shop_items() 和 _update_price_display()。
+```
