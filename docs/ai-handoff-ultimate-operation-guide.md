@@ -155,6 +155,7 @@ func run(config: Dictionary) -> Dictionary:
 ```text
 docs/ai-handoff-ultimate-operation-guide.md
 docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
 ```
 
 中间过程、批次记录、失败尝试、退出判断写到：

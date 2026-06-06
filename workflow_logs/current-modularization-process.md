@@ -5154,3 +5154,72 @@ ShopManager.gd 的购买流程已经拆出价格校验和购买成功后的商�
 下一批优先检查 _fly_to_deck_pile(card) 是否还需要进一步收口参数拼装或保持现状。
 如果飞行动画已足够薄，则转向 _on_fly_to_deck_finished(card_id, card) 的商店记录移除与牌库同步边界，仍然每批只拆一个风险面。
 ```
+
+## 已拆模块终极维护文档批次记录
+
+日期：2026-06-06
+
+### 本批目标
+
+本批不改任何 GDScript 行为，只为当前已经拆出的模块建立最新版总结性维护手册。文档模仿 `docs/hex-map-ultimate-operation-guide.md` 的写法，按模块目录和具体 `.gd` 文件逐一说明用途、维护边界和后续改进方向。
+
+目标文档范围：
+
+```text
+docs/modularized-files-ultimate-operation-guide.md
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+```
+
+覆盖模块范围：
+
+```text
+scene/in_scene/hex_map_modules/：31 个文件
+scene/in_scene/in_scene_modules/：32 个文件
+scene/in_scene/drag_modules/：16 个文件
+scene/in_scene/rewards/animation|bridges|diagnostics|factory|presenters|rules/：24 个文件
+合计：103 个已拆 GDScript 模块
+```
+
+### 新增文档
+
+```text
+docs/modularized-files-ultimate-operation-guide.md
+```
+
+文档边界：
+
+- 它负责汇总每个已拆模块的用途、维护边界和可继续优化方向。
+- 它不替代 `docs/hex-map-ultimate-operation-guide.md` 中关于 `map_data`、`stack_nodes` 和 metadata 的细节说明。
+- 它不记录中间批次过程；批次过程仍写入 `workflow_logs/current-modularization-process.md`。
+
+### 本批删除或收口的重复点
+
+删除原因：
+
+```text
+没有删除文档。本批把“每个拆分文件怎么用、怎么维护、下一步怎么优化”的说明集中成一份最新版总手册，避免 docs 目录出现大量零散批次文档。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：103 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有既有 LF/CRLF 提示。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+已拆模块现在有三份核心文档入口：AI 接力总说明、HexMap 专项操作手册、已拆模块总维护手册。
+后续 AI 可以先看 docs/modularized-files-ultimate-operation-guide.md 快速定位每个拆分模块的职责边界。
+```
+
+下一步计划：
+
+```text
+继续回到代码拆分主线时，优先处理 ShopManager.gd 的购买完成边界。
+建议下一批只拆 _on_fly_to_deck_finished(card_id, card) 中的商店记录移除，暂不改 RewardDeckSyncBridge.add_card_and_sync(...)。
+```

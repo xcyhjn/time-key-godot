@@ -34,10 +34,11 @@ scene/in_scene/hex_map_modules/
 
 ```text
 docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
 workflow_logs/current-modularization-process.md
 ```
 
-本文件是更偏操作的手册。需要做具体改动时，优先看本文件；需要理解历史拆分和后续接力方式时，再看接力说明与流程归档。`docs/` 目录不再保留每批 landing log。
+本文件是更偏 HexMap 操作的手册。需要做地图具体改动时，优先看本文件；需要查所有已拆模块的使用和维护边界时，看 `docs/modularized-files-ultimate-operation-guide.md`；需要理解历史拆分和后续接力方式时，再看接力说明与流程归档。`docs/` 目录不再保留每批 landing log。
 
 ## 一句话职责
 
