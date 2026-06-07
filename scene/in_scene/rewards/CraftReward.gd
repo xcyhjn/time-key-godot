@@ -298,6 +298,9 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 @export_group("Tooltip资源配置")
 @export var tooltip_config: TooltipConfig = preload("res://scene/shared/tooltip/reward_card_tooltip_config.tres")
 
+@export_group("配方资源配置")
+@export var craft_recipe_book: Resource = preload("res://scene/in_scene/rewards/resources/default_craft_recipe_book.tres")
+
 
 func _ready() -> void:
 	slot1.pressed.connect(_on_slot_pressed.bind(SLOT_1))
@@ -811,7 +814,7 @@ func _get_current_deck_card_ids() -> Array[String]:
 
 
 func _get_recipe_result(card_a_id: String, card_b_id: String) -> String:
-	return _get_recipe_resolver().get_recipe_result(card_a_id, card_b_id, CRAFTING_RECIPES)
+	return _get_recipe_resolver().get_recipe_result(card_a_id, card_b_id, craft_recipe_book, CRAFTING_RECIPES)
 
 
 func _has_clickable_entry(entries: Array) -> bool:

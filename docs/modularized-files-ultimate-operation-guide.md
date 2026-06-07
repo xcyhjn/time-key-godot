@@ -27,6 +27,7 @@ scene/in_scene/rewards/diagnostics/
 scene/in_scene/rewards/factory/
 scene/in_scene/rewards/presenters/
 scene/in_scene/rewards/rules/
+scene/in_scene/rewards/resources/
 ```
 
 这些目录下的模块都应该保持“小职责、旧入口转发、可单批验证”的风格。不要为了减少主文件行数，把多个跨系统步骤塞进一个新模块。
@@ -613,9 +614,9 @@ scene/in_scene/rewards/rules/
 
 #### `scene/in_scene/rewards/rules/CraftRecipeResolver.gd`
 
-- 用途：查询合成配方结果。
+- 用途：查询合成配方结果，优先读取 `CraftRecipeBook`，资源缺失时回退旧字典。
 - 维护：不要修改牌库，不创建卡牌，不改合成选择状态。
-- 改进：配方表可以资源化，减少硬编码字典。
+- 改进：如果旧 `CRAFTING_RECIPES` fallback 后续不再需要，可在确认资源稳定后删除。
 
 #### `scene/in_scene/rewards/rules/CraftResultDeckIndexResolver.gd`
 
@@ -676,6 +677,26 @@ scene/in_scene/rewards/rules/
 - 用途：处理商店升级按钮的费用计算、时间币消费、升级次数和本地时代偏移结果。
 - 维护：不要生成商品，不更新价格标签，也不要读取或修改全局时代。
 - 改进：后续可和刷新费用结算模块共享更小的费用消费 helper。
+
+### resources
+
+#### `scene/in_scene/rewards/resources/CraftRecipeBook.gd`
+
+- 用途：保存合成配方表并提供只读查询。
+- 维护：不要修改牌组，不创建卡牌，不访问场景树或奖励页 UI。
+- 改进：新增配方优先改 `default_craft_recipe_book.tres`，不要回到 `CraftReward.gd` 写硬编码字典。
+
+#### `scene/in_scene/rewards/resources/CraftRecipeEntry.gd`
+
+- 用途：记录一条合成配方的静态数据：主卡、副卡和结果卡。
+- 维护：不要检查卡牌是否存在，不处理正反向匹配逻辑。
+- 改进：如果配方后续需要成本、条件或时代限制，优先给 entry 加静态字段，再由 resolver 或规则模块读取。
+
+#### `scene/in_scene/rewards/resources/default_craft_recipe_book.tres`
+
+- 用途：默认合成配方资源，目前承载 `wind + tower -> tornado` 和 `lighting + earthquake -> poison`。
+- 维护：这是数据资产，不是脚本模块；新增配方时只改资源内容，并保留 `CraftRecipeBook.gd` 的只读职责。
+- 改进：等编辑器缓存稳定后，可以给 `.tres` 补 `uid`，但不要把忽略的 `.gd.uid` 加入提交。
 
 ## HexMap 拆分模块
 
@@ -1012,13 +1033,13 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、合成移除索引、合成结果牌组写入、选择条目构建、选择卡状态、连接线、预览清理、预览卡 UI 配置、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块，并且 `_create_preview_card()` 已复用 `RewardDraftCardFactory`。下一步可重新扫描剩余大函数：
+`CraftReward.gd` 已经拆出配方查询、合成配方资源、合成移除索引、合成结果牌组写入、选择条目构建、选择卡状态、连接线、预览清理、预览卡 UI 配置、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块，并且 `_create_preview_card()` 已复用 `RewardDraftCardFactory`。下一步可重新扫描剩余大函数：
 
 ```text
 _refresh_result_preview()
 ```
 
-`_create_preview_card()` 剩余临时牌堆创建、真实卡生成、数据写入和释放临时牌堆属于同一异步编排，不建议继续硬拆。`_apply_crafting_result_to_deck()` 剩余同步运行时抽牌堆和关闭流程也已经接近页面编排，不建议继续硬拆。下一批如果继续 Craft，优先评估 `CRAFTING_RECIPES` 配方表资源化。
+`_create_preview_card()` 剩余临时牌堆创建、真实卡生成、数据写入和释放临时牌堆属于同一异步编排，不建议继续硬拆。`_apply_crafting_result_to_deck()` 剩余同步运行时抽牌堆和关闭流程也已经接近页面编排，不建议继续硬拆。`CRAFTING_RECIPES` 已资源化，后续不要再围绕 Craft 页面硬拆；除非新增配方字段，否则转向 Shop 或 Drag。
 
 ### RemoveReward 继续清理页面专属小边界
 

@@ -7343,3 +7343,152 @@ CraftReward.gd 的预览创建链和确认写入链都不建议继续硬拆。
 如果配方表资源化需要牵动场景、卡牌数据池或保存系统，就停止 Resource 改造，转向 DragShapeController.gd 的放置完成流程。
 ShopManager.gd 后续只评估临时牌堆生命周期或定价/时代权重配置资源化，不再硬拆单商品生成编排。
 ```
+
+## CraftReward.gd 合成配方资源化记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批继续评估 `CraftReward.gd::CRAFTING_RECIPES`。结论是它是静态配方数据，适合注册成 Resource；本批只做配方表资源化，不触碰合成选择、预览异步链、牌组写入、运行时抽牌堆同步或奖励页关闭。
+
+目标文件：
+
+```text
+scene/in_scene/rewards/CraftReward.gd
+scene/in_scene/rewards/rules/CraftRecipeResolver.gd
+scene/in_scene/rewards/resources/CraftRecipeBook.gd
+scene/in_scene/rewards/resources/CraftRecipeEntry.gd
+scene/in_scene/rewards/resources/default_craft_recipe_book.tres
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+```
+
+`rg` 轮廓：
+
+```text
+CraftReward.gd::CRAFTING_RECIPES
+CraftReward.gd::craft_recipe_book
+CraftReward.gd::_get_recipe_result(card_a_id, card_b_id)
+CraftRecipeResolver.gd::get_recipe_result(card_a_id, card_b_id, recipe_book, fallback_recipes)
+CraftRecipeBook.gd::get_recipe_result(card_a_id, card_b_id)
+CraftRecipeEntry.gd::card_a_id / card_b_id / result_card_id
+```
+
+### 当前职责与耦合点
+
+`CraftReward.gd` 当前仍负责合成页 UI 编排：
+
+```text
+素材槽选择
+配方结果刷新
+预览卡异步创建
+确认按钮与关闭
+牌组写入入口
+```
+
+本批耦合点：
+
+```text
+_get_recipe_result() 会被选择列表过滤和结果预览刷新共同调用。
+CraftRecipeResolver.gd 原本只接收 Dictionary。
+新 Resource 脚本首次进入 Godot 时，class_name 全局类缓存可能尚未刷新。
+```
+
+### 待拆清单
+
+```text
+P1：ShopManager.gd 定价、刷新/升级费用和时代权重资源化评估。
+P1：DragShapeController.gd 放置完成流程的数据流梳理。
+P2：ShopManager.gd::_generate_shop_items() 的临时牌堆生命周期等更小边界。
+P2：timeline_ui.gd 行动块表现或清理动画。
+P2：out_scene_map_exp.gd 房间结算 payload 消费拆分。
+```
+
+### 本批风险面
+
+本批只触碰 1 个清晰风险面：
+
+```text
+合成配方静态数据来源从硬编码字典迁移为 CraftRecipeBook Resource。
+```
+
+涉及的 3 个小风险点：
+
+```text
+默认配方资源能被 CraftReward.gd preload。
+CraftRecipeResolver.gd 优先读取 Resource，资源缺失时回退 CRAFTING_RECIPES。
+Resource 脚本内部避免直接依赖新 class_name 类型，防止首次 headless 解析失败。
+```
+
+不触碰：
+
+```text
+slot_entries 和 current_result_card_id。
+_refresh_result_preview() 异步预览创建。
+_apply_crafting_result_to_deck() 牌组写入和同步。
+Craft 关闭流程。
+```
+
+### 新增资源与模块
+
+```text
+scene/in_scene/rewards/resources/CraftRecipeBook.gd
+scene/in_scene/rewards/resources/CraftRecipeEntry.gd
+scene/in_scene/rewards/resources/default_craft_recipe_book.tres
+```
+
+职责：
+
+```text
+CraftRecipeBook.gd 只保存配方表并提供只读查询。
+CraftRecipeEntry.gd 只记录单条配方的主卡、副卡和结果卡。
+default_craft_recipe_book.tres 是默认配方数据资产，不处理逻辑。
+```
+
+### 本批实现注意
+
+```text
+CraftRecipeBook.gd 保留 class_name，方便编辑器识别。
+CraftRecipeBook.gd 内部 recipes 使用 Array[Resource]，字段读取用 Resource.get()。
+CraftReward.gd 的 craft_recipe_book 导出类型使用 Resource。
+这样可以避免新 Resource 首次进入项目时，Godot 全局类缓存尚未刷新导致 Parse Error。
+```
+
+### 文档同步
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md 已更新模块数为 126，并把下一优先级切到 Shop 配置资源化或 Drag 放置流程。
+docs/modularized-files-ultimate-operation-guide.md 已新增 rewards/resources 分类和 CraftRecipeBook、CraftRecipeEntry、default_craft_recipe_book.tres 条目。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：126 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有 CraftReward.gd、CraftRecipeResolver.gd 和 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+首次验证时发现新 Resource 脚本直接引用新 class_name 会导致 Craft 场景 Parse Error；本批已改为导出 Resource 和 Array[Resource]，并使用 Resource.get() 读取字段。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的 CRAFTING_RECIPES 已资源化为 default_craft_recipe_book.tres。
+CraftRecipeResolver.gd 优先读取 CraftRecipeBook，资源缺失时回退旧 CRAFTING_RECIPES 字典。
+CraftReward.gd 的预览创建链、确认写入链和配方数据来源都已收口，不建议继续围绕 Craft 页面硬拆。
+本批新增 2 个 Resource 脚本模块，已拆模块总数从 124 增至 126。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 ShopManager.gd 的定价、刷新/升级费用和时代权重资源化。
+如果 Shop 配置资源化需要牵动商品生成异步链，就停止 Shop，转向 DragShapeController.gd 的放置完成流程。
+DragShapeController.gd 评估时先写清时间轴行动创建、卡牌归属变化和 UI 恢复边界，不要同批修改卡牌归属和 UI 清理。
+```
