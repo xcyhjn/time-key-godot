@@ -57,7 +57,7 @@ scene/in_scene/rewards/resources/
 
 ## DragShapeController 拆分模块
 
-这些文件服务于 `scene/in_scene/DragShapeController.gd`。它们处理拖拽、时间轴预览、放置校验、拒绝提示、放置动画、玩家行动创建、时间轴提交和成功后的卡牌视觉复原。
+这些文件服务于 `scene/in_scene/DragShapeController.gd`。它们处理拖拽、时间轴预览、放置校验、拒绝提示、放置动画、玩家行动创建、时间轴提交、成功后的卡牌视觉复原和弃牌移动。
 
 ### animation
 
@@ -83,6 +83,15 @@ scene/in_scene/rewards/resources/
 - 入口：`get_main_board()`、`get_card_manager()`、`find_discard_pile()`、`find_player_hand()`、`get_hex_map()`。
 - 维护：只改查找路径和兜底顺序，不要缓存拖拽状态。
 - 改进：如果场景树继续变化，优先改这个文件，避免把新路径散回 `DragShapeController.gd`。
+
+### cards
+
+#### `scene/in_scene/drag_modules/cards/DragSuccessDiscardMover.gd`
+
+- 用途：成功放置后把卡牌移入弃牌区，并触发 `MainBoard` 旧弃牌效果。
+- 入口：`move_to_discard(...)`。
+- 维护：不要查找弃牌区或 MainBoard，不处理回手牌 fallback，也不要收起时间轴。
+- 改进：如果后续弃牌效果从 MainBoard 迁出，可在这里替换触发入口，但仍保持失败时只返回 `false`。
 
 ### coordinates
 
@@ -1106,16 +1115,16 @@ _on_confirm_pressed()
 
 ### DragShapeController 适合继续清理完成流程
 
-拖拽放置动画前后的状态已经拆出不少，玩家 `TimelineAction` 创建、时间轴提交和成功后的卡牌视觉复原已经分别进入 `DragPlayerActionFactory.gd`、`DragTimelineActionSubmitter.gd` 与 `DragSuccessCardVisualRestorer.gd`。后续可关注放置成功后的收尾流程，但要先写清楚卡牌归属变化和 UI 恢复的边界。
+拖拽放置动画前后的状态已经拆出不少，玩家 `TimelineAction` 创建、时间轴提交、成功后的卡牌视觉复原和弃牌移动已经分别进入 `DragPlayerActionFactory.gd`、`DragTimelineActionSubmitter.gd`、`DragSuccessCardVisualRestorer.gd` 与 `DragSuccessDiscardMover.gd`。后续可关注放置成功后的 UI 收尾流程，但要先写清楚时间轴收起、主状态清理和回手牌 fallback 的边界。
 
 下一批如果继续 Drag，优先评估：
 
 ```text
-end_dragging_success() 中弃牌归属移动
-或 end_dragging_success() 中成功后 UI/时间轴收起
+end_dragging_success() 中成功后 UI/时间轴收起
+或 _return_card_to_hand() 的失败 fallback 收尾
 ```
 
-如果这一步需要同时吞掉失败动画、效果触发、预览清理、弃牌收尾、手牌同步和时间轴收起，就停止拆分，保留 `DragShapeController.gd` 作为 composition root。
+如果这一步需要同时吞掉失败动画、效果触发、预览清理、弃牌收尾、手牌同步和主状态清理，就停止拆分，保留 `DragShapeController.gd` 作为 composition root。
 
 ### InScene 剩余大块需要更强回归
 

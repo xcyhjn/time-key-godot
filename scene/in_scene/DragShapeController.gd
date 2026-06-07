@@ -25,6 +25,7 @@ const DragPlacementAnimationRunnerScript = preload("res://scene/in_scene/drag_mo
 const DragPlayerActionFactoryScript = preload("res://scene/in_scene/drag_modules/rules/DragPlayerActionFactory.gd")
 const DragTimelineActionSubmitterScript = preload("res://scene/in_scene/drag_modules/timeline/DragTimelineActionSubmitter.gd")
 const DragSuccessCardVisualRestorerScript = preload("res://scene/in_scene/drag_modules/presenters/DragSuccessCardVisualRestorer.gd")
+const DragSuccessDiscardMoverScript = preload("res://scene/in_scene/drag_modules/cards/DragSuccessDiscardMover.gd")
 
 # ==========================================
 # 信号
@@ -101,6 +102,7 @@ var _placement_animation_runner = null
 var _player_action_factory = null
 var _timeline_action_submitter = null
 var _success_card_visual_restorer = null
+var _success_discard_mover = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -228,6 +230,12 @@ func _get_success_card_visual_restorer():
 	return _success_card_visual_restorer
 
 
+func _get_success_discard_mover():
+	if _success_discard_mover == null:
+		_success_discard_mover = DragSuccessDiscardMoverScript.new()
+	return _success_discard_mover
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -275,6 +283,7 @@ func _ready() -> void:
 	_player_action_factory = DragPlayerActionFactoryScript.new()
 	_timeline_action_submitter = DragTimelineActionSubmitterScript.new()
 	_success_card_visual_restorer = DragSuccessCardVisualRestorerScript.new()
+	_success_discard_mover = DragSuccessDiscardMoverScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -969,16 +978,12 @@ func end_dragging_success() -> void:
 	if is_instance_valid(current_card):
 		var discard_pile_node = _find_discard_pile()
 		var main_board = _get_main_board()
-
-		# 直接尝试移入弃牌区
-		if is_instance_valid(discard_pile_node) and discard_pile_node.has_method("move_cards"):
-			discard_pile_node.move_cards([current_card])
-			
-			# 触发弃牌效果
-			if is_instance_valid(main_board) and main_board.has_method("_handle_discard_effects"):
-				main_board.call_deferred("_handle_discard_effects", current_card)
-		else:
-			# 终极回退
+		var moved_to_discard: bool = _get_success_discard_mover().move_to_discard(
+			current_card,
+			discard_pile_node,
+			main_board
+		)
+		if not moved_to_discard:
 			_return_card_to_hand(current_card)
 
 	# 收起时间轴

@@ -8152,3 +8152,131 @@ end_dragging_success() 剩余 drag_ended 信号、弃牌归属移动、弃牌效
 如果弃牌移动需要同时接管 MainBoard 旧效果、手牌 fallback、时间轴收起和主状态清理，就停止拆该边界。
 另一个可选方向是 ShopManager.gd 的临时牌堆生命周期，但不要回到 Shop 定价或时代权重 Resource。
 ```
+
+## DragShapeController.gd 第二十三批成功弃牌移动拆分记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批继续 `DragShapeController.gd` 的放置成功收尾，但只拆最小边界：“成功放置后把卡牌移入弃牌区并触发旧弃牌效果”。不拆回手牌 fallback，不拆时间轴收起，不拆主状态清理，也不改 `drag_ended` 信号。
+
+### rg 轮廓
+
+```text
+scene/in_scene/DragShapeController.gd
+const DragSuccessDiscardMoverScript
+var _success_discard_mover
+func _get_success_discard_mover()
+func end_dragging_success()
+func _return_card_to_hand(card: Node)
+
+scene/in_scene/drag_modules/cards/DragSuccessDiscardMover.gd
+func move_to_discard(card: Control, discard_pile: Node, main_board: Node) -> bool
+
+scene/in_scene/drag_modules/bridges/DragShapeNodeBridge.gd
+func get_main_board() -> Node
+func find_discard_pile() -> Node
+func find_player_hand() -> Node
+```
+
+### 当前职责
+
+`DragShapeController.gd` 仍是拖拽系统 composition root，负责编排拖拽结束状态、`drag_ended` 信号、成功视觉复原、弃牌移动失败后的回手牌 fallback、时间轴收起和主状态清理。
+
+本批后，`DragSuccessDiscardMover.gd` 只承担一个窄职责：当主脚本传入有效卡牌、弃牌区和 MainBoard 时，调用弃牌区 `move_cards([card])`，并延迟触发旧的 `_handle_discard_effects(card)`。它不查找任何节点，不处理失败回手牌，也不收起时间轴。
+
+### 当前耦合点
+
+```text
+end_dragging_success() 仍负责查找 discard_pile_node 和 main_board。
+DragSuccessDiscardMover.gd 只返回 bool，失败时由 DragShapeController.gd 调用 _return_card_to_hand(current_card)。
+_return_card_to_hand() 仍负责手牌查找、回手牌、时间轴 fallback 展开、tooltip 隐藏和状态清空。
+时间轴 collapse 仍由 DragShapeController.gd 调用 DragTimelineUiStateController。
+```
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 低风险原因 | 暂不触碰 |
+| --- | --- | --- | --- | --- |
+| 1 | `DragSuccessDiscardMover.gd` | `end_dragging_success()` 中 `move_cards()` 与 `_handle_discard_effects()` | 只接收已查好的节点，只返回成功/失败 | 本批执行 |
+| 2 | 成功后 UI/时间轴收起 | `end_dragging_success()` 中 `collapse(timeline_ui)` | 已有 `DragTimelineUiStateController`，但单行 wrapper 收益很低 | 本批不碰 |
+| 3 | `_return_card_to_hand()` fallback 收尾 | 回手牌、timeline toggle、tooltip、状态清空 | 触碰手牌、UI 和主状态，风险更高 | 本批不碰 |
+| 4 | 判断停止 Drag 成功收尾拆分 | 剩余代码接近 composition root 编排 | 继续拆可能只降低行数 | 本批不碰 |
+
+### 本批风险面
+
+本批风险面：成功放置后的弃牌区移动和旧弃牌效果触发。
+
+涉及的 3 个小风险点：
+
+```text
+新增 DragSuccessDiscardMover.gd，集中调用 discard_pile.move_cards([card])。
+DragShapeController.gd 增加 preload、缓存 getter 和 _ready() 初始化。
+end_dragging_success() 保留旧节点查找和 fallback，只把弃牌移动块替换为 move_to_discard(...)。
+```
+
+不触碰：
+
+```text
+drag_ended.emit(current_card, true) 的触发时机。
+DragSuccessCardVisualRestorer.gd 的视觉复原。
+_return_card_to_hand() 的回手牌 fallback 和状态清空。
+_get_timeline_ui_state_controller().collapse(timeline_ui)。
+失败动画、效果触发、时间轴提交和 TimelineManager。
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/cards/DragSuccessDiscardMover.gd
+```
+
+职责：
+
+```text
+DragSuccessDiscardMover.gd 只负责成功放置后把卡牌移入弃牌区并触发旧弃牌效果。
+它不查找节点，不处理回手牌 fallback，也不收起时间轴。
+```
+
+### 本批实现注意
+
+```text
+move_to_discard() 在 card、discard_pile 或 move_cards() 无效时返回 false，让主脚本沿用旧 fallback。
+旧的 MainBoard._handle_discard_effects(card) 仍使用 call_deferred，保持原触发时机。
+main_board 无效不会阻止卡牌进入弃牌区，只跳过旧弃牌效果，保持旧逻辑。
+```
+
+### 文档同步
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md 已更新模块数为 132，并把 Drag 下一步切到成功后 UI/时间轴收起或停止拆分评估。
+docs/modularized-files-ultimate-operation-guide.md 已新增 DragSuccessDiscardMover.gd 条目。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：135 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 132 个。
+git diff --check 通过，仅有 DragShapeController.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+DragShapeController.gd 的放置完成流程已拆出玩家 TimelineAction 创建、时间轴提交、成功卡牌视觉复原和成功弃牌移动。
+end_dragging_success() 剩余 drag_ended 信号、弃牌失败 fallback 和时间轴收起仍在主脚本中编排。
+已拆模块总数从 131 增至 132。
+```
+
+下一步计划：
+
+```text
+下一批如果继续 Drag，优先评估 end_dragging_success() 中成功后 UI/时间轴收起是否值得拆。
+如果只剩 collapse(timeline_ui) 这种单行 wrapper，就停止 DragShapeController 的成功收尾拆分。
+另一个可选方向是 ShopManager.gd 的临时牌堆生命周期，但不要回到 Shop 定价或时代权重 Resource。
+```
