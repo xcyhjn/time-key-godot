@@ -1,6 +1,6 @@
 # 已拆模块终极使用、操作、改进与维护说明
 
-日期：2026-06-06
+日期：2026-06-07
 
 ## 先读这一段
 
@@ -623,6 +623,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要修改 `GlobalDB`，不要添加结果卡，也不同步运行时抽牌堆。
 - 改进：后续可和删除奖励页的牌组索引规则统一。
 
+#### `scene/in_scene/rewards/rules/CraftResultDeckWriteProcessor.gd`
+
+- 用途：把合成结果写入传入的牌组数组，按倒序索引移除素材牌并追加结果卡。
+- 维护：不要计算素材牌索引，不同步运行时抽牌堆，也不要处理奖励页 UI 或关闭流程。
+- 改进：如果 `deck_manager` 后续提供稳定的批量替换接口，可以让本模块返回写入计划，再由桥接层执行。
+
 #### `scene/in_scene/rewards/rules/CraftSelectionEntryBuilder.gd`
 
 - 用途：生成合成选择列表条目，并返回 pending 选择和可直接返回状态建议。
@@ -1006,13 +1012,13 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、预览卡 UI 配置、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块，并且 `_create_preview_card()` 已复用 `RewardDraftCardFactory`。下一步可重新扫描剩余大函数：
+`CraftReward.gd` 已经拆出配方查询、合成移除索引、合成结果牌组写入、选择条目构建、选择卡状态、连接线、预览清理、预览卡 UI 配置、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块，并且 `_create_preview_card()` 已复用 `RewardDraftCardFactory`。下一步可重新扫描剩余大函数：
 
 ```text
 _refresh_result_preview()
 ```
 
-`_create_preview_card()` 剩余临时牌堆创建、真实卡生成、数据写入和释放临时牌堆属于同一异步编排，不建议继续硬拆。下一批建议转向 `_apply_crafting_result_to_deck()` 的牌组写入和同步。
+`_create_preview_card()` 剩余临时牌堆创建、真实卡生成、数据写入和释放临时牌堆属于同一异步编排，不建议继续硬拆。`_apply_crafting_result_to_deck()` 剩余同步运行时抽牌堆和关闭流程也已经接近页面编排，不建议继续硬拆。下一批如果继续 Craft，优先评估 `CRAFTING_RECIPES` 配方表资源化。
 
 ### RemoveReward 继续清理页面专属小边界
 

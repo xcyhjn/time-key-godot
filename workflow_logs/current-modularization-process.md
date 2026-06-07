@@ -7183,3 +7183,163 @@ _create_preview_card() 剩余临时牌堆、真实卡生成、异步数据写入
 如果写入边界仍会和 RemoveReward 的删牌/同步规则重复或传入过多状态，就停止 CraftReward，转向 DragShapeController.gd 的放置完成流程。
 ShopManager.gd 只在需要时评估临时牌堆生命周期，不再回到单商品生成硬拆。
 ```
+
+## CraftReward.gd 合成结果牌组写入处理记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批继续评估 `CraftReward.gd::_apply_crafting_result_to_deck()`。上一批已经把合成素材牌的倒序索引计算拆到 `CraftResultDeckIndexResolver.gd`，本批只收口真实牌组数组写入：按索引移除素材牌，并追加合成结果卡。运行时抽牌堆同步和奖励页关闭仍留在主脚本编排。
+
+目标文件：
+
+```text
+scene/in_scene/rewards/CraftReward.gd
+scene/in_scene/rewards/rules/CraftResultDeckWriteProcessor.gd
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+```
+
+`rg` 轮廓：
+
+```text
+CraftReward.gd::_apply_crafting_result_to_deck()
+CraftReward.gd::_get_result_deck_index_resolver()
+CraftReward.gd::_get_result_deck_write_processor()
+CraftResultDeckIndexResolver.gd::get_remove_indices(slot_entries, slot_1, slot_2)
+CraftResultDeckWriteProcessor.gd::apply_result(player_deck, remove_indices, result_card_id)
+RewardDeckSyncBridge.gd::sync_runtime_deck(owner, deck_manager)
+```
+
+### 当前职责与耦合点
+
+`CraftReward.gd` 当前仍承担合成奖励页的页面编排：
+
+```text
+槽位选择和取消
+配方结果刷新
+预览卡异步创建
+确认按钮动效
+牌组写入入口
+运行时抽牌堆同步
+奖励页提交和关闭
+```
+
+最明显的耦合点：
+
+```text
+slot_entries 同时记录 UI 槽位、card_id 和原始牌组索引。
+GlobalDB.player_deck 是真实持久牌组数据，写入后还需要 RewardDeckSyncBridge 同步局内抽牌堆。
+_claim_result_card() 还要处理确认按钮、tooltip、reset、settlement_reward_committed 和 close()。
+```
+
+### 待拆清单
+
+```text
+P1：CraftReward.gd::CRAFTING_RECIPES 配方表资源化评估。
+P1：DragShapeController.gd 放置完成流程的数据流梳理。
+P2：ShopManager.gd::_generate_shop_items() 的临时牌堆生命周期等更小边界。
+P2：timeline_ui.gd 行动块表现或清理动画。
+P2：out_scene_map_exp.gd 房间结算 payload 消费拆分。
+```
+
+### 本批风险面
+
+本批只触碰 1 个清晰风险面：
+
+```text
+GlobalDB.player_deck 的 remove_at 和 append 写入细节。
+```
+
+不触碰：
+
+```text
+slot_entries 的生成和 deck_index 记录。
+移除索引计算顺序。
+RewardDeckSyncBridge 的运行时同步。
+确认按钮动画、tooltip、reset 和 close()。
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/rules/CraftResultDeckWriteProcessor.gd
+```
+
+职责：
+
+```text
+只负责把合成结果写入传入的牌组数组。
+不计算素材牌索引，不同步运行时抽牌堆，也不处理奖励页 UI 或关闭流程。
+```
+
+### Resource 化候选分析
+
+本批只分析，不做 Resource 改造。Resource 适合承载可复用、可 Inspector 调参、默认只读的数据；运行态状态和场景节点不适合直接资源化。
+
+适合优先注册成 Resource 的内容：
+
+```text
+P1：CraftReward.gd::CRAFTING_RECIPES。
+原因：静态配方表，已经由 CraftRecipeResolver.gd 读取，适合拆成 CraftRecipeBook / CraftRecipeEntry。
+
+P1：ShopManager.gd 的 base_price、price_increment、refresh_base_cost、upgrade_base_cost、时代权重。
+原因：都是调参型策略数据，可以拆成 ShopPricingConfig / ShopEraWeightConfig。
+
+P2：timeline_ui.gd 的网格、行动块、敌方意图 overlay 和清理动画表现参数。
+原因：大量导出表现参数集中在 UI 层，适合 TimelineVisualConfig，但需要先避免和 TimelineManager 数据规则混在一起。
+
+P2：hex_map.gd 的高度视图、敌方意图地图表现、入场动画、地貌投放配额。
+原因：参数已经比较多，但 HexMap 是大 composition root，建议拆成多个小 Resource，而不是一个巨型 GameConfig。
+
+P2：DragShapeController.gd 的拖拽动画、吸附速度、旋转/缩放时长和拒绝提示样式。
+原因：表现调参数据多于规则数据，适合 DragPlacementVisualConfig。
+```
+
+暂不适合资源化的内容：
+
+```text
+GlobalDB.player_deck、map_data、stack_nodes、slot_entries、current_result_card_id。
+临时牌堆、真实卡节点、DraftCard 节点、Tween、场景树查询结果。
+需要 get_tree()、输入、动画回调或跨场景同步的行为。
+```
+
+下一批如果做 Resource，最稳目标是 `CRAFTING_RECIPES`。它是静态数据，改造面小，且可以保留旧字典 fallback，便于验证。
+
+### 文档同步
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md 已更新模块数为 124，并加入 Resource 化候选总结。
+docs/modularized-files-ultimate-operation-guide.md 已加入 CraftResultDeckWriteProcessor.gd 条目。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：124 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有 CraftReward.gd 和 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+in_scene.tscn 仍输出退出时 RID/ObjectDB/resource 占用提示，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 的 _apply_crafting_result_to_deck() 已拆出结果牌组写入处理，主脚本只保留移除索引解析、运行时抽牌堆同步和页面收尾编排。
+CraftReward.gd 的预览创建链和确认写入链都不建议继续硬拆。
+本批新增 1 个模块，已拆模块总数从 123 增至 124。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 CraftReward.gd::CRAFTING_RECIPES 的 Resource 化，目标是 CraftRecipeBook / CraftRecipeEntry。
+如果配方表资源化需要牵动场景、卡牌数据池或保存系统，就停止 Resource 改造，转向 DragShapeController.gd 的放置完成流程。
+ShopManager.gd 后续只评估临时牌堆生命周期或定价/时代权重配置资源化，不再硬拆单商品生成编排。
+```
