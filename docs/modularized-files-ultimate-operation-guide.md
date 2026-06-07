@@ -246,16 +246,16 @@ scene/out_scene/out_scene_modules/
 
 ## TimelineUI 拆分模块
 
-这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、敌方意图 overlay、行动方格动画、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知。`timeline_ui.gd` 仍负责连接 `TimelineManager`、维护行动容器字典、持有当前 hover 引用和决定清理动画触发时机。
+这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、敌方意图 overlay、行动方格动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知。`timeline_ui.gd` 仍负责连接 `TimelineManager`、维护行动容器字典、持有当前 hover 引用和决定清理动画触发时机。
 
 ### animation
 
 #### `scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd`
 
-- 用途：从即将移除的时间轴行动容器生成无 Shader、无 Overlay、无鼠标交互的清理动画残影。
-- 入口：`create_ghost(...)`。
-- 维护：不要启动 Tween，不修改 `TimelineManager` 数据，不维护 `action_containers`，也不要清理原行动容器。
-- 改进：如果清理动画需要多种残影样式，可以在这里扩展复制策略，仍让 `timeline_ui.gd` 决定何时触发播放。
+- 用途：从即将移除的时间轴行动容器生成无 Shader、无 Overlay、无鼠标交互的清理动画残影，并卸载原容器上的运行时视觉效果。
+- 入口：`create_ghost(...)`、`strip_runtime_effects(...)`。
+- 维护：不要启动 Tween，不修改 `TimelineManager` 数据，不维护 `action_containers`，也不要释放原行动容器。
+- 改进：如果清理动画需要多种残影样式，可以在这里扩展复制策略，仍让 `timeline_ui.gd` 决定何时触发播放和释放原容器。
 
 #### `scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd`
 
@@ -316,8 +316,8 @@ scene/out_scene/out_scene_modules/
 
 #### `scene/in_scene/timeline/ui_modules/layout/TimelineExpandVisualController.gd`
 
-- 用途：处理时间轴展开/收起时的遮罩表现和地图交互过滤。
-- 入口：`create_background_mask(...)`、`animate_background_mask(...)`、`set_map_interaction_for_expand(...)`。
+- 用途：处理时间轴展开/收起时的遮罩表现、时间轴缩放表现和地图交互过滤。
+- 入口：`create_background_mask(...)`、`animate_background_mask(...)`、`animate_timeline_scale(...)`、`set_map_interaction_for_expand(...)`。
 - 维护：不要创建行动块，不改时间轴数据，也不要处理拖拽预览。
 - 改进：遮罩颜色和层级可以进入视觉配置 Resource。
 
@@ -332,10 +332,31 @@ scene/out_scene/out_scene_modules/
 
 #### `scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd`
 
-- 用途：创建和配置时间轴敌方意图 overlay 材质，并批量切换 overlay 显隐。
-- 入口：`create_overlay_material(...)`、`set_overlay_visible(...)`、`configure_material(...)`。
+- 用途：创建和配置时间轴敌方意图 overlay 材质，批量切换 overlay 显隐，并应用/清理敌方意图预览的容器视觉状态。
+- 入口：`build_config(...)`、`create_overlay_material_from_config(...)`、`set_overlay_visible_from_config(...)`、`apply_preview_state(...)`、`clear_preview_state(...)`、`configure_material_from_config(...)`；旧的逐参数入口仍保留作兼容包装。
 - 维护：不要决定何时进入预览，不创建行动块，不修改 `TimelineManager` 数据，也不处理移除动画。
-- 改进：敌方意图 overlay 的 shader 参数后续可迁入 `TimelineVisualConfig`。
+- 改进：敌方意图 overlay 的 shader 参数后续可从当前字典迁入 `TimelineVisualConfig`。
+
+#### `scene/in_scene/timeline/ui_modules/presenters/TimelineActionBlockPresenter.gd`
+
+- 用途：创建单个时间轴行动方块 Panel、基础样式和 `EnemyIntentOverlay` 子节点。
+- 入口：`create_action_block_style(...)`、`build_config(...)`、`create_action_block_from_config(...)`；旧的逐参数入口仍保留作兼容包装。
+- 维护：不要连接 hover，不播放动画，不修改 `TimelineManager` 数据，也不要决定行动块何时被创建或移除。
+- 改进：如果行动方块样式继续膨胀，可让这里接收视觉配置资源，但不要接管整组行动容器生成。
+
+#### `scene/in_scene/timeline/ui_modules/presenters/TimelineActionGeometryPresenter.gd`
+
+- 用途：计算时间轴行动形状边界、行动容器尺寸位置和单个方块在容器内的局部位置。
+- 入口：`get_shape_bounds(...)`、`apply_shape_container_geometry(...)`、`get_block_local_position(...)`。
+- 维护：不要创建行动方块，不连接 hover，不播放动画，也不要修改 `TimelineManager` 数据。
+- 改进：如果后续需要更强类型的几何结果，可把当前字典返回值替换为轻量数据对象。
+
+#### `scene/in_scene/timeline/ui_modules/presenters/TimelineActionShapeVisualPresenter.gd`
+
+- 用途：创建时间轴行动整体形状视觉层，包括局部坐标归一化、BACKPLATE 和 OUTLINE 绘制节点挂载。
+- 入口：`build_config(...)`、`get_local_shape_coords(...)`、`add_action_shape_visual_from_config(...)`；旧的逐参数入口仍保留作兼容包装。
+- 维护：不要创建行动方块，不连接 hover，不创建敌方意图 overlay，也不要修改 `TimelineManager` 数据。
+- 改进：如果行动整体轮廓参数资源化，可让这里接收视觉配置，但仍不要接管 `_on_action_placed()` 的完整生成流程。
 
 ## InScene 拆分模块
 
@@ -1200,7 +1221,7 @@ git diff --check
 
 ### timeline_ui 剩余表现边界优先级更高
 
-`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知。当前如果继续时间轴，应先评估更小的行动块视觉 presenter 或纯视觉配置 Resource，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块生成。
+`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知。当前如果继续时间轴，应先评估统一的纯视觉配置 Resource，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块生成。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 

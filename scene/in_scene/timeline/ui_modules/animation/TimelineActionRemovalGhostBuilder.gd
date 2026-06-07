@@ -1,7 +1,8 @@
 extends RefCounted
 
-## TimelineActionRemovalGhostBuilder 只负责从即将移除的时间轴行动容器生成清理动画残影。
-## 它不启动 Tween，不修改 TimelineManager 数据，不维护 action_containers，也不清理原行动容器。
+## TimelineActionRemovalGhostBuilder 只负责从即将移除的时间轴行动容器生成清理动画残影，
+## 并卸载原容器上的运行时视觉效果。
+## 它不启动 Tween，不修改 TimelineManager 数据，不维护 action_containers，也不释放原行动容器。
 
 
 func create_ghost(source_container: Control, action_id: int, reason: String, preview_z_index: int) -> Control:
@@ -39,6 +40,18 @@ func create_ghost(source_container: Control, action_id: int, reason: String, pre
 		ghost.add_child(_create_ghost_block(source_block))
 
 	return ghost
+
+
+func strip_runtime_effects(node: Node) -> void:
+	if node is CanvasItem:
+		(node as CanvasItem).material = null
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if node is ColorRect and node.name == "EnemyIntentOverlay":
+		(node as ColorRect).visible = false
+
+	for child in node.get_children():
+		strip_runtime_effects(child)
 
 
 func _create_ghost_block(source_block: Panel) -> Panel:

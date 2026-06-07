@@ -1,7 +1,6 @@
 extends Control
 
 const ENEMY_INTENT_TIMELINE_SHADER: Shader = preload("res://shaders/enemy_intent_timeline_pulse.gdshader")
-const TimelineActionShapeVisualScene = preload("res://scene/in_scene/timeline/TimelineActionShapeVisual.gd")
 const TimelineExpandVisualControllerScript = preload("res://scene/in_scene/timeline/ui_modules/layout/TimelineExpandVisualController.gd")
 const TimelineLayoutControllerScript = preload("res://scene/in_scene/timeline/ui_modules/layout/TimelineLayoutController.gd")
 const TimelineGridBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/grid/TimelineGridBuilder.gd")
@@ -9,6 +8,9 @@ const TimelineGridCellInteractionPresenterScript = preload("res://scene/in_scene
 const TimelineGridPreviewPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/grid/TimelineGridPreviewPresenter.gd")
 const TimelineManagerLocatorScript = preload("res://scene/in_scene/timeline/ui_modules/bridges/TimelineManagerLocator.gd")
 const TimelineEnemyIntentOverlayPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd")
+const TimelineActionBlockPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/presenters/TimelineActionBlockPresenter.gd")
+const TimelineActionGeometryPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/presenters/TimelineActionGeometryPresenter.gd")
+const TimelineActionShapeVisualPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/presenters/TimelineActionShapeVisualPresenter.gd")
 const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd")
 const TimelineActionRemovalGhostBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd")
 const TimelineActionRemovalAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd")
@@ -107,6 +109,9 @@ var _grid_cell_interaction_presenter = null
 var _grid_preview_presenter = null
 var _timeline_manager_locator = null
 var _enemy_intent_overlay_presenter = null
+var _action_block_presenter = null
+var _action_geometry_presenter = null
+var _action_shape_visual_presenter = null
 var _block_placement_animator = null
 var _action_removal_ghost_builder = null
 var _action_removal_animator = null
@@ -161,6 +166,24 @@ func _get_enemy_intent_overlay_presenter():
 	if _enemy_intent_overlay_presenter == null:
 		_enemy_intent_overlay_presenter = TimelineEnemyIntentOverlayPresenterScript.new()
 	return _enemy_intent_overlay_presenter
+
+
+func _get_action_block_presenter():
+	if _action_block_presenter == null:
+		_action_block_presenter = TimelineActionBlockPresenterScript.new()
+	return _action_block_presenter
+
+
+func _get_action_geometry_presenter():
+	if _action_geometry_presenter == null:
+		_action_geometry_presenter = TimelineActionGeometryPresenterScript.new()
+	return _action_geometry_presenter
+
+
+func _get_action_shape_visual_presenter():
+	if _action_shape_visual_presenter == null:
+		_action_shape_visual_presenter = TimelineActionShapeVisualPresenterScript.new()
+	return _action_shape_visual_presenter
 
 
 func _get_block_placement_animator():
@@ -305,47 +328,6 @@ func is_intro_in_progress() -> bool:
 	return _timeline_intro_in_progress
 
 
-## 将 action.shape_coords 转成 shape_container 内部使用的局部坐标。
-## TimelineAction 允许 shape 坐标里存在负值或不从 0 开始；容器已经按 min_x / min_y 放到了正确位置，
-## 因此绘制整体轮廓时只需要从左上角重新归一化，避免视觉层和 Panel 方格发生偏移。
-func _get_local_shape_coords(shape_coords: Array[Vector2i], min_x: int, min_y: int) -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	for coord in shape_coords:
-		result.append(Vector2i(coord.x - min_x, coord.y - min_y))
-	return result
-
-
-## 给单个 TimelineAction 容器添加整体视觉层。
-## BACKPLATE 放在方格下方，负责连接同意图内部空隙；OUTLINE 放在方格上方，负责外轮廓和淡内线。
-func _add_action_shape_visual(
-	shape_container: Control,
-	local_shape_coords: Array[Vector2i],
-	action_color: Color,
-	visual_mode: int
-) -> void:
-	if not is_instance_valid(shape_container) or local_shape_coords.is_empty():
-		return
-
-	var visual := TimelineActionShapeVisualScene.new() as TimelineActionShapeVisual
-	visual.name = "ActionBackplateVisual" if visual_mode == TimelineActionShapeVisual.VisualMode.BACKPLATE else "ActionOutlineVisual"
-	visual.size = shape_container.size
-	visual.custom_minimum_size = shape_container.size
-	visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	visual.z_index = 20 if visual_mode == TimelineActionShapeVisual.VisualMode.OUTLINE else 0
-	visual.setup(
-		visual_mode,
-		local_shape_coords,
-		slot_size,
-		spacing,
-		action_color,
-		action_group_outline_color,
-		action_group_outline_width,
-		action_group_internal_seam_color,
-		action_group_internal_seam_width
-	)
-	shape_container.add_child(visual)
-
-
 # ==========================================
 # ★ UI 绘制：方格保留交互，整体轮廓负责表达同一意图的归属
 # ==========================================
@@ -359,91 +341,60 @@ func _on_action_placed(action: TimelineAction):
 	shape_container.set_meta("action_id", action.get_instance_id())
 	action_containers[action.get_instance_id()] = shape_container
 
-	var min_x = 0
-	var max_x = 0
-	var min_y = 0
-	var max_y = 0
-	if not action.shape_coords.is_empty():
-		min_x = action.shape_coords[0].x
-		max_x = action.shape_coords[0].x
-		min_y = action.shape_coords[0].y
-		max_y = action.shape_coords[0].y
-		for offset in action.shape_coords:
-			min_x = min(min_x, offset.x)
-			max_x = max(max_x, offset.x)
-			min_y = min(min_y, offset.y)
-			max_y = max(max_y, offset.y)
-
-	var cell_span_x = slot_size + spacing
-	var cell_span_y = slot_size + spacing
-	var width = (max_x - min_x + 1) * slot_size + max(0, max_x - min_x) * spacing
-	var height = (max_y - min_y + 1) * slot_size + max(0, max_y - min_y) * spacing
-	shape_container.size = Vector2(width, height)
-	shape_container.pivot_offset = shape_container.size * 0.5
-	shape_container.position = Vector2(
-		(action.origin_grid_pos.x + min_x) * cell_span_x,
-		(action.origin_grid_pos.y + min_y) * cell_span_y
+	var action_geometry_presenter = _get_action_geometry_presenter()
+	var shape_bounds: Dictionary = action_geometry_presenter.get_shape_bounds(action.shape_coords)
+	action_geometry_presenter.apply_shape_container_geometry(
+		shape_container,
+		action.origin_grid_pos,
+		shape_bounds,
+		slot_size,
+		spacing
 	)
+	var min_x: int = int(shape_bounds["min_x"])
+	var min_y: int = int(shape_bounds["min_y"])
 
-	var local_shape_coords := _get_local_shape_coords(action.shape_coords, min_x, min_y)
+	var action_shape_visual_presenter = _get_action_shape_visual_presenter()
+	var action_shape_visual_config := _build_action_shape_visual_config()
+	var local_shape_coords: Array[Vector2i] = action_shape_visual_presenter.get_local_shape_coords(action.shape_coords, min_x, min_y)
 	if action_group_visual_enabled:
 		# 底板先于 Panel 加入，专门填补同一意图内部的 spacing 缝隙。
 		# 这样 "11"、"11,1" 等多格意图会先有一个连起来的整体色块。
-		_add_action_shape_visual(
+		action_shape_visual_presenter.add_action_shape_visual_from_config(
 			shape_container,
 			local_shape_coords,
 			action.color,
-			TimelineActionShapeVisual.VisualMode.BACKPLATE
+			TimelineActionShapeVisual.VisualMode.BACKPLATE,
+			action_shape_visual_config
 		)
 
-	# 为所有方块设置统一样式。
-	# 强黑边改由整体轮廓层负责；单个 Panel 不再画黑框，避免内部相邻格被误读成不同意图。
-	var style = StyleBoxFlat.new()
-	style.bg_color = action.color
-	if action_group_visual_enabled:
-		style.set_border_width_all(0)
-		style.border_color = Color.TRANSPARENT
-	else:
-		style.set_border_width_all(2)
-		style.border_color = Color.BLACK
+	var action_block_presenter = _get_action_block_presenter()
+	var block_style: StyleBoxFlat = action_block_presenter.create_action_block_style(action.color, action_group_visual_enabled)
 
 	for offset in action.shape_coords:
 		var target_grid_pos = action.origin_grid_pos + offset
-		var block = Panel.new()
-		block.name = "ActionBlock_%s_%s" % [target_grid_pos.x, target_grid_pos.y]
-		block.add_theme_stylebox_override("panel", style)
-		block.size = Vector2(slot_size, slot_size)
-		block.custom_minimum_size = Vector2(slot_size, slot_size)
 
-		# 计算相对于 shape_container 左上角的局部像素位置
-		var pos_x = (target_grid_pos.x - (action.origin_grid_pos.x + min_x)) * cell_span_x
-		var pos_y = (target_grid_pos.y - (action.origin_grid_pos.y + min_y)) * cell_span_y
-		block.position = Vector2(pos_x, pos_y)
+		var block_local_position: Vector2 = action_geometry_presenter.get_block_local_position(
+			target_grid_pos,
+			action.origin_grid_pos,
+			shape_bounds,
+			slot_size,
+			spacing
+		)
+
+		var overlay_material: Material = null
+		if action.type == TimelineAction.Type.ENEMY:
+			overlay_material = _create_enemy_intent_overlay_material()
+
+		var block_config: Dictionary = action_block_presenter.build_config(slot_size, block_style, overlay_material)
+		var block: Panel = action_block_presenter.create_action_block_from_config(
+			target_grid_pos,
+			block_local_position,
+			block_config
+		)
 
 		# ★ 给每个小块加上鼠标检测区
-		block.mouse_filter = Control.MOUSE_FILTER_PASS
 		block.mouse_entered.connect(_on_block_hovered.bind(action))
 		block.mouse_exited.connect(_on_block_exited)
-
-		var overlay = ColorRect.new()
-		overlay.name = "EnemyIntentOverlay"
-		overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		overlay.visible = false
-		overlay.color = Color.WHITE
-		if action.type == TimelineAction.Type.ENEMY:
-			overlay.material = _get_enemy_intent_overlay_presenter().create_overlay_material(
-				enemy_intent_timeline_shader,
-				enemy_intent_pulse_speed,
-				enemy_intent_pulse_min_alpha,
-				enemy_intent_pulse_max_alpha,
-				enemy_intent_stripe_color,
-				enemy_intent_stripe_speed,
-				enemy_intent_stripe_density,
-				enemy_intent_stripe_width,
-				enemy_intent_stripe_strength
-			)
-		block.add_child(overlay)
 
 		shape_container.add_child(block)
 
@@ -455,11 +406,12 @@ func _on_action_placed(action: TimelineAction):
 	if action_group_visual_enabled:
 		# 外轮廓最后加入，确保它压在方格和敌人意图 pulse overlay 之上。
 		# 它只画整个形状外侧，内部相邻边仅保留很淡的 seam，归属关系会更清楚。
-		_add_action_shape_visual(
+		action_shape_visual_presenter.add_action_shape_visual_from_config(
 			shape_container,
 			local_shape_coords,
 			action.color,
-			TimelineActionShapeVisual.VisualMode.OUTLINE
+			TimelineActionShapeVisual.VisualMode.OUTLINE,
+			action_shape_visual_config
 		)
 
 	if use_action_intro:
@@ -509,14 +461,15 @@ func toggle_expand():
 	_get_expand_visual_controller().set_map_interaction_for_expand(self, is_expanded)
 	
 	# ★ 核心动画：只需改变 scale，位置交给 Anchor 和 Pivot 自动管理！
-	if is_expanded:
-		tw.parallel().tween_property(self, "scale", expanded_scale, anim_duration)
-	else:
-		tw.parallel().tween_property(self, "scale", Vector2.ONE, anim_duration)
-		# 动画结束后重新确认布局
-		tw.tween_callback(func():
+	_get_expand_visual_controller().animate_timeline_scale(
+		tw,
+		self,
+		is_expanded,
+		expanded_scale,
+		anim_duration,
+		func():
 			_apply_anchor_layout()
-		)
+	)
 
 
 func _on_block_hovered(action: TimelineAction):
@@ -551,11 +504,13 @@ func show_enemy_intent_preview(action: TimelineAction, is_valid: bool, pulse_col
 	if not is_instance_valid(container):
 		return
 
-	container.pivot_offset = container.size * 0.5
-	container.modulate = Color.WHITE
-	container.scale = enemy_intent_preview_scale
-	container.z_index = enemy_intent_preview_z_index
-	_set_enemy_intent_overlay_visible(container, true, pulse_color)
+	_get_enemy_intent_overlay_presenter().apply_preview_state(
+		container,
+		enemy_intent_preview_scale,
+		enemy_intent_preview_z_index,
+		pulse_color,
+		_build_enemy_intent_overlay_config()
+	)
 
 
 ## 清除当前时间轴上正在展示的敌人意图预览。
@@ -571,10 +526,11 @@ func clear_enemy_intent_preview() -> void:
 	if action_containers.has(action_id):
 		var container = action_containers[action_id]
 		if is_instance_valid(container):
-			container.modulate = Color.WHITE
-			container.scale = Vector2.ONE
-			container.z_index = 0
-			_set_enemy_intent_overlay_visible(container, false, current_enemy_intent_preview_action.color)
+			_get_enemy_intent_overlay_presenter().clear_preview_state(
+				container,
+				current_enemy_intent_preview_action.color,
+				_build_enemy_intent_overlay_config()
+			)
 
 	current_enemy_intent_preview_action = null
 
@@ -614,7 +570,7 @@ func animate_action_removal(action: TimelineAction, reason: String = "") -> void
 		)
 
 	var ghost = _create_action_removal_ghost(container, action_id, reason)
-	_strip_action_container_runtime_effects(container)
+	_get_action_removal_ghost_builder().strip_runtime_effects(container)
 	container.queue_free()
 	action_containers.erase(action_id)
 
@@ -643,28 +599,27 @@ func _create_action_removal_ghost(source_container: Control, action_id: int, rea
 	)
 
 
-## 递归卸载 action 容器上的运行时表现：
-## - 清掉 CanvasItem.material，避免 pulse / hover shader 继续参与渲染；
-## - 关闭 EnemyIntentOverlay，避免残留发光层；
-## - 禁用鼠标输入，避免移除中的节点继续触发 hover。
-func _strip_action_container_runtime_effects(node: Node) -> void:
-	if node is CanvasItem:
-		(node as CanvasItem).material = null
-	if node is Control:
-		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if node is ColorRect and node.name == "EnemyIntentOverlay":
-		(node as ColorRect).visible = false
-
-	for child in node.get_children():
-		_strip_action_container_runtime_effects(child)
+func _create_enemy_intent_overlay_material() -> ShaderMaterial:
+	return _get_enemy_intent_overlay_presenter().create_overlay_material_from_config(
+		enemy_intent_timeline_shader,
+		_build_enemy_intent_overlay_config()
+	)
 
 
-## 对同一个敌人意图容器中的所有格子 overlay 统一设置显示状态与脉冲颜色。
-func _set_enemy_intent_overlay_visible(container: Control, visible: bool, color: Color) -> void:
-	_get_enemy_intent_overlay_presenter().set_overlay_visible(
-		container,
-		visible,
-		color,
+## 将导出的时间轴意图条纹参数写入 shader。
+## 核心逻辑：每个敌人意图格子的 Overlay 都独立持有 ShaderMaterial，hover 时统一刷新参数即可。
+func _configure_enemy_intent_timeline_material(material: Material) -> void:
+	_get_enemy_intent_overlay_presenter().configure_material_from_config(
+		material,
+		_build_enemy_intent_overlay_config()
+	)
+
+
+func _build_enemy_intent_overlay_config() -> Dictionary:
+	return _get_enemy_intent_overlay_presenter().build_config(
+		enemy_intent_pulse_speed,
+		enemy_intent_pulse_min_alpha,
+		enemy_intent_pulse_max_alpha,
 		enemy_intent_stripe_color,
 		enemy_intent_stripe_speed,
 		enemy_intent_stripe_density,
@@ -673,16 +628,14 @@ func _set_enemy_intent_overlay_visible(container: Control, visible: bool, color:
 	)
 
 
-## 将导出的时间轴意图条纹参数写入 shader。
-## 核心逻辑：每个敌人意图格子的 Overlay 都独立持有 ShaderMaterial，hover 时统一刷新参数即可。
-func _configure_enemy_intent_timeline_material(material: Material) -> void:
-	_get_enemy_intent_overlay_presenter().configure_material(
-		material,
-		enemy_intent_stripe_color,
-		enemy_intent_stripe_speed,
-		enemy_intent_stripe_density,
-		enemy_intent_stripe_width,
-		enemy_intent_stripe_strength
+func _build_action_shape_visual_config() -> Dictionary:
+	return _get_action_shape_visual_presenter().build_config(
+		slot_size,
+		spacing,
+		action_group_outline_color,
+		action_group_outline_width,
+		action_group_internal_seam_color,
+		action_group_internal_seam_width
 	)
 
 
@@ -748,10 +701,14 @@ func collapse() -> void:
 	)
 	
 	# 仅缩放回归即可
-	tw.parallel().tween_property(self, "scale", Vector2.ONE, anim_duration)
-	
-	tw.tween_callback(func():
-		_apply_anchor_layout()
+	_get_expand_visual_controller().animate_timeline_scale(
+		tw,
+		self,
+		false,
+		expanded_scale,
+		anim_duration,
+		func():
+			_apply_anchor_layout()
 	)
 
 

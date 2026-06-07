@@ -1,6 +1,6 @@
 ﻿extends RefCounted
 
-## TimelineExpandVisualController 只负责 TimelineUI 展开/收起时的遮罩和地图交互表现。
+## TimelineExpandVisualController 只负责 TimelineUI 展开/收起时的遮罩、缩放和地图交互表现。
 ## 它不处理时间轴行动数据，不创建行动方块，也不参与拖拽放置判断。
 
 
@@ -46,6 +46,27 @@ func animate_background_mask(
 		tween.tween_callback(func():
 			if is_instance_valid(background_mask) and should_hide_mask.is_valid() and bool(should_hide_mask.call()):
 				background_mask.visible = false
+		)
+
+
+func animate_timeline_scale(
+	tween: Tween,
+	timeline_ui: Control,
+	is_expanded: bool,
+	expanded_scale: Vector2,
+	anim_duration: float,
+	after_collapsed: Callable
+) -> void:
+	if not is_instance_valid(tween) or not is_instance_valid(timeline_ui):
+		return
+
+	if is_expanded:
+		tween.parallel().tween_property(timeline_ui, "scale", expanded_scale, anim_duration)
+	else:
+		tween.parallel().tween_property(timeline_ui, "scale", Vector2.ONE, anim_duration)
+		tween.tween_callback(func():
+			if after_collapsed.is_valid():
+				after_collapsed.call()
 		)
 
 

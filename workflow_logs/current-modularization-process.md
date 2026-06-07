@@ -13,6 +13,100 @@ docs/hex-map-ultimate-operation-guide.md
 docs/ai-handoff-ultimate-operation-guide.md
 ```
 
+## 2026-06-08 TimelineUI 行动块视觉 presenter 拆分
+
+### 读取与轮廓
+
+本批接续前序半成品改动，先确认工作区已有未提交文件集中在 `timeline_ui.gd`、三个新增 TimelineUI presenter 和相关文档上。仓库内仍未发现 `AGENTS.md`，本批以当前对话中用户贴出的 AGENTS 约束为准。随后用 `rg` 输出了以下目标轮廓：
+
+```text
+scene/in_scene/timeline/timeline_ui.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionBlockPresenter.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionGeometryPresenter.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionShapeVisualPresenter.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd
+scene/in_scene/timeline/ui_modules/layout/TimelineExpandVisualController.gd
+scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd
+```
+
+### 当前职责
+
+`timeline_ui.gd` 仍是时间轴 UI 的 composition root，负责连接 `TimelineManager`，维护 `action_containers` 和当前 hover 状态，决定行动容器何时创建、何时播放 intro、何时连接 hover 信号、何时触发敌方意图预览和移除动画。
+
+### 耦合点
+
+```text
+_on_action_placed() 仍是行动容器创建入口，会同时触发行动容器几何、整体形状视觉、单格 Panel、敌方 overlay、hover 信号和 intro 动画。
+本批只把其中纯视觉创建细节拆出，不改变创建时机，不改变 TimelineManager 数据，也不改变 hover 信号连接位置。
+TimelineEnemyIntentOverlayPresenter 只是增加 config 入口和预览状态写入封装，仍不决定何时进入预览。
+TimelineExpandVisualController 和 TimelineActionRemovalGhostBuilder 只是承接前序遗留的缩放/运行时视觉清理小边界，本批不继续扩大它们。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 行动容器几何 presenter | `_on_action_placed()` 中 bounds、容器尺寸位置、方块局部位置 | 纯计算/写 Control 几何，不碰数据规则 | 执行 |
+| 2 | 行动方块视觉 presenter | `_on_action_placed()` 中 Panel、StyleBox、EnemyIntentOverlay 子节点 | 只创建视觉节点，不连接 hover | 执行 |
+| 3 | 整体形状视觉 presenter | `_get_local_shape_coords()`、`_add_action_shape_visual()` | 只挂 BACKPLATE / OUTLINE 视觉层 | 执行 |
+| 4 | TimelineVisualConfig | 多个导出表现参数 | Resource 化另开小批，避免混合风险 | 暂缓 |
+
+### 本批风险面
+
+本批只拆一个风险面：时间轴行动块创建中的纯视觉 presenter。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TimelineActionGeometryPresenter.gd，集中计算行动形状边界、容器几何和方块局部位置。
+新增 TimelineActionBlockPresenter.gd，集中创建单个 Panel、基础 StyleBox 和 EnemyIntentOverlay 子节点。
+新增 TimelineActionShapeVisualPresenter.gd，集中归一化 shape 坐标并创建整体 BACKPLATE / OUTLINE 视觉层。
+```
+
+不触碰：
+
+```text
+TimelineManager 数据结构和行动放置规则。
+_on_action_placed() 的入口时机、action_containers 字典、hover 信号连接和 intro 动画触发。
+敌人意图落点规则、地图联动和局内 hover tooltip。
+```
+
+### 实现结果
+
+```text
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionGeometryPresenter.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionBlockPresenter.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionShapeVisualPresenter.gd
+```
+
+职责：
+
+```text
+TimelineActionGeometryPresenter 只负责计算并应用时间轴行动容器的几何信息。
+TimelineActionBlockPresenter 只负责创建单个时间轴行动方块的视觉节点。
+TimelineActionShapeVisualPresenter 只负责时间轴行动整体形状视觉层。
+```
+
+`timeline_ui.gd` 新增三个 presenter preload 和缓存 getter。`_on_action_placed()` 仍保留旧的创建入口和信号连接，但把容器几何、Panel 创建和整体形状视觉层挂载委托给新模块。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 149 个脚本模块和 3 个默认 Resource 文件。
+TimelineUI 现在有 14 个 ui_modules 脚本，新增 3 个 presenters：TimelineActionGeometryPresenter、TimelineActionBlockPresenter、TimelineActionShapeVisualPresenter。
+timeline_ui.gd 从约 786 行降到约 755 行。
+下一批如果继续 TimelineUI，只评估 TimelineVisualConfig 这类纯视觉配置；不要硬拆 _on_action_placed() 的剩余创建时机、intro 动画和信号连接。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 scene/in_scene/timeline/timeline_ui.gd、TimelineExpandVisualController.gd、TimelineEnemyIntentOverlayPresenter.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+覆盖率检查通过：152 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 149 个，默认 Resource 文件为 3 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
 ## 已完成的 HexMap 解耦阶段
 
 ### 第一阶段：清理低风险兜底和重复路径
