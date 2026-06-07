@@ -94,6 +94,9 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 @export_group("Tooltip资源配置")
 @export var tooltip_config: TooltipConfig = preload("res://scene/shared/tooltip/reward_card_tooltip_config.tres")
 
+@export_group("定价资源配置")
+@export var pricing_config: Resource = preload("res://scene/in_scene/rewards/resources/default_shop_pricing_config.tres")
+
 @export_group("卡牌排版配置")
 @export var card_display_size: Vector2 = Vector2(125, 175)  # 动态控制生成的卡牌大小
 @export var card_spacing_x: int = 20  # 卡牌水平间距
@@ -306,7 +309,7 @@ func _ready():
 	
 	# ★ 调试输出：检查初始布局参数
 	_get_debug_logger().log_initial_layout(shop_slots_count, shop_columns, shop_grid.columns if shop_grid else -1)
-	_get_debug_logger().log_exported_prices(base_price, price_increment, refresh_base_cost, upgrade_base_cost)
+	_get_debug_logger().log_exported_prices(_get_base_price(), _get_price_increment(), _get_refresh_base_cost(), _get_upgrade_base_cost())
 	_get_debug_logger().log_label_refs(label_refresh_cost != null, label_upgrade_cost != null)
 	
 	# ★ 延迟一帧确保所有节点完成初始化
@@ -516,9 +519,9 @@ func _on_fly_to_deck_finished(card_id: String, card: Control) -> void:
 ## 刷新商店
 func _on_refresh_pressed():
 	var result: Dictionary = _get_refresh_purchase_processor().process_refresh(
-		refresh_base_cost,
+		_get_refresh_base_cost(),
 		refresh_count,
-		price_increment,
+		_get_price_increment(),
 		Callable(self, "_consume_timecoins")
 	)
 	if not result.get("success", false):
@@ -533,9 +536,9 @@ func _on_refresh_pressed():
 ## 升级时代
 func _on_upgrade_pressed():
 	var result: Dictionary = _get_upgrade_purchase_processor().process_upgrade(
-		upgrade_base_cost,
+		_get_upgrade_base_cost(),
 		upgrade_count,
-		price_increment,
+		_get_price_increment(),
 		local_era_offset,
 		Callable(self, "_consume_timecoins")
 	)
@@ -596,17 +599,20 @@ func _consume_timecoins(amount: int) -> bool:
 
 ## 根据卡牌位置计算价格
 func _calculate_card_price(slot_index: int) -> int:
-	return _get_pricing_presenter().calculate_card_price(slot_index, base_price)
+	return _get_pricing_presenter().calculate_card_price(slot_index, _get_base_price(), _get_slot_price_step())
 
 ## 更新侧边栏价格显示
 func _update_price_display():
-	var refresh_cost = _get_pricing_presenter().calculate_refresh_cost(refresh_base_cost, refresh_count, price_increment)
-	var upgrade_cost = _get_pricing_presenter().calculate_upgrade_cost(upgrade_base_cost, upgrade_count, price_increment)
+	var current_refresh_base_cost := _get_refresh_base_cost()
+	var current_upgrade_base_cost := _get_upgrade_base_cost()
+	var current_price_increment := _get_price_increment()
+	var refresh_cost = _get_pricing_presenter().calculate_refresh_cost(current_refresh_base_cost, refresh_count, current_price_increment)
+	var upgrade_cost = _get_pricing_presenter().calculate_upgrade_cost(current_upgrade_base_cost, upgrade_count, current_price_increment)
 	
 	# 调试输出：显示详细价格信息
 	print("💰 价格更新 - 刷新: %d (基数: %d + 计数: %d × 增量: %d), 升级: %d (基数: %d + 计数: %d × 增量: %d)" % [
-		refresh_cost, refresh_base_cost, refresh_count, price_increment,
-		upgrade_cost, upgrade_base_cost, upgrade_count, price_increment
+		refresh_cost, current_refresh_base_cost, refresh_count, current_price_increment,
+		upgrade_cost, current_upgrade_base_cost, upgrade_count, current_price_increment
 	])
 	
 	# 更新 UI 标签显示当前价格
@@ -617,6 +623,33 @@ func _update_price_display():
 ## 根据时代获取卡牌ID列表 (对接 CardDataPool 系统)
 func _get_cards_by_era(era: int) -> Array[String]:
 	return _get_card_pool_bridge().get_cards_by_era(CardDataPool, era)
+
+
+func _get_base_price() -> int:
+	return int(_get_pricing_config_value("base_price", base_price))
+
+
+func _get_slot_price_step() -> int:
+	return int(_get_pricing_config_value("slot_price_step", 5))
+
+
+func _get_price_increment() -> int:
+	return int(_get_pricing_config_value("price_increment", price_increment))
+
+
+func _get_refresh_base_cost() -> int:
+	return int(_get_pricing_config_value("refresh_base_cost", refresh_base_cost))
+
+
+func _get_upgrade_base_cost() -> int:
+	return int(_get_pricing_config_value("upgrade_base_cost", upgrade_base_cost))
+
+
+func _get_pricing_config_value(property_name: StringName, fallback_value: Variant) -> Variant:
+	if pricing_config == null:
+		return fallback_value
+	var value: Variant = pricing_config.get(property_name)
+	return fallback_value if value == null else value
 
 ## ==========================================
 ## ★ 单例查找函数 (模仿 TimelineManager 中的查找逻辑)

@@ -7492,3 +7492,148 @@ CraftReward.gd 的预览创建链、确认写入链和配方数据来源都已�
 如果 Shop 配置资源化需要牵动商品生成异步链，就停止 Shop，转向 DragShapeController.gd 的放置完成流程。
 DragShapeController.gd 评估时先写清时间轴行动创建、卡牌归属变化和 UI 恢复边界，不要同批修改卡牌归属和 UI 清理。
 ```
+
+## ShopManager.gd 商店定价资源化记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批继续处理 `ShopManager.gd` 的 Resource 化候选，只拆“商店静态定价参数”这一处风险面。范围包括基础价格、商品位价格步进、刷新基础费用、升级基础费用和费用增量；不碰时代权重、商品生成异步链、购买流程、刷新/升级后的生成流程或临时牌堆生命周期。
+
+### rg 轮廓
+
+```text
+scene/in_scene/rewards/ShopManager.gd
+@export var base_price
+@export var price_increment
+@export var refresh_base_cost
+@export var upgrade_base_cost
+@export var pricing_config
+func _on_refresh_pressed()
+func _on_upgrade_pressed()
+func _calculate_card_price(slot_index)
+func _update_price_display()
+func _get_base_price()
+func _get_slot_price_step()
+func _get_price_increment()
+func _get_refresh_base_cost()
+func _get_upgrade_base_cost()
+func _get_pricing_config_value(property_name, fallback_value)
+
+scene/in_scene/rewards/presenters/ShopPricingPresenter.gd
+func calculate_card_price(slot_index, base_price, slot_price_step)
+func calculate_refresh_cost(refresh_base_cost, refresh_count, price_increment)
+func calculate_upgrade_cost(upgrade_base_cost, upgrade_count, price_increment)
+func update_price_labels(...)
+
+scene/in_scene/rewards/resources/ShopPricingConfig.gd
+class_name ShopPricingConfig
+extends Resource
+@export var base_price
+@export var slot_price_step
+@export var price_increment
+@export var refresh_base_cost
+@export var upgrade_base_cost
+```
+
+### 当前职责与耦合点
+
+`ShopManager.gd` 仍是商店页 composition root，负责编排打开商店、生成商品、购买、刷新、升级、关闭和调试输出。前面批次已经拆出价格展示、购买校验、刷新/升级费用结算、CardDataPool 桥接、商品槽注册、生成依赖检查等模块。
+
+定价耦合点原本有三类：
+
+```text
+ShopManager.gd 的导出定价值。
+ShopPricingPresenter.gd 内部的商品位价格步进硬编码 5。
+刷新/升级处理器和价格标签刷新都直接读取 ShopManager 的导出值。
+```
+
+本批只把这些静态数值收口为 `ShopPricingConfig`。`refresh_count`、`upgrade_count` 和 `local_era_offset` 仍是运行态状态，不适合写入 Resource。
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 低风险原因 | 暂不触碰 |
+| --- | --- | --- | --- | --- |
+| 1 | `ShopPricingConfig.gd` | `_calculate_card_price()`、`_update_price_display()`、`_on_refresh_pressed()`、`_on_upgrade_pressed()` 的静态定价参数读取 | 只迁移只读调参数据，保留旧导出值 fallback | 不改时间币消费、刷新/升级结果、商品生成 |
+| 2 | `ShopEraWeightConfig.gd` | `_select_card_by_era_weight()` 使用的四个时代权重 | 同样是静态调参数据，但会影响选卡概率 | 本批不碰时代权重 |
+| 3 | 临时牌堆生命周期 | `_generate_shop_items()` 的 temp_pile 创建和销毁 | 可能形成小边界 | 本批不碰异步真实卡生成和数据提取 |
+
+### 本批风险面
+
+本批风险面：商店经济定价静态参数资源化。
+
+涉及的 3 个小风险点：
+
+```text
+ShopManager.gd 新增 pricing_config Resource，并通过 getter 读取资源值。
+ShopPricingPresenter.gd 的商品位价格步进从硬编码 5 改为调用方传入。
+default_shop_pricing_config.tres 保存与旧行为一致的默认数值。
+```
+
+不触碰：
+
+```text
+时代权重 weight_current_era / weight_previous_era / weight_next_era / weight_next_next_era。
+_generate_shop_items() 的选卡、临时牌堆、DraftCard 创建和异步数据提取。
+_on_shop_card_clicked() 购买流程和飞入牌库流程。
+refresh_count、upgrade_count、local_era_offset 等运行态计数。
+```
+
+### 新增资源与模块
+
+```text
+scene/in_scene/rewards/resources/ShopPricingConfig.gd
+scene/in_scene/rewards/resources/default_shop_pricing_config.tres
+```
+
+职责：
+
+```text
+ShopPricingConfig.gd 只保存商店经济定价的静态参数。
+default_shop_pricing_config.tres 是默认商店定价数据资产，不处理逻辑。
+```
+
+### 本批实现注意
+
+```text
+ShopManager.gd 的 pricing_config 导出类型使用 Resource，避免新 class_name 缓存未刷新造成解析风险。
+旧的 base_price、price_increment、refresh_base_cost、upgrade_base_cost 暂时保留为 fallback，降低场景资源缺失时的风险。
+slot_price_step 没有旧导出字段，因此 getter 使用旧硬编码值 5 作为 fallback，保持当前商品位定价行为不变。
+```
+
+### 文档同步
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md 已更新模块数为 127，并把 Shop 下一步从“定价和时代权重”改为“时代权重”。
+docs/modularized-files-ultimate-operation-guide.md 已新增 ShopPricingConfig.gd 和 default_shop_pricing_config.tres 条目。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：127 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有 ShopPricingPresenter.gd 和 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 的商店静态定价数据已资源化为 default_shop_pricing_config.tres。
+ShopPricingPresenter.gd 不再保留商品位价格步进硬编码。
+ShopManager.gd 的旧导出定价值仍保留为 fallback，不建议下一批重复处理定价。
+已拆模块总数从 126 增至 127。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 ShopManager.gd 的时代权重资源化，目标是 ShopEraWeightConfig。
+如果时代权重资源化需要牵动 _generate_shop_items() 的异步生成链，就停止 ShopManager，转向 DragShapeController.gd 放置完成流程。
+DragShapeController.gd 评估时先写清时间轴行动创建、卡牌归属变化和 UI 恢复边界。
+```

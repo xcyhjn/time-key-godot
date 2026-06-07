@@ -594,9 +594,9 @@ scene/in_scene/rewards/resources/
 
 #### `scene/in_scene/rewards/presenters/ShopPricingPresenter.gd`
 
-- 用途：计算商店价格并更新价格标签。
+- 用途：根据调用方传入的定价参数计算商店价格并更新价格标签。
 - 维护：不要消费时间币，不生成商品，不处理购买。
-- 改进：价格公式后续可拆成规则资源，presenter 只负责标签显示。
+- 改进：价格公式如果继续复杂化，可拆成更小规则模块；静态数值仍优先放在 `ShopPricingConfig.gd`。
 
 #### `scene/in_scene/rewards/presenters/ShopPurchaseCardDetachPresenter.gd`
 
@@ -697,6 +697,18 @@ scene/in_scene/rewards/resources/
 - 用途：默认合成配方资源，目前承载 `wind + tower -> tornado` 和 `lighting + earthquake -> poison`。
 - 维护：这是数据资产，不是脚本模块；新增配方时只改资源内容，并保留 `CraftRecipeBook.gd` 的只读职责。
 - 改进：等编辑器缓存稳定后，可以给 `.tres` 补 `uid`，但不要把忽略的 `.gd.uid` 加入提交。
+
+#### `scene/in_scene/rewards/resources/ShopPricingConfig.gd`
+
+- 用途：保存商店经济定价的静态参数，包括基础价格、商品位价格步进、刷新/升级基础费用和费用增量。
+- 维护：不要在这里计算价格，不消费时间币，不生成或购买商品，也不要读取场景节点。
+- 改进：如果后续出现折扣、时代倍率或限时促销，优先新增独立规则模块读取本资源，不要让 Resource 承担运行时流程。
+
+#### `scene/in_scene/rewards/resources/default_shop_pricing_config.tres`
+
+- 用途：默认商店定价数据资产，当前等价旧导出值：基础价格 50、商品位步进 5、刷新基础费用 50、升级基础费用 100、费用增量 25。
+- 维护：这是数据资产，不是脚本模块；调参时只改静态数值，不写运行态次数、时间币余额或商品节点。
+- 改进：如果不同章节需要不同商店经济参数，可以新增多份 `.tres`，由场景或上层流程选择资源。
 
 ## HexMap 拆分模块
 
@@ -1022,14 +1034,14 @@ git diff --check
 
 ### 评估 ShopManager 剩余边界
 
-`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接、商品槽注册和生成依赖检查都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，继续拆收益很低。
+`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接、商品槽注册、生成依赖检查和静态定价配置都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，定价数值也已经来自 `ShopPricingConfig`，继续围绕价格硬拆收益很低。
 
 ```text
 _generate_shop_items()
 open_shop()
 ```
 
-如果继续处理商店，本轮已经确认单个商品生成编排会牵动 `draft_card_factory`、`temp_pile`、`deck_manager`、价格、UI 注册和异步数据提取等过多状态，不建议硬拆。下一批只适合评估更小的生成前后边界，例如临时牌堆生命周期；如果仍然需要传入过多成员，就停止 ShopManager，转向 CraftReward 或 DragShapeController。
+如果继续处理商店，本轮已经确认单个商品生成编排会牵动 `draft_card_factory`、`temp_pile`、`deck_manager`、UI 注册和异步数据提取等过多状态，不建议硬拆。下一批只适合评估时代权重资源化或更小的生成前后边界，例如临时牌堆生命周期；如果仍然需要传入过多成员，就停止 ShopManager，转向 DragShapeController。
 
 ### CraftReward 继续清理页面专属小边界
 

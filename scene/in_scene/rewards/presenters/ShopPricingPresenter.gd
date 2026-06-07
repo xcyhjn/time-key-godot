@@ -4,8 +4,8 @@
 ## 它不消费时间币，不生成商品，也不处理购买或刷新升级流程。
 
 
-func calculate_card_price(slot_index: int, base_price: int) -> int:
-	return base_price + (slot_index * 5)
+func calculate_card_price(slot_index: int, base_price: int, slot_price_step: int) -> int:
+	return base_price + (slot_index * slot_price_step)
 
 
 func calculate_refresh_cost(refresh_base_cost: int, refresh_count: int, price_increment: int) -> int:
