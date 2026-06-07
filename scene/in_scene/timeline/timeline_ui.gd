@@ -11,6 +11,7 @@ const TimelineManagerLocatorScript = preload("res://scene/in_scene/timeline/ui_m
 const TimelineEnemyIntentOverlayPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd")
 const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd")
 const TimelineActionRemovalGhostBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd")
+const TimelineActionRemovalAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -107,6 +108,7 @@ var _timeline_manager_locator = null
 var _enemy_intent_overlay_presenter = null
 var _block_placement_animator = null
 var _action_removal_ghost_builder = null
+var _action_removal_animator = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -169,6 +171,12 @@ func _get_action_removal_ghost_builder():
 	if _action_removal_ghost_builder == null:
 		_action_removal_ghost_builder = TimelineActionRemovalGhostBuilderScript.new()
 	return _action_removal_ghost_builder
+
+
+func _get_action_removal_animator():
+	if _action_removal_animator == null:
+		_action_removal_animator = TimelineActionRemovalAnimatorScript.new()
+	return _action_removal_animator
 
 
 ## 查找TimelineManager节点
@@ -627,13 +635,13 @@ func animate_action_removal(action: TimelineAction, reason: String = "") -> void
 	if not is_instance_valid(ghost):
 		return
 
-	var tw = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tw.tween_property(ghost, "modulate", action_removal_fade_color, enemy_intent_removal_duration)
-	tw.parallel().tween_property(ghost, "position:y", ghost.position.y + action_removal_drop_distance, enemy_intent_removal_duration)
-	tw.parallel().tween_property(ghost, "scale", enemy_intent_removal_scale, enemy_intent_removal_duration)
-	tw.tween_callback(func():
-		if is_instance_valid(ghost):
-			ghost.queue_free()
+	_get_action_removal_animator().animate_removal(
+		ghost,
+		func(): return create_tween(),
+		action_removal_fade_color,
+		action_removal_drop_distance,
+		enemy_intent_removal_scale,
+		enemy_intent_removal_duration
 	)
 
 

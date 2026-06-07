@@ -8887,3 +8887,91 @@ git diff --check 通过，仅有 workflow_logs/current-modularization-process.md
 覆盖率检查通过：147 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 144 个，默认 Resource 文件为 3 个。
 本批只改 Markdown，没有运行 Godot headless 场景加载。
 ```
+
+## 2026-06-07 TimelineUI 清理动画 tween runner 拆分
+
+### 读取与轮廓
+
+本批按接力规则先确认工作区干净，再读取固定文档。仓库内未发现 `AGENTS.md`，本批以当前对话中用户贴出的约束为准。随后用 `rg` 输出了以下目标轮廓：
+
+```text
+scene/in_scene/timeline/timeline_ui.gd
+scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd
+scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd
+scene/in_scene/timeline/ui_modules/grid/TimelineGridPreviewPresenter.gd
+scene/in_scene/timeline/ui_modules/grid/TimelineGridCellInteractionPresenter.gd
+```
+
+### 当前职责
+
+`timeline_ui.gd` 仍是时间轴 UI 的 composition root，负责连接 `TimelineManager`，维护 `action_containers` 和 `hovered_action`，创建/移除行动容器，触发敌方意图 overlay、放置动画、清理残影动画和网格交互转发。
+
+### 耦合点
+
+```text
+_on_action_placed() 同时创建行动容器、格子 Panel、overlay、intro 动画和 hover 信号，暂不硬拆。
+_on_block_hovered() / _on_block_exited() 会同步 hovered_action 与 TimelineManager.action_hovered_changed，影响地图和敌方意图联动，本批不动。
+animate_action_removal() 的残影创建和 tween 播放相邻，但 tween 播放只依赖 ghost、颜色、位移、缩放、时长和 tween factory，可作为纯表现 runner 拆出。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 清理动画 tween runner | `animate_action_removal()` 残影播放与释放 | 纯表现边界，风险小 | 执行 |
+| 2 | hover 信号/表现边界 | `_on_block_hovered()`、`_on_block_exited()` | 会碰行动 hover 和地图联动 | 暂缓 |
+| 3 | 行动块生成 presenter | `_on_action_placed()` | 牵动容器、格子、overlay、intro、信号 | 不拆 |
+| 4 | TimelineVisualConfig | 多个表现参数 | Resource 化会碰 class_name 缓存和导出参数 | 不同批处理 |
+
+### 本批风险面
+
+本批只拆一个风险面：时间轴行动移除残影的 tween 播放。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TimelineActionRemovalAnimator.gd，只负责播放残影淡出、下落、缩放并释放残影。
+timeline_ui.gd 保留动画触发时机和残影创建，只把 tween 播放委托出去。
+不修改 TimelineManager 数据结构、敌人意图规则、行动块生成或 hover 信号语义。
+```
+
+不触碰：
+
+```text
+_on_action_placed() 的行动块生成流程。
+_on_block_hovered() / _on_block_exited() 的 hover 联动。
+TimelineManager 的行动数据与敌方意图规则。
+```
+
+### 实现结果
+
+```text
+scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd
+```
+
+职责：
+
+```text
+TimelineActionRemovalAnimator 只负责播放时间轴行动残影的移除动画。
+它不创建残影，不修改 TimelineManager 数据，不维护 action_containers，也不处理原行动容器释放。
+```
+
+`timeline_ui.gd` 新增 `TimelineActionRemovalAnimatorScript` preload、缓存 getter 和委托调用。`animate_action_removal()` 仍决定何时创建残影，也仍使用原有表现参数。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 145 个脚本模块和 3 个默认 Resource 文件。
+TimelineUI 现在有 10 个 ui_modules 脚本：布局、背景网格、格子交互、网格预览、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、清理动画残影创建、清理动画 tween 播放和展开表现。
+下一批如果继续 TimelineUI，只评估行动块 hover 信号/表现边界；不要硬拆 _on_action_placed()。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 scene/in_scene/timeline/timeline_ui.gd 的既有 LF/CRLF 提示。
+覆盖率检查通过：148 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 145 个，默认 Resource 文件为 3 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍有既有退出资源占用 warning。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+```

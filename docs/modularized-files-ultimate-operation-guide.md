@@ -245,7 +245,7 @@ scene/out_scene/out_scene_modules/
 
 ## TimelineUI 拆分模块
 
-这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、敌方意图 overlay、行动方格动画和清理动画残影。`timeline_ui.gd` 仍负责连接 `TimelineManager` 信号、维护行动容器字典、hover 状态和清理动画编排。
+这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、敌方意图 overlay、行动方格动画、清理动画残影创建和残影 tween 播放。`timeline_ui.gd` 仍负责连接 `TimelineManager` 信号、维护行动容器字典、hover 状态和清理动画触发时机。
 
 ### animation
 
@@ -254,7 +254,14 @@ scene/out_scene/out_scene_modules/
 - 用途：从即将移除的时间轴行动容器生成无 Shader、无 Overlay、无鼠标交互的清理动画残影。
 - 入口：`create_ghost(...)`。
 - 维护：不要启动 Tween，不修改 `TimelineManager` 数据，不维护 `action_containers`，也不要清理原行动容器。
-- 改进：如果清理动画需要多种残影样式，可以在这里扩展复制策略，仍让 `timeline_ui.gd` 决定何时播放和释放。
+- 改进：如果清理动画需要多种残影样式，可以在这里扩展复制策略，仍让 `timeline_ui.gd` 决定何时触发播放。
+
+#### `scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd`
+
+- 用途：播放时间轴行动残影的淡出、下落、缩放，并在结束后释放残影。
+- 入口：`animate_removal(...)`。
+- 维护：不要创建残影，不修改 `TimelineManager` 数据，不维护 `action_containers`，也不要处理原行动容器释放。
+- 改进：如果不同移除原因需要不同曲线，可从参数或配置注入，不要读取主脚本状态。
 
 #### `scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd`
 
@@ -1183,7 +1190,7 @@ git diff --check
 
 ### timeline_ui 剩余表现边界优先级更高
 
-`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay 和行动方格放置动画。当前仍可优先评估行动块视觉 presenter 或清理动画 runner，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块表现。
+`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、清理动画残影创建和残影 tween 播放。当前仍可优先评估行动块 hover 信号/表现边界，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块生成。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
