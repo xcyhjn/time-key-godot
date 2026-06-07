@@ -8627,3 +8627,85 @@ out_scene_map_exp.gd 已拆出房间结算 payload 读取、boss 推进判断、
 地图移动、镜头限制、章节揭示动画执行和切场景仍留在 out_scene_map_exp.gd。
 下一批优先评估房间完成状态回写；如果需要同时改 tile_data、tile_features、view.tiles、存档和切场返回，就暂停，改评估章节揭示动画 runner。
 ```
+
+## 2026-06-07 OutScene 章节揭示动画 runner 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/out_scene/out_scene_map_exp.gd`。启动前已重新读取固定文档，并用 `rg` 输出目标文件轮廓。房间完成状态回写经过搜索后没有发现既有“已完成/已清空/已领奖”的局外状态字段，当前只有 `tile_data`、`tile_features`、`view.tiles` 和 `MapState` 保存。
+
+### 当前职责
+
+`out_scene_map_exp.gd` 仍是局外地图 composition root。上一批已把结算 payload 读取、boss 推进判断和 tier 推进计划拆到 `RoomResolutionController.gd`；本批后，章节揭示地块的初始视觉状态、升起 tween 和收尾 tween 由 `ChapterRevealAnimationRunner.gd` 执行。
+
+### 耦合点
+
+```text
+房间完成状态回写会牵动 tile_data、tile_features、view.tiles、MapState 保存和房间返回 payload，目前缺少明确数据契约，暂缓。
+章节揭示动画只读写 view.tiles 中的 Sprite2D，依赖 _hex_to_pixel()、随机延迟、动画参数和 create_tween()。
+镜头聚焦、current_tier 推进、MapState.current_tier、apply_tier_camera_limit() 和 _save_to_global() 仍留在 out_scene_map_exp.gd。
+```
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `ChapterRevealAnimationRunner.gd` | `_prepare_chapter_reveal_tiles()`、`_execute_chapter_reveal_animation()` | 纯动画执行，不决定揭示范围，不改 tier 和保存 | 执行 |
+| 2 | 房间完成状态回写 controller | `_handle_room_resolution_payload()` 预留挂点 | 缺少既有状态字段，容易变成玩法设计 | 暂缓 |
+| 3 | 地图移动确认流程 | `_move_to()` | 牵动玩家、镜头、确认 UI、路径崩塌和进房 | 不拆 |
+| 4 | 切场景 payload 注入 | `_switch_scene_with_data()`、`_apply_payload_before_scene_enters_tree()` | 可评估，但优先级低于状态契约 | 后续 |
+
+### 本批风险面
+
+本批风险面：章节揭示动画 runner。
+
+涉及的 3 个小风险点：
+
+```text
+新增 ChapterRevealAnimationRunner.gd，负责新章节地块的初始位置、透明度、旋转和缩放。
+把升起 tween 和收尾 tween 从 out_scene_map_exp.gd 移入新模块。
+out_scene_map_exp.gd 保留旧 _prepare_chapter_reveal_tiles() 和 _execute_chapter_reveal_animation() 入口，转发给新模块。
+```
+
+不触碰：
+
+```text
+current_tier 推进和 MapState.current_tier 写入。
+camera.focus_on_position() 的镜头聚焦。
+_get_reveal_coords_between_radii() 的揭示范围判断。
+地图移动、路径崩塌、进房和切场景。
+```
+
+### 实现结果
+
+```text
+scene/out_scene/out_scene_modules/ChapterRevealAnimationRunner.gd
+```
+
+职责：
+
+```text
+ChapterRevealAnimationRunner 只负责局外新章节地块的揭示动画。
+它不推进 current_tier，不移动镜头，不保存 MapState，也不决定哪些地块需要揭示。
+```
+
+`out_scene_map_exp.gd` 新增 `ChapterRevealAnimationRunnerScript` preload、缓存 getter 和动画配置 getter。旧入口仍保留，调用顺序不变。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 143 个脚本模块和 3 个默认 Resource 文件。
+OutScene 现在有 2 个 out_scene_modules 脚本：RoomResolutionController、ChapterRevealAnimationRunner。
+out_scene_map_exp.gd 从约 830 行降到约 805 行。
+下一批如果继续 OutScene，优先只做房间完成状态回写的数据契约评估，不直接写新状态。
+如果要继续拆代码，优先评估切场景 payload 注入或镜头限制小模块；地图移动流程暂不拆。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：146 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 143 个，默认 Resource 文件为 3 个。
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/out_scene/Out_Scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；场景加载仍输出既有 TileSetAtlasSource atlas tile 资源错误，本批未改 TileSet。
+```

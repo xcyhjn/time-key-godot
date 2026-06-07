@@ -3,6 +3,7 @@
 extends Control
 
 const RoomResolutionControllerScript = preload("res://scene/out_scene/out_scene_modules/RoomResolutionController.gd")
+const ChapterRevealAnimationRunnerScript = preload("res://scene/out_scene/out_scene_modules/ChapterRevealAnimationRunner.gd")
 
 # ==========================================
 # 1. 变量与配置
@@ -59,6 +60,7 @@ var _cached_map_center: Vector2 = Vector2.ZERO
 var _map_center_dirty: bool = true
 var chosen_char_index: int = -1
 var _room_resolution_controller: Variant = null
+var _chapter_reveal_animation_runner: Variant = null
 ## 从其它场景切回来时注入的外部事件。
 ## 这里不直接在 apply_external_event() 里处理，是为了确保 OutScene 的节点树先 ready 完成。
 var pending_external_event: Variant = null
@@ -84,6 +86,24 @@ func _get_room_resolution_controller() -> Variant:
 	if _room_resolution_controller == null:
 		_room_resolution_controller = RoomResolutionControllerScript.new()
 	return _room_resolution_controller
+
+
+func _get_chapter_reveal_animation_runner() -> Variant:
+	if _chapter_reveal_animation_runner == null:
+		_chapter_reveal_animation_runner = ChapterRevealAnimationRunnerScript.new()
+	return _chapter_reveal_animation_runner
+
+
+func _get_chapter_reveal_animation_config() -> Dictionary:
+	return {
+		"fall_distance_min": chapter_reveal_fall_distance_min,
+		"fall_distance_max": chapter_reveal_fall_distance_max,
+		"start_scale": chapter_reveal_start_scale,
+		"start_tint": chapter_reveal_start_tint,
+		"delay_random": chapter_reveal_delay_random,
+		"rise_duration": chapter_reveal_rise_duration,
+		"settle_duration": chapter_reveal_settle_duration,
+	}
 
 # ==========================================
 # 2. 初始化逻辑
@@ -411,53 +431,23 @@ func _get_reveal_coords_between_radii(previous_radius: int, next_radius: int) ->
 
 
 func _prepare_chapter_reveal_tiles(coords_list: Array) -> void:
-	for c in coords_list:
-		if not view.tiles.has(c):
-			continue
-
-		var tile: Sprite2D = view.tiles[c]
-		var final_pos: Vector2 = _hex_to_pixel(c)
-		var fall_dist: float = randf_range(chapter_reveal_fall_distance_min, chapter_reveal_fall_distance_max)
-		tile.visible = true
-		tile.position = final_pos + Vector2(0.0, fall_dist)
-		tile.rotation = randf_range(-1.2, 1.2)
-		tile.scale = Vector2.ONE * chapter_reveal_start_scale
-		tile.modulate.a = 0.0
-		tile.self_modulate = chapter_reveal_start_tint
+	_get_chapter_reveal_animation_runner().prepare_tiles(
+		coords_list,
+		view.tiles,
+		Callable(self, "_hex_to_pixel"),
+		_get_chapter_reveal_animation_config()
+	)
 
 
 func _execute_chapter_reveal_animation(coords_list: Array, s: float) -> void:
-	if coords_list.is_empty():
-		return
-
-	var rise_tween = create_tween().set_parallel(true)
-	for c in coords_list:
-		if not view.tiles.has(c):
-			continue
-
-		var tile: Sprite2D = view.tiles[c]
-		var delay: float = randf() * chapter_reveal_delay_random
-		rise_tween.tween_property(tile, "modulate:a", 1.0, chapter_reveal_rise_duration * s).set_delay(delay)
-		rise_tween.tween_property(tile, "position", _hex_to_pixel(c), chapter_reveal_rise_duration * s)\
-			.set_trans(Tween.TRANS_SINE)\
-			.set_ease(Tween.EASE_OUT)\
-			.set_delay(delay)
-		rise_tween.tween_property(tile, "rotation", 0.0, chapter_reveal_rise_duration * s).set_delay(delay)
-	await rise_tween.finished
-
-	var settle_tween = create_tween().set_parallel(true)
-	for c in coords_list:
-		if not view.tiles.has(c):
-			continue
-
-		var tile: Sprite2D = view.tiles[c]
-		var delay: float = randf() * min(chapter_reveal_delay_random, 0.12)
-		settle_tween.tween_property(tile, "scale", Vector2.ONE, chapter_reveal_settle_duration * s)\
-			.set_trans(Tween.TRANS_BACK)\
-			.set_ease(Tween.EASE_OUT)\
-			.set_delay(delay)
-		settle_tween.tween_property(tile, "self_modulate", Color(1, 1, 1, 1), chapter_reveal_settle_duration * s).set_delay(delay)
-	await settle_tween.finished
+	await _get_chapter_reveal_animation_runner().execute_animation(
+		coords_list,
+		view.tiles,
+		Callable(self, "_hex_to_pixel"),
+		self,
+		_get_chapter_reveal_animation_config(),
+		s
+	)
 
 
 func _get_hex_distance_from_origin(coords: Vector2i) -> int:

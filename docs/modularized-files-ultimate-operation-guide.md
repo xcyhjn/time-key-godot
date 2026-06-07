@@ -52,6 +52,12 @@ scene/out_scene/out_scene_modules/
 
 这些文件服务于 `scene/out_scene/out_scene_map_exp.gd`。局外地图当前仍是地图初始化、房间结算、章节推进、玩家移动和切场景的 composition root；新增模块只接管明确的小流程，不要把镜头动画、移动动画或场景切换一次性搬出去。
 
+#### `scene/out_scene/out_scene_modules/ChapterRevealAnimationRunner.gd`
+
+- 用途：执行局外 boss 后新章节地块的揭示动画，包括初始位置/透明度设置、升起 tween 和收尾 tween。
+- 维护：不要在这里推进 `current_tier`，不要移动镜头，不保存 `MapState`，也不要决定哪些地块应该揭示。
+- 改进：如果未来多个局外动画共用随机延迟或落点参数，可以抽成更小的动画配置 Resource，但运行时 tile 节点不要资源化。
+
 #### `scene/out_scene/out_scene_modules/RoomResolutionController.gd`
 
 - 用途：统一处理局外房间结算 payload 的读取、坐标解析、boss 房判定和 tier 推进计划。
@@ -1173,9 +1179,9 @@ git diff --check
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay 和行动方格放置动画。当前仍可优先评估行动块视觉 presenter 或清理动画 runner，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块表现。
 
-### out_scene_map_exp 已完成房间结算首批拆分
+### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
-`out_scene_map_exp.gd` 已拆出 `RoomResolutionController.gd`，当前返回战斗后的结算读取、boss 后 tier 推进判断和坐标解析已经有独立模块承接。下一批如果继续局外地图，先评估“房间完成状态回写”或“章节揭示动画 runner”这种单一边界；不要同批改地图移动、镜头限制和场景切换。
+`out_scene_map_exp.gd` 已拆出 `RoomResolutionController.gd` 和 `ChapterRevealAnimationRunner.gd`。当前返回战斗后的结算读取、boss 后 tier 推进判断、坐标解析和章节揭示地块动画已经有独立模块承接。房间完成状态回写目前缺少既有状态字段，继续前要先设计数据契约；不要同批改地图移动、镜头限制和场景切换。
 
 ### ShopManager 剩余边界已经接近停止点
 
