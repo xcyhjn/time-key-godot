@@ -4,6 +4,7 @@ extends Control
 
 const RoomResolutionControllerScript = preload("res://scene/out_scene/out_scene_modules/RoomResolutionController.gd")
 const ChapterRevealAnimationRunnerScript = preload("res://scene/out_scene/out_scene_modules/ChapterRevealAnimationRunner.gd")
+const OutScenePayloadBridgeScript = preload("res://scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd")
 
 # ==========================================
 # 1. 变量与配置
@@ -61,6 +62,7 @@ var _map_center_dirty: bool = true
 var chosen_char_index: int = -1
 var _room_resolution_controller: Variant = null
 var _chapter_reveal_animation_runner: Variant = null
+var _payload_bridge: Variant = null
 ## 从其它场景切回来时注入的外部事件。
 ## 这里不直接在 apply_external_event() 里处理，是为了确保 OutScene 的节点树先 ready 完成。
 var pending_external_event: Variant = null
@@ -92,6 +94,12 @@ func _get_chapter_reveal_animation_runner() -> Variant:
 	if _chapter_reveal_animation_runner == null:
 		_chapter_reveal_animation_runner = ChapterRevealAnimationRunnerScript.new()
 	return _chapter_reveal_animation_runner
+
+
+func _get_payload_bridge() -> Variant:
+	if _payload_bridge == null:
+		_payload_bridge = OutScenePayloadBridgeScript.new()
+	return _payload_bridge
 
 
 func _get_chapter_reveal_animation_config() -> Dictionary:
@@ -783,23 +791,8 @@ func _log_scene_switch_error(message: String, extra: Dictionary = {}) -> void:
 ## - 再写 MainBoard，保留战斗返回时需要的 battle_tag / map_seed。
 ## - 最后保留根节点和旧路径兜底，兼容教程场景与历史结构。
 func _apply_payload_before_scene_enters_tree(next_scene: Node, data: String) -> void:
-	var delivered := false
-
-	var hex_map = next_scene.get_node_or_null("map/HexMap")
-	if hex_map and hex_map.has_method("apply_external_event"):
-		hex_map.apply_external_event(data)
-		delivered = true
-
-	var main_board = next_scene.get_node_or_null("ui/Main")
-	if main_board and main_board.has_method("apply_external_event"):
-		main_board.apply_external_event(data)
-		delivered = true
-
-	if not delivered and next_scene.has_method("apply_external_event"):
-		next_scene.apply_external_event(data)
-		delivered = true
-
-	if not delivered:
-		var target_node = next_scene.get_node_or_null("Main/Node2D")
-		if target_node and _object_has_property(target_node, &"received_text"):
-			target_node.received_text = data
+	_get_payload_bridge().apply_before_scene_enters_tree(
+		next_scene,
+		data,
+		Callable(self, "_object_has_property")
+	)

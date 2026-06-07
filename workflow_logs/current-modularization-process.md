@@ -7984,6 +7984,88 @@ Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR�
 Godot 加载 res://scene/out_scene/Out_Scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；场景加载仍输出既有 TileSetAtlasSource atlas tile 资源错误，本批未改 TileSet。
 ```
 
+## 2026-06-07 OutScene 切场前 payload bridge 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/out_scene/out_scene_map_exp.gd`。启动前已重新读取固定文档，并用 `rg` 输出目标文件、`MapState` 和切场 payload 相关轮廓。`MapState.path_gone` 是选角色后路径崩塌记录，不是“房间已完成”状态；因此本批不复用它做房间完成回写，避免制造错误语义。
+
+### 当前职责
+
+`out_scene_map_exp.gd` 仍是局外地图 composition root，负责地图初始化、玩家移动、切场景和生命周期编排。前面已经拆出房间结算 payload 控制器和章节揭示动画 runner；本批后，切场前 payload 注入由 `OutScenePayloadBridge.gd` 承接。
+
+### 耦合点
+
+```text
+_switch_scene_with_data() 同时处理 PackedScene 加载、保存、实例化、payload 注入、挂树、current_scene 替换和 queue_free()。
+payload 注入只需要知道 HexMap、MainBoard、根节点 apply_external_event 和旧 received_text 兜底路径。
+ResourceLoader、_save_to_global()、get_tree().root.add_child()、current_scene 和 queue_free() 仍留在主脚本。
+```
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `OutScenePayloadBridge.gd` | `_apply_payload_before_scene_enters_tree()` | 只写 payload，不创建/销毁场景 | 执行 |
+| 2 | 房间完成状态数据契约 | `_handle_room_resolution_payload()` 预留挂点 | 缺少既有状态字段，不直接写代码 | 暂缓 |
+| 3 | 切场景 executor | `_switch_scene_with_data()` | 会牵动挂树、current_scene、queue_free 和失败恢复 | 不拆 |
+| 4 | 地图移动确认流程 | `_move_to()` | 牵动玩家、镜头、确认 UI、路径崩塌和进房 | 不拆 |
+
+### 本批风险面
+
+本批风险面：切场前 payload 注入桥接。
+
+涉及的 3 个小风险点：
+
+```text
+新增 OutScenePayloadBridge.gd，负责把 payload 写给 HexMap 和 MainBoard。
+保留根节点 apply_external_event 兜底。
+保留旧 Main/Node2D.received_text 兜底，通过主脚本传入属性检查 Callable。
+```
+
+不触碰：
+
+```text
+PackedScene 加载和失败恢复。
+_save_to_global()。
+新场景挂树、current_scene 替换和 queue_free()。
+房间完成状态、tile_data、tile_features 和 MapState.path_gone 语义。
+```
+
+### 实现结果
+
+```text
+scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd
+```
+
+职责：
+
+```text
+OutScenePayloadBridge 只负责在局外切入新场景前写入外部 payload。
+它不加载场景，不挂树，不释放旧场景，也不解析 payload 内容。
+```
+
+`out_scene_map_exp.gd` 新增 `OutScenePayloadBridgeScript` preload 和 `_get_payload_bridge()` 缓存入口。旧 `_apply_payload_before_scene_enters_tree()` 保留，内部转发给新模块。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 144 个脚本模块和 3 个默认 Resource 文件。
+OutScene 现在有 3 个 out_scene_modules 脚本：RoomResolutionController、ChapterRevealAnimationRunner、OutScenePayloadBridge。
+out_scene_map_exp.gd 从约 805 行降到约 798 行。
+下一批如果继续 OutScene，优先只做房间完成状态回写的数据契约设计，不直接写状态。
+如果继续拆代码，切场景 executor 和地图移动流程都偏高风险；可转向镜头限制小模块或暂停 OutScene。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：147 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 144 个，默认 Resource 文件为 3 个。
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/out_scene/Out_Scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
 ### 当前优化进度与下一步
 
 当前进度：

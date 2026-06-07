@@ -58,6 +58,12 @@ scene/out_scene/out_scene_modules/
 - 维护：不要在这里推进 `current_tier`，不要移动镜头，不保存 `MapState`，也不要决定哪些地块应该揭示。
 - 改进：如果未来多个局外动画共用随机延迟或落点参数，可以抽成更小的动画配置 Resource，但运行时 tile 节点不要资源化。
 
+#### `scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd`
+
+- 用途：在局外切入新场景且新场景入树前，把 payload 写给 HexMap、MainBoard、根节点或旧 `received_text` 兜底节点。
+- 维护：不要在这里加载 PackedScene，不挂树，不替换 `current_scene`，不释放旧场景，也不解析 payload 内容。
+- 改进：如果后续教程场景和正式局内场景的 payload 协议完全统一，可以把旧 `received_text` 兜底逐步删掉，但要先验证教程入口。
+
 #### `scene/out_scene/out_scene_modules/RoomResolutionController.gd`
 
 - 用途：统一处理局外房间结算 payload 的读取、坐标解析、boss 房判定和 tier 推进计划。
@@ -1181,7 +1187,7 @@ git diff --check
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
-`out_scene_map_exp.gd` 已拆出 `RoomResolutionController.gd` 和 `ChapterRevealAnimationRunner.gd`。当前返回战斗后的结算读取、boss 后 tier 推进判断、坐标解析和章节揭示地块动画已经有独立模块承接。房间完成状态回写目前缺少既有状态字段，继续前要先设计数据契约；不要同批改地图移动、镜头限制和场景切换。
+`out_scene_map_exp.gd` 已拆出 `RoomResolutionController.gd`、`ChapterRevealAnimationRunner.gd` 和 `OutScenePayloadBridge.gd`。当前返回战斗后的结算读取、boss 后 tier 推进判断、坐标解析、章节揭示地块动画和切场前 payload 注入已经有独立模块承接。房间完成状态回写目前缺少既有状态字段，继续前要先设计数据契约；不要同批改地图移动、镜头限制和场景切换 executor。
 
 ### ShopManager 剩余边界已经接近停止点
 
