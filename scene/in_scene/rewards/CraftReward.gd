@@ -17,6 +17,7 @@ const CraftResultDescriptionContentPresenterScript = preload("res://scene/in_sce
 const CraftSlotPlaceholderPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd")
 const CraftPreviewCleanupPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftPreviewCleanupPresenter.gd")
 const CraftResultPreviewPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultPreviewPresenter.gd")
+const CraftPreviewCardConfiguratorScript = preload("res://scene/in_scene/rewards/presenters/CraftPreviewCardConfigurator.gd")
 const CraftSelectionTitlePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSelectionTitlePresenter.gd")
 const CraftSelectionCardStatePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSelectionCardStatePresenter.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
@@ -96,6 +97,7 @@ var _result_description_content_presenter = null
 var _slot_placeholder_presenter = null
 var _preview_cleanup_presenter = null
 var _result_preview_presenter = null
+var _preview_card_configurator = null
 var _selection_title_presenter = null
 var _selection_card_state_presenter = null
 var _tooltip_adapter = null
@@ -182,6 +184,12 @@ func _get_result_preview_presenter():
 	if _result_preview_presenter == null:
 		_result_preview_presenter = CraftResultPreviewPresenterScript.new()
 	return _result_preview_presenter
+
+
+func _get_preview_card_configurator():
+	if _preview_card_configurator == null:
+		_preview_card_configurator = CraftPreviewCardConfiguratorScript.new()
+	return _preview_card_configurator
 
 
 func _get_selection_title_presenter():
@@ -582,14 +590,7 @@ func _create_preview_card(card_id: String, preview_size: Vector2, tooltip_enable
 	await _steal_card_data(card_id, draft_card, temp_pile)
 	temp_pile.queue_free()
 
-	draft_card.custom_minimum_size = preview_size
-	draft_card.size = preview_size
-	draft_card.position = Vector2.ZERO
-
-	if not tooltip_enabled:
-		draft_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	return draft_card
+	return _get_preview_card_configurator().configure_preview_card(draft_card, preview_size, tooltip_enabled)
 
 
 func _on_result_card_clicked(_card: Control) -> void:

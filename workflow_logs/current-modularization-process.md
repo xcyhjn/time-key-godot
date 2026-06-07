@@ -6941,3 +6941,132 @@ _refresh_result_preview() 现在保留清理旧结果、槽位检查、配方结
 如果 _create_preview_card() 需要同时传入临时牌堆、真实卡生成、数据写入、tooltip 开关和 deck_manager，就停止 CraftReward 预览创建拆分。
 之后可转向 CraftReward.gd::_apply_crafting_result_to_deck() 的牌组写入边界，或 DragShapeController.gd 的放置完成流程。
 ```
+
+## CraftReward.gd 预览卡 UI 配置拆分记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批评估 `CraftReward.gd::_create_preview_card()` 后，没有直接搬走整条异步创建链。该函数同时负责临时牌堆、真实卡生成、数据写入和临时牌堆释放，整体拆出需要传入过多异步状态。最终只抽出数据写入完成后的预览卡 UI 配置。
+
+目标文件：
+
+```text
+scene/in_scene/rewards/CraftReward.gd
+scene/in_scene/rewards/presenters/CraftPreviewCardConfigurator.gd
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+```
+
+`rg` 轮廓：
+
+```text
+CraftReward.gd::_create_preview_card(card_id, preview_size, tooltip_enabled)
+CraftReward.gd::_steal_card_data(card_id, draft_card, temp_pile)
+CraftReward.gd::_create_temp_pile()
+CraftReward.gd 相关变量：draft_card_scene、deck_manager、_temp_pile_factory、_real_card_spawner、_draft_card_data_applier
+CraftPreviewCardConfigurator.gd::configure_preview_card(draft_card, preview_size, tooltip_enabled)
+```
+
+### 当前职责与耦合点
+
+`CraftReward.gd` 当前仍负责合成奖励页主流程。`_create_preview_card()` 仍串联：
+
+```text
+创建临时牌堆
+实例化 DraftCard
+写入 card_id 和 custom_set_size
+await _steal_card_data()
+释放临时牌堆
+配置预览卡尺寸、位置和 tooltip 鼠标过滤
+```
+
+整体拆出会把 `draft_card_scene`、`deck_manager`、临时牌堆、真实卡生成、数据写入和 tooltip 开关一起传入新模块，风险面过大。
+
+### 待拆清单
+
+```text
+P1：CraftReward.gd::_create_preview_card() 剩余异步创建链，下一批应优先判断是否停止继续拆。
+P1：CraftReward.gd::_apply_crafting_result_to_deck() 的牌组写入和同步边界。
+P2：DragShapeController.gd 放置完成流程。
+P2：ShopManager.gd::_generate_shop_items() 的临时牌堆生命周期等更小边界。
+```
+
+### 本批风险面
+
+本批只抽出预览卡 UI 配置：
+
+```text
+draft_card.custom_minimum_size = preview_size
+draft_card.size = preview_size
+draft_card.position = Vector2.ZERO
+tooltip_enabled 为 false 时设置 mouse_filter
+```
+
+不触碰：
+
+```text
+临时牌堆创建和释放
+DraftCard 实例化
+真实卡生成
+异步数据写入
+结果预览挂载
+确认合成和牌组写入
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/CraftPreviewCardConfigurator.gd
+```
+
+模块边界：
+
+- `CraftPreviewCardConfigurator.gd` 只负责配置已完成数据写入的预览卡 UI 状态。
+- 它不创建预览卡，不读取真实卡数据，也不管理临时牌堆生命周期。
+- 它返回配置后的 `Control`，由 `CraftReward.gd::_create_preview_card()` 继续作为旧入口返回。
+
+### 本批删除或收口的重复点
+
+```text
+custom_minimum_size、size、position 和 tooltip 鼠标过滤从 CraftReward.gd 收口到 CraftPreviewCardConfigurator.gd。
+主脚本保留临时牌堆和异步数据写入编排。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftPreviewCardConfigurator.gd 条目。
+docs/ai-handoff-ultimate-operation-guide.md 已刷新模块数量、Craft 剩余边界和下一步优先级。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：123 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有 CraftReward.gd 和 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+craft_reward.tscn 仍输出退出时 ObjectDB/resource 占用提示，in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 已拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、预览卡 UI 配置、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块。
+_create_preview_card() 现在只剩临时牌堆创建、DraftCard 实例化、异步真实卡数据写入、临时牌堆释放和调用预览卡 UI 配置模块。
+整条 _create_preview_card() 异步链继续拆会传入过多状态，下一批应优先判断是否停止 Craft 预览创建拆分。
+```
+
+下一步计划：
+
+```text
+下一批优先判断 CraftReward.gd::_create_preview_card() 是否停止继续拆。
+如果停止 Craft 预览创建拆分，就转向 CraftReward.gd::_apply_crafting_result_to_deck() 的牌组写入边界，或 DragShapeController.gd 的放置完成流程。
+如果继续拆 Craft，必须只选临时牌堆生命周期或 DraftCard 实例化其中一个风险面，不要同时改异步数据写入。
+```

@@ -477,6 +477,12 @@ scene/in_scene/rewards/rules/
 - 维护：不要创建预览卡，不刷新配方，不更新结果描述，也不修改牌组。
 - 改进：如果预览状态继续扩展，可以把返回字典改成更明确的状态对象。
 
+#### `scene/in_scene/rewards/presenters/CraftPreviewCardConfigurator.gd`
+
+- 用途：配置已完成数据写入的合成预览卡尺寸、位置和 tooltip 鼠标过滤状态。
+- 维护：不要创建预览卡，不读取真实卡数据，也不要管理临时牌堆生命周期。
+- 改进：如果素材槽和结果槽预览 UI 需要不同样式，可以继续通过参数传入，不要读取合成页状态。
+
 #### `scene/in_scene/rewards/presenters/CraftResultDescriptionPanelPresenter.gd`
 
 - 用途：配置合成结果描述面板基础样式。
@@ -1000,13 +1006,13 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块。下一步可重新扫描剩余大函数：
+`CraftReward.gd` 已经拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、预览卡 UI 配置、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块。下一步可重新扫描剩余大函数：
 
 ```text
 _refresh_result_preview()
 ```
 
-`_refresh_result_preview()` 仍涉及异步预览卡创建。`_apply_crafting_result_to_deck()` 只剩 GlobalDB 写入、追加结果卡和运行时抽牌堆同步，继续拆前要先评估是否会和 RemoveReward 的牌组写入规则重复。
+`_create_preview_card()` 仍保留临时牌堆创建、真实卡生成、数据写入和释放临时牌堆的异步编排。继续拆前要确认是否能形成单一边界，否则建议转向 `_apply_crafting_result_to_deck()` 的牌组写入和同步。
 
 ### RemoveReward 继续清理页面专属小边界
 
