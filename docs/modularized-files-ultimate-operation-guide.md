@@ -33,6 +33,7 @@ scene/in_scene/rewards/factory/
 scene/in_scene/rewards/presenters/
 scene/in_scene/rewards/rules/
 scene/in_scene/rewards/resources/
+scene/out_scene/out_scene_modules/
 ```
 
 这些目录下的模块都应该保持“小职责、旧入口转发、可单批验证”的风格。不要为了减少主文件行数，把多个跨系统步骤塞进一个新模块。
@@ -46,6 +47,16 @@ scene/in_scene/rewards/resources/
 - controller 可以编排一个小流程，但不要吞掉主场景的整体生命周期。
 - 每次改模块时，同时看它的主脚本旧入口，确认调用顺序没有被改变。
 - 新增模块必须写中文职责注释，说明“负责什么”和“不负责什么”。
+
+## OutScene 拆分模块
+
+这些文件服务于 `scene/out_scene/out_scene_map_exp.gd`。局外地图当前仍是地图初始化、房间结算、章节推进、玩家移动和切场景的 composition root；新增模块只接管明确的小流程，不要把镜头动画、移动动画或场景切换一次性搬出去。
+
+#### `scene/out_scene/out_scene_modules/RoomResolutionController.gd`
+
+- 用途：统一处理局外房间结算 payload 的读取、坐标解析、boss 房判定和 tier 推进计划。
+- 维护：不要在这里播放章节揭示动画，不移动玩家，不切换场景，也不直接写入 `current_tier` 或 `MapState.current_tier`。
+- 改进：如果后续要标记房间已清空或已领取奖励，可优先在这里补纯规则判断，再由 `out_scene_map_exp.gd` 执行真实地图状态修改。
 
 ## 使用本文
 
@@ -1162,9 +1173,9 @@ git diff --check
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay 和行动方格放置动画。当前仍可优先评估行动块视觉 presenter 或清理动画 runner，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块表现。
 
-### out_scene_map_exp 适合进入第一批拆分
+### out_scene_map_exp 已完成房间结算首批拆分
 
-`out_scene_map_exp.gd` 尚未系统性拆分。下一批如果转向局外地图，优先评估房间结算 payload 消费，把返回战斗后的结算读取、Boss 后 tier 推进判断等纯流程边界先收口；不要同批改地图移动、章节揭示动画或场景切换。
+`out_scene_map_exp.gd` 已拆出 `RoomResolutionController.gd`，当前返回战斗后的结算读取、boss 后 tier 推进判断和坐标解析已经有独立模块承接。下一批如果继续局外地图，先评估“房间完成状态回写”或“章节揭示动画 runner”这种单一边界；不要同批改地图移动、镜头限制和场景切换。
 
 ### ShopManager 剩余边界已经接近停止点
 

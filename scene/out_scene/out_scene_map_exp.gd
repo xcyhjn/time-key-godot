@@ -2,6 +2,8 @@
 # 核心逻辑: _ready() 根据 MapState 恢复或生成地图；_move_to() 处理玩家移动与进房；_advance_tier_from_boss_resolution() 在 boss 结算返回后解锁下一章并播放生成动画。
 extends Control
 
+const RoomResolutionControllerScript = preload("res://scene/out_scene/out_scene_modules/RoomResolutionController.gd")
+
 # ==========================================
 # 1. 变量与配置
 # ==========================================
@@ -56,6 +58,7 @@ var _current_decision = ""
 var _cached_map_center: Vector2 = Vector2.ZERO
 var _map_center_dirty: bool = true
 var chosen_char_index: int = -1
+var _room_resolution_controller: Variant = null
 ## 从其它场景切回来时注入的外部事件。
 ## 这里不直接在 apply_external_event() 里处理，是为了确保 OutScene 的节点树先 ready 完成。
 var pending_external_event: Variant = null
@@ -75,6 +78,12 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 		if property_info.get("name", &"") == property_name:
 			return true
 	return false
+
+
+func _get_room_resolution_controller() -> Variant:
+	if _room_resolution_controller == null:
+		_room_resolution_controller = RoomResolutionControllerScript.new()
+	return _room_resolution_controller
 
 # ==========================================
 # 2. 初始化逻辑
@@ -292,17 +301,7 @@ func _refresh_global_progress_labels() -> void:
 ## 这样即使未来切场方式从“手动实例化”改回“change_scene_to_file”，
 ## 这层接口依然成立，不会把结算结果绑死在某一种转场实现上。
 func _consume_pending_room_resolution() -> void:
-	var resolution_payload: Dictionary = {}
-
-	if pending_external_event is Dictionary:
-		resolution_payload = pending_external_event.duplicate(true)
-		if MapState.has_method("clear_pending_room_resolution"):
-			MapState.clear_pending_room_resolution()
-	elif MapState.has_method("peek_pending_room_resolution"):
-		resolution_payload = MapState.peek_pending_room_resolution()
-		if not resolution_payload.is_empty() and MapState.has_method("consume_pending_room_resolution"):
-			resolution_payload = MapState.consume_pending_room_resolution()
-
+	var resolution_payload: Dictionary = _get_room_resolution_controller().consume_pending_payload(pending_external_event, MapState)
 	if resolution_payload.is_empty():
 		return
 
@@ -327,7 +326,7 @@ func _handle_room_resolution_payload(payload: Dictionary) -> void:
 	# - 未来可在这里基于 payload["room_context"] 定位局外地图节点
 	# - 决定是否把房间改为已完成/已清空/已领取奖励状态
 	# - 根据 payload 中的战斗结果分流不同的局外处理
-	if payload.get("clear_active_room_context", true) and MapState.has_method("clear_active_room_context"):
+	if _get_room_resolution_controller().should_clear_active_room_context(payload) and MapState.has_method("clear_active_room_context"):
 		MapState.clear_active_room_context()
 
 	_refresh_global_progress_labels()
@@ -350,38 +349,24 @@ func _create_world():
 
 
 func _should_advance_tier_from_boss_payload(payload: Dictionary) -> bool:
-	if str(payload.get("combat_result", "")) != "completed":
-		return false
-
-	var room_context: Dictionary = payload.get("room_context", {}) if payload.get("room_context", {}) is Dictionary else {}
-	var is_boss_room := str(payload.get("battle_tag", "")) == "boss_stage"
-	is_boss_room = is_boss_room or int(room_context.get("room_type", 0)) == MapGenerator.TileType.BOSS
-	is_boss_room = is_boss_room or str(room_context.get("room_data", "")).begins_with("boss_stage")
-	if not is_boss_room:
-		return false
-
-	var max_tier_index: int = int(gen.layer_boundaries.size()) - 1
-	if current_tier >= max_tier_index:
-		return false
-
-	var boss_hex: Vector2i = _get_room_hex_from_payload(payload)
-	if not tile_data.has(boss_hex) or int(tile_data.get(boss_hex, 0)) != MapGenerator.TileType.BOSS:
-		return false
-
-	# 只有玩家刚结算“当前可见边界”的 boss 时才推进章节。
-	# 这能避免读档或旧版本已提前推进过 current_tier 时重复开章。
-	var current_boundary: int = int(gen.layer_boundaries[clamp(current_tier, 0, max_tier_index)])
-	return _get_hex_distance_from_origin(boss_hex) == current_boundary
+	return _get_room_resolution_controller().should_advance_tier_from_boss_payload(
+		payload,
+		tile_data,
+		gen.layer_boundaries,
+		current_tier,
+		player_hex,
+		MapGenerator.TileType.BOSS
+	)
 
 
 func _advance_tier_from_boss_resolution(_payload: Dictionary) -> bool:
-	var max_tier_index: int = int(gen.layer_boundaries.size()) - 1
-	if current_tier >= max_tier_index:
+	var tier_plan: Dictionary = _get_room_resolution_controller().build_tier_advance_plan(gen.layer_boundaries, current_tier)
+	if not bool(tier_plan.get("should_advance", false)):
 		return false
 
-	var previous_radius: int = int(gen.layer_boundaries[clamp(current_tier, 0, max_tier_index)])
-	var next_tier: int = current_tier + 1
-	var next_radius: int = int(gen.layer_boundaries[clamp(next_tier, 0, max_tier_index)])
+	var previous_radius: int = int(tier_plan.get("previous_radius", 0))
+	var next_tier: int = int(tier_plan.get("next_tier", current_tier))
+	var next_radius: int = int(tier_plan.get("next_radius", previous_radius))
 	var reveal_coords: Array = _get_reveal_coords_between_radii(previous_radius, next_radius)
 
 	current_tier = next_tier
@@ -410,29 +395,6 @@ func _advance_tier_from_boss_resolution(_payload: Dictionary) -> bool:
 	camera._target_zoom = camera.zoom
 	is_moving = false
 	return true
-
-
-func _get_room_hex_from_payload(payload: Dictionary) -> Vector2i:
-	var room_context: Dictionary = payload.get("room_context", {}) if payload.get("room_context", {}) is Dictionary else {}
-	var room_hex = room_context.get("room_hex", player_hex)
-	return _variant_to_vector2i(room_hex, player_hex)
-
-
-func _variant_to_vector2i(value: Variant, fallback: Vector2i = Vector2i.ZERO) -> Vector2i:
-	if value is Vector2i:
-		return value
-	if value is Vector2:
-		return Vector2i(int(value.x), int(value.y))
-	if value is Dictionary and value.has("x") and value.has("y"):
-		return Vector2i(int(value.x), int(value.y))
-	if value is String:
-		var stripped: String = value.strip_edges()
-		if stripped.begins_with("(") and stripped.ends_with(")"):
-			stripped = stripped.substr(1, stripped.length() - 2)
-		var parts: PackedStringArray = stripped.split(",", false)
-		if parts.size() >= 2:
-			return Vector2i(int(parts[0].strip_edges()), int(parts[1].strip_edges()))
-	return fallback
 
 
 func _get_reveal_coords_between_radii(previous_radius: int, next_radius: int) -> Array:

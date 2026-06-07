@@ -7884,6 +7884,106 @@ Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR�
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 ```
 
+## 2026-06-07 OutScene 房间结算 payload 控制器拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/out_scene/out_scene_map_exp.gd`，先用 `rg` 输出了变量、导出项和函数轮廓。目标文件当前仍包含：
+
+```text
+_ready()
+apply_external_event(payload)
+_consume_pending_room_resolution()
+_handle_room_resolution_payload(payload)
+_should_advance_tier_from_boss_payload(payload)
+_advance_tier_from_boss_resolution(_payload)
+_get_reveal_coords_between_radii(previous_radius, next_radius)
+_prepare_chapter_reveal_tiles(coords_list)
+_execute_chapter_reveal_animation(coords_list, s)
+_move_to(target)
+_enter_room_logic(target)
+_switch_scene_with_data(path, data)
+```
+
+### 当前职责
+
+`out_scene_map_exp.gd` 是局外地图的 composition root，负责地图初始化/恢复、角色选路、玩家移动、进房切场景、房间结算返回、boss 后章节推进、章节揭示动画、镜头限制和局外 UI 进度刷新。
+
+本批后，`RoomResolutionController.gd` 只负责局外房间结算 payload 的读取、解析和章节推进判断。它不播放章节揭示动画，不移动玩家，不切换场景，也不直接写入 `current_tier`。
+
+### 耦合点
+
+```text
+pending_external_event 与 MapState.pending_room_resolution 是两条结算返回来源。
+boss 推进判断需要读取 payload.room_context、battle_tag、tile_data、gen.layer_boundaries 和 current_tier。
+真正推进章节仍会触发 current_tier、MapState.current_tier、apply_tier_camera_limit()、章节揭示动画和 _save_to_global()，这些仍留在主脚本。
+地图移动、镜头动画和切场景都与玩家操作链强耦合，本批不碰。
+```
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `RoomResolutionController.gd` | `_consume_pending_room_resolution()`、`_should_advance_tier_from_boss_payload()`、`_advance_tier_from_boss_resolution()` 的纯计划部分 | payload 来源、boss 判定和 tier 半径计划是纯逻辑，边界清晰 | 执行 |
+| 2 | 房间完成状态回写 controller | `_handle_room_resolution_payload()` 预留挂点 | 需要先确认完成/清空/奖励领取状态写到哪里 | 后续评估 |
+| 3 | 章节揭示动画 runner | `_prepare_chapter_reveal_tiles()`、`_execute_chapter_reveal_animation()` | 可以拆，但牵动 camera、view.tiles、随机动画参数 | 暂停 |
+| 4 | 地图移动/进房流程 | `_move_to()`、`_enter_room_logic()` | 同时牵动玩家、镜头、确认 UI、MapState 和切场景 | 不拆 |
+
+### 本批风险面
+
+本批风险面：局外房间结算 payload 控制器。
+
+涉及的 3 个小风险点：
+
+```text
+新增 RoomResolutionController.gd，统一读取 pending_external_event 与 MapState.pending_room_resolution。
+把 boss 房判定、room_hex 解析和 hex 距离判断移入新模块。
+把 tier 推进的 previous_radius、next_tier、next_radius 计划移入新模块，真实推进和动画仍由 out_scene_map_exp.gd 执行。
+```
+
+不触碰：
+
+```text
+_move_to() 的玩家移动、确认 UI、镜头跟随和路径崩塌动画。
+_enter_room_logic() 的 active_room_context 写入与切场景。
+章节揭示动画的 tween、camera.focus_on_position() 和 view.tiles 状态。
+MapState 的字段结构和 InScene 返回 payload 构造。
+```
+
+### 实现结果
+
+```text
+scene/out_scene/out_scene_modules/RoomResolutionController.gd
+```
+
+职责：
+
+```text
+RoomResolutionController 只负责局外房间结算 payload 的读取、解析和章节推进判断。
+它不播放章节揭示动画，不移动玩家，不切换场景，也不直接写入 current_tier。
+```
+
+`out_scene_map_exp.gd` 新增 `RoomResolutionControllerScript` preload 和 `_get_room_resolution_controller()` 缓存入口。旧的 `_consume_pending_room_resolution()`、`_should_advance_tier_from_boss_payload()` 和 `_advance_tier_from_boss_resolution()` 继续保留原调用顺序，但纯判断委托给新模块。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 142 个脚本模块和 3 个默认 Resource 文件。
+OutScene 现在有 1 个 out_scene_modules 脚本。
+out_scene_map_exp.gd 从约 853 行降到约 830 行。
+下一批如果继续局外地图，先评估“房间完成状态回写”是否能独立成纯规则/小 controller。
+如果房间完成状态回写需要同时改 tile_data、tile_features、view.tiles、存档和切场返回，就暂停，改评估章节揭示动画 runner。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：145 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 142 个，默认 Resource 文件为 3 个。
+git diff --check 通过。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/out_scene/Out_Scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；场景加载仍输出既有 TileSetAtlasSource atlas tile 资源错误，本批未改 TileSet。
+```
+
 ### 当前优化进度与下一步
 
 当前进度：
@@ -8514,4 +8614,16 @@ timeline_ui.gd 从约 837 行降到约 804 行。
 git diff --check 通过，仅有 timeline_ui.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
 Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+## 2026-06-07 最新状态：OutScene 房间结算 payload 控制器已完成
+
+这段是当前文件的最新尾部状态，供下一批继续时优先读取。
+
+```text
+已拆模块统计：142 个脚本模块 + 3 个默认 Resource 文件。
+docs/modularized-files-ultimate-operation-guide.md 覆盖缺失：0。
+out_scene_map_exp.gd 已拆出房间结算 payload 读取、boss 推进判断、room_hex 解析和 tier 推进计划。
+地图移动、镜头限制、章节揭示动画执行和切场景仍留在 out_scene_map_exp.gd。
+下一批优先评估房间完成状态回写；如果需要同时改 tile_data、tile_features、view.tiles、存档和切场返回，就暂停，改评估章节揭示动画 runner。
 ```
