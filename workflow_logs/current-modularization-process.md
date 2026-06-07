@@ -8411,3 +8411,107 @@ ShopManager.gd 的单个商品生成和临时牌堆释放生命周期暂不硬�
 另一个优先方向是 out_scene_map_exp.gd 的房间结算 payload 消费拆分，不动地图移动。
 如果继续 Resource 化，转向 timeline/drag/hex_map 的纯视觉调参配置；不要把临时牌堆、真实卡节点或 DraftCard 节点注册成 Resource。
 ```
+
+## timeline_ui.gd 第九批清理动画残影创建拆分记录
+
+### 本批启动前约束
+
+本批继续遵守当前对话中的 AGENTS 约束：先分析目标文件，再列待拆清单，最后每批只拆 1 个清晰风险面，最多触碰 3 到 4 个风险点。仓库内未发现 `AGENTS.md`，以用户贴出的约束为准。
+
+### rg 轮廓摘要
+
+```text
+scene/in_scene/timeline/timeline_ui.gd
+const TimelineBlockPlacementAnimatorScript
+var action_containers
+var hovered_action
+var current_enemy_intent_preview_action
+func _on_action_placed(action)
+func animate_action_removal(action, reason)
+func _create_action_removal_ghost(source_container, action_id, reason)
+func _strip_action_container_runtime_effects(node)
+
+scene/in_scene/timeline/TimelineActionShapeVisual.gd
+func clone_visual()
+
+scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd
+func animate_block_placement(block, target_color, tween_factory)
+```
+
+### 当前职责
+
+`timeline_ui.gd` 仍是时间轴 UI 的 composition root，负责连接 `TimelineManager` 信号、维护行动容器字典、创建行动容器、处理 hover 状态、敌方意图预览、移除动画编排和 UI 清理。
+
+本批后，`TimelineActionRemovalGhostBuilder.gd` 只承担一个窄职责：从即将移除的行动容器复制一份干净残影。它不启动 tween，不修改 `TimelineManager` 数据，不维护 `action_containers`，也不清理原容器。
+
+### 耦合点
+
+```text
+_on_action_placed() 同时处理容器几何、Panel 创建、EnemyIntentOverlay、intro 动画和 hover 信号，暂不硬拆。
+animate_action_removal() 同时处理 preview 清理、hover 信号复位、容器字典移除、残影动画和释放，仍留在主脚本编排。
+_create_action_removal_ghost() 只读取原容器的几何、StyleBox 和 TimelineActionShapeVisual 纯绘制参数，输入输出清楚。
+```
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TimelineActionRemovalGhostBuilder.gd` | `_create_action_removal_ghost()` | 纯视觉节点复制，不碰时间轴数据和状态字典 | 执行 |
+| 2 | 清理动画 tween runner | `animate_action_removal()` 的 tween 段 | 可拆，但会和 ghost 生命周期绑定 | 暂停 |
+| 3 | 行动块 hover presenter | `_on_block_hovered()` / `_on_block_exited()` | 边界较小，但涉及 TimelineManager 信号和 action 类型 | 后续评估 |
+| 4 | 行动块生成 builder | `_on_action_placed()` | 牵动容器、格子、overlay、intro 和 hover | 不拆 |
+
+### 本批风险面
+
+本批风险面：清理动画残影创建。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TimelineActionRemovalGhostBuilder.gd，复制 Control/Panel/TimelineActionShapeVisual 的纯视觉状态。
+timeline_ui.gd 增加 preload、缓存 getter 和旧 _create_action_removal_ghost() 转发。
+docs 和 workflow 更新模块统计，把 timeline/ui_modules 纳入已拆模块覆盖。
+```
+
+不触碰：
+
+```text
+TimelineManager 数据结构和 remove_action_with_fade()。
+animate_action_removal() 的 hover 信号复位、action_containers.erase() 和 tween 顺序。
+EnemyIntentOverlay 的材质创建与显示逻辑。
+_on_action_placed() 的行动块生成流程。
+```
+
+### 实现结果
+
+```text
+scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd
+```
+
+职责：
+
+```text
+TimelineActionRemovalGhostBuilder.gd 只负责从即将移除的时间轴行动容器生成清理动画残影。
+它不启动 Tween，不修改 TimelineManager 数据，不维护 action_containers，也不清理原行动容器。
+```
+
+`timeline_ui.gd` 保留 `_create_action_removal_ghost()` 旧入口，内部转发给新模块。残影创建之后的运行时效果卸载、原容器释放、字典清理和 tween 动画仍由 `timeline_ui.gd` 编排。
+
+### 当前优化进度与下一步
+
+```text
+TimelineUI 已拆出 9 个 ui_modules 脚本：布局 2、网格 3、桥接 1、presenter 1、animation 2。
+已拆脚本模块统计口径修正为包含 timeline/ui_modules，本批后为 141 个脚本模块和 3 个默认 Resource 文件。
+timeline_ui.gd 从约 837 行降到约 804 行。
+下一批优先转向 out_scene_map_exp.gd 的房间结算 payload 消费拆分。
+如果继续 timeline_ui.gd，只评估 hover 信号/表现或清理动画 tween runner，不硬拆 _on_action_placed()。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：144 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 141 个，默认 Resource 文件为 3 个。
+git diff --check 通过，仅有 timeline_ui.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```

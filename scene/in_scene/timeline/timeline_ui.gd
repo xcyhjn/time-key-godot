@@ -10,6 +10,7 @@ const TimelineGridPreviewPresenterScript = preload("res://scene/in_scene/timelin
 const TimelineManagerLocatorScript = preload("res://scene/in_scene/timeline/ui_modules/bridges/TimelineManagerLocator.gd")
 const TimelineEnemyIntentOverlayPresenterScript = preload("res://scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd")
 const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd")
+const TimelineActionRemovalGhostBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -105,6 +106,7 @@ var _grid_preview_presenter = null
 var _timeline_manager_locator = null
 var _enemy_intent_overlay_presenter = null
 var _block_placement_animator = null
+var _action_removal_ghost_builder = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -161,6 +163,12 @@ func _get_block_placement_animator():
 	if _block_placement_animator == null:
 		_block_placement_animator = TimelineBlockPlacementAnimatorScript.new()
 	return _block_placement_animator
+
+
+func _get_action_removal_ghost_builder():
+	if _action_removal_ghost_builder == null:
+		_action_removal_ghost_builder = TimelineActionRemovalGhostBuilderScript.new()
+	return _action_removal_ghost_builder
 
 
 ## 查找TimelineManager节点
@@ -633,53 +641,12 @@ func animate_action_removal(action: TimelineAction, reason: String = "") -> void
 ## 残影复制方块几何、StyleBox 颜色和 TimelineActionShapeVisual 的纯绘制参数，
 ## 但不复制任何子节点材质，确保清除动画是干净且仍保留“同一意图整体感”的一版。
 func _create_action_removal_ghost(source_container: Control, action_id: int, reason: String = "") -> Control:
-	if not is_instance_valid(source_container):
-		return null
-
-	var parent = source_container.get_parent()
-	if parent == null:
-		return null
-
-	var ghost = Control.new()
-	ghost.name = "ActionRemovalGhost_%s" % action_id
-	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ghost.size = source_container.size
-	ghost.position = source_container.position
-	ghost.pivot_offset = source_container.pivot_offset
-	ghost.scale = Vector2.ONE
-	ghost.modulate = Color.WHITE
-	ghost.z_index = max(source_container.z_index, enemy_intent_preview_z_index + 1)
-	ghost.set_meta("action_id", action_id)
-	ghost.set_meta("removal_reason", reason)
-	parent.add_child(ghost)
-	parent.move_child(ghost, parent.get_child_count() - 1)
-
-	for child in source_container.get_children():
-		if child is TimelineActionShapeVisual:
-			var source_visual := child as TimelineActionShapeVisual
-			ghost.add_child(source_visual.clone_visual())
-			continue
-
-		if not (child is Panel):
-			continue
-
-		var source_block := child as Panel
-		var ghost_block := Panel.new()
-		ghost_block.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ghost_block.position = source_block.position
-		ghost_block.size = source_block.size
-		ghost_block.custom_minimum_size = source_block.custom_minimum_size
-		ghost_block.pivot_offset = source_block.pivot_offset
-		ghost_block.scale = source_block.scale
-		ghost_block.rotation = source_block.rotation
-
-		var source_style = source_block.get_theme_stylebox("panel")
-		if source_style != null:
-			ghost_block.add_theme_stylebox_override("panel", source_style.duplicate())
-
-		ghost.add_child(ghost_block)
-
-	return ghost
+	return _get_action_removal_ghost_builder().create_ghost(
+		source_container,
+		action_id,
+		reason,
+		enemy_intent_preview_z_index
+	)
 
 
 ## 递归卸载 action 容器上的运行时表现：

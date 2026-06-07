@@ -21,6 +21,11 @@
 scene/in_scene/hex_map_modules/
 scene/in_scene/in_scene_modules/
 scene/in_scene/drag_modules/
+scene/in_scene/timeline/ui_modules/animation/
+scene/in_scene/timeline/ui_modules/bridges/
+scene/in_scene/timeline/ui_modules/grid/
+scene/in_scene/timeline/ui_modules/layout/
+scene/in_scene/timeline/ui_modules/presenters/
 scene/in_scene/rewards/animation/
 scene/in_scene/rewards/bridges/
 scene/in_scene/rewards/diagnostics/
@@ -214,6 +219,83 @@ scene/in_scene/rewards/resources/
 - 入口：`enter_drag_mode(...)`、`exit_drag_mode(...)`、`collapse(...)`。
 - 维护：不要处理预览格子，不移动卡牌。
 - 改进：可以把拖拽期间时间轴状态抽成显式状态对象，减少 UI 侧隐式标记。
+
+## TimelineUI 拆分模块
+
+这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、敌方意图 overlay、行动方格动画和清理动画残影。`timeline_ui.gd` 仍负责连接 `TimelineManager` 信号、维护行动容器字典、hover 状态和清理动画编排。
+
+### animation
+
+#### `scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd`
+
+- 用途：从即将移除的时间轴行动容器生成无 Shader、无 Overlay、无鼠标交互的清理动画残影。
+- 入口：`create_ghost(...)`。
+- 维护：不要启动 Tween，不修改 `TimelineManager` 数据，不维护 `action_containers`，也不要清理原行动容器。
+- 改进：如果清理动画需要多种残影样式，可以在这里扩展复制策略，仍让 `timeline_ui.gd` 决定何时播放和释放。
+
+#### `scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd`
+
+- 用途：播放单个时间轴行动方格的放置入场动画。
+- 入口：`animate_block_placement(...)`。
+- 维护：不要创建行动容器，不修改 `TimelineManager` 数据，也不要处理敌方意图入场动画。
+- 改进：动画曲线和时长后续可改为配置参数，仍通过主脚本传入 tween factory。
+
+### bridges
+
+#### `scene/in_scene/timeline/ui_modules/bridges/TimelineManagerLocator.gd`
+
+- 用途：为 `timeline_ui.gd` 查找 `TimelineManager`。
+- 入口：`find_timeline_manager(...)`。
+- 维护：只负责查找路径和兜底顺序，不连接信号，不读取时间轴数据。
+- 改进：后续可改为由 `in_scene.gd` 注入 manager，减少运行时查找。
+
+### grid
+
+#### `scene/in_scene/timeline/ui_modules/grid/TimelineGridBuilder.gd`
+
+- 用途：构建时间轴背景格子，设置间距、尺寸和鼠标信号。
+- 入口：`build_grid(...)`。
+- 维护：不要创建行动块，不处理拖拽预览，也不要读写 `TimelineManager`。
+- 改进：格子样式如果资源化，可从参数中接收样式配置。
+
+#### `scene/in_scene/timeline/ui_modules/grid/TimelineGridCellInteractionPresenter.gd`
+
+- 用途：把格子索引换算成网格坐标，并应用 hover 默认色。
+- 入口：`get_grid_pos(...)`、`apply_cell_color(...)`。
+- 维护：不要发射点击或 hover 信号，不判断放置是否合法。
+- 改进：如果格子结构变化，只改这里的坐标换算。
+
+#### `scene/in_scene/timeline/ui_modules/grid/TimelineGridPreviewPresenter.gd`
+
+- 用途：显示和清理拖拽形状在时间轴背景格子上的预览样式。
+- 入口：`update_grid_preview(...)`、`clear_grid_preview(...)`。
+- 维护：不要创建行动块，不修改 `TimelineManager` 数据，不处理最终放置规则。
+- 改进：预览颜色和边框可以继续资源化。
+
+### layout
+
+#### `scene/in_scene/timeline/ui_modules/layout/TimelineExpandVisualController.gd`
+
+- 用途：处理时间轴展开/收起时的遮罩表现和地图交互过滤。
+- 入口：`create_background_mask(...)`、`animate_background_mask(...)`、`set_map_interaction_for_expand(...)`。
+- 维护：不要创建行动块，不改时间轴数据，也不要处理拖拽预览。
+- 改进：遮罩颜色和层级可以进入视觉配置 Resource。
+
+#### `scene/in_scene/timeline/ui_modules/layout/TimelineLayoutController.gd`
+
+- 用途：根据网格尺寸、格子大小、间距和顶部预留空间应用时间轴锚点布局。
+- 入口：`apply_anchor_layout(...)`。
+- 维护：不要处理展开动画，不连接信号，不创建格子或行动块。
+- 改进：布局参数可与 HUD 顶部空间配置统一。
+
+### presenters
+
+#### `scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd`
+
+- 用途：创建和配置时间轴敌方意图 overlay 材质，并批量切换 overlay 显隐。
+- 入口：`create_overlay_material(...)`、`set_overlay_visible(...)`、`configure_material(...)`。
+- 维护：不要决定何时进入预览，不创建行动块，不修改 `TimelineManager` 数据，也不处理移除动画。
+- 改进：敌方意图 overlay 的 shader 参数后续可迁入 `TimelineVisualConfig`。
 
 ## InScene 拆分模块
 
