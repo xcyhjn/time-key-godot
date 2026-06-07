@@ -12,6 +12,7 @@ const TimelineEnemyIntentOverlayPresenterScript = preload("res://scene/in_scene/
 const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd")
 const TimelineActionRemovalGhostBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd")
 const TimelineActionRemovalAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd")
+const TimelineActionHoverStateControllerScript = preload("res://scene/in_scene/timeline/ui_modules/controllers/TimelineActionHoverStateController.gd")
 
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
@@ -109,6 +110,7 @@ var _enemy_intent_overlay_presenter = null
 var _block_placement_animator = null
 var _action_removal_ghost_builder = null
 var _action_removal_animator = null
+var _action_hover_state_controller = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -177,6 +179,12 @@ func _get_action_removal_animator():
 	if _action_removal_animator == null:
 		_action_removal_animator = TimelineActionRemovalAnimatorScript.new()
 	return _action_removal_animator
+
+
+func _get_action_hover_state_controller():
+	if _action_hover_state_controller == null:
+		_action_hover_state_controller = TimelineActionHoverStateControllerScript.new()
+	return _action_hover_state_controller
 
 
 ## 查找TimelineManager节点
@@ -512,35 +520,11 @@ func toggle_expand():
 
 
 func _on_block_hovered(action: TimelineAction):
-	hovered_action = action
-	# ★ 修复：通过TimelineManager发射高亮信号
-	
-	# 通过TimelineManager通知主场景高亮
-	if timeline_manager and timeline_manager.has_signal("action_hovered_changed"):
-		timeline_manager.action_hovered_changed.emit(action, true)
-	else:
-		pass
-	
-	# 保留原有的类型判断（可选，实际高亮逻辑在主场景中实现）
-	if action.type == TimelineAction.Type.ENEMY:
-		# 敌人行动：红色高亮
-		pass
-	elif action.type == TimelineAction.Type.PLAYER:
-		# 玩家卡牌：金色高亮
-		pass
+	hovered_action = _get_action_hover_state_controller().enter_hover(action, timeline_manager)
 
 
 func _on_block_exited():
-	if hovered_action != null:
-		# ★ 修复：通知主场景清除高亮
-		
-		# 通过TimelineManager通知主场景清除高亮
-		if timeline_manager and timeline_manager.has_signal("action_hovered_changed"):
-			timeline_manager.action_hovered_changed.emit(hovered_action, false)
-		else:
-			pass
-		
-		hovered_action = null
+	hovered_action = _get_action_hover_state_controller().exit_hover(hovered_action, timeline_manager)
 
 
 ## 敌人意图时间轴预览入口
@@ -623,9 +607,11 @@ func animate_action_removal(action: TimelineAction, reason: String = "") -> void
 		clear_enemy_intent_preview()
 
 	if hovered_action == action:
-		if timeline_manager and timeline_manager.has_signal("action_hovered_changed"):
-			timeline_manager.action_hovered_changed.emit(action, false)
-		hovered_action = null
+		hovered_action = _get_action_hover_state_controller().clear_removed_action_hover(
+			hovered_action,
+			action,
+			timeline_manager
+		)
 
 	var ghost = _create_action_removal_ghost(container, action_id, reason)
 	_strip_action_container_runtime_effects(container)

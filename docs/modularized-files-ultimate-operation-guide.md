@@ -23,6 +23,7 @@ scene/in_scene/in_scene_modules/
 scene/in_scene/drag_modules/
 scene/in_scene/timeline/ui_modules/animation/
 scene/in_scene/timeline/ui_modules/bridges/
+scene/in_scene/timeline/ui_modules/controllers/
 scene/in_scene/timeline/ui_modules/grid/
 scene/in_scene/timeline/ui_modules/layout/
 scene/in_scene/timeline/ui_modules/presenters/
@@ -245,7 +246,7 @@ scene/out_scene/out_scene_modules/
 
 ## TimelineUI 拆分模块
 
-这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、敌方意图 overlay、行动方格动画、清理动画残影创建和残影 tween 播放。`timeline_ui.gd` 仍负责连接 `TimelineManager` 信号、维护行动容器字典、hover 状态和清理动画触发时机。
+这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、敌方意图 overlay、行动方格动画、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知。`timeline_ui.gd` 仍负责连接 `TimelineManager`、维护行动容器字典、持有当前 hover 引用和决定清理动画触发时机。
 
 ### animation
 
@@ -278,6 +279,15 @@ scene/out_scene/out_scene_modules/
 - 入口：`find_timeline_manager(...)`。
 - 维护：只负责查找路径和兜底顺序，不连接信号，不读取时间轴数据。
 - 改进：后续可改为由 `in_scene.gd` 注入 manager，减少运行时查找。
+
+### controllers
+
+#### `scene/in_scene/timeline/ui_modules/controllers/TimelineActionHoverStateController.gd`
+
+- 用途：处理时间轴行动方块 hover 进入、退出和行动被移除时的本地状态切换，并沿用 `TimelineManager.action_hovered_changed` 通知外部。
+- 入口：`enter_hover(...)`、`exit_hover(...)`、`clear_removed_action_hover(...)`。
+- 维护：不要创建行动方块，不展示 tooltip，不处理敌方意图预览，也不要修改 `TimelineManager` 的网格数据。
+- 改进：如果未来需要区分重复 hover 或跨行动切换时的旧 action 清理，可在这里扩展状态转换结果，但不要直接读取场景树。
 
 ### grid
 
@@ -1190,7 +1200,7 @@ git diff --check
 
 ### timeline_ui 剩余表现边界优先级更高
 
-`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、清理动画残影创建和残影 tween 播放。当前仍可优先评估行动块 hover 信号/表现边界，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块生成。
+`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知。当前如果继续时间轴，应先评估更小的行动块视觉 presenter 或纯视觉配置 Resource，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块生成。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 

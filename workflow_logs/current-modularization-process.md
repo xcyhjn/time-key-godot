@@ -8975,3 +8975,92 @@ git diff --check 通过，仅有 scene/in_scene/timeline/timeline_ui.gd 的既�
 Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍有既有退出资源占用 warning。
 Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
 ```
+
+## 2026-06-07 TimelineUI 行动块 hover 状态通知拆分
+
+### 读取与轮廓
+
+本批按接力规则先确认工作区干净，再读取固定文档。仓库内未发现 `AGENTS.md`，本批以当前对话中用户贴出的约束为准。用户明确要求先不要解耦局外，因此本批只处理局内时间轴。随后用 `rg` 输出了以下目标轮廓：
+
+```text
+scene/in_scene/timeline/timeline_ui.gd
+scene/in_scene/timeline/TimelineManager.gd
+scene/in_scene/in_scene.gd
+scene/in_scene/in_scene_modules/ui/TimelineActionHoverUiController.gd
+scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd
+```
+
+### 当前职责
+
+`timeline_ui.gd` 仍是时间轴 UI 的 composition root，负责连接 `TimelineManager`，维护 `action_containers` 和当前 `hovered_action`，创建行动容器，触发敌方意图 overlay、放置动画、移除动画和网格交互转发。
+
+### 耦合点
+
+```text
+_on_block_hovered() / _on_block_exited() 同时更新 timeline_ui.gd 的 hovered_action，并通过 TimelineManager.action_hovered_changed 通知局内 UI 与敌方意图控制器。
+animate_action_removal() 在移除当前 hover action 前也要发出 action_hovered_changed(false)，避免外部高亮残留。
+_on_action_placed() 仍同时创建容器、格子 Panel、overlay、intro 动画和信号连接，本批不碰。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | hover 状态通知 controller | `_on_block_hovered()`、`_on_block_exited()`、移除时清 hover | 只处理本地状态和旧信号通知 | 执行 |
+| 2 | 行动块视觉 presenter | `_on_action_placed()` 内样式与方格配置 | 仍牵动 overlay、intro 和信号连接 | 暂缓 |
+| 3 | TimelineVisualConfig | 时间轴视觉参数 | Resource 化要小批处理 | 暂缓 |
+| 4 | TimelineManager 敌方意图规则 | `TimelineManager.gd` | 数据规则核心，风险高 | 不碰 |
+
+### 本批风险面
+
+本批只拆一个风险面：时间轴行动块 hover 的本地状态切换和旧信号通知。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TimelineActionHoverStateController.gd，负责 enter_hover、exit_hover 和移除当前 hover action 时的清理通知。
+timeline_ui.gd 保留 hovered_action 成员和旧入口，只把状态转换和 action_hovered_changed 发射委托出去。
+不修改 TimelineManager.hovered_action，不展示 tooltip，不处理敌方意图预览，也不改行动块生成。
+```
+
+不触碰：
+
+```text
+_on_action_placed() 的行动块生成流程。
+TimelineManager 的网格数据、敌方意图排布和 hover 存储。
+EnemyIntentPresentationController 与 InScene hover UI 的外部响应。
+```
+
+### 实现结果
+
+```text
+scene/in_scene/timeline/ui_modules/controllers/TimelineActionHoverStateController.gd
+```
+
+职责：
+
+```text
+TimelineActionHoverStateController 只负责时间轴行动方块 hover 的本地状态切换和旧信号通知。
+它不创建行动方块，不展示 tooltip，不处理敌方意图预览，也不修改 TimelineManager 的网格数据。
+```
+
+`timeline_ui.gd` 新增 `TimelineActionHoverStateControllerScript` preload、缓存 getter 和三个委托调用。`_on_block_hovered()`、`_on_block_exited()` 和 `animate_action_removal()` 的旧公共入口与旧信号语义保持不变。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 146 个脚本模块和 3 个默认 Resource 文件。
+TimelineUI 现在有 11 个 ui_modules 脚本，新增 controllers/TimelineActionHoverStateController.gd。
+timeline_ui.gd 从约 800 行降到约 786 行。
+下一批如果继续 TimelineUI，只评估行动块视觉 presenter 或 TimelineVisualConfig 这类纯视觉配置；不要硬拆 _on_action_placed() 的完整生成编排。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 scene/in_scene/timeline/timeline_ui.gd 的既有 LF/CRLF 提示。
+覆盖率检查通过：149 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 146 个，默认 Resource 文件为 3 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍有既有退出资源占用 warning。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+```
