@@ -16,6 +16,7 @@ const CraftResultDescriptionPositionPresenterScript = preload("res://scene/in_sc
 const CraftResultDescriptionContentPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultDescriptionContentPresenter.gd")
 const CraftSlotPlaceholderPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSlotPlaceholderPresenter.gd")
 const CraftPreviewCleanupPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftPreviewCleanupPresenter.gd")
+const CraftResultPreviewPresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftResultPreviewPresenter.gd")
 const CraftSelectionTitlePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSelectionTitlePresenter.gd")
 const CraftSelectionCardStatePresenterScript = preload("res://scene/in_scene/rewards/presenters/CraftSelectionCardStatePresenter.gd")
 const RewardTooltipAdapterScript = preload("res://scene/in_scene/rewards/presenters/RewardTooltipAdapter.gd")
@@ -94,6 +95,7 @@ var _result_description_position_presenter = null
 var _result_description_content_presenter = null
 var _slot_placeholder_presenter = null
 var _preview_cleanup_presenter = null
+var _result_preview_presenter = null
 var _selection_title_presenter = null
 var _selection_card_state_presenter = null
 var _tooltip_adapter = null
@@ -174,6 +176,12 @@ func _get_preview_cleanup_presenter():
 	if _preview_cleanup_presenter == null:
 		_preview_cleanup_presenter = CraftPreviewCleanupPresenterScript.new()
 	return _preview_cleanup_presenter
+
+
+func _get_result_preview_presenter():
+	if _result_preview_presenter == null:
+		_result_preview_presenter = CraftResultPreviewPresenterScript.new()
+	return _result_preview_presenter
 
 
 func _get_selection_title_presenter():
@@ -549,15 +557,13 @@ func _refresh_result_preview() -> void:
 	var preview_card = await _create_preview_card(current_result_card_id, _get_anchor_preview_size(result_anchor), true)
 	if preview_card == null:
 		return
-	result_anchor.add_child(preview_card)
-	preview_card.position = Vector2.ZERO
-	result_preview_card = preview_card
-
-	if result_preview_card.has_method("set_selected"):
-		result_preview_card.set_selected(true)
-
-	if result_preview_card.has_signal("card_clicked"):
-		result_preview_card.card_clicked.connect(_on_result_card_clicked)
+	result_preview_card = _get_result_preview_presenter().attach_result_preview(
+		result_anchor,
+		preview_card,
+		Callable(self, "_on_result_card_clicked")
+	)
+	if result_preview_card == null:
+		return
 
 	_refresh_slot_placeholders()
 	_update_result_description()

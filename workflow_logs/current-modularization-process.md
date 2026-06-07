@@ -6811,3 +6811,133 @@ _generate_shop_items() 仍保留生成锁、旧商品清理、时代读取、临
 如果继续看 ShopManager，只评估临时牌堆生命周期等更小边界；若仍需要传入过多成员，就停止 ShopManager。
 之后再评估 DragShapeController.gd 的放置完成流程或 timeline_ui.gd 的行动块表现。
 ```
+
+## CraftReward.gd 结果预览挂载拆分记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批只处理 `CraftReward.gd::_refresh_result_preview()` 中“已创建结果预览卡之后的挂载和点击绑定”。不拆配方判断，不拆 `_create_preview_card()` 的异步真实卡数据读取，也不改合成结果写入牌组。
+
+目标文件：
+
+```text
+scene/in_scene/rewards/CraftReward.gd
+scene/in_scene/rewards/presenters/CraftResultPreviewPresenter.gd
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+```
+
+`rg` 轮廓：
+
+```text
+CraftReward.gd::_refresh_result_preview()
+CraftReward.gd::_create_preview_card(card_id, preview_size, tooltip_enabled)
+CraftReward.gd::_on_result_card_clicked(_card)
+CraftReward.gd 相关变量：result_anchor、result_preview_card、current_result_card_id、slot_entries
+CraftResultPreviewPresenter.gd::attach_result_preview(result_anchor, preview_card, click_callback)
+```
+
+### 当前职责与耦合点
+
+`CraftReward.gd` 当前仍是合成奖励页的 composition root，负责选择主副卡、生成选择卡、生成槽位预览、计算配方结果、确认合成、写回牌组和关闭奖励页。
+
+`_refresh_result_preview()` 的剩余耦合点：
+
+```text
+清理旧结果预览
+检查两个槽位是否都有选择
+计算配方结果 current_result_card_id
+异步创建结果预览卡
+结果槽 UI 刷新
+结果描述刷新
+连接线刷新
+```
+
+### 待拆清单
+
+```text
+P1：CraftReward.gd::_create_preview_card() 的异步预览创建边界，但它仍牵动临时牌堆、真实卡生成、数据写入和 tooltip 开关，下一批需重新评估。
+P1：CraftReward.gd::_apply_crafting_result_to_deck() 的牌组写入和同步边界，暂不和预览流程同批处理。
+P2：ShopManager.gd::_generate_shop_items() 的临时牌堆生命周期等更小边界。
+P2：DragShapeController.gd 放置完成流程。
+```
+
+### 本批风险面
+
+本批只抽出结果预览卡挂载：
+
+```text
+result_anchor.add_child(preview_card)
+preview_card.position = Vector2.ZERO
+preview_card.set_selected(true) 兜底调用
+preview_card.card_clicked.connect(_on_result_card_clicked) 兜底连接
+```
+
+不触碰：
+
+```text
+配方判断
+预览卡异步创建
+临时牌堆创建和释放
+结果描述刷新
+连接线刷新
+确认合成和牌组写入
+```
+
+### 新增模块
+
+```text
+scene/in_scene/rewards/presenters/CraftResultPreviewPresenter.gd
+```
+
+模块边界：
+
+- `CraftResultPreviewPresenter.gd` 只负责把已创建的结果预览卡挂到结果槽。
+- 它不创建预览卡，不读取配方，不更新结果描述或连接线。
+- 它返回挂载后的 `Control`，由 `CraftReward.gd` 继续保存 `result_preview_card` 并调度后续刷新。
+
+### 本批删除或收口的重复点
+
+```text
+result_anchor.add_child、position 归零、选中态设置和结果卡点击信号连接从 CraftReward.gd 收口到 CraftResultPreviewPresenter.gd。
+主脚本保留配方判断、异步预览创建、结果说明和连接线刷新。
+```
+
+### 文档同步
+
+```text
+docs/modularized-files-ultimate-operation-guide.md 已补充 CraftResultPreviewPresenter.gd 条目。
+docs/ai-handoff-ultimate-operation-guide.md 已刷新模块数量、Craft 剩余边界和下一步优先级。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：122 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有 CraftReward.gd 和 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/craft_reward.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+craft_reward.tscn 仍输出退出时 ObjectDB/resource 占用提示，in_scene.tscn 仍输出既有 TileSet atlas 噪声，不作为本批新增问题处理。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+CraftReward.gd 已拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块。
+_refresh_result_preview() 现在保留清理旧结果、槽位检查、配方结果计算、异步预览创建和后续刷新编排。
+本批没有触碰 _create_preview_card()、确认合成和牌组写入。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 CraftReward.gd::_create_preview_card() 的异步预览创建边界。
+如果 _create_preview_card() 需要同时传入临时牌堆、真实卡生成、数据写入、tooltip 开关和 deck_manager，就停止 CraftReward 预览创建拆分。
+之后可转向 CraftReward.gd::_apply_crafting_result_to_deck() 的牌组写入边界，或 DragShapeController.gd 的放置完成流程。
+```
