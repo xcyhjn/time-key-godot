@@ -8280,3 +8280,134 @@ end_dragging_success() 剩余 drag_ended 信号、弃牌失败 fallback 和时�
 如果只剩 collapse(timeline_ui) 这种单行 wrapper，就停止 DragShapeController 的成功收尾拆分。
 另一个可选方向是 ShopManager.gd 的临时牌堆生命周期，但不要回到 Shop 定价或时代权重 Resource。
 ```
+
+## ShopManager.gd 临时牌堆隐藏创建收口记录
+
+### 本批启动前约束
+
+本批继续遵守当前对话中的 AGENTS 约束：先分析目标文件，再列待拆清单，最后每批只拆 1 个清晰风险面，最多触碰 3 到 4 个风险点。仓库内未发现 `AGENTS.md` 时，以用户贴出的约束为准。
+
+本批先评估上批留下的两个候选：
+
+```text
+DragShapeController.gd 的成功后 UI/时间轴收起。
+ShopManager.gd::_generate_shop_items() 的临时牌堆生命周期。
+```
+
+### rg 轮廓摘要
+
+```text
+scene/in_scene/DragShapeController.gd
+end_dragging_success()
+_return_card_to_hand(card)
+_get_timeline_ui_state_controller().collapse(timeline_ui)
+
+scene/in_scene/rewards/ShopManager.gd
+signal reward_scene_close_requested(scene_instance)
+var _is_generating
+var _temp_pile_factory
+func _generate_shop_items()
+func _steal_card_data(card_id, draft_card, temp_pile)
+func _create_temp_pile()
+
+scene/in_scene/rewards/factory/RewardTempPileFactory.gd
+const PILE_SCENE
+func create_temp_pile(deck_manager, owner_label)
+```
+
+### 当前职责
+
+`DragShapeController.gd` 仍是拖拽放置流程的 composition root，负责编排拖拽结束信号、成功视觉恢复、弃牌移动、失败 fallback、时间轴收起和主状态清理。
+
+`ShopManager.gd` 仍是商店页 composition root，负责编排商店打开、商品生成锁、旧商品清理、生成依赖检查、时代读取、选卡、DraftCard 创建、真实卡异步数据提取、定价、商品槽注册、购买、刷新、升级和退出。
+
+`RewardTempPileFactory.gd` 是奖励页共享 factory，负责创建临时幽灵牌堆。
+
+### 耦合点
+
+```text
+Drag 的 collapse(timeline_ui) 已经由 DragTimelineUiStateController 承担；继续包一层只会制造单行 wrapper。
+Drag 的 _return_card_to_hand() 同时触碰 hand、timeline_ui、tooltip、current_target_tile、current_shape_coords、current_card 和 is_timeline_clear_mode。
+Shop 的单个商品生成会牵动 draft_card_factory、temp_pile、deck_manager、真实卡异步生成、DraftCard 数据写入、价格和 UI 注册。
+Shop 的 temp_pile.visible = false 是生成前的基础可见性设置，能形成更小边界。
+```
+
+### 待拆清单
+
+| 优先级 | 候选 | 范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 临时牌堆隐藏创建 | `_generate_shop_items()` 中创建 temp_pile 后立刻 `visible = false` | 只影响创建后基础状态，不碰异步生成和释放 | 执行 |
+| 2 | 临时牌堆释放生命周期 | `_generate_shop_items()` 尾部 `temp_pile.queue_free()` | 与异步生成循环绑定，若提前抽出会牵动异常路径 | 暂停 |
+| 3 | 单个商品生成 | 选卡、DraftCard、数据提取、定价、注册 | 需要传入过多状态 | 不拆 |
+| 4 | Drag 成功后 UI 收起 | `collapse(timeline_ui)` | 已经是现有模块单行调用 | 停止 |
+| 5 | Drag 回手牌 fallback | `_return_card_to_hand()` | 同时触碰手牌、时间轴、tooltip 和主状态 | 停止 |
+
+### 本批风险面
+
+本批风险面：把 Shop 临时牌堆“创建后隐藏”收口到 `RewardTempPileFactory.gd`。
+
+涉及的 3 个小风险点：
+
+```text
+RewardTempPileFactory.gd 新增 create_hidden_temp_pile()，复用旧 create_temp_pile()。
+ShopManager.gd 的 _create_temp_pile() 改为调用 create_hidden_temp_pile()。
+_generate_shop_items() 移除散落的 temp_pile.visible = false，不改变生成循环、异步数据提取或 queue_free()。
+```
+
+不触碰：
+
+```text
+_steal_card_data() 的异步真实卡生成与 DraftCard 数据写入。
+_generate_shop_items() 的商品循环、选卡、价格和 UI 注册。
+Shop 购买、刷新、升级和退出流程。
+Acquire/Remove/Craft 的旧 create_temp_pile() 调用语义。
+```
+
+### 实现结果
+
+```text
+RewardTempPileFactory.gd 增加 create_hidden_temp_pile(deck_manager, owner_label)。
+ShopManager.gd 继续保留旧 _create_temp_pile() wrapper，但内部改用隐藏创建入口。
+docs/ai-handoff-ultimate-operation-guide.md 刷新当前完成度、优先级和停止点。
+docs/modularized-files-ultimate-operation-guide.md 更新 RewardTempPileFactory 入口和后续优化方向。
+```
+
+### 当前优化进度与下一步
+
+```text
+DragShapeController.gd 成功收尾本轮确认停止继续硬拆：collapse 已是单行模块调用，fallback 收尾耦合过多。
+ShopManager.gd 的隐藏临时牌堆创建已收口，单个商品生成和释放生命周期暂不硬拆。
+下一批优先评估 timeline_ui.gd 的行动块视觉 presenter 或清理动画 runner。
+另一个优先方向是 out_scene_map_exp.gd 的房间结算 payload 消费拆分，不动地图移动。
+```
+
+## ShopManager.gd 临时牌堆隐藏创建最终验证记录
+
+### 回归检查
+
+```text
+覆盖率检查通过：135 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 132 个，默认 Resource 文件为 3 个。
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+已拆脚本模块仍为 132 个，默认 Resource 文件仍为 3 个；本批没有新增模块，只扩展了 RewardTempPileFactory 的隐藏创建入口。
+ShopManager.gd 的隐藏临时牌堆创建已从 _generate_shop_items() 收口到 RewardTempPileFactory.create_hidden_temp_pile()。
+DragShapeController.gd 成功收尾本轮确认停止继续硬拆：collapse 已是单行模块调用，fallback 收尾耦合过多。
+ShopManager.gd 的单个商品生成和临时牌堆释放生命周期暂不硬拆。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 timeline_ui.gd 的行动块视觉 presenter 或清理动画 runner。
+另一个优先方向是 out_scene_map_exp.gd 的房间结算 payload 消费拆分，不动地图移动。
+如果继续 Resource 化，转向 timeline/drag/hex_map 的纯视觉调参配置；不要把临时牌堆、真实卡节点或 DraftCard 节点注册成 Resource。
+```

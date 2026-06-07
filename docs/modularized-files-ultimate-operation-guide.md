@@ -492,9 +492,9 @@ scene/in_scene/rewards/resources/
 
 #### `scene/in_scene/rewards/factory/RewardTempPileFactory.gd`
 
-- 用途：为奖励页面创建临时幽灵牌堆。
-- 维护：不要生成卡牌，不决定奖励选择或确认流程。
-- 改进：临时牌堆场景路径可以配置化。
+- 用途：为奖励页面创建临时幽灵牌堆；需要完全隐藏时用 `create_hidden_temp_pile(...)`。
+- 维护：不要生成卡牌，不读取卡牌数据，不清理临时牌堆，不决定奖励选择或确认流程。
+- 改进：临时牌堆场景路径可以配置化；如果多个奖励页需要统一释放策略，再单独评估生命周期模块。
 
 ### presenters
 
@@ -1076,16 +1076,24 @@ git diff --check
 
 ## 当前最值得继续优化的方向
 
-### 评估 ShopManager 剩余边界
+### timeline_ui 剩余表现边界优先级更高
 
-`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接、商品槽注册、生成依赖检查、静态定价配置和时代权重配置都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，定价数值来自 `ShopPricingConfig`，时代权重来自 `ShopEraWeightConfig`，继续围绕这些配置硬拆收益很低。
+`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay 和行动方格放置动画。当前仍可优先评估行动块视觉 presenter 或清理动画 runner，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块表现。
+
+### out_scene_map_exp 适合进入第一批拆分
+
+`out_scene_map_exp.gd` 尚未系统性拆分。下一批如果转向局外地图，优先评估房间结算 payload 消费，把返回战斗后的结算读取、Boss 后 tier 推进判断等纯流程边界先收口；不要同批改地图移动、章节揭示动画或场景切换。
+
+### ShopManager 剩余边界已经接近停止点
+
+`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接、商品槽注册、生成依赖检查、静态定价配置、时代权重配置和隐藏临时牌堆创建都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，定价数值来自 `ShopPricingConfig`，时代权重来自 `ShopEraWeightConfig`，临时牌堆隐藏创建来自 `RewardTempPileFactory.create_hidden_temp_pile(...)`，继续围绕这些配置和创建步骤硬拆收益很低。
 
 ```text
 _generate_shop_items()
 open_shop()
 ```
 
-如果继续处理商店，本轮已经确认单个商品生成编排会牵动 `draft_card_factory`、`temp_pile`、`deck_manager`、UI 注册和异步数据提取等过多状态，不建议硬拆。下一批只适合评估更小的生成前后边界，例如临时牌堆生命周期；如果仍然需要传入过多成员，就停止 ShopManager，转向 DragShapeController。
+如果继续处理商店，本轮已经确认单个商品生成编排会牵动 `draft_card_factory`、`temp_pile`、`deck_manager`、UI 注册和异步数据提取等过多状态，不建议硬拆。临时牌堆释放仍绑定异步生成循环，除非要统一多个奖励页的释放策略，否则停止 ShopManager 生成链拆分。
 
 ### CraftReward 继续清理页面专属小边界
 
@@ -1095,7 +1103,7 @@ open_shop()
 _refresh_result_preview()
 ```
 
-`_create_preview_card()` 剩余临时牌堆创建、真实卡生成、数据写入和释放临时牌堆属于同一异步编排，不建议继续硬拆。`_apply_crafting_result_to_deck()` 剩余同步运行时抽牌堆和关闭流程也已经接近页面编排，不建议继续硬拆。`CRAFTING_RECIPES` 已资源化，后续不要再围绕 Craft 页面硬拆；除非新增配方字段，否则转向 Shop 或 Drag。
+`_create_preview_card()` 剩余临时牌堆创建、真实卡生成、数据写入和释放临时牌堆属于同一异步编排，不建议继续硬拆。`_apply_crafting_result_to_deck()` 剩余同步运行时抽牌堆和关闭流程也已经接近页面编排，不建议继续硬拆。`CRAFTING_RECIPES` 已资源化，后续不要再围绕 Craft 页面硬拆；除非新增配方字段，否则转向 timeline_ui 或 out_scene_map_exp。
 
 ### RemoveReward 继续清理页面专属小边界
 
@@ -1107,24 +1115,24 @@ _refresh_result_preview()
 _on_confirm_pressed()
 ```
 
-下一步不要急着继续拆完整确认删除动画。它剩余部分主要是选择保护、按钮禁用、tween 创建、删牌入口、奖励提交和关闭流程，已经接近页面流程编排。除非后续要统一多个奖励页的确认动画，否则建议停止 RemoveReward，转向 ShopManager 或 CraftReward 的剩余边界。
+下一步不要急着继续拆完整确认删除动画。它剩余部分主要是选择保护、按钮禁用、tween 创建、删牌入口、奖励提交和关闭流程，已经接近页面流程编排。除非后续要统一多个奖励页的确认动画，否则建议停止 RemoveReward，转向 timeline_ui 或 out_scene_map_exp。
 
 ### 不要急着继续拆 HexMap
 
 `hex_map.gd` 已经进入维护阶段。除非新增地图规则或修 bug，否则优先维护已有模块边界，不要为了行数继续机械搬函数。
 
-### DragShapeController 适合继续清理完成流程
+### DragShapeController 成功收尾暂时停止
 
 拖拽放置动画前后的状态已经拆出不少，玩家 `TimelineAction` 创建、时间轴提交、成功后的卡牌视觉复原和弃牌移动已经分别进入 `DragPlayerActionFactory.gd`、`DragTimelineActionSubmitter.gd`、`DragSuccessCardVisualRestorer.gd` 与 `DragSuccessDiscardMover.gd`。后续可关注放置成功后的 UI 收尾流程，但要先写清楚时间轴收起、主状态清理和回手牌 fallback 的边界。
 
-下一批如果继续 Drag，优先评估：
+本轮已经评估：
 
 ```text
-end_dragging_success() 中成功后 UI/时间轴收起
-或 _return_card_to_hand() 的失败 fallback 收尾
+end_dragging_success() 中成功后 UI/时间轴收起只是既有 DragTimelineUiStateController.collapse(timeline_ui) 的单行调用
+_return_card_to_hand() 的失败 fallback 同时触碰手牌、timeline toggle、tooltip、目标状态和当前卡牌状态
 ```
 
-如果这一步需要同时吞掉失败动画、效果触发、预览清理、弃牌收尾、手牌同步和主状态清理，就停止拆分，保留 `DragShapeController.gd` 作为 composition root。
+当前不要继续围绕成功收尾硬拆。除非未来要统一多处回手牌 fallback，否则保留 `DragShapeController.gd` 作为 composition root。
 
 ### InScene 剩余大块需要更强回归
 

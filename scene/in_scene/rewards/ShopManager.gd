@@ -370,7 +370,6 @@ func _generate_shop_items():
 	if temp_pile == null:
 		_is_generating = false
 		return
-	temp_pile.visible = false
 	
 	# 生成所有商品位
 	_get_debug_logger().log_slot_generation_start(shop_slots_count)
@@ -728,7 +727,7 @@ func set_deck_manager(manager):
 
 
 func _create_temp_pile() -> Pile:
-	return _get_temp_pile_factory().create_temp_pile(deck_manager, "ShopManager")
+	return _get_temp_pile_factory().create_hidden_temp_pile(deck_manager, "ShopManager")
 
 
 func _extract_front_texture(real_card: Node, card_id: String) -> Texture2D:
