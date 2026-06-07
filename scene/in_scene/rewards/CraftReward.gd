@@ -584,9 +584,7 @@ func _create_preview_card(card_id: String, preview_size: Vector2, tooltip_enable
 		return null
 	temp_pile.visible = false
 
-	var draft_card = draft_card_scene.instantiate()
-	draft_card.card_id = card_id
-	draft_card.custom_set_size = preview_size
+	var draft_card = _get_draft_card_factory().create_draft_card(draft_card_scene, card_id, preview_size)
 	await _steal_card_data(card_id, draft_card, temp_pile)
 	temp_pile.queue_free()
 

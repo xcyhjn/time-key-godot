@@ -1006,13 +1006,13 @@ open_shop()
 
 ### CraftReward 继续清理页面专属小边界
 
-`CraftReward.gd` 已经拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、预览卡 UI 配置、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块。下一步可重新扫描剩余大函数：
+`CraftReward.gd` 已经拆出配方查询、合成移除索引、选择条目构建、选择卡状态、连接线、预览清理、预览卡 UI 配置、结果预览挂载、结果描述样式/内容/定位、选择标题、槽位占位符、槽位预览布局、奖励页通用卡牌读取模块和只读牌组来源模块，并且 `_create_preview_card()` 已复用 `RewardDraftCardFactory`。下一步可重新扫描剩余大函数：
 
 ```text
 _refresh_result_preview()
 ```
 
-`_create_preview_card()` 仍保留临时牌堆创建、真实卡生成、数据写入和释放临时牌堆的异步编排。继续拆前要确认是否能形成单一边界，否则建议转向 `_apply_crafting_result_to_deck()` 的牌组写入和同步。
+`_create_preview_card()` 剩余临时牌堆创建、真实卡生成、数据写入和释放临时牌堆属于同一异步编排，不建议继续硬拆。下一批建议转向 `_apply_crafting_result_to_deck()` 的牌组写入和同步。
 
 ### RemoveReward 继续清理页面专属小边界
 
