@@ -91,6 +91,9 @@ var card_price_map: Dictionary = {}  # key: DraftCard实例, value: 价格标签
 @export var weight_next_era: float = 0.09       # 下一个时代: 9%
 @export var weight_next_next_era: float = 0.01  # 下两个时代: 1%
 
+@export_group("时代权重资源配置")
+@export var era_weight_config: Resource = preload("res://scene/in_scene/rewards/resources/default_shop_era_weight_config.tres")
+
 @export_group("Tooltip资源配置")
 @export var tooltip_config: TooltipConfig = preload("res://scene/shared/tooltip/reward_card_tooltip_config.tres")
 
@@ -437,10 +440,10 @@ func _steal_card_data(card_id: String, draft_card: Control, temp_pile: Node):
 func _select_card_by_era_weight(base_era: int) -> String:
 	var selected_era = _get_era_weight_selector().select_era(
 		base_era,
-		weight_previous_era,
-		weight_current_era,
-		weight_next_era,
-		weight_next_next_era
+		_get_weight_previous_era(),
+		_get_weight_current_era(),
+		_get_weight_next_era(),
+		_get_weight_next_next_era()
 	)
 
 	if selected_era < 1:
@@ -623,6 +626,29 @@ func _update_price_display():
 ## 根据时代获取卡牌ID列表 (对接 CardDataPool 系统)
 func _get_cards_by_era(era: int) -> Array[String]:
 	return _get_card_pool_bridge().get_cards_by_era(CardDataPool, era)
+
+
+func _get_weight_current_era() -> float:
+	return float(_get_era_weight_config_value("weight_current_era", weight_current_era))
+
+
+func _get_weight_previous_era() -> float:
+	return float(_get_era_weight_config_value("weight_previous_era", weight_previous_era))
+
+
+func _get_weight_next_era() -> float:
+	return float(_get_era_weight_config_value("weight_next_era", weight_next_era))
+
+
+func _get_weight_next_next_era() -> float:
+	return float(_get_era_weight_config_value("weight_next_next_era", weight_next_next_era))
+
+
+func _get_era_weight_config_value(property_name: StringName, fallback_value: Variant) -> Variant:
+	if era_weight_config == null:
+		return fallback_value
+	var value: Variant = era_weight_config.get(property_name)
+	return fallback_value if value == null else value
 
 
 func _get_base_price() -> int:

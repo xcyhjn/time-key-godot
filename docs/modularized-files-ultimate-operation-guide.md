@@ -710,6 +710,18 @@ scene/in_scene/rewards/resources/
 - 维护：这是数据资产，不是脚本模块；调参时只改静态数值，不写运行态次数、时间币余额或商品节点。
 - 改进：如果不同章节需要不同商店经济参数，可以新增多份 `.tres`，由场景或上层流程选择资源。
 
+#### `scene/in_scene/rewards/resources/ShopEraWeightConfig.gd`
+
+- 用途：保存商店按时代选卡的静态权重参数，包括当前时代、前一个时代、下一个时代和下两个时代。
+- 维护：不要在这里读取卡池，不生成卡牌，不决定最终商品，也不要保存运行时选中的时代。
+- 改进：如果后续需要按章节或难度调整商店卡池倾向，可以新增多份 `.tres`，由上层流程选择资源。
+
+#### `scene/in_scene/rewards/resources/default_shop_era_weight_config.tres`
+
+- 用途：默认商店时代权重数据资产，当前等价旧导出值：当前时代 0.85、前一个时代 0.05、下一个时代 0.09、下两个时代 0.01。
+- 维护：这是数据资产，不是脚本模块；调参时只改静态权重，不写全局时代、随机数结果或卡牌 ID。
+- 改进：如果未来支持事件商店或特殊房间商店，可以通过替换资源改变时代倾向，而不是改 `ShopManager.gd`。
+
 ## HexMap 拆分模块
 
 这些文件服务于 `scene/in_scene/hex_map.gd`。详细数据契约看 `docs/hex-map-ultimate-operation-guide.md`，这里只列每个文件的维护入口。
@@ -1034,14 +1046,14 @@ git diff --check
 
 ### 评估 ShopManager 剩余边界
 
-`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接、商品槽注册、生成依赖检查和静态定价配置都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，定价数值也已经来自 `ShopPricingConfig`，继续围绕价格硬拆收益很低。
+`ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接、商品槽注册、生成依赖检查、静态定价配置和时代权重配置都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，定价数值来自 `ShopPricingConfig`，时代权重来自 `ShopEraWeightConfig`，继续围绕这些配置硬拆收益很低。
 
 ```text
 _generate_shop_items()
 open_shop()
 ```
 
-如果继续处理商店，本轮已经确认单个商品生成编排会牵动 `draft_card_factory`、`temp_pile`、`deck_manager`、UI 注册和异步数据提取等过多状态，不建议硬拆。下一批只适合评估时代权重资源化或更小的生成前后边界，例如临时牌堆生命周期；如果仍然需要传入过多成员，就停止 ShopManager，转向 DragShapeController。
+如果继续处理商店，本轮已经确认单个商品生成编排会牵动 `draft_card_factory`、`temp_pile`、`deck_manager`、UI 注册和异步数据提取等过多状态，不建议硬拆。下一批只适合评估更小的生成前后边界，例如临时牌堆生命周期；如果仍然需要传入过多成员，就停止 ShopManager，转向 DragShapeController。
 
 ### CraftReward 继续清理页面专属小边界
 

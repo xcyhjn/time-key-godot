@@ -7637,3 +7637,138 @@ ShopManager.gd 的旧导出定价值仍保留为 fallback，不建议下一批�
 如果时代权重资源化需要牵动 _generate_shop_items() 的异步生成链，就停止 ShopManager，转向 DragShapeController.gd 放置完成流程。
 DragShapeController.gd 评估时先写清时间轴行动创建、卡牌归属变化和 UI 恢复边界。
 ```
+
+## ShopManager.gd 商店时代权重资源化记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批继续处理 `ShopManager.gd` 的 Resource 化候选，只拆“商店时代权重静态参数”这一处风险面。范围包括当前时代、前一个时代、下一个时代和下两个时代的权重；不碰时代读取、随机选择算法、卡池读取、商品生成异步链、临时牌堆生命周期或购买流程。
+
+### rg 轮廓
+
+```text
+scene/in_scene/rewards/ShopManager.gd
+@export var weight_current_era
+@export var weight_previous_era
+@export var weight_next_era
+@export var weight_next_next_era
+@export var era_weight_config
+func _select_card_by_era_weight(base_era)
+func _get_weight_current_era()
+func _get_weight_previous_era()
+func _get_weight_next_era()
+func _get_weight_next_next_era()
+func _get_era_weight_config_value(property_name, fallback_value)
+
+scene/in_scene/rewards/rules/ShopEraWeightSelector.gd
+func select_era(base_era, weight_previous_era, weight_current_era, weight_next_era, weight_next_next_era)
+
+scene/in_scene/rewards/resources/ShopEraWeightConfig.gd
+class_name ShopEraWeightConfig
+extends Resource
+@export var weight_current_era
+@export var weight_previous_era
+@export var weight_next_era
+@export var weight_next_next_era
+```
+
+### 当前职责与耦合点
+
+`ShopManager.gd` 仍是商店页 composition root。前面批次已经拆出价格展示、购买路径、刷新/升级费用结算、CardDataPool 读取、商品槽注册、生成依赖检查和静态定价 Resource。
+
+时代权重耦合点原本有两类：
+
+```text
+ShopManager.gd 直接导出四个时代权重。
+_select_card_by_era_weight() 直接把这些导出值传入 ShopEraWeightSelector。
+```
+
+本批只把这些静态权重收口为 `ShopEraWeightConfig`。`base_era`、随机命中的 `selected_era`、卡池读取结果和最终卡牌 ID 仍是运行态流程，不适合写入 Resource。
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 低风险原因 | 暂不触碰 |
+| --- | --- | --- | --- | --- |
+| 1 | `ShopEraWeightConfig.gd` | `_select_card_by_era_weight()` 的四个静态权重读取 | 只迁移只读调参数据，保留旧导出值 fallback | 不改随机选择算法、不改卡池读取、不改商品生成 |
+| 2 | 临时牌堆生命周期 | `_generate_shop_items()` 的 temp_pile 创建和销毁 | 可能形成更小边界 | 本批不碰异步真实卡生成和数据提取 |
+| 3 | Drag 放置完成流程 | `_finish_placement()` 或等价流程 | 如果 Shop 继续变重，转向拖拽更合理 | 本批不碰拖拽 |
+
+### 本批风险面
+
+本批风险面：商店时代权重静态参数资源化。
+
+涉及的 3 个小风险点：
+
+```text
+ShopManager.gd 新增 era_weight_config Resource，并通过 getter 读取资源值。
+_select_card_by_era_weight() 保持旧入口，只把传给 ShopEraWeightSelector 的参数来源改为 getter。
+default_shop_era_weight_config.tres 保存与旧行为一致的默认权重。
+```
+
+不触碰：
+
+```text
+ShopEraWeightSelector.gd 的随机选择算法。
+_get_shop_era() 和 _get_global_era() 的时代读取。
+_get_cards_by_era() 的 CardDataPool 读取。
+_generate_shop_items() 的临时牌堆、DraftCard 创建和异步数据提取。
+```
+
+### 新增资源与模块
+
+```text
+scene/in_scene/rewards/resources/ShopEraWeightConfig.gd
+scene/in_scene/rewards/resources/default_shop_era_weight_config.tres
+```
+
+职责：
+
+```text
+ShopEraWeightConfig.gd 只保存商店按时代选卡的静态权重参数。
+default_shop_era_weight_config.tres 是默认商店时代权重数据资产，不处理逻辑。
+```
+
+### 本批实现注意
+
+```text
+ShopManager.gd 的 era_weight_config 导出类型使用 Resource，避免新 class_name 缓存未刷新造成解析风险。
+旧的四个 weight_* 导出值暂时保留为 fallback，降低场景资源缺失时的风险。
+ShopEraWeightSelector.gd 已经是纯规则模块，本批不修改它，避免改变随机命中行为。
+```
+
+### 文档同步
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md 已更新模块数为 128，并把下一优先级切到 Drag 放置完成流程或 Shop 临时牌堆生命周期。
+docs/modularized-files-ultimate-operation-guide.md 已新增 ShopEraWeightConfig.gd 和 default_shop_era_weight_config.tres 条目。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：128 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/rewards/shop.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+ShopManager.gd 的商店静态定价数据和时代权重数据都已资源化。
+ShopManager.gd 的旧导出定价值与权重值仍保留为 fallback，不建议下一批重复处理 Shop 配置资源化。
+已拆模块总数从 127 增至 128。
+```
+
+下一步计划：
+
+```text
+下一批优先评估 DragShapeController.gd 的放置完成流程。
+如果用户希望继续看 ShopManager.gd，只评估 _generate_shop_items() 的临时牌堆生命周期；如果需要传入过多成员，就停止 ShopManager。
+DragShapeController.gd 评估时先写清时间轴行动创建、卡牌归属变化和 UI 恢复边界。
+```

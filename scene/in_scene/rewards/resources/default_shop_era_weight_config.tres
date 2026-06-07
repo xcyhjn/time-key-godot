@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ShopEraWeightConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scene/in_scene/rewards/resources/ShopEraWeightConfig.gd" id="1_era_weight_config"]
+
+[resource]
+script = ExtResource("1_era_weight_config")
+weight_current_era = 0.85
+weight_previous_era = 0.05
+weight_next_era = 0.09
+weight_next_next_era = 0.01
