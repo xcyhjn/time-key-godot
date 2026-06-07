@@ -22,6 +22,7 @@ const DragFreeDragPresenterScript = preload("res://scene/in_scene/drag_modules/p
 const DragPlacementVisualStatePreparerScript = preload("res://scene/in_scene/drag_modules/presenters/DragPlacementVisualStatePreparer.gd")
 const DragPlacementTargetResolverScript = preload("res://scene/in_scene/drag_modules/coordinates/DragPlacementTargetResolver.gd")
 const DragPlacementAnimationRunnerScript = preload("res://scene/in_scene/drag_modules/animation/DragPlacementAnimationRunner.gd")
+const DragPlayerActionFactoryScript = preload("res://scene/in_scene/drag_modules/rules/DragPlayerActionFactory.gd")
 
 # ==========================================
 # 信号
@@ -95,6 +96,7 @@ var _free_drag_presenter = null
 var _placement_visual_state_preparer = null
 var _placement_target_resolver = null
 var _placement_animation_runner = null
+var _player_action_factory = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -204,6 +206,12 @@ func _get_placement_animation_runner():
 	return _placement_animation_runner
 
 
+func _get_player_action_factory():
+	if _player_action_factory == null:
+		_player_action_factory = DragPlayerActionFactoryScript.new()
+	return _player_action_factory
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -248,6 +256,7 @@ func _ready() -> void:
 	_free_drag_presenter = DragFreeDragPresenterScript.new()
 	_placement_visual_state_preparer = DragPlacementVisualStatePreparerScript.new()
 	_placement_target_resolver = DragPlacementTargetResolverScript.new()
+	_player_action_factory = DragPlayerActionFactoryScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -871,13 +880,10 @@ func _finish_placement(grid_pos: Vector2i) -> void:
 	_restore_mouse_filters()
 
 	# 执行实际的时间轴放置
-	var action = TimelineAction.new(
-		TimelineAction.Type.PLAYER,
+	var action: TimelineAction = _get_player_action_factory().create_action(
 		current_card,
 		current_target_tile,
-		current_shape_coords,
-		Color.AQUA,
-		current_card.card_info
+		current_shape_coords
 	)
 
 	var placement_success = false

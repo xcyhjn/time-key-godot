@@ -153,6 +153,13 @@ scene/in_scene/rewards/resources/
 - 维护：不要创建 `TimelineAction`，不要改时间轴或卡牌状态。
 - 改进：清除类卡牌与普通卡牌的校验分支可以继续拆成更小规则对象。
 
+#### `scene/in_scene/drag_modules/rules/DragPlayerActionFactory.gd`
+
+- 用途：从当前拖拽上下文创建玩家 `TimelineAction`。
+- 入口：`create_action(...)`。
+- 维护：不要调用 `TimelineManager.place_action()`，不要发射放置信号，也不要移动卡牌到弃牌区。
+- 改进：如果玩家行动颜色、action_data 复制或卡牌元数据以后需要统一策略，优先在这里集中处理。
+
 ### ui
 
 #### `scene/in_scene/drag_modules/ui/DragRejectTooltipController.gd`
@@ -1083,7 +1090,16 @@ _on_confirm_pressed()
 
 ### DragShapeController 适合继续清理完成流程
 
-拖拽放置动画前后的状态已经拆出不少，后续可关注 `_finish_placement()` 相关流程，但要先写清楚时间轴行动创建、卡牌归属变化和 UI 恢复的边界。
+拖拽放置动画前后的状态已经拆出不少，玩家 `TimelineAction` 创建也已经进入 `DragPlayerActionFactory.gd`。后续可关注 `_finish_placement()` 剩余流程，但要先写清楚时间轴提交、卡牌归属变化和 UI 恢复的边界。
+
+下一批如果继续 Drag，优先评估：
+
+```text
+timeline_manager.place_action(action, grid_pos)
+player_action_placed.emit(action)
+```
+
+如果这一步需要吞掉失败动画、效果触发、预览清理和弃牌收尾，就停止拆分，保留 `DragShapeController.gd` 作为 composition root。
 
 ### InScene 剩余大块需要更强回归
 

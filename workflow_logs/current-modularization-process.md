@@ -7772,3 +7772,132 @@ ShopManager.gd 的旧导出定价值与权重值仍保留为 fallback，不建�
 如果用户希望继续看 ShopManager.gd，只评估 _generate_shop_items() 的临时牌堆生命周期；如果需要传入过多成员，就停止 ShopManager。
 DragShapeController.gd 评估时先写清时间轴行动创建、卡牌归属变化和 UI 恢复边界。
 ```
+
+## DragShapeController.gd 第二十批玩家行动创建拆分记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批转向 `DragShapeController.gd` 的放置完成流程，但只拆最小边界：“玩家 TimelineAction 创建”。不拆 `timeline_manager.place_action()`，不改成功/失败分支，不改卡牌进入弃牌区，也不改 UI 预览清理。
+
+### rg 轮廓
+
+```text
+scene/in_scene/DragShapeController.gd
+const DragPlayerActionFactoryScript
+var _player_action_factory
+func _get_player_action_factory()
+func _finish_placement(grid_pos)
+func end_dragging_success()
+
+scene/in_scene/drag_modules/rules/DragPlayerActionFactory.gd
+func create_action(card, target_tile, shape_coords)
+
+scene/in_scene/timeline/TimelineAction.gd
+class_name TimelineAction
+func _init(p_type, p_source, p_target, p_coords, p_color, p_data)
+```
+
+### 当前职责与耦合点
+
+`DragShapeController.gd` 仍是拖拽系统 composition root，负责编排开始拖拽、时间轴 hover、放置校验、拒绝动画、放置动画、确认放置、clear 即时卡牌、成功后弃牌和 UI 收尾。
+
+`_finish_placement()` 的耦合点包括：
+
+```text
+恢复地图和时间轴鼠标过滤。
+创建玩家 TimelineAction。
+调用 timeline_manager.place_action(action, grid_pos)。
+发射 player_action_placed。
+失败时播放拒绝动画并释放 is_placing。
+成功后触发卡牌效果、清理预览、进入 end_dragging_success()。
+```
+
+本批只拆其中“创建玩家 TimelineAction”这一步，避免同批触碰时间轴写入和卡牌归属变化。
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 低风险原因 | 暂不触碰 |
+| --- | --- | --- | --- | --- |
+| 1 | `DragPlayerActionFactory.gd` | `_finish_placement()` 中 `TimelineAction.new(...)` | 只创建数据对象，不调用 `place_action`，不改卡牌归属 | 不改成功/失败流程、不改弃牌 |
+| 2 | 时间轴提交模块 | `timeline_manager.place_action()` 与 `player_action_placed.emit(action)` | 边界可能清楚，但会触碰写入结果 | 本批不碰 |
+| 3 | 成功收尾视觉清理 | `end_dragging_success()` 的 shader/状态恢复 | 状态细节多，需另批分析 | 本批不碰 |
+| 4 | 弃牌归属移动 | `end_dragging_success()` 中 discard fallback | 涉及 CardManager/牌堆效果 | 本批不碰 |
+
+### 本批风险面
+
+本批风险面：玩家 `TimelineAction` 创建。
+
+涉及的 3 个小风险点：
+
+```text
+新增 DragPlayerActionFactory.gd，集中创建 TimelineAction.Type.PLAYER。
+DragShapeController.gd 增加 preload、缓存 getter 和 _ready() 初始化。
+_finish_placement() 保留原流程，只把 TimelineAction.new(...) 替换为工厂调用。
+```
+
+不触碰：
+
+```text
+timeline_manager.place_action(action, grid_pos)。
+player_action_placed.emit(action) 的触发时机。
+_play_reject_animation() 失败回退。
+_trigger_card_effect()、_clear_timeline_grid_preview() 和 end_dragging_success()。
+current_card 移入弃牌区或返回手牌。
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/rules/DragPlayerActionFactory.gd
+```
+
+职责：
+
+```text
+DragPlayerActionFactory.gd 只负责从当前拖拽上下文创建玩家 TimelineAction。
+它不调用 TimelineManager，不发射信号，也不移动卡牌到弃牌区。
+```
+
+### 本批实现注意
+
+```text
+工厂仍直接读取 card.card_info，保持与旧 TimelineAction.new(...) 参数一致。
+shape_coords 仍由 TimelineAction 自己 duplicate，工厂不额外复制，避免行为差异。
+DragShapeController.gd 仍决定何时提交时间轴、何时播放失败动画和何时进入成功收尾。
+```
+
+### 文档同步
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md 已更新模块数为 129，并把 Drag 下一步切到时间轴提交边界。
+docs/modularized-files-ultimate-operation-guide.md 已新增 DragPlayerActionFactory.gd 条目。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：129 个已拆模块路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0。
+git diff --check 通过，仅有 DragShapeController.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+DragShapeController.gd 的放置完成流程已拆出玩家 TimelineAction 创建。
+_finish_placement() 剩余时间轴提交、失败回退、效果触发、预览清理和成功收尾仍在主脚本中编排。
+已拆模块总数从 128 增至 129。
+```
+
+下一步计划：
+
+```text
+下一批如果继续 Drag，优先评估 timeline_manager.place_action(action, grid_pos) 与 player_action_placed.emit(action) 是否能形成小提交模块。
+如果提交模块需要吞掉失败动画、效果触发、预览清理和弃牌收尾，就停止 DragShapeController。
+另一个可选方向是 ShopManager.gd 的临时牌堆生命周期，但不要回到 Shop 定价或时代权重 Resource。
+```
