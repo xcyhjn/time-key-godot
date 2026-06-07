@@ -1189,6 +1189,8 @@ git diff --check
 
 `out_scene_map_exp.gd` 已拆出 `RoomResolutionController.gd`、`ChapterRevealAnimationRunner.gd` 和 `OutScenePayloadBridge.gd`。当前返回战斗后的结算读取、boss 后 tier 推进判断、坐标解析、章节揭示地块动画和切场前 payload 注入已经有独立模块承接。房间完成状态回写目前缺少既有状态字段，继续前要先设计数据契约；不要同批改地图移动、镜头限制和场景切换 executor。
 
+本轮已审查房间完成状态回写契约，结论是暂不复用任何现有字段。`path_gone` 表示路径坍塌记录，不能表示房间是否完成；`active_room_context` 与 `pending_room_resolution` 只负责跨场景上下文和一次性返回 payload，不能作为长期状态；`tile_data` 仍应保持“坐标 -> 房间类型”的简单逻辑地图，避免影响 `map_renderer.gd`、移动判断和存档恢复。后续如果需要房间完成状态，应新增独立字典，例如按 `Vector2i` 记录 `completed`、`cleared`、`reward_claimed` 等语义，再单独补 `Saver.gd` 保存/读取和局外视觉刷新。这个实现应作为单独批次处理。
+
 ### ShopManager 剩余边界已经接近停止点
 
 `ShopManager.gd` 的购买路径、刷新费用结算、升级费用结算、CardDataPool 读取桥接、商品槽注册、生成依赖检查、静态定价配置、时代权重配置和隐藏临时牌堆创建都已经拆出。`_update_price_display()` 已经转发给 `ShopPricingPresenter`，定价数值来自 `ShopPricingConfig`，时代权重来自 `ShopEraWeightConfig`，临时牌堆隐藏创建来自 `RewardTempPileFactory.create_hidden_temp_pile(...)`，继续围绕这些配置和创建步骤硬拆收益很低。

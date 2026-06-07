@@ -8791,3 +8791,99 @@ git diff --check 通过，仅有 workflow_logs/current-modularization-process.md
 Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
 Godot 加载 res://scene/out_scene/Out_Scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；场景加载仍输出既有 TileSetAtlasSource atlas tile 资源错误，本批未改 TileSet。
 ```
+
+## 2026-06-07 OutScene 房间完成状态回写数据契约评估
+
+### 读取与轮廓
+
+本批按接力规则先确认工作区干净，再读取固定文档。仓库内未发现 `AGENTS.md`，本批以当前对话中用户贴出的约束为准。随后用 `rg` 输出了以下目标轮廓：
+
+```text
+scene/out_scene/out_scene_map_exp.gd
+scene/out_scene/out_scene_modules/RoomResolutionController.gd
+scene/out_scene/out_scene_modules/ChapterRevealAnimationRunner.gd
+scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd
+scene/global/map_data.gd
+scene/global/Saver.gd
+scene/in_scene/in_scene_modules/scene_flow/InSceneReturnPayloadBuilder.gd
+scene/in_scene/in_scene_modules/scene_flow/InSceneReturnFlowController.gd
+```
+
+本批只审查局外房间完成状态的数据契约，不改 GDScript 运行逻辑。
+
+### 当前职责
+
+`out_scene_map_exp.gd` 仍是局外地图 composition root，负责地图生成/恢复、玩家移动、进房、切场、保存和章节推进。`RoomResolutionController.gd` 负责消费局内返回 payload、解析 `room_context.room_hex`、判断 boss 房是否推进章节和构造 tier 推进计划。`MapState.active_room_context` 只记录当前正在进入的房间，`MapState.pending_room_resolution` 只暂存一次局内返回局外的结算 payload。
+
+### 耦合点
+
+```text
+path_gone 只在局外移动/选角后的路径坍塌流程里追加，语义不是房间完成状态。
+active_room_context 是进房上下文，pending_room_resolution 是一次性返回桥接，二者都不适合作为持久完成状态。
+tile_data 当前是坐标到房间类型整数的逻辑地图；如果直接混入完成状态，会影响 map_renderer.gd、移动判断和存档恢复。
+真正实现房间完成状态会同时牵动 MapState、Saver、out_scene_map_exp.gd 的结算消费入口，以及可能的局外视觉刷新。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 房间完成状态数据契约 | 现有保存字段与返回 payload 语义 | 需要先确认独立字段，不复用 `path_gone` | 执行文档评估 |
+| 2 | 房间完成状态实现 | `MapState`、`Saver`、`out_scene_map_exp.gd`、视图刷新 | 会触碰持久化和视觉规则 | 暂不写代码 |
+| 3 | 房间完成视觉表达 | `map_renderer.gd` 或局外 tile sprite 状态 | 需要先有状态字段 | 暂不处理 |
+| 4 | 奖励/事件房差异化结算 | payload 分流与房间类型规则 | 玩法契约未定 | 暂不处理 |
+
+### 本批风险面
+
+本批风险面：房间完成状态回写的数据契约评估。
+
+涉及的 3 个小风险点：
+
+```text
+确认 path_gone 不适合复用为房间完成状态。
+确认 active_room_context 和 pending_room_resolution 只适合做跨场景桥接。
+确认后续如实现，需要新增独立 MapState 字段和 Saver 持久化字段。
+```
+
+不触碰：
+
+```text
+tile_data、tile_features 和 view.tiles 的运行时结构。
+地图移动、路径坍塌、进房和切场景。
+current_tier 推进、镜头限制和章节揭示动画。
+```
+
+### 实现结果
+
+本批没有新增脚本模块，也没有修改 GDScript。只更新总结文档和当前流程归档：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+```
+
+契约结论：
+
+```text
+房间完成状态必须使用独立字段，不复用 path_gone。
+临时 payload 和 active room context 只能作为跨场景桥接，不能作为长期状态。
+后续如实现，建议单独小批新增 MapState 房间状态字典、Saver 保存/读取和局外结算消费入口。
+```
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计保持为 144 个脚本模块和 3 个默认 Resource 文件。
+docs/modularized-files-ultimate-operation-guide.md 覆盖缺失目标仍为 0；本批没有新增模块路径。
+下一批如果继续 OutScene，可在确认字段命名和视觉语义后，单独实现房间完成状态字段与存档；不要同批改移动、镜头和切场。
+如果继续代码拆分，优先评估 timeline_ui.gd 的 hover 表现边界或清理动画 tween runner。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+覆盖率检查通过：147 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 144 个，默认 Resource 文件为 3 个。
+本批只改 Markdown，没有运行 Godot headless 场景加载。
+```
