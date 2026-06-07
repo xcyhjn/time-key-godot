@@ -7901,3 +7901,131 @@ _finish_placement() 剩余时间轴提交、失败回退、效果触发、预览
 如果提交模块需要吞掉失败动画、效果触发、预览清理和弃牌收尾，就停止 DragShapeController。
 另一个可选方向是 ShopManager.gd 的临时牌堆生命周期，但不要回到 Shop 定价或时代权重 Resource。
 ```
+
+## DragShapeController.gd 第二十一批时间轴提交拆分记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批继续 `DragShapeController.gd` 的放置完成流程，但只拆最小边界：“已创建玩家 TimelineAction 后提交给 TimelineManager，并在成功时触发旧的玩家行动放置信号”。不拆失败动画，不拆卡牌效果，不拆预览清理，不拆成功收尾，也不移动卡牌到弃牌区。
+
+### rg 轮廓
+
+```text
+scene/in_scene/DragShapeController.gd
+const DragTimelineActionSubmitterScript
+var _timeline_action_submitter
+func _get_timeline_action_submitter()
+func _finish_placement(grid_pos: Vector2i)
+func _emit_player_action_placed(action: TimelineAction)
+
+scene/in_scene/drag_modules/timeline/DragTimelineActionSubmitter.gd
+func submit_action(timeline_manager, action, grid_pos, success_callback)
+
+scene/in_scene/timeline/TimelineManager.gd
+signal action_placed(action: TimelineAction)
+func place_action(action: TimelineAction, origin: Vector2i) -> bool
+```
+
+### 当前职责
+
+`DragShapeController.gd` 仍是拖拽系统 composition root，负责编排开始拖拽、hover、放置校验、拒绝动画、放置动画、确认放置、即时 clear 卡牌、效果触发、预览清理、成功后弃牌和 UI 收尾。
+
+本批后，`DragTimelineActionSubmitter.gd` 只承担一个窄职责：调用 `TimelineManager.place_action(action, grid_pos)`，并在提交成功时调用主脚本传入的成功回调。它不创建 `TimelineAction`，不判断失败表现，也不处理成功收尾。
+
+### 当前耦合点
+
+```text
+_finish_placement() 仍依赖 current_card、current_target_tile、current_shape_coords。
+TimelineManager.place_action() 是实际写入时间轴的唯一入口。
+player_action_placed 仍由 DragShapeController.gd 发射，保持旧对外信号位置。
+成功后仍由 DragShapeController.gd 触发卡牌效果、清理时间轴预览并调用 end_dragging_success()。
+失败后仍由 DragShapeController.gd 播放拒绝动画并释放 is_placing。
+```
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 低风险原因 | 暂不触碰 |
+| --- | --- | --- | --- | --- |
+| 1 | `DragTimelineActionSubmitter.gd` | `_finish_placement()` 中 `timeline_manager.place_action()` 与成功信号回调 | 只包装提交结果和成功回调，不接管失败/成功收尾 | 本批执行 |
+| 2 | 成功收尾视觉清理 | `end_dragging_success()` 的卡牌 shader、scale、modulate、rotation、mouse_filter 恢复 | 可形成纯卡牌视觉状态恢复模块 | 本批不碰 |
+| 3 | 弃牌归属移动 | `end_dragging_success()` 中 discard fallback 与手牌移除 | 可能形成牌堆移动小模块 | 本批不碰 |
+| 4 | 成功后 UI 恢复 | `end_dragging_success()` 中 scene interaction 和 drag state 清理 | 涉及主控状态较多 | 本批不碰 |
+
+### 本批风险面
+
+本批风险面：时间轴提交和成功信号回调。
+
+涉及的 3 个小风险点：
+
+```text
+新增 DragTimelineActionSubmitter.gd，集中调用 TimelineManager.place_action()。
+DragShapeController.gd 增加 preload、缓存 getter 和 _ready() 初始化。
+_finish_placement() 保留原失败与成功分支，只把提交和成功信号触发交给 submitter 回调。
+```
+
+不触碰：
+
+```text
+DragPlayerActionFactory.gd 的行动创建。
+_play_reject_animation() 失败回退。
+_trigger_card_effect()、_clear_timeline_grid_preview() 和 end_dragging_success()。
+current_card 移入弃牌区或返回手牌。
+TimelineManager.place_action() 内部规则。
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/timeline/DragTimelineActionSubmitter.gd
+```
+
+职责：
+
+```text
+DragTimelineActionSubmitter.gd 只负责把已创建的 TimelineAction 提交给 TimelineManager。
+它不创建行动，不播放失败动画，不清理预览，也不移动卡牌到弃牌区。
+```
+
+### 本批实现注意
+
+```text
+submit_action() 在 timeline_manager 无效时返回 false，主脚本沿用失败动画分支。
+submit_action() 只在 placement_success 为 true 且回调有效时调用 success_callback。
+_emit_player_action_placed() 让 player_action_placed 仍由 DragShapeController.gd 发射，避免新模块直接拥有主脚本信号。
+```
+
+### 文档同步
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md 已更新模块数为 130，并把 Drag 下一步切到成功收尾边界。
+docs/modularized-files-ultimate-operation-guide.md 已新增 DragTimelineActionSubmitter.gd 条目。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：133 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 130 个。
+git diff --check 通过，仅有 DragShapeController.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+DragShapeController.gd 的放置完成流程已拆出玩家 TimelineAction 创建和时间轴提交。
+_finish_placement() 剩余失败回退、效果触发、预览清理和成功收尾仍在主脚本中编排。
+已拆模块总数从 129 增至 130。
+```
+
+下一步计划：
+
+```text
+下一批如果继续 Drag，优先评估 end_dragging_success() 中卡牌视觉状态恢复是否能形成纯视觉状态模块。
+如果视觉恢复和弃牌归属、手牌同步或场景交互恢复纠缠过深，就停止拆该边界。
+另一个可选方向是 ShopManager.gd 的临时牌堆生命周期，但不要回到 Shop 定价或时代权重 Resource。
+```

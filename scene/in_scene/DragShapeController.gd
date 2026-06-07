@@ -23,6 +23,7 @@ const DragPlacementVisualStatePreparerScript = preload("res://scene/in_scene/dra
 const DragPlacementTargetResolverScript = preload("res://scene/in_scene/drag_modules/coordinates/DragPlacementTargetResolver.gd")
 const DragPlacementAnimationRunnerScript = preload("res://scene/in_scene/drag_modules/animation/DragPlacementAnimationRunner.gd")
 const DragPlayerActionFactoryScript = preload("res://scene/in_scene/drag_modules/rules/DragPlayerActionFactory.gd")
+const DragTimelineActionSubmitterScript = preload("res://scene/in_scene/drag_modules/timeline/DragTimelineActionSubmitter.gd")
 
 # ==========================================
 # 信号
@@ -97,6 +98,7 @@ var _placement_visual_state_preparer = null
 var _placement_target_resolver = null
 var _placement_animation_runner = null
 var _player_action_factory = null
+var _timeline_action_submitter = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -212,6 +214,12 @@ func _get_player_action_factory():
 	return _player_action_factory
 
 
+func _get_timeline_action_submitter():
+	if _timeline_action_submitter == null:
+		_timeline_action_submitter = DragTimelineActionSubmitterScript.new()
+	return _timeline_action_submitter
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -257,6 +265,7 @@ func _ready() -> void:
 	_placement_visual_state_preparer = DragPlacementVisualStatePreparerScript.new()
 	_placement_target_resolver = DragPlacementTargetResolverScript.new()
 	_player_action_factory = DragPlayerActionFactoryScript.new()
+	_timeline_action_submitter = DragTimelineActionSubmitterScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -886,13 +895,14 @@ func _finish_placement(grid_pos: Vector2i) -> void:
 		current_shape_coords
 	)
 
-	var placement_success = false
-	if timeline_manager:
-		placement_success = timeline_manager.place_action(action, grid_pos)
+	var placement_success: bool = _get_timeline_action_submitter().submit_action(
+		timeline_manager,
+		action,
+		grid_pos,
+		Callable(self, "_emit_player_action_placed")
+	)
 	
-	if placement_success:
-		player_action_placed.emit(action)
-	else:
+	if not placement_success:
 		# 放置失败，触发拒绝动画
 		_play_reject_animation()
 		# 这里不调用end_dragging_success，因为放置失败了
@@ -908,6 +918,10 @@ func _finish_placement(grid_pos: Vector2i) -> void:
 	# 放置完成后清理
 	end_dragging_success()
 	is_placing = false
+
+
+func _emit_player_action_placed(action: TimelineAction) -> void:
+	player_action_placed.emit(action)
 
 
 ## 触发卡牌效果
