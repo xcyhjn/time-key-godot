@@ -24,6 +24,7 @@ const DragPlacementTargetResolverScript = preload("res://scene/in_scene/drag_mod
 const DragPlacementAnimationRunnerScript = preload("res://scene/in_scene/drag_modules/animation/DragPlacementAnimationRunner.gd")
 const DragPlayerActionFactoryScript = preload("res://scene/in_scene/drag_modules/rules/DragPlayerActionFactory.gd")
 const DragTimelineActionSubmitterScript = preload("res://scene/in_scene/drag_modules/timeline/DragTimelineActionSubmitter.gd")
+const DragSuccessCardVisualRestorerScript = preload("res://scene/in_scene/drag_modules/presenters/DragSuccessCardVisualRestorer.gd")
 
 # ==========================================
 # 信号
@@ -99,6 +100,7 @@ var _placement_target_resolver = null
 var _placement_animation_runner = null
 var _player_action_factory = null
 var _timeline_action_submitter = null
+var _success_card_visual_restorer = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -220,6 +222,12 @@ func _get_timeline_action_submitter():
 	return _timeline_action_submitter
 
 
+func _get_success_card_visual_restorer():
+	if _success_card_visual_restorer == null:
+		_success_card_visual_restorer = DragSuccessCardVisualRestorerScript.new()
+	return _success_card_visual_restorer
+
+
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
 	return _get_node_bridge().get_main_board()
@@ -266,6 +274,7 @@ func _ready() -> void:
 	_placement_target_resolver = DragPlacementTargetResolverScript.new()
 	_player_action_factory = DragPlayerActionFactoryScript.new()
 	_timeline_action_submitter = DragTimelineActionSubmitterScript.new()
+	_success_card_visual_restorer = DragSuccessCardVisualRestorerScript.new()
 	timeline_ui = get_node(timeline_ui_path)
 
 	if not cursor_tooltip_path.is_empty():
@@ -954,38 +963,7 @@ func end_dragging_success() -> void:
 	# 发射拖拽结束信号（用于时间轴可视化器）
 	if is_instance_valid(current_card):
 		drag_ended.emit(current_card, true)  # true表示已放置
-		
-		# ==========================================
-		# ★ 核心修复 4：彻底剥离拖拽 Shader 与状态
-		# 强制调用刚才完善的重置函数，洗掉所有拖拽特效
-		# ==========================================
-		if current_card.has_method("force_reset_visuals"):
-			current_card.force_reset_visuals()
-		
-		# 将卡牌内部状态机硬重置为闲置状态
-		if _object_has_property(current_card, &"card_current_state"):
-			current_card.card_current_state = 0 # 0 对应 CustomCardState.IDLE
-			
-		current_card.mouse_filter = Control.MOUSE_FILTER_STOP
-		current_card.modulate = Color.WHITE
-		current_card.scale = Vector2.ONE
-		
-		# ========================================================
-		# ★ 新增修复 2：将卡牌送入弃牌区前，彻底剥离拖拽Shader，恢复原始外观
-		# ========================================================
-		if _object_has_property(current_card, &"original_material"):
-			current_card.material = current_card.original_material
-			# 如果卡牌有正面贴图引用，一并恢复
-			var tex_node = current_card.get("front_face_texture")
-			if tex_node and _object_has_property(tex_node, &"material"):
-				tex_node.material = current_card.original_material
-				
-		# 关闭底层卡牌框架的高亮逻辑，并恢复透明度
-		if current_card.has_method("_set_shader"):
-			current_card._set_shader(false) 
-		if current_card.has_method("set_card_transparency"):
-			current_card.set_card_transparency(1.0)
-		# ========================================================
+		_get_success_card_visual_restorer().restore(current_card)
 
 	# 处理弃牌逻辑
 	if is_instance_valid(current_card):

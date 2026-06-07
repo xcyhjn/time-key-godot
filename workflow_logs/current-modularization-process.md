@@ -8029,3 +8029,126 @@ _finish_placement() 剩余失败回退、效果触发、预览清理和成功收
 如果视觉恢复和弃牌归属、手牌同步或场景交互恢复纠缠过深，就停止拆该边界。
 另一个可选方向是 ShopManager.gd 的临时牌堆生命周期，但不要回到 Shop 定价或时代权重 Resource。
 ```
+
+## DragShapeController.gd 第二十二批成功卡牌视觉复原拆分记录
+
+日期：2026-06-07
+
+### 本批目标
+
+本批继续 `DragShapeController.gd` 的放置成功收尾，但只拆最小边界：“成功放置后恢复卡牌自身视觉状态”。不拆 `drag_ended` 信号，不拆弃牌归属移动，不拆弃牌效果，不拆时间轴收起，也不改失败分支。
+
+### rg 轮廓
+
+```text
+scene/in_scene/DragShapeController.gd
+const DragSuccessCardVisualRestorerScript
+var _success_card_visual_restorer
+func _get_success_card_visual_restorer()
+func end_dragging_success()
+
+scene/in_scene/drag_modules/presenters/DragSuccessCardVisualRestorer.gd
+func restore(card: Control) -> void
+func _object_has_property(target: Object, property_name: StringName) -> bool
+```
+
+### 当前职责
+
+`DragShapeController.gd` 仍是拖拽系统 composition root，负责编排拖拽结束状态、`drag_ended` 信号、卡牌放入弃牌区、弃牌效果、时间轴收起和主状态清理。
+
+本批后，`DragSuccessCardVisualRestorer.gd` 只承担一个窄职责：成功放置后把当前卡牌自身视觉状态恢复到可进入弃牌区的状态，包括拖拽 shader、透明度、材质、缩放和鼠标过滤。它不处理牌堆、不处理时间轴，也不发射信号。
+
+### 当前耦合点
+
+```text
+end_dragging_success() 仍决定 is_dragging/is_placing 的最终状态。
+drag_ended 仍由 DragShapeController.gd 发射，保持旧对外信号位置。
+弃牌区查找、move_cards()、_handle_discard_effects() 仍在 DragShapeController.gd。
+时间轴 collapse 仍由 DragShapeController.gd 调用 DragTimelineUiStateController。
+视觉复原模块只接收 current_card，不读取 controller 其他成员。
+```
+
+### 待拆清单
+
+| 优先级 | 候选模块 | 当前函数范围 | 低风险原因 | 暂不触碰 |
+| --- | --- | --- | --- | --- |
+| 1 | `DragSuccessCardVisualRestorer.gd` | `end_dragging_success()` 中卡牌 shader、材质、透明度、scale、mouse_filter 恢复 | 只处理卡牌自身表现，不接触牌堆和时间轴 | 本批执行 |
+| 2 | 弃牌归属移动 | `end_dragging_success()` 中 `_find_discard_pile()`、`move_cards()`、弃牌效果和 fallback | 可形成牌堆移动小模块，但涉及 MainBoard 旧效果 | 本批不碰 |
+| 3 | 成功后 UI 收尾 | `end_dragging_success()` 中时间轴 collapse 与主状态清理 | 主控状态较多，需另批分析 | 本批不碰 |
+| 4 | `_return_card_to_hand()` 复原 fallback | 回退到手牌时的 card 状态复原和 hand.move_cards() | 与弃牌失败路径相关 | 本批不碰 |
+
+### 本批风险面
+
+本批风险面：成功放置后的卡牌自身视觉复原。
+
+涉及的 3 个小风险点：
+
+```text
+新增 DragSuccessCardVisualRestorer.gd，集中恢复卡牌自身视觉状态。
+DragShapeController.gd 增加 preload、缓存 getter 和 _ready() 初始化。
+end_dragging_success() 保留旧信号、弃牌和时间轴收起，只把视觉复原块替换为 restore(current_card)。
+```
+
+不触碰：
+
+```text
+drag_ended.emit(current_card, true) 的触发时机。
+_find_discard_pile()、move_cards()、_handle_discard_effects() 和 _return_card_to_hand()。
+_get_timeline_ui_state_controller().collapse(timeline_ui)。
+失败动画、效果触发和时间轴提交。
+```
+
+### 新增模块
+
+```text
+scene/in_scene/drag_modules/presenters/DragSuccessCardVisualRestorer.gd
+```
+
+职责：
+
+```text
+DragSuccessCardVisualRestorer.gd 只负责成功放置后恢复卡牌自身视觉状态。
+它不发射拖拽信号，不移动卡牌到弃牌区，也不收起时间轴。
+```
+
+### 本批实现注意
+
+```text
+force_reset_visuals()、_set_shader(false) 和 set_card_transparency(1.0) 的调用顺序保持和旧逻辑一致。
+card_current_state 仍设置为 0，保持旧 CustomCardState.IDLE 语义。
+original_material 和 front_face_texture 的恢复仍带属性检查，避免假设所有卡牌都有这些字段。
+```
+
+### 文档同步
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md 已更新模块数为 131，并把 Drag 下一步切到弃牌归属移动边界。
+docs/modularized-files-ultimate-operation-guide.md 已新增 DragSuccessCardVisualRestorer.gd 条目。
+```
+
+### 回归检查
+
+```text
+覆盖率检查通过：134 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 131 个。
+git diff --check 通过，仅有 DragShapeController.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+```
+
+### 当前优化进度与下一步
+
+当前进度：
+
+```text
+DragShapeController.gd 的放置完成流程已拆出玩家 TimelineAction 创建、时间轴提交和成功卡牌视觉复原。
+end_dragging_success() 剩余 drag_ended 信号、弃牌归属移动、弃牌效果和时间轴收起仍在主脚本中编排。
+已拆模块总数从 130 增至 131。
+```
+
+下一步计划：
+
+```text
+下一批如果继续 Drag，优先评估 end_dragging_success() 中弃牌归属移动是否能形成小模块。
+如果弃牌移动需要同时接管 MainBoard 旧效果、手牌 fallback、时间轴收起和主状态清理，就停止拆该边界。
+另一个可选方向是 ShopManager.gd 的临时牌堆生命周期，但不要回到 Shop 定价或时代权重 Resource。
+```
