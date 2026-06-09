@@ -9,6 +9,7 @@ const CustomCardEffectRangeParserScript = preload("res://scene/card/custom_card_
 const CustomCardSelectedVisualPresenterScript = preload("res://scene/card/custom_card_modules/presenters/CustomCardSelectedVisualPresenter.gd")
 const CustomCardHoverShaderPresenterScript = preload("res://scene/card/custom_card_modules/presenters/CustomCardHoverShaderPresenter.gd")
 const CustomCardTooltipBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardTooltipBridge.gd")
+const CustomCardMapConditionalEffectBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardMapConditionalEffectBridge.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
@@ -17,6 +18,7 @@ var _effect_range_parser = null
 var _selected_visual_presenter = null
 var _hover_shader_presenter = null
 var _tooltip_bridge = null
+var _map_conditional_effect_bridge = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -56,6 +58,12 @@ func _get_tooltip_bridge():
 	if _tooltip_bridge == null:
 		_tooltip_bridge = CustomCardTooltipBridgeScript.new()
 	return _tooltip_bridge
+
+
+func _get_map_conditional_effect_bridge():
+	if _map_conditional_effect_bridge == null:
+		_map_conditional_effect_bridge = CustomCardMapConditionalEffectBridgeScript.new()
+	return _map_conditional_effect_bridge
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -330,11 +338,7 @@ func force_deselect() -> void:
 				
 ## 更新地图地块的条件效果
 func _update_map_conditional_effects() -> void:
-	var main = _get_main_board()
-	if main:
-		var hex_map = main.get_node_or_null("../../map/HexMap")
-		if hex_map and hex_map.has_method("update_all_stack_conditional_effects"):
-			hex_map.update_all_stack_conditional_effects()
+	_get_map_conditional_effect_bridge().update_map_conditional_effects(_get_main_board())
 
 
 func setup_card_data() -> void:

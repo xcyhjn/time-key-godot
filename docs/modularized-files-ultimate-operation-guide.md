@@ -105,6 +105,13 @@ scene/out_scene/out_scene_modules/
 - 维护：不要生成 tooltip 内容，不判断卡牌状态，不创建 tween，不处理选中、拖拽、出牌或数值刷新。
 - 改进：如果 DraftCard 与 CustomCard 后续统一 tooltip provider 查找策略，可以先在这里增加可注入 provider，但不要让 bridge 持有卡牌状态。
 
+#### `scene/card/custom_card_modules/bridges/CustomCardMapConditionalEffectBridge.gd`
+
+- 用途：从 `MainBoard` 查找 `HexMap`，并请求刷新地块条件效果。
+- 入口：`update_map_conditional_effects(main_board)`。
+- 维护：不要判断卡牌选中状态，不计算条件效果，不写地图数据，也不要处理拖拽、出牌或手牌布局。
+- 改进：如果 `HexMap` 路径变化，优先在这里调整；如果条件效果规则变化，应放在 `HexMap` 或对应规则模块里处理。
+
 ### rules
 
 #### `scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd`
@@ -1286,7 +1293,7 @@ git diff --check
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
 
-### custom_card 已完成形状、效果范围、选中跟随、hover shader 和 tooltip 查找拆分
+### custom_card 已完成形状、效果范围、选中跟随、hover shader、tooltip 查找和地图条件效果刷新拆分
 
 `custom_card.gd` 的时间轴 `shape` 解析已由 `CustomCardTimelineShapeParser.gd` 接管。旧 `_normalize_and_parse_shape()` 入口仍保留，并继续写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，避免影响 DragShapeController、时间轴预览和已有卡牌数据。
 
@@ -1298,7 +1305,9 @@ hover shader 参数写入已由 `CustomCardHoverShaderPresenter.gd` 接管。旧
 
 tooltip 的 MainBoard 查找与显隐转发已由 `CustomCardTooltipBridge.gd` 接管。旧 `_request_tooltip(should_show)` 入口仍保留，hover、holding、数值变化和视觉重置里的调用顺序没有改变。
 
-后续如果继续处理 `custom_card.gd`，先重新审查剩余函数，不要为了降行数硬拆 `_enter_state()`、`toggle_selection()`、`force_deselect()` 或 `play_card()`。不要同批修改 clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
+地图条件效果刷新已由 `CustomCardMapConditionalEffectBridge.gd` 接管。旧 `_update_map_conditional_effects()` 入口仍保留，并只把 `MainBoard` 转发给 bridge；`toggle_selection()` 和 `force_deselect()` 里的调用时机没有改变。
+
+后续如果继续处理 `custom_card.gd`，先重新审查剩余函数，不要为了降行数硬拆 `_enter_state()`、`toggle_selection()`、`force_deselect()` 或 `play_card()`。不要同批修改 clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析；当前剩余低风险边界已经基本清空。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
