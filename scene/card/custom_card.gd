@@ -11,6 +11,7 @@ const CustomCardHoverShaderPresenterScript = preload("res://scene/card/custom_ca
 const CustomCardTooltipBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardTooltipBridge.gd")
 const CustomCardMapConditionalEffectBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardMapConditionalEffectBridge.gd")
 const CustomCardNodeBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardNodeBridge.gd")
+const CustomCardDescriptionParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardDescriptionParser.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
@@ -21,16 +22,7 @@ var _hover_shader_presenter = null
 var _tooltip_bridge = null
 var _map_conditional_effect_bridge = null
 var _node_bridge = null
-
-
-func _object_has_property(target: Object, property_name: StringName) -> bool:
-	if target == null:
-		return false
-	for property_info in target.get_property_list():
-		if property_info.get("name", &"") == property_name:
-			return true
-	return false
-
+var _description_parser = null
 
 func _get_timeline_shape_parser():
 	if _timeline_shape_parser == null:
@@ -72,6 +64,12 @@ func _get_node_bridge():
 	if _node_bridge == null:
 		_node_bridge = CustomCardNodeBridgeScript.new(self)
 	return _node_bridge
+
+
+func _get_description_parser():
+	if _description_parser == null:
+		_description_parser = CustomCardDescriptionParserScript.new()
+	return _description_parser
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -382,46 +380,17 @@ func set_card_transparency(alpha: float) -> void:
 
 # ==========================================
 func get_parsed_description() -> String:
-	var final_text = raw_description
+	var parsed_description: Dictionary = _get_description_parser().parse(
+		raw_description,
+		base_stats,
+		current_stats,
+		GlobalDB.KEYWORDS,
+		GlobalDB.ICONS
+	)
 	active_keywords.clear()
-
-	# 1. 替换动态变量并变色 (如果有的话)
-	if _object_has_property(self, &"current_stats"):
-		for stat_key in current_stats.keys():
-			var placeholder = "{" + stat_key + "}"
-			if placeholder in final_text:
-				var base_val = base_stats[stat_key]
-				var cur_val = current_stats[stat_key]
-				var val_str = str(cur_val)
-				#数值强化变绿，削弱变红
-				if cur_val > base_val:
-					val_str = "[color=#55ff55]" + val_str + "[/color]"
-				elif cur_val < base_val:
-					val_str = "[color=#ff5555]" + val_str + "[/color]"
-				final_text = final_text.replace(placeholder, val_str)
-
-	# 2. 自动雷达：识别关键词并高亮
-	for kw in GlobalDB.KEYWORDS.keys():
-		if kw in final_text:
-			if not active_keywords.has(kw):
-				active_keywords.append(kw)  # 记录下来供右侧注释框生成
-			# 兼容插件的高级包裹特效
-			if GlobalDB.KEYWORDS[kw].has("bbcode_wrap"):
-				var format_string = GlobalDB.KEYWORDS[kw]["bbcode_wrap"]
-				final_text = final_text.replace(kw, format_string % kw)
-			else:
-				var kw_color = GlobalDB.KEYWORDS[kw]["color"]
-				var colored_kw = "[color=" + kw_color + "]" + kw + "[/color]"
-				final_text = final_text.replace(kw, colored_kw)
-
-	# 3. 替换文本图标
-	for icon_tag in GlobalDB.ICONS.keys():
-		if icon_tag in final_text:
-			var img_path = GlobalDB.ICONS[icon_tag]
-			var img_bbcode = "[img=20]" + img_path + "[/img]"
-			final_text = final_text.replace(icon_tag, img_bbcode)
-
-	return final_text
+	for keyword in parsed_description.get("keywords", []):
+		active_keywords.append(keyword)
+	return str(parsed_description.get("text", raw_description))
 
 
 # 3. 外部调用的属性修改接口 (供主界面的法术/Buff调用)

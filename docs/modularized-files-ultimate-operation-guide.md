@@ -128,6 +128,13 @@ scene/out_scene/out_scene_modules/
 - 维护：不要读取场景树，不修改卡牌节点，不判断时间轴放置是否合法，也不要处理 clear 卡牌的特殊效果。
 - 改进：如果 `tile.gd` 后续也需要同一套矩阵标准化规则，可评估共用本解析器或抽到共享规则目录；先确保普通卡牌和建筑意图的 shape 语义一致。
 
+#### `scene/card/custom_card_modules/rules/CustomCardDescriptionParser.gd`
+
+- 用途：把 CustomCard 的原始描述、基础/当前数值、关键词库和图标表解析为 BBCode 文本与关键词列表。
+- 入口：`parse(raw_description, base_stats, current_stats, keywords, icons)`。
+- 维护：不要请求 tooltip，不读取或修改卡牌节点状态，不处理选中、拖拽、出牌或数值变化流程。
+- 改进：如果后续卡牌描述改为结构化数据，可以先在这里兼容新格式；不要让 parser 直接读取 `GlobalDB` 或卡牌节点。
+
 #### `scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd`
 
 - 用途：把卡牌 `effect_range` 数据解析为六边形相对坐标偏移，支持数字半径和字符串坐标数组。
@@ -1300,9 +1307,11 @@ git diff --check
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
 
-### custom_card 已完成节点查找、形状、效果范围、选中跟随、hover shader、tooltip 查找和地图条件效果刷新拆分
+### custom_card 已完成节点查找、描述解析、形状、效果范围、选中跟随、hover shader、tooltip 查找和地图条件效果刷新拆分
 
 CustomCard 需要的 `MainBoard`、`CardManager`、玩家手牌和 `DragShapeController` 查找已由 `CustomCardNodeBridge.gd` 接管。旧 `_get_main_board()`、`get_card_manager()`、`_find_player_hand()` 入口仍保留，`play_card(target_hex)` 也仍负责出牌交接，只把拖拽控制器查找转发给 bridge。
+
+卡牌描述 BBCode 生成已由 `CustomCardDescriptionParser.gd` 接管。旧 `get_parsed_description()` 入口仍保留，并继续把解析出的关键词写回 `active_keywords`，因此共享 `CardTooltipPresenter` 的描述和关键词读取协议没有变化。
 
 `custom_card.gd` 的时间轴 `shape` 解析已由 `CustomCardTimelineShapeParser.gd` 接管。旧 `_normalize_and_parse_shape()` 入口仍保留，并继续写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，避免影响 DragShapeController、时间轴预览和已有卡牌数据。
 
@@ -1316,7 +1325,7 @@ tooltip 的 MainBoard 查找与显隐转发已由 `CustomCardTooltipBridge.gd` �
 
 地图条件效果刷新已由 `CustomCardMapConditionalEffectBridge.gd` 接管。旧 `_update_map_conditional_effects()` 入口仍保留，并只把 `MainBoard` 转发给 bridge；`toggle_selection()` 和 `force_deselect()` 里的调用时机没有改变。
 
-后续如果继续处理 `custom_card.gd`，先重新审查剩余函数，不要为了降行数硬拆 `_enter_state()`、`toggle_selection()`、`force_deselect()`、`return_to_hand()` 或 `play_card()`。不要同批修改 clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析；当前剩余低风险边界已经基本清空。
+后续如果继续处理 `custom_card.gd`，先重新审查剩余函数，不要为了降行数硬拆 `_enter_state()`、`toggle_selection()`、`force_deselect()`、`return_to_hand()`、`apply_stat_modifier()` 或 `play_card()`。不要同批修改 clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析；当前剩余低风险边界已经基本清空。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
