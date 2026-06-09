@@ -7,12 +7,14 @@ const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineC
 const CustomCardTimelineShapeParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd")
 const CustomCardEffectRangeParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd")
 const CustomCardSelectedVisualPresenterScript = preload("res://scene/card/custom_card_modules/presenters/CustomCardSelectedVisualPresenter.gd")
+const CustomCardHoverShaderPresenterScript = preload("res://scene/card/custom_card_modules/presenters/CustomCardHoverShaderPresenter.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
 var _timeline_shape_parser = null
 var _effect_range_parser = null
 var _selected_visual_presenter = null
+var _hover_shader_presenter = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -40,6 +42,12 @@ func _get_selected_visual_presenter():
 	if _selected_visual_presenter == null:
 		_selected_visual_presenter = CustomCardSelectedVisualPresenterScript.new()
 	return _selected_visual_presenter
+
+
+func _get_hover_shader_presenter():
+	if _hover_shader_presenter == null:
+		_hover_shader_presenter = CustomCardHoverShaderPresenterScript.new()
+	return _hover_shader_presenter
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -477,10 +485,7 @@ func _enter_state(state: DraggableState, from_state: DraggableState) -> void:
 
 # 独立表现处理函数
 func _set_shader(active: bool) -> void:
-	if material is ShaderMaterial:
-		material.set_shader_parameter("is_hovered", active)
-	elif front_face_texture and front_face_texture.material is ShaderMaterial:
-		front_face_texture.material.set_shader_parameter("is_hovered", active)
+	_get_hover_shader_presenter().set_hover_shader(material, front_face_texture, active)
 
 
 func _request_tooltip(should_show: bool) -> void:

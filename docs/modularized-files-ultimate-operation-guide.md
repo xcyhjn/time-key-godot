@@ -120,6 +120,13 @@ scene/out_scene/out_scene_modules/
 - 维护：不要修改 `is_selected`，不要请求 tooltip，不处理出牌、拖拽、CardManager 选中状态或手牌布局。
 - 改进：如果未来选中进入/退出动画也要拆，必须另开小批处理，避免把状态切换和逐帧视觉跟随混到同一个 presenter。
 
+#### `scene/card/custom_card_modules/presenters/CustomCardHoverShaderPresenter.gd`
+
+- 用途：切换卡牌自身或正面贴图材质上的 `is_hovered` shader 参数。
+- 入口：`set_hover_shader(card_material, front_face_texture, active)`。
+- 维护：不要判断卡牌状态，不请求 tooltip，不创建 tween，不处理选中、拖拽、出牌或手牌布局。
+- 改进：如果 hover 表现后续增加多个 shader 参数，可以继续集中在这里；状态进入和 tooltip 显隐仍应留在 `custom_card.gd` 或单独桥接模块中。
+
 ### animation
 
 #### `scene/in_scene/drag_modules/animation/DragPlacementAnimationRunner.gd`
@@ -1269,7 +1276,7 @@ git diff --check
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
 
-### custom_card 已完成形状、效果范围和选中跟随视觉拆分
+### custom_card 已完成形状、效果范围、选中跟随和 hover shader 拆分
 
 `custom_card.gd` 的时间轴 `shape` 解析已由 `CustomCardTimelineShapeParser.gd` 接管。旧 `_normalize_and_parse_shape()` 入口仍保留，并继续写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，避免影响 DragShapeController、时间轴预览和已有卡牌数据。
 
@@ -1277,7 +1284,9 @@ git diff --check
 
 选中状态下的倾斜和阴影跟随已由 `CustomCardSelectedVisualPresenter.gd` 接管。旧 `_process(delta)` 入口仍保留，并只在 `is_selected` 为真时转发视觉参数；它不改变选中状态，也不请求 tooltip。
 
-后续如果继续处理 `custom_card.gd`，优先评估 MainBoard tooltip 查找桥接或 hover shader 小边界。不要同批修改 `play_card()`、clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
+hover shader 参数写入已由 `CustomCardHoverShaderPresenter.gd` 接管。旧 `_set_shader(active)` 入口仍保留，并只把当前材质和正面贴图转发给 presenter；它不判断状态，也不处理 tooltip。
+
+后续如果继续处理 `custom_card.gd`，优先评估 MainBoard tooltip 查找桥接。不要同批修改 `play_card()`、clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
