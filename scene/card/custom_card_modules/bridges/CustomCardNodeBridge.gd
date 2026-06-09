@@ -41,6 +41,13 @@ func find_player_hand() -> Node:
 	return hand as Node
 
 
+func get_player_hand_container(card_container: Variant) -> Node:
+	if card_container is Hand:
+		return card_container as Hand
+
+	return find_player_hand()
+
+
 func find_drag_shape_controller() -> Node:
 	if not is_instance_valid(_owner):
 		return null

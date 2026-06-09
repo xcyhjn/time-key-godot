@@ -213,10 +213,7 @@ func _find_player_hand() -> Node:
 
 ## 获取玩家手牌容器。回手牌必须交给 Hand 重新布局，不能只依赖卡牌保存的旧坐标。
 func _get_player_hand_container() -> Hand:
-	if card_container is Hand:
-		return card_container as Hand
-	var hand = _find_player_hand()
-	return hand as Hand
+	return _get_node_bridge().get_player_hand_container(card_container) as Hand
 
 
 ## 当前是否已经有另一张卡处于选中状态；用于隔绝手牌区其它卡牌点击。

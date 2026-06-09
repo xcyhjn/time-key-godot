@@ -100,8 +100,8 @@ scene/out_scene/out_scene_modules/
 
 #### `scene/card/custom_card_modules/bridges/CustomCardNodeBridge.gd`
 
-- 用途：集中查找 CustomCard 需要的 `MainBoard`、`CardManager`、玩家手牌和 `DragShapeController`。
-- 入口：`get_main_board()`、`get_card_manager()`、`find_player_hand()`、`find_drag_shape_controller()`。
+- 用途：集中查找 CustomCard 需要的 `MainBoard`、`CardManager`、玩家手牌、当前手牌容器和 `DragShapeController`。
+- 入口：`get_main_board()`、`get_card_manager()`、`find_player_hand()`、`get_player_hand_container(card_container)`、`find_drag_shape_controller()`。
 - 维护：只改节点路径和群组查找策略，不缓存卡牌状态，不修改手牌、地图或出牌流程。
 - 改进：如果 `MainBoard`、玩家手牌或拖拽控制器的挂载方式变化，优先在这里调整，避免把新查找逻辑散回 `custom_card.gd`。
 
@@ -1309,7 +1309,7 @@ git diff --check
 
 ### custom_card 已完成节点查找、描述解析、形状、效果范围、选中跟随、hover shader、tooltip 查找和地图条件效果刷新拆分
 
-CustomCard 需要的 `MainBoard`、`CardManager`、玩家手牌和 `DragShapeController` 查找已由 `CustomCardNodeBridge.gd` 接管。旧 `_get_main_board()`、`get_card_manager()`、`_find_player_hand()` 入口仍保留，`play_card(target_hex)` 也仍负责出牌交接，只把拖拽控制器查找转发给 bridge。
+CustomCard 需要的 `MainBoard`、`CardManager`、玩家手牌、当前手牌容器和 `DragShapeController` 查找已由 `CustomCardNodeBridge.gd` 接管。旧 `_get_main_board()`、`get_card_manager()`、`_find_player_hand()` 和 `_get_player_hand_container()` 入口仍保留；`_get_player_hand_container()` 只解析当前 `card_container` 或兜底玩家手牌，不负责回手牌节点重挂和扇形布局刷新；`play_card(target_hex)` 也仍负责出牌交接，只把拖拽控制器查找转发给 bridge。
 
 卡牌描述 BBCode 生成已由 `CustomCardDescriptionParser.gd` 接管。旧 `get_parsed_description()` 入口仍保留，并继续把解析出的关键词写回 `active_keywords`，因此共享 `CardTooltipPresenter` 的描述和关键词读取协议没有变化。
 
