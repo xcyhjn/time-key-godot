@@ -35,6 +35,7 @@ scene/in_scene/rewards/factory/
 scene/in_scene/rewards/presenters/
 scene/in_scene/rewards/rules/
 scene/in_scene/rewards/resources/
+scene/card/custom_card_modules/rules/
 scene/out_scene/out_scene_modules/
 ```
 
@@ -88,6 +89,19 @@ scene/out_scene/out_scene_modules/
 ## DragShapeController 拆分模块
 
 这些文件服务于 `scene/in_scene/DragShapeController.gd`。它们处理拖拽、时间轴预览、放置校验、拒绝提示、放置动画、玩家行动创建、时间轴提交、成功后的卡牌视觉复原和弃牌移动。
+
+## CustomCard 拆分模块
+
+这些文件服务于 `scene/card/custom_card.gd`。`custom_card.gd` 仍是卡牌节点的 composition root，继续负责父类 Card 状态适配、选中/拖拽入口、tooltip 请求、出牌交接和卡牌数据写回；新增模块只接管纯规则或纯表现小边界。
+
+### rules
+
+#### `scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd`
+
+- 用途：把卡牌 `shape` 数据解析为时间轴局部坐标、形状尺寸和标准 key，支持字符串、字符串数组和已解析 `Vector2i` 数组。
+- 入口：`parse(shape_data)`。
+- 维护：不要读取场景树，不修改卡牌节点，不判断时间轴放置是否合法，也不要处理 clear 卡牌的特殊效果。
+- 改进：如果 `tile.gd` 后续也需要同一套矩阵标准化规则，可评估共用本解析器或抽到共享规则目录；先确保普通卡牌和建筑意图的 shape 语义一致。
 
 ### animation
 
@@ -1237,6 +1251,12 @@ git diff --check
 ### timeline_ui 剩余表现边界优先级更高
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
+
+### custom_card 已完成时间轴形状解析拆分
+
+`custom_card.gd` 的时间轴 `shape` 解析已由 `CustomCardTimelineShapeParser.gd` 接管。旧 `_normalize_and_parse_shape()` 入口仍保留，并继续写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，避免影响 DragShapeController、时间轴预览和已有卡牌数据。
+
+后续如果继续处理 `custom_card.gd`，优先评估 `_parse_hex_effect_range()` 这种纯效果范围解析，或只拆选中状态下的倾斜/阴影视觉 presenter。不要同批修改 `play_card()`、clear 卡牌自动进入时间轴、CardManager 选中状态和 MainBoard tooltip 请求。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 

@@ -13,6 +13,98 @@ docs/hex-map-ultimate-operation-guide.md
 docs/ai-handoff-ultimate-operation-guide.md
 ```
 
+## 2026-06-09 CustomCard 时间轴形状解析拆分
+
+### 读取与轮廓
+
+本批按接力规则先确认工作区干净，再读取固定文档。仓库内仍未发现 `AGENTS.md`，本批以当前对话中用户贴出的 AGENTS 约束为准。随后用 `rg` 输出了以下目标轮廓：
+
+```text
+scene/card/custom_card.gd
+scene/card/custom_card.tscn
+scene/in_scene/drag_modules/rules/DragCardShapeResolver.gd
+scene/in_scene/timeline/TimelineClearEffect.gd
+scene/in_scene/hex_map_modules/rules/HexTargetRules.gd
+```
+
+`custom_card.gd` 当前约 654 行。外部主要通过 `timeline_shape_coords` 读取普通卡牌时间轴形状，通过 `get_absolute_effect_range(center_coord)` 读取六边形影响范围，通过 `play_card(target_hex)` 把选中卡牌交给 DragShapeController。
+
+### 当前职责
+
+`custom_card.gd` 仍是卡牌节点的 composition root，负责适配插件 `Card` 父类状态、保存手牌原始状态、处理选中/取消选中、请求 tooltip、读取 `card_info`、解析时间轴 shape、解析六边形效果范围、把卡牌移交 DragShapeController，以及维护 selected 状态下的倾斜和阴影跟随视觉。
+
+### 耦合点
+
+```text
+toggle_selection() / force_deselect() 同时改 CardManager 选中状态、tween、手牌布局、地图条件效果和 clear 卡牌自动进入时间轴。
+_enter_state() 与 _process() 同时处理父类 hover 状态、shader、tooltip、倾斜和阴影跟随。
+_normalize_and_parse_shape() 是纯数据解析，写入 timeline_shape_coords / timeline_shape_size / timeline_shape_key，后续由 DragShapeController 读取。
+play_card() 直接寻找 DragShapeController，失败时走 apply_effect_immediate()，本批不碰。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `CustomCardTimelineShapeParser.gd` | `_normalize_and_parse_shape()` | 纯 Variant 到坐标/尺寸/key 解析，不查场景树，不改出牌流程 | 执行 |
+| 2 | `CustomCardEffectRangeParser.gd` | `_parse_hex_effect_range()` | 纯 effect_range 到 offset 数组，但 HexTargetRules 依赖结果 | 暂缓 |
+| 3 | 选中视觉 presenter | `toggle_selection()`、`force_deselect()`、`_process()` 部分 | 牵动 CardManager、Hand 布局和父类状态 | 暂缓 |
+| 4 | Tooltip/MainBoard bridge | `_get_main_board()`、`_request_tooltip()` | 查找集中化可行 | 暂缓 |
+
+### 本批风险面
+
+本批只拆一个风险面：普通卡牌时间轴形状解析。
+
+涉及的 3 个小风险点：
+
+```text
+新增 CustomCardTimelineShapeParser.gd，只解析 shape 数据，不碰节点和放置规则。
+custom_card.gd 保留旧 _normalize_and_parse_shape() 入口，只把解析委托出去并写回旧成员。
+不修改 card_info["shape"]，不改 DragShapeController、TimelineClearEffect 或 play_card() 流程。
+```
+
+不触碰：
+
+```text
+CardManager 选中状态、MainBoard tooltip、DragShapeController 交接。
+clear 卡牌通过 TimelineClearEffect 的特殊 shape 解析。
+六边形 effect_range 解析和 HexTargetRules 读取路径。
+```
+
+### 实现结果
+
+```text
+scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd
+```
+
+职责：
+
+```text
+CustomCardTimelineShapeParser 只负责把卡牌时间轴形状数据解析成坐标、尺寸和标准 key。
+它不读取场景树，不修改卡牌节点，也不决定卡牌能否放置或如何打出。
+```
+
+`custom_card.gd` 新增解析器 preload 和 `_get_timeline_shape_parser()` 缓存 getter。旧 `_normalize_and_parse_shape()` 继续写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，保持 DragShapeController 的读取路径不变。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 151 个脚本模块和 4 个默认 Resource 文件。
+CustomCard 现在有 1 个 custom_card_modules 规则脚本。
+custom_card.gd 从约 654 行降到约 597 行。
+下一批如果继续 custom_card.gd，优先评估 _parse_hex_effect_range() 或选中状态视觉 presenter；不要同批改 play_card()、CardManager 选中状态、MainBoard tooltip 和 DragShapeController 交接。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 scene/card/custom_card.gd 的既有 LF/CRLF 提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍输出既有退出资源占用 warning。
+Godot 加载 res://scene/card/custom_card.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+覆盖率检查通过：155 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 151 个，默认 Resource 文件为 4 个。
+```
+
 ## 2026-06-09 TimelineUI 视觉配置 Resource 化
 
 ### 读取与轮廓

@@ -4,9 +4,11 @@ class_name CustomCard
 extends Card  # 直接继承插件自带的 Card 类，白嫖它所有底层功能！
 
 const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
+const CustomCardTimelineShapeParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
+var _timeline_shape_parser = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -16,6 +18,12 @@ func _object_has_property(target: Object, property_name: StringName) -> bool:
 		if property_info.get("name", &"") == property_name:
 			return true
 	return false
+
+
+func _get_timeline_shape_parser():
+	if _timeline_shape_parser == null:
+		_timeline_shape_parser = CustomCardTimelineShapeParserScript.new()
+	return _timeline_shape_parser
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -313,77 +321,12 @@ func setup_card_data() -> void:
 # ★ 核心矩阵解析与归一化方法
 # ==========================================
 func _normalize_and_parse_shape(shape_data: Variant) -> void:
-	var temp_coords: Array[Vector2i] = []
-	
-	# 【修复1】：判断是否已经是解析好的坐标数组（防止引用污染引发二次解析爆炸）
-	var is_already_parsed = true
-	if typeof(shape_data) == TYPE_ARRAY and not shape_data.is_empty():
-		for item in shape_data:
-			if typeof(item) != TYPE_VECTOR2I:
-				is_already_parsed = false
-				break
-	else:
-		is_already_parsed = false
-
-	if is_already_parsed:
-		# 如果已经被前一张牌解析过了，直接拷贝拿来用！
-		temp_coords = shape_data.duplicate()
-	else:
-		# 正常读取字符串进行解析
-		var raw_rows: Array[String] = []
-		if typeof(shape_data) == TYPE_ARRAY:
-			for row in shape_data:
-				raw_rows.append(str(row))
-		elif typeof(shape_data) == TYPE_STRING:
-			var s = shape_data as String
-			s = s.replace("\n", ",").replace(" ", ",")
-			for row in s.split(",", false):
-				raw_rows.append(row.strip_edges())
-		
-		# 提取所有 "1" 的绝对坐标
-		for y in range(raw_rows.size()):
-			var row_str = raw_rows[y]
-			for x in range(row_str.length()):
-				if row_str[x] == "1":
-					temp_coords.append(Vector2i(x, y))
-	
-	# 兜底防错：如果全填了0或空，强行给个 (0,0)
-	if temp_coords.is_empty():
-		temp_coords.append(Vector2i(0, 0))
-		
-	# 寻找边界框 (Bounding Box)，用于裁切四周多余的 "0"
-	var min_x = 9999
-	var min_y = 9999
-	var max_x = -9999
-	var max_y = -9999
-	
-	for c in temp_coords:
-		if c.x < min_x: min_x = c.x
-		if c.x > max_x: max_x = c.x
-		if c.y < min_y: min_y = c.y
-		if c.y > max_y: max_y = c.y
-		
-	# 平移坐标 (归一化)，使形状紧贴左上角 (0,0)
+	var parsed_shape: Dictionary = _get_timeline_shape_parser().parse(shape_data)
 	timeline_shape_coords.clear()
-	for c in temp_coords:
-		timeline_shape_coords.append(Vector2i(c.x - min_x, c.y - min_y))
-		
-	# 计算真实占用的尺寸
-	timeline_shape_size = Vector2i(max_x - min_x + 1, max_y - min_y + 1)
-	
-	# 生成极简标准化 Key (用于统一读取图片)
-	var canonical_rows: PackedStringArray = []
-	for y in range(timeline_shape_size.y):
-		var row_str = ""
-		for x in range(timeline_shape_size.x):
-			if timeline_shape_coords.has(Vector2i(x, y)):
-				row_str += "1"
-			else:
-				row_str += "0"
-		canonical_rows.append(row_str)
-	
-	# 生成绝对唯一的特征码，比如 "11"
-	timeline_shape_key = ",".join(canonical_rows)
+	for coord: Vector2i in parsed_shape.get("coords", [Vector2i(0, 0)]):
+		timeline_shape_coords.append(coord)
+	timeline_shape_size = parsed_shape.get("size", Vector2i(1, 1))
+	timeline_shape_key = parsed_shape.get("key", "1")
 	
 	# 【修复2】：绝对不要覆写原数据字典，保持原数据的纯洁性！
 	# card_info["shape"] = timeline_shape_coords # <--- 删掉这行，大功告成！
