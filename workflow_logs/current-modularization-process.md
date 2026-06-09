@@ -13,6 +13,84 @@ docs/hex-map-ultimate-operation-guide.md
 docs/ai-handoff-ultimate-operation-guide.md
 ```
 
+## 2026-06-10 TimecoinUI 全局时间币查找 bridge 拆分
+
+### 读取与轮廓
+
+本批处理 `scene/in_scene/timecoin_ui.gd`。开工前确认工作区干净，仓库内仍没有实体 `AGENTS.md`，因此遵守当前对话中用户贴出的 AGENTS 约束。随后读取固定文档、模块总说明和 HexMap 手册，并用 `rg` 输出 `timecoin_ui.gd` 的函数、变量和导出参数轮廓。补充搜索确认 `GlobalTimecoin` 的主要接口是 `timecoin_updated`、`timecoin_insufficient` 和 `get_timecoins()`，本批不改变这些协议。
+
+### 当前职责
+
+`timecoin_ui.gd` 仍是时间币 UI 的 composition root，负责校验沙漏图标和数值标签、连接全局时间币信号、刷新数量文本、播放获得/消耗/不足动画、维护活跃 tween 队列、重置视觉状态，以及控制沙漏 shader 的震动参数。
+
+### 耦合点
+
+```text
+_get_timecoin_singleton() 同时包含 Autoload、父级、root 子节点和 current_scene 递归查找，是清晰的跨节点 bridge 边界。
+_connect_global_signals() 同时连接 GlobalTimecoin 信号并初始同步数值，本批不拆，保持调用旧 _get_timecoin_singleton()。
+_play_gain_animation()、_play_consume_animation() 和 _play_warning_animation() 牵动 tween、位置、缩放、颜色和动画收尾，本批不拆。
+_cleanup_active_tweens()、_reset_to_original_state() 和 shader 控制牵动动画状态，后续如拆必须单独审查。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TimecoinGlobalBridge.gd` | `_get_timecoin_singleton()` 和 `_find_node_with_script()` | 只查找节点，不连接信号，不改 UI 或时间币数值 | 执行 |
+| 2 | 获得/消耗/不足动画 runner | `_play_gain_animation()`、`_play_consume_animation()`、`_play_warning_animation()` | 纯视觉但参数和收尾较多，应另开小批 | 暂缓 |
+| 3 | tween 状态清理 controller | `_cleanup_active_tweens()`、`_reset_to_original_state()`、`_remove_tween_from_active()` | 与所有动画共享状态，需先梳理输入输出 | 暂缓 |
+| 4 | 沙漏 shader controller | `_initialize_shader_material()`、`start_hourglass_shake()`、`stop_hourglass_shake()` 等 | 纯 shader 参数，适合作为后续小批 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：TimecoinUI 的 `GlobalTimecoin` 查找。
+
+涉及的 4 个小风险点：
+
+```text
+新增 TimecoinGlobalBridge.gd，保留 Autoload、父级、root 子节点和 current_scene 递归兜底顺序。
+timecoin_ui.gd 新增 preload 与 _get_timecoin_global_bridge() 缓存 getter。
+旧 _get_timecoin_singleton() 入口继续存在，只转发给 bridge 并保留找不到节点时的 warning。
+删除本批造成的 _find_node_with_script() 孤儿函数；递归查找移入 bridge。
+```
+
+不触碰：
+
+```text
+GlobalTimecoin 信号连接协议。
+get_timecoins() 数值来源。
+获得/消耗/不足动画。
+tween 冲突处理。
+沙漏 shader 控制。
+```
+
+### 实现结果
+
+```text
+scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd
+scene/in_scene/timecoin_ui.gd
+```
+
+`TimecoinGlobalBridge.gd` 是新的 RefCounted bridge，中文职责注释说明它只负责查找 `GlobalTimecoin`，不连接信号、不读写时间币数值、不刷新 UI、不播放动画。`timecoin_ui.gd::_get_timecoin_singleton()` 继续作为旧入口存在，`_connect_global_signals()` 和 `_refresh_display_from_global()` 的调用路径没有改变。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 159 个脚本模块和 4 个默认 Resource 文件。
+timecoin_ui.gd 当前约 484 行；本批只缩小全局节点查找边界，不追求压行数。
+下一批如果继续 TimecoinUI，先重新审查动画 runner 或沙漏 shader controller；不要同批改数值来源、信号协议和 UI 动画。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有换行风格提示。
+覆盖检查通过：163 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 159 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-10 CustomCard 手牌容器查找 bridge 扩展
 
 ### 读取与轮廓

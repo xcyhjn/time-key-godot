@@ -38,6 +38,7 @@ scene/in_scene/rewards/resources/
 scene/card/custom_card_modules/bridges/
 scene/card/custom_card_modules/presenters/
 scene/card/custom_card_modules/rules/
+scene/in_scene/timecoin_ui_modules/bridges/
 scene/out_scene/out_scene_modules/
 ```
 
@@ -157,6 +158,19 @@ scene/out_scene/out_scene_modules/
 - 入口：`set_hover_shader(card_material, front_face_texture, active)`。
 - 维护：不要判断卡牌状态，不请求 tooltip，不创建 tween，不处理选中、拖拽、出牌或手牌布局。
 - 改进：如果 hover 表现后续增加多个 shader 参数，可以继续集中在这里；状态进入和 tooltip 显隐仍应留在 `custom_card.gd` 或单独桥接模块中。
+
+## TimecoinUI 拆分模块
+
+这些文件服务于 `scene/in_scene/timecoin_ui.gd`。`timecoin_ui.gd` 仍是时间币 UI 的 composition root，负责节点引用校验、GlobalTimecoin 信号连接、数值显示、获得/消耗/不足动画、tween 防冲突和沙漏 shader 控制；新增模块只接管跨节点查找、纯动画或纯 shader 小边界。
+
+### bridges
+
+#### `scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd`
+
+- 用途：为 `timecoin_ui.gd` 查找 `GlobalTimecoin`，保留 Autoload、父级、root 子节点和当前场景递归兜底顺序。
+- 入口：`find_timecoin_singleton(owner)`、`find_node_with_script(node, script_path)`。
+- 维护：只改全局时间币节点查找策略，不连接信号，不读取或修改时间币数值，不刷新 UI，也不播放动画。
+- 改进：如果后续 `GlobalTimecoin` 查找策略要和 Shop 统一，可以评估抽公共全局节点查找器；不要让该 bridge 持有 TimecoinUI 动画状态。
 
 ### animation
 

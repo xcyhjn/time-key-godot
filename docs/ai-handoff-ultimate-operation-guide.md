@@ -21,7 +21,7 @@ D:/godot/时之钥/时之钥
 
 ## 当前状态一览
 
-当前模块化工作已经完成多条主线。当前已拆脚本模块共 `158` 个，另有 `4` 个默认 Resource 文件；`docs/modularized-files-ultimate-operation-guide.md` 对这些脚本和资源路径的覆盖缺失数为 `0`。
+当前模块化工作已经完成多条主线。当前已拆脚本模块共 `159` 个，另有 `4` 个默认 Resource 文件；`docs/modularized-files-ultimate-operation-guide.md` 对这些脚本和资源路径的覆盖缺失数为 `0`。
 
 | 文件 | 当前状态 | 接下来怎么处理 |
 | --- | --- | --- |
@@ -31,6 +31,7 @@ D:/godot/时之钥/时之钥
 | `scene/in_scene/timeline/timeline_ui.gd` | 约 807 行，`timeline/ui_modules/` 下已有 14 个模块，`timeline/resources/` 下已有 `TimelineVisualConfig` 与默认资源。已拆布局、背景网格、预览样式、TimelineManager 查找、敌方意图 overlay、放置动画、行动容器几何、行动方块视觉节点、整体形状视觉层、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知，并已完成首批纯视觉参数 Resource 化。 | 行动块生成仍耦合创建时机、intro 动画和信号连接；不要硬拆 `_on_action_placed()`。后续如继续时间轴，优先只做小的视觉调参补充或转向其他文件。 |
 | `scene/in_scene/rewards/*.gd` | 奖励页下已有 49 个拆分脚本模块和 3 个默认资源。Acquire/Remove 已接近页面编排；Shop 生成前依赖检查、商店定价 Resource、时代权重 Resource 和临时牌堆隐藏创建已收口，Craft 结果预览、预览卡 UI、预览 DraftCard 工厂复用、合成结果牌组写入和合成配方 Resource 已完成。 | Craft 预览创建链、确认写入链和 Shop 单商品生成都不建议继续硬拆；Shop 临时牌堆释放仍绑定异步生成循环，除非要统一多个奖励页生命周期，否则转向时间轴 UI 或局外地图。 |
 | `scene/card/custom_card.gd` | 约 569 行，`custom_card_modules/` 下已有 8 个模块：节点查找 bridge、描述解析规则、时间轴形状解析、六边形效果范围解析、选中态跟随视觉 presenter、hover shader presenter、tooltip bridge 和地图条件效果刷新 bridge。旧 `_get_main_board()`、`get_card_manager()`、`_find_player_hand()`、`_get_player_hand_container()`、`get_parsed_description()`、`_normalize_and_parse_shape()`、`_parse_hex_effect_range()`、`_process(delta)`、`_set_shader(active)`、`_request_tooltip()` 与 `_update_map_conditional_effects()` 仍保留入口。 | 继续前先重新审查剩余函数；不要为了降行数硬拆 `_enter_state()`、选中/取消选中、数值修改、回手牌或 `play_card()`。 |
+| `scene/in_scene/timecoin_ui.gd` | 约 484 行，已拆出 `timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd`，集中处理 `GlobalTimecoin` 的 Autoload、父级和场景树兜底查找。旧 `_get_timecoin_singleton()` 仍保留入口。 | 后续如继续，优先审查动画 runner 或 shader controller；不要同批改时间币数值来源、信号协议和 UI 动画。 |
 | `scene/out_scene/out_scene_map_exp.gd` | 约 798 行，已拆出 `RoomResolutionController.gd`、`ChapterRevealAnimationRunner.gd` 和 `OutScenePayloadBridge.gd`，分别处理房间结算、章节揭示动画和切场前 payload 注入。 | 房间完成状态回写缺少既有状态字段，继续前先设计数据契约；地图移动、镜头限制和切场景 executor 不要同批拆。 |
 
 不要继续优先拆 `addons/dialogic/` 或其他插件目录，除非明确是在改插件行为。插件大文件不计入当前项目解耦优先级。
@@ -257,7 +258,7 @@ git commit -m "<类型>: <本批清晰描述>"
 | 7 | `scene/card/custom_card.gd` | 选中/取消选中、状态进入、数值修改、回手牌和出牌逻辑仍耦合；节点查找、描述解析、时间轴形状解析、六边形效果范围解析、选中跟随视觉、hover shader 参数写入、tooltip 查找和地图条件效果刷新已拆到 `custom_card_modules/`。 | 继续前先重新审查剩余函数；避免直接改出牌逻辑。 |
 | 8 | `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | 引用查找、hover phase 判断、tooltip、关键词 tooltip、地图和时间轴表现耦合。 | 先拆引用查找或 tooltip presenter，不动地图/时间轴联动规则。 |
 | 9 | `scene/in_scene/timeline/TimelineManager.gd` | 时间轴规则核心较集中，但敌人意图候选、排序、落点选择还可拆。 | 等 `timeline_ui.gd` 剩余表现稳定后，再拆敌人意图落点选择服务。 |
-| 10 | `scene/in_scene/timecoin_ui.gd` | 全局 Timecoin 查找、数值显示、获得/消耗/警告动画、沙漏 shader 混在 UI 脚本里。 | 先拆全局查找和动画 runner，保持数值来源不变。 |
+| 10 | `scene/in_scene/timecoin_ui.gd` | 全局 Timecoin 查找已拆到 `TimecoinGlobalBridge.gd`；数值显示、获得/消耗/警告动画、tween 清理和沙漏 shader 仍在 UI 脚本里。 | 后续如继续，先拆纯动画 runner 或 shader controller，保持数值来源和信号协议不变。 |
 
 ## 各重点文件的第一批低风险拆法
 
@@ -299,11 +300,14 @@ scene/card/custom_card_modules/presenters/CustomCardHoverShaderPresenter.gd
 scene/card/custom_card_modules/bridges/CustomCardNodeBridge.gd
 scene/card/custom_card_modules/bridges/CustomCardTooltipBridge.gd
 scene/card/custom_card_modules/bridges/CustomCardMapConditionalEffectBridge.gd
+scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd
 ```
 
 `CustomCardNodeBridge.gd` 只集中 CustomCard 需要的 `MainBoard`、`CardManager`、玩家手牌、当前手牌容器和 `DragShapeController` 查找。`custom_card.gd::_get_main_board()`、`get_card_manager()`、`_find_player_hand()` 与 `_get_player_hand_container()` 仍保留旧入口，`play_card(target_hex)` 仍只负责编排出牌交接，并通过 bridge 查找拖拽控制器。
 
 `CustomCardDescriptionParser.gd` 只把原始描述、基础/当前数值、关键词库和图标表解析为 BBCode 文本与关键词列表。`custom_card.gd::get_parsed_description()` 仍保留旧入口，并继续写回 `active_keywords`，因此共享 `CardTooltipPresenter` 的描述和关键词读取协议没有变化。
+
+`TimecoinGlobalBridge.gd` 只为 `timecoin_ui.gd` 查找 `GlobalTimecoin`，保留 Autoload、父级和场景树兜底顺序；旧 `_get_timecoin_singleton()` 入口仍保留并转发给 bridge。它不连接信号，不刷新时间币文本，也不播放获得、消耗或不足动画。
 
 该模块只把 `shape` 的字符串、字符串数组或已解析 `Vector2i` 数组转成时间轴坐标、尺寸和标准 key。`custom_card.gd::_normalize_and_parse_shape()` 仍保留旧入口并写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，因此 DragShapeController 的读取路径没有变化。
 
@@ -429,11 +433,11 @@ scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd
 
 先分析目标文件，再列待拆清单，最后每批只拆 1 个清晰风险面，最多触碰 3 到 4 个风险点。不要直接改代码。
 
-当前已拆脚本模块共 158 个，另有 4 个默认 Resource 文件，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd、RemoveReward.gd 或 CraftReward.gd 的确认关闭链。下一阶段优先处理：
+当前已拆脚本模块共 159 个，另有 4 个默认 Resource 文件，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd、RemoveReward.gd 或 CraftReward.gd 的确认关闭链。下一阶段优先处理：
 1. scene/out_scene/out_scene_map_exp.gd 的房间完成状态实现前置设计：契约已评估，后续如实现必须新增独立状态字段，不复用 path_gone
 2. scene/in_scene/tile.gd 的 timeline shape 解析或纯适配边界
 3. scene/card/custom_card.gd 剩余函数的重新审查，避免硬拆出牌和选中状态链
-4. scene/in_scene/timecoin_ui.gd 的全局查找或动画 runner
+4. scene/in_scene/timecoin_ui.gd 的动画 runner 或沙漏 shader controller
 
 工作方式：
 - 先用 rg 输出目标文件函数、变量、信号轮廓。
@@ -446,5 +450,5 @@ scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd
 - 清理临时日志。
 - 每批单独 commit。
 
-out_scene_map_exp.gd 的房间结算 payload 消费已拆到 RoomResolutionController.gd，章节揭示地块动画已拆到 ChapterRevealAnimationRunner.gd，切场前 payload 注入已拆到 OutScenePayloadBridge.gd；房间完成状态回写契约已评估，当前没有既有字段可直接复用，path_gone 是路径坍塌记录，active_room_context 和 pending_room_resolution 是临时桥接，tile_data 仍是房间类型映射；后续如实现必须新增独立完成状态字段和 Saver 持久化，不要同批改地图移动、镜头限制和场景切换 executor。timeline_ui.gd 已经拆出展开遮罩、背景网格、格子交互、顶部布局、网格预览、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何、行动方块视觉节点、整体形状视觉层、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知，并已完成 TimelineVisualConfig 首批纯视觉参数资源化；行动块生成暂不硬拆。custom_card.gd 的节点查找已拆到 CustomCardNodeBridge.gd，描述解析已拆到 CustomCardDescriptionParser.gd，时间轴形状解析已拆到 CustomCardTimelineShapeParser.gd，六边形效果范围解析已拆到 CustomCardEffectRangeParser.gd，选中状态下的倾斜和阴影跟随已拆到 CustomCardSelectedVisualPresenter.gd，hover shader 参数写入已拆到 CustomCardHoverShaderPresenter.gd，tooltip MainBoard 查找与显隐转发已拆到 CustomCardTooltipBridge.gd，地图条件效果刷新已拆到 CustomCardMapConditionalEffectBridge.gd，旧入口仍写回 active_keywords、timeline_shape_coords/size/key 和 effect_range_offsets，`_process(delta)` 仍先判断 is_selected 再转发视觉参数，`get_parsed_description()`、`_set_shader(active)`、`_request_tooltip(should_show)`、`_update_map_conditional_effects()` 与节点查找旧入口仍保留，`_get_player_hand_container()` 也只把当前 `card_container` 与兜底玩家手牌解析交给 NodeBridge；后续不要重复拆 description parser/node bridge/shape/effect_range/selected follow/hover shader/tooltip bridge/map conditional bridge，继续前先重新审查剩余函数，不要硬拆 _enter_state、toggle_selection、force_deselect、apply_stat_modifier、return_to_hand 或 play_card，也不要同批统一 EffectProcessor 或敌人意图解析。DragShapeController.gd 的玩家 TimelineAction 创建已拆到 DragPlayerActionFactory.gd，时间轴提交已拆到 DragTimelineActionSubmitter.gd，成功卡牌视觉复原已拆到 DragSuccessCardVisualRestorer.gd，弃牌移动已拆到 DragSuccessDiscardMover.gd；成功后时间轴收起已确认只是现有 DragTimelineUiStateController 的单行调用，fallback 收尾牵动手牌、tooltip、时间轴和主状态，暂不继续拆。CraftReward.gd::_refresh_result_preview() 的结果预览挂载已经拆到 CraftResultPreviewPresenter.gd，预览卡尺寸/位置/tooltip 鼠标过滤已经拆到 CraftPreviewCardConfigurator.gd，_create_preview_card() 已复用 RewardDraftCardFactory 且剩余异步链不建议继续硬拆，_apply_crafting_result_to_deck() 已拆出索引计算和结果写入处理，CRAFTING_RECIPES 已资源化，剩余同步/关闭属于页面编排。ShopManager.gd 的商店定价已资源化为 ShopPricingConfig，时代权重已资源化为 ShopEraWeightConfig，隐藏临时牌堆创建已收口到 RewardTempPileFactory；_generate_shop_items() 的单个商品生成编排已经判断会传入 draft_card_factory、temp_pile、deck_manager、UI 注册和异步数据提取等过多状态，不建议硬拆。不要重复拆已经完成的节点桥接、tooltip、CardManager 查找、临时牌堆、DraftCard 数据写入、生成依赖检查、只读牌组来源、Craft 预览工厂复用、Craft 结果写入模块、Craft 配方资源、Shop 定价资源、Shop 时代权重资源、Shop 临时牌堆隐藏创建、Drag 玩家行动创建、Drag 时间轴提交、Drag 成功视觉复原、Drag 弃牌移动、TimelineUI 清理动画残影创建、TimelineUI 清理动画 tween 播放、TimelineUI 行动块 hover 状态通知、TimelineUI 行动容器几何 presenter、TimelineUI 行动方块视觉 presenter、TimelineUI 整体形状视觉 presenter、TimelineUI 视觉配置资源、CustomCard description parser、CustomCard node bridge、CustomCard 时间轴形状解析、CustomCard 效果范围解析、CustomCard 选中跟随视觉 presenter、CustomCard hover shader presenter、CustomCard tooltip bridge、CustomCard map conditional bridge、OutScene 房间结算 payload 控制器、OutScene 章节揭示动画 runner、OutScene payload bridge。
+out_scene_map_exp.gd 的房间结算 payload 消费已拆到 RoomResolutionController.gd，章节揭示地块动画已拆到 ChapterRevealAnimationRunner.gd，切场前 payload 注入已拆到 OutScenePayloadBridge.gd；房间完成状态回写契约已评估，当前没有既有字段可直接复用，path_gone 是路径坍塌记录，active_room_context 和 pending_room_resolution 是临时桥接，tile_data 仍是房间类型映射；后续如实现必须新增独立完成状态字段和 Saver 持久化，不要同批改地图移动、镜头限制和场景切换 executor。timeline_ui.gd 已经拆出展开遮罩、背景网格、格子交互、顶部布局、网格预览、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何、行动方块视觉节点、整体形状视觉层、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知，并已完成 TimelineVisualConfig 首批纯视觉参数资源化；行动块生成暂不硬拆。custom_card.gd 的节点查找已拆到 CustomCardNodeBridge.gd，描述解析已拆到 CustomCardDescriptionParser.gd，时间轴形状解析已拆到 CustomCardTimelineShapeParser.gd，六边形效果范围解析已拆到 CustomCardEffectRangeParser.gd，选中状态下的倾斜和阴影跟随已拆到 CustomCardSelectedVisualPresenter.gd，hover shader 参数写入已拆到 CustomCardHoverShaderPresenter.gd，tooltip MainBoard 查找与显隐转发已拆到 CustomCardTooltipBridge.gd，地图条件效果刷新已拆到 CustomCardMapConditionalEffectBridge.gd，旧入口仍写回 active_keywords、timeline_shape_coords/size/key 和 effect_range_offsets，`_process(delta)` 仍先判断 is_selected 再转发视觉参数，`get_parsed_description()`、`_set_shader(active)`、`_request_tooltip(should_show)`、`_update_map_conditional_effects()` 与节点查找旧入口仍保留，`_get_player_hand_container()` 也只把当前 `card_container` 与兜底玩家手牌解析交给 NodeBridge；后续不要重复拆 description parser/node bridge/shape/effect_range/selected follow/hover shader/tooltip bridge/map conditional bridge，继续前先重新审查剩余函数，不要硬拆 _enter_state、toggle_selection、force_deselect、apply_stat_modifier、return_to_hand 或 play_card，也不要同批统一 EffectProcessor 或敌人意图解析。timecoin_ui.gd 的全局时间币查找已拆到 TimecoinGlobalBridge.gd，旧 `_get_timecoin_singleton()` 入口仍保留，后续不要重复拆 GlobalTimecoin 查找；如果继续 TimecoinUI，优先审查获得/消耗/不足动画 runner 或沙漏 shader controller，并保持数值来源和信号协议不变。DragShapeController.gd 的玩家 TimelineAction 创建已拆到 DragPlayerActionFactory.gd，时间轴提交已拆到 DragTimelineActionSubmitter.gd，成功卡牌视觉复原已拆到 DragSuccessCardVisualRestorer.gd，弃牌移动已拆到 DragSuccessDiscardMover.gd；成功后时间轴收起已确认只是现有 DragTimelineUiStateController 的单行调用，fallback 收尾牵动手牌、tooltip、时间轴和主状态，暂不继续拆。CraftReward.gd::_refresh_result_preview() 的结果预览挂载已经拆到 CraftResultPreviewPresenter.gd，预览卡尺寸/位置/tooltip 鼠标过滤已经拆到 CraftPreviewCardConfigurator.gd，_create_preview_card() 已复用 RewardDraftCardFactory 且剩余异步链不建议继续硬拆，_apply_crafting_result_to_deck() 已拆出索引计算和结果写入处理，CRAFTING_RECIPES 已资源化，剩余同步/关闭属于页面编排。ShopManager.gd 的商店定价已资源化为 ShopPricingConfig，时代权重已资源化为 ShopEraWeightConfig，隐藏临时牌堆创建已收口到 RewardTempPileFactory；_generate_shop_items() 的单个商品生成编排已经判断会传入 draft_card_factory、temp_pile、deck_manager、UI 注册和异步数据提取等过多状态，不建议硬拆。不要重复拆已经完成的节点桥接、tooltip、CardManager 查找、临时牌堆、DraftCard 数据写入、生成依赖检查、只读牌组来源、Craft 预览工厂复用、Craft 结果写入模块、Craft 配方资源、Shop 定价资源、Shop 时代权重资源、Shop 临时牌堆隐藏创建、Drag 玩家行动创建、Drag 时间轴提交、Drag 成功视觉复原、Drag 弃牌移动、TimelineUI 清理动画残影创建、TimelineUI 清理动画 tween 播放、TimelineUI 行动块 hover 状态通知、TimelineUI 行动容器几何 presenter、TimelineUI 行动方块视觉 presenter、TimelineUI 整体形状视觉 presenter、TimelineUI 视觉配置资源、CustomCard description parser、CustomCard node bridge、CustomCard 时间轴形状解析、CustomCard 效果范围解析、CustomCard 选中跟随视觉 presenter、CustomCard hover shader presenter、CustomCard tooltip bridge、CustomCard map conditional bridge、Timecoin GlobalTimecoin bridge、OutScene 房间结算 payload 控制器、OutScene 章节揭示动画 runner、OutScene payload bridge。
 ```

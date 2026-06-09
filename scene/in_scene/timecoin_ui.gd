@@ -3,6 +3,8 @@
 # 设计原则: 响应全局数据变更，提供丰富的视觉反馈，严格防动画冲突
 extends PanelContainer
 
+const TimecoinGlobalBridgeScript = preload("res://scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd")
+
 ## ==========================================
 ## 节点引用 (必须在场景中正确连接)
 ## ==========================================
@@ -60,10 +62,18 @@ var is_shaking: bool = false
 # 动画队列 (用于处理快速连续操作)
 var animation_queue: Array[Dictionary] = []
 
+var _timecoin_global_bridge = null
+
 
 ## ==========================================
 ## 生命周期方法
 ## ==========================================
+
+func _get_timecoin_global_bridge():
+	if _timecoin_global_bridge == null:
+		_timecoin_global_bridge = TimecoinGlobalBridgeScript.new()
+	return _timecoin_global_bridge
+
 
 # 验证节点引用是否有效
 func _validate_node_references() -> void:
@@ -158,45 +168,10 @@ func _refresh_display_from_global() -> void:
 
 # 尝试获取时间币单例的多种方式
 func _get_timecoin_singleton() -> Node:
-	# 方法1: 通过 Autoload 名称直接获取（如果已设置为Autoload）
-	if has_node("/root/GlobalTimecoin"):
-		return get_node("/root/GlobalTimecoin")
-	
-	# 方法2: 通过父节点查找（如果GlobalTimecoin是当前场景中的节点）
-	# 节点结构: GlobalTimecoin -> TimecoinCanvasLayer -> TimecoinContainer (本脚本)
-	var parent_node = get_parent()
-	if parent_node:
-		var grandparent = parent_node.get_parent()
-		if grandparent and grandparent.get_script() and "global_timecoin.gd" in grandparent.get_script().resource_path:
-			return grandparent
-	
-	# 方法3: 通过根节点查找所有匹配的脚本
-	var root = get_tree().root
-	for child in root.get_children():
-		if child.get_script() and "global_timecoin.gd" in child.get_script().resource_path:
-			return child
-	
-	# 方法4: 在当前场景树中递归查找
-	var scene_root = get_tree().current_scene
-	if scene_root:
-		var found = _find_node_with_script(scene_root, "global_timecoin.gd")
-		if found:
-			return found
-	
-	push_warning("[TimecoinUI] 无法找到 GlobalTimecoin 单例，请确保已添加到项目设置的 Autoload 中或场景中")
-	return null
-
-# 递归查找具有指定脚本的节点
-func _find_node_with_script(node: Node, script_path: String) -> Node:
-	if node.get_script() and script_path in node.get_script().resource_path:
-		return node
-	
-	for child in node.get_children():
-		var result = _find_node_with_script(child, script_path)
-		if result:
-			return result
-	
-	return null
+	var timecoin_singleton: Node = _get_timecoin_global_bridge().find_timecoin_singleton(self)
+	if timecoin_singleton == null:
+		push_warning("[TimecoinUI] 无法找到 GlobalTimecoin 单例，请确保已添加到项目设置的 Autoload 中或场景中")
+	return timecoin_singleton
 
 
 # 时间币更新信号处理
