@@ -5,10 +5,12 @@ extends Card  # 直接继承插件自带的 Card 类，白嫖它所有底层功�
 
 const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
 const CustomCardTimelineShapeParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd")
+const CustomCardEffectRangeParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
 var _timeline_shape_parser = null
+var _effect_range_parser = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -24,6 +26,12 @@ func _get_timeline_shape_parser():
 	if _timeline_shape_parser == null:
 		_timeline_shape_parser = CustomCardTimelineShapeParserScript.new()
 	return _timeline_shape_parser
+
+
+func _get_effect_range_parser():
+	if _effect_range_parser == null:
+		_effect_range_parser = CustomCardEffectRangeParserScript.new()
+	return _effect_range_parser
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -569,25 +577,8 @@ func apply_effect_immediate(target_hex: Area2D):
 ## ★ 解析六边形范围
 func _parse_hex_effect_range(range_data: Variant) -> void:
 	effect_range_offsets.clear()
-	
-	# 情况1：填的是一个整数（代表半径）。例如 1 代表自身+周围6格
-	if typeof(range_data) == TYPE_INT or typeof(range_data) == TYPE_FLOAT:
-		var radius = int(range_data)
-		for q in range(-radius, radius + 1):
-			for r in range(max(-radius, -q - radius), min(radius, -q + radius) + 1):
-				effect_range_offsets.append(Vector2i(q, r))
-				
-	# 情况2：填的是自定义坐标偏移数组，比如 ["0,0", "1,0", "0,1"]
-	elif typeof(range_data) == TYPE_ARRAY:
-		for item in range_data:
-			if typeof(item) == TYPE_STRING:
-				var parts = item.split(",")
-				if parts.size() == 2:
-					effect_range_offsets.append(Vector2i(int(parts[0]), int(parts[1])))
-					
-	# 兜底：如果解析失败，仅作用于自身
-	if effect_range_offsets.is_empty():
-		effect_range_offsets.append(Vector2i(0, 0))
+	for offset: Vector2i in _get_effect_range_parser().parse(range_data):
+		effect_range_offsets.append(offset)
 
 ## 获取以指定坐标为中心的绝对影响范围
 func get_absolute_effect_range(center_coord: Vector2i) -> Array[Vector2i]:

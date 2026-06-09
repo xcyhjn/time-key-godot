@@ -21,7 +21,7 @@ D:/godot/时之钥/时之钥
 
 ## 当前状态一览
 
-当前模块化工作已经完成多条主线。当前已拆脚本模块共 `151` 个，另有 `4` 个默认 Resource 文件；`docs/modularized-files-ultimate-operation-guide.md` 对这些脚本和资源路径的覆盖缺失数为 `0`。
+当前模块化工作已经完成多条主线。当前已拆脚本模块共 `152` 个，另有 `4` 个默认 Resource 文件；`docs/modularized-files-ultimate-operation-guide.md` 对这些脚本和资源路径的覆盖缺失数为 `0`。
 
 | 文件 | 当前状态 | 接下来怎么处理 |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ D:/godot/时之钥/时之钥
 | `scene/in_scene/DragShapeController.gd` | 约 1057 行，`drag_modules/` 下已有 20 个模块，节点桥接、拒绝提示、时间轴预览、放置校验、场景交互锁、放置动画、玩家行动创建、时间轴提交、成功卡牌视觉复原和弃牌移动等已拆。 | 本轮已评估成功后 UI/时间轴收起：现有 `collapse(timeline_ui)` 已是单行转发；fallback 收尾同时触碰手牌、tooltip、时间轴和主状态，当前建议停止 Drag 成功收尾拆分。 |
 | `scene/in_scene/timeline/timeline_ui.gd` | 约 807 行，`timeline/ui_modules/` 下已有 14 个模块，`timeline/resources/` 下已有 `TimelineVisualConfig` 与默认资源。已拆布局、背景网格、预览样式、TimelineManager 查找、敌方意图 overlay、放置动画、行动容器几何、行动方块视觉节点、整体形状视觉层、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知，并已完成首批纯视觉参数 Resource 化。 | 行动块生成仍耦合创建时机、intro 动画和信号连接；不要硬拆 `_on_action_placed()`。后续如继续时间轴，优先只做小的视觉调参补充或转向其他文件。 |
 | `scene/in_scene/rewards/*.gd` | 奖励页下已有 49 个拆分脚本模块和 3 个默认资源。Acquire/Remove 已接近页面编排；Shop 生成前依赖检查、商店定价 Resource、时代权重 Resource 和临时牌堆隐藏创建已收口，Craft 结果预览、预览卡 UI、预览 DraftCard 工厂复用、合成结果牌组写入和合成配方 Resource 已完成。 | Craft 预览创建链、确认写入链和 Shop 单商品生成都不建议继续硬拆；Shop 临时牌堆释放仍绑定异步生成循环，除非要统一多个奖励页生命周期，否则转向时间轴 UI 或局外地图。 |
-| `scene/card/custom_card.gd` | 约 597 行，`custom_card_modules/rules/` 下已有 `CustomCardTimelineShapeParser.gd`。时间轴形状解析已从卡牌节点中拆出，旧 `_normalize_and_parse_shape()` 仍写回 `timeline_shape_coords/size/key` 兼容拖拽读取。 | 后续只评估六边形效果范围解析或选中视觉小边界；不要同批改 `play_card()`、DragShapeController 或 tooltip 流程。 |
+| `scene/card/custom_card.gd` | 约 588 行，`custom_card_modules/rules/` 下已有 2 个模块：时间轴形状解析和六边形效果范围解析。旧 `_normalize_and_parse_shape()` 与 `_parse_hex_effect_range()` 仍写回原成员，兼容拖拽、AOE hover 和 HexTargetRules 读取。 | 后续只评估选中视觉小边界或 tooltip 查找桥接；不要同批改 `play_card()`、DragShapeController、EffectProcessor 或敌人意图解析。 |
 | `scene/out_scene/out_scene_map_exp.gd` | 约 798 行，已拆出 `RoomResolutionController.gd`、`ChapterRevealAnimationRunner.gd` 和 `OutScenePayloadBridge.gd`，分别处理房间结算、章节揭示动画和切场前 payload 注入。 | 房间完成状态回写缺少既有状态字段，继续前先设计数据契约；地图移动、镜头限制和切场景 executor 不要同批拆。 |
 
 不要继续优先拆 `addons/dialogic/` 或其他插件目录，除非明确是在改插件行为。插件大文件不计入当前项目解耦优先级。
@@ -254,7 +254,7 @@ git commit -m "<类型>: <本批清晰描述>"
 | 4 | `scene/in_scene/rewards/ShopManager.gd` | `_generate_shop_items()` 仍串联生成锁、时代读取、选卡、草稿卡创建、异步数据提取、临时牌堆释放和循环编排；生成依赖检查、商店定价、时代权重配置和隐藏临时牌堆创建都已拆出。 | 单个商品生成编排不建议硬拆；临时牌堆释放当前绑定异步循环，除非要统一多个奖励页生命周期，否则停止 Shop 生成链拆分。 |
 | 5 | `scene/in_scene/DragShapeController.gd` | 低风险查找、tooltip、预览、校验、交互锁、放置动画、玩家行动创建、时间轴提交、成功卡牌视觉复原和弃牌移动已拆，剩余主要是成功后 UI/时间轴收起与失败 fallback 收尾。 | `collapse(timeline_ui)` 已有状态控制器且只是单行转发；fallback 收尾牵动多状态，当前只保留为主脚本编排。 |
 | 6 | `scene/in_scene/tile.gd` | 地貌规则、状态组件、结算奖励、敌人意图、血量、贴图选择和 timeline shape 混在一个实体脚本里。 | 先拆纯解析或适配小边界，例如 timeline shape 解析，不动实体生命周期。 |
-| 7 | `scene/card/custom_card.gd` | 卡牌数据解析、选中视觉、tooltip、效果范围和出牌逻辑仍耦合；时间轴形状解析已拆到 `CustomCardTimelineShapeParser.gd`。 | 后续先评估效果范围解析或选中视觉，避免直接改出牌逻辑。 |
+| 7 | `scene/card/custom_card.gd` | 卡牌数据解析、选中视觉、tooltip 和出牌逻辑仍耦合；时间轴形状解析与六边形效果范围解析已拆到 `custom_card_modules/rules/`。 | 后续先评估选中视觉或 tooltip 查找桥接，避免直接改出牌逻辑。 |
 | 8 | `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | 引用查找、hover phase 判断、tooltip、关键词 tooltip、地图和时间轴表现耦合。 | 先拆引用查找或 tooltip presenter，不动地图/时间轴联动规则。 |
 | 9 | `scene/in_scene/timeline/TimelineManager.gd` | 时间轴规则核心较集中，但敌人意图候选、排序、落点选择还可拆。 | 等 `timeline_ui.gd` 剩余表现稳定后，再拆敌人意图落点选择服务。 |
 | 10 | `scene/in_scene/timecoin_ui.gd` | 全局 Timecoin 查找、数值显示、获得/消耗/警告动画、沙漏 shader 混在 UI 脚本里。 | 先拆全局查找和动画 runner，保持数值来源不变。 |
@@ -292,18 +292,21 @@ TimelineVisualConfig 这类纯视觉配置
 
 ```text
 scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd
+scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd
 ```
 
 该模块只把 `shape` 的字符串、字符串数组或已解析 `Vector2i` 数组转成时间轴坐标、尺寸和标准 key。`custom_card.gd::_normalize_and_parse_shape()` 仍保留旧入口并写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，因此 DragShapeController 的读取路径没有变化。
 
+`CustomCardEffectRangeParser.gd` 只把 `effect_range` 的数字半径或字符串坐标数组转成六边形相对偏移。`custom_card.gd::_parse_hex_effect_range()` 仍保留旧入口并写回 `effect_range_offsets`，因此 `get_absolute_effect_range()` 和 `HexTargetRules.get_effect_range_stacks()` 的读取路径没有变化。
+
 下一批如果继续 `custom_card.gd`，优先评估：
 
 ```text
-_parse_hex_effect_range()
-或选中状态下的倾斜/阴影视觉 presenter
+选中状态下的倾斜/阴影视觉 presenter
+或 MainBoard tooltip 查找桥接
 ```
 
-不要同批修改 `play_card()`、`_play_no_target_timeline_card()`、DragShapeController 交接、CardManager 选中状态和 MainBoard tooltip 请求。
+不要同批修改 `play_card()`、`_play_no_target_timeline_card()`、DragShapeController 交接、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
 
 ### 奖励脚本
 
@@ -407,10 +410,10 @@ scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd
 
 先分析目标文件，再列待拆清单，最后每批只拆 1 个清晰风险面，最多触碰 3 到 4 个风险点。不要直接改代码。
 
-当前已拆脚本模块共 151 个，另有 4 个默认 Resource 文件，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd、RemoveReward.gd 或 CraftReward.gd 的确认关闭链。下一阶段优先处理：
+当前已拆脚本模块共 152 个，另有 4 个默认 Resource 文件，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd、RemoveReward.gd 或 CraftReward.gd 的确认关闭链。下一阶段优先处理：
 1. scene/out_scene/out_scene_map_exp.gd 的房间完成状态实现前置设计：契约已评估，后续如实现必须新增独立状态字段，不复用 path_gone
 2. scene/in_scene/tile.gd 的 timeline shape 解析或纯适配边界
-3. scene/card/custom_card.gd 的效果范围解析或选中视觉边界
+3. scene/card/custom_card.gd 的选中视觉或 tooltip 查找桥接边界
 4. scene/in_scene/timecoin_ui.gd 的全局查找或动画 runner
 
 工作方式：
@@ -424,5 +427,5 @@ scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd
 - 清理临时日志。
 - 每批单独 commit。
 
-out_scene_map_exp.gd 的房间结算 payload 消费已拆到 RoomResolutionController.gd，章节揭示地块动画已拆到 ChapterRevealAnimationRunner.gd，切场前 payload 注入已拆到 OutScenePayloadBridge.gd；房间完成状态回写契约已评估，当前没有既有字段可直接复用，path_gone 是路径坍塌记录，active_room_context 和 pending_room_resolution 是临时桥接，tile_data 仍是房间类型映射；后续如实现必须新增独立完成状态字段和 Saver 持久化，不要同批改地图移动、镜头限制和场景切换 executor。timeline_ui.gd 已经拆出展开遮罩、背景网格、格子交互、顶部布局、网格预览、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何、行动方块视觉节点、整体形状视觉层、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知，并已完成 TimelineVisualConfig 首批纯视觉参数资源化；行动块生成暂不硬拆。custom_card.gd 的时间轴形状解析已拆到 CustomCardTimelineShapeParser.gd，旧入口仍写回 timeline_shape_coords/size/key；后续不要重复拆 shape 解析，优先评估效果范围解析或选中视觉。DragShapeController.gd 的玩家 TimelineAction 创建已拆到 DragPlayerActionFactory.gd，时间轴提交已拆到 DragTimelineActionSubmitter.gd，成功卡牌视觉复原已拆到 DragSuccessCardVisualRestorer.gd，弃牌移动已拆到 DragSuccessDiscardMover.gd；成功后时间轴收起已确认只是现有 DragTimelineUiStateController 的单行调用，fallback 收尾牵动手牌、tooltip、时间轴和主状态，暂不继续拆。CraftReward.gd::_refresh_result_preview() 的结果预览挂载已经拆到 CraftResultPreviewPresenter.gd，预览卡尺寸/位置/tooltip 鼠标过滤已经拆到 CraftPreviewCardConfigurator.gd，_create_preview_card() 已复用 RewardDraftCardFactory 且剩余异步链不建议继续硬拆，_apply_crafting_result_to_deck() 已拆出索引计算和结果写入处理，CRAFTING_RECIPES 已资源化，剩余同步/关闭属于页面编排。ShopManager.gd 的商店定价已资源化为 ShopPricingConfig，时代权重已资源化为 ShopEraWeightConfig，隐藏临时牌堆创建已收口到 RewardTempPileFactory；_generate_shop_items() 的单个商品生成编排已经判断会传入 draft_card_factory、temp_pile、deck_manager、UI 注册和异步数据提取等过多状态，不建议硬拆。不要重复拆已经完成的节点桥接、tooltip、CardManager 查找、临时牌堆、DraftCard 数据写入、生成依赖检查、只读牌组来源、Craft 预览工厂复用、Craft 结果写入模块、Craft 配方资源、Shop 定价资源、Shop 时代权重资源、Shop 临时牌堆隐藏创建、Drag 玩家行动创建、Drag 时间轴提交、Drag 成功视觉复原、Drag 弃牌移动、TimelineUI 清理动画残影创建、TimelineUI 清理动画 tween 播放、TimelineUI 行动块 hover 状态通知、TimelineUI 行动容器几何 presenter、TimelineUI 行动方块视觉 presenter、TimelineUI 整体形状视觉 presenter、TimelineUI 视觉配置资源、CustomCard 时间轴形状解析、OutScene 房间结算 payload 控制器、OutScene 章节揭示动画 runner、OutScene payload bridge。
+out_scene_map_exp.gd 的房间结算 payload 消费已拆到 RoomResolutionController.gd，章节揭示地块动画已拆到 ChapterRevealAnimationRunner.gd，切场前 payload 注入已拆到 OutScenePayloadBridge.gd；房间完成状态回写契约已评估，当前没有既有字段可直接复用，path_gone 是路径坍塌记录，active_room_context 和 pending_room_resolution 是临时桥接，tile_data 仍是房间类型映射；后续如实现必须新增独立完成状态字段和 Saver 持久化，不要同批改地图移动、镜头限制和场景切换 executor。timeline_ui.gd 已经拆出展开遮罩、背景网格、格子交互、顶部布局、网格预览、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何、行动方块视觉节点、整体形状视觉层、清理动画残影创建、残影 tween 播放和行动块 hover 状态通知，并已完成 TimelineVisualConfig 首批纯视觉参数资源化；行动块生成暂不硬拆。custom_card.gd 的时间轴形状解析已拆到 CustomCardTimelineShapeParser.gd，六边形效果范围解析已拆到 CustomCardEffectRangeParser.gd，旧入口仍写回 timeline_shape_coords/size/key 和 effect_range_offsets；后续不要重复拆 shape/effect_range 解析，优先评估选中视觉或 tooltip 查找桥接，不要同批统一 EffectProcessor 或敌人意图解析。DragShapeController.gd 的玩家 TimelineAction 创建已拆到 DragPlayerActionFactory.gd，时间轴提交已拆到 DragTimelineActionSubmitter.gd，成功卡牌视觉复原已拆到 DragSuccessCardVisualRestorer.gd，弃牌移动已拆到 DragSuccessDiscardMover.gd；成功后时间轴收起已确认只是现有 DragTimelineUiStateController 的单行调用，fallback 收尾牵动手牌、tooltip、时间轴和主状态，暂不继续拆。CraftReward.gd::_refresh_result_preview() 的结果预览挂载已经拆到 CraftResultPreviewPresenter.gd，预览卡尺寸/位置/tooltip 鼠标过滤已经拆到 CraftPreviewCardConfigurator.gd，_create_preview_card() 已复用 RewardDraftCardFactory 且剩余异步链不建议继续硬拆，_apply_crafting_result_to_deck() 已拆出索引计算和结果写入处理，CRAFTING_RECIPES 已资源化，剩余同步/关闭属于页面编排。ShopManager.gd 的商店定价已资源化为 ShopPricingConfig，时代权重已资源化为 ShopEraWeightConfig，隐藏临时牌堆创建已收口到 RewardTempPileFactory；_generate_shop_items() 的单个商品生成编排已经判断会传入 draft_card_factory、temp_pile、deck_manager、UI 注册和异步数据提取等过多状态，不建议硬拆。不要重复拆已经完成的节点桥接、tooltip、CardManager 查找、临时牌堆、DraftCard 数据写入、生成依赖检查、只读牌组来源、Craft 预览工厂复用、Craft 结果写入模块、Craft 配方资源、Shop 定价资源、Shop 时代权重资源、Shop 临时牌堆隐藏创建、Drag 玩家行动创建、Drag 时间轴提交、Drag 成功视觉复原、Drag 弃牌移动、TimelineUI 清理动画残影创建、TimelineUI 清理动画 tween 播放、TimelineUI 行动块 hover 状态通知、TimelineUI 行动容器几何 presenter、TimelineUI 行动方块视觉 presenter、TimelineUI 整体形状视觉 presenter、TimelineUI 视觉配置资源、CustomCard 时间轴形状解析、CustomCard 效果范围解析、OutScene 房间结算 payload 控制器、OutScene 章节揭示动画 runner、OutScene payload bridge。
 ```

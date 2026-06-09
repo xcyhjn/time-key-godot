@@ -13,6 +13,98 @@ docs/hex-map-ultimate-operation-guide.md
 docs/ai-handoff-ultimate-operation-guide.md
 ```
 
+## 2026-06-09 CustomCard 效果范围解析拆分
+
+### 读取与轮廓
+
+本批按接力规则先确认工作区干净，再读取固定文档。仓库内仍未发现 `AGENTS.md`，本批以当前对话中用户贴出的 AGENTS 约束为准。随后用 `rg` 输出了以下目标轮廓：
+
+```text
+scene/card/custom_card.gd
+scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd
+scene/in_scene/hex_map_modules/rules/HexTargetRules.gd
+scene/in_scene/effect/effect_processor.gd
+scene/in_scene/enermy/enemy_intent_resolver.gd
+```
+
+上一批已经把普通时间轴 `shape` 解析拆到 `CustomCardTimelineShapeParser.gd`。本批重新审查后，`custom_card.gd` 里最清晰的剩余规则边界是 `_parse_hex_effect_range()`，它只把 `card_info.effect_range` 解析为 `effect_range_offsets`，再由 `get_absolute_effect_range(center_coord)` 提供给地图 hover 规则读取。
+
+### 当前职责
+
+`custom_card.gd` 仍是卡牌节点的 composition root，负责适配插件 `Card` 父类状态、保存手牌原始状态、处理选中/取消选中、请求 tooltip、读取 `card_info`、把解析结果写回卡牌成员、把卡牌移交 DragShapeController，以及维护 selected 状态下的倾斜和阴影跟随视觉。
+
+### 耦合点
+
+```text
+_parse_hex_effect_range() 本身是纯解析，但结果被 get_absolute_effect_range() 和 HexTargetRules.get_effect_range_stacks() 读取，用于地图 AOE hover。
+EffectProcessor.gd 和 enemy_intent_resolver.gd 里也有相似 effect_range 解析逻辑，但分别服务运行时结算和敌人意图，本批不跨系统统一。
+play_card() 直接寻找 DragShapeController，失败时走 apply_effect_immediate()，仍不碰。
+toggle_selection() / force_deselect() 牵动 CardManager、手牌布局、tooltip 和地图条件效果，本批不碰。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `CustomCardEffectRangeParser.gd` | `_parse_hex_effect_range()` | 纯 Variant 到六边形偏移解析，不查场景树，不改目标规则 | 执行 |
+| 2 | 选中视觉 presenter | `_process()` 的倾斜和阴影跟随 | 纯表现可拆，但牵动 selected 状态 | 暂缓 |
+| 3 | Tooltip/MainBoard bridge | `_request_tooltip()` / `_get_main_board()` | 查找集中化可行，但影响 hover/选中体验 | 暂缓 |
+| 4 | 出牌交接 | `play_card()` | 牵动 DragShapeController 和 fallback 即时结算 | 不拆 |
+
+### 本批风险面
+
+本批只拆一个风险面：卡牌六边形效果范围解析。
+
+涉及的 3 个小风险点：
+
+```text
+新增 CustomCardEffectRangeParser.gd，只解析 effect_range 数据，不碰地图节点和效果执行。
+custom_card.gd 保留旧 _parse_hex_effect_range() 入口，只把解析委托出去并写回 effect_range_offsets。
+不修改 get_absolute_effect_range()、HexTargetRules、EffectProcessor、enemy_intent_resolver 或 play_card()。
+```
+
+不触碰：
+
+```text
+CardManager 选中状态、MainBoard tooltip、DragShapeController 交接。
+EffectProcessor 运行时结算范围解析。
+敌人意图 effect_range 解析。
+```
+
+### 实现结果
+
+```text
+scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd
+```
+
+职责：
+
+```text
+CustomCardEffectRangeParser 只负责解析卡牌六边形效果范围偏移。
+它不读取地图节点，不执行卡牌效果，也不决定目标是否合法或如何高亮。
+```
+
+`custom_card.gd` 新增解析器 preload 和 `_get_effect_range_parser()` 缓存 getter。旧 `_parse_hex_effect_range()` 继续写回 `effect_range_offsets`，保持 `get_absolute_effect_range()` 和 `HexTargetRules.get_effect_range_stacks()` 的读取路径不变。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 152 个脚本模块和 4 个默认 Resource 文件。
+CustomCard 现在有 2 个 custom_card_modules 规则脚本。
+custom_card.gd 从约 597 行降到约 588 行。
+下一批如果继续 custom_card.gd，优先评估选中状态视觉 presenter 或 tooltip 查找桥接；不要同批改 play_card()、CardManager 选中状态、MainBoard tooltip、EffectProcessor 和敌人意图解析。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 scene/card/custom_card.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍输出既有退出资源占用 warning。
+Godot 加载 res://scene/card/custom_card.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+覆盖率检查通过：156 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 152 个，默认 Resource 文件为 4 个。
+```
+
 ## 2026-06-09 CustomCard 时间轴形状解析拆分
 
 ### 读取与轮廓

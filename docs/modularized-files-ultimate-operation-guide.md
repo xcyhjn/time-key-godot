@@ -103,6 +103,13 @@ scene/out_scene/out_scene_modules/
 - 维护：不要读取场景树，不修改卡牌节点，不判断时间轴放置是否合法，也不要处理 clear 卡牌的特殊效果。
 - 改进：如果 `tile.gd` 后续也需要同一套矩阵标准化规则，可评估共用本解析器或抽到共享规则目录；先确保普通卡牌和建筑意图的 shape 语义一致。
 
+#### `scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd`
+
+- 用途：把卡牌 `effect_range` 数据解析为六边形相对坐标偏移，支持数字半径和字符串坐标数组。
+- 入口：`parse(range_data)`。
+- 维护：不要读取地图节点，不执行卡牌效果，不判断目标是否合法，也不要处理地图 AOE 高亮。
+- 改进：`EffectProcessor.gd` 和敌人意图解析里仍有相似的运行时范围解析；如果未来要统一，必须单独小批处理并同时验证玩家卡、结算命令和敌人意图。
+
 ### animation
 
 #### `scene/in_scene/drag_modules/animation/DragPlacementAnimationRunner.gd`
@@ -1252,11 +1259,13 @@ git diff --check
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
 
-### custom_card 已完成时间轴形状解析拆分
+### custom_card 已完成形状与效果范围解析拆分
 
 `custom_card.gd` 的时间轴 `shape` 解析已由 `CustomCardTimelineShapeParser.gd` 接管。旧 `_normalize_and_parse_shape()` 入口仍保留，并继续写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，避免影响 DragShapeController、时间轴预览和已有卡牌数据。
 
-后续如果继续处理 `custom_card.gd`，优先评估 `_parse_hex_effect_range()` 这种纯效果范围解析，或只拆选中状态下的倾斜/阴影视觉 presenter。不要同批修改 `play_card()`、clear 卡牌自动进入时间轴、CardManager 选中状态和 MainBoard tooltip 请求。
+卡牌六边形 `effect_range` 解析已由 `CustomCardEffectRangeParser.gd` 接管。旧 `_parse_hex_effect_range()` 入口仍保留，并继续写回 `effect_range_offsets`，避免影响 `get_absolute_effect_range()`、`HexTargetRules.get_effect_range_stacks()` 和地图 AOE hover。
+
+后续如果继续处理 `custom_card.gd`，优先评估选中状态下的倾斜/阴影视觉 presenter，或 MainBoard tooltip 查找桥接。不要同批修改 `play_card()`、clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
