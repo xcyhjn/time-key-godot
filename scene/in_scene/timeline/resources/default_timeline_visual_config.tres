@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="TimelineVisualConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scene/in_scene/timeline/resources/TimelineVisualConfig.gd" id="1_timeline_visual_config"]
+
+[resource]
+script = ExtResource("1_timeline_visual_config")
+grid_cell_default_color = Color(0.4, 0.4, 0.4, 0.6)
+grid_cell_hover_color = Color(0.5, 0.5, 0.5, 0.75)
+expanded_scale = Vector2(1.5, 1.5)
+anim_duration = 0.3
+enemy_intent_preview_scale = Vector2(1.08, 1.08)
+enemy_intent_removal_scale = Vector2(0.92, 0.92)
+enemy_intent_removal_duration = 0.28
+enemy_intent_preview_z_index = 50
+enemy_intent_pulse_speed = 3.0
+enemy_intent_pulse_min_alpha = 0.15
+enemy_intent_pulse_max_alpha = 0.75
+enemy_intent_stripe_color = Color(1, 0.85, 0.12, 1)
+enemy_intent_stripe_speed = 3.8
+enemy_intent_stripe_density = 12.0
+enemy_intent_stripe_width = 0.12
+enemy_intent_stripe_strength = 0.75
+action_removal_drop_distance = 14.0
+action_removal_fade_color = Color(0.28, 0.28, 0.28, 0)
+action_group_visual_enabled = true
+action_group_outline_width = 3.0
+action_group_outline_color = Color(0.03, 0.03, 0.03, 0.95)
+action_group_internal_seam_width = 1.0
+action_group_internal_seam_color = Color(1, 1, 1, 0.14)
+mask_color = Color(0.26657525, 0.26657513, 0.26657534, 0.6)
+mask_layer = 1

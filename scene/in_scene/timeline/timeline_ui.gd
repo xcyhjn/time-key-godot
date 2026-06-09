@@ -16,6 +16,9 @@ const TimelineActionRemovalGhostBuilderScript = preload("res://scene/in_scene/ti
 const TimelineActionRemovalAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd")
 const TimelineActionHoverStateControllerScript = preload("res://scene/in_scene/timeline/ui_modules/controllers/TimelineActionHoverStateController.gd")
 
+@export_group("视觉资源配置")
+@export var visual_config: Resource
+
 @export_group("Grid Settings")
 @export var slot_size: float = 40.0  # 格子大小，应与DragShapeController的slot_size一致
 @export var spacing: float = 2.0  # 格子间距，应与DragShapeController的spacing一致
@@ -210,6 +213,40 @@ func _get_action_hover_state_controller():
 	return _action_hover_state_controller
 
 
+func _get_visual_config_value(property_name: StringName, fallback_value: Variant) -> Variant:
+	if visual_config == null:
+		return fallback_value
+	var value: Variant = visual_config.get(property_name)
+	return fallback_value if value == null else value
+
+
+func _get_visual_color(property_name: StringName, fallback_value: Color) -> Color:
+	var value: Variant = _get_visual_config_value(property_name, fallback_value)
+	return value if value is Color else fallback_value
+
+
+func _get_visual_vector2(property_name: StringName, fallback_value: Vector2) -> Vector2:
+	var value: Variant = _get_visual_config_value(property_name, fallback_value)
+	return value if value is Vector2 else fallback_value
+
+
+func _get_visual_float(property_name: StringName, fallback_value: float) -> float:
+	return float(_get_visual_config_value(property_name, fallback_value))
+
+
+func _get_visual_int(property_name: StringName, fallback_value: int) -> int:
+	return int(_get_visual_config_value(property_name, fallback_value))
+
+
+func _get_visual_bool(property_name: StringName, fallback_value: bool) -> bool:
+	return bool(_get_visual_config_value(property_name, fallback_value))
+
+
+func _get_enemy_intent_timeline_shader() -> Shader:
+	var value: Variant = _get_visual_config_value(&"enemy_intent_timeline_shader", enemy_intent_timeline_shader)
+	return value if value is Shader else enemy_intent_timeline_shader
+
+
 ## 查找TimelineManager节点
 func _find_timeline_manager() -> TimelineManager:
 	return _get_timeline_manager_locator().find_timeline_manager(self)
@@ -279,7 +316,11 @@ func _ready():
 
 ## 创建背景遮罩（参考RewardManager的BackgroundMask）
 func _create_background_mask() -> void:
-	background_mask = _get_expand_visual_controller().create_background_mask(self, mask_color, mask_layer)
+	background_mask = _get_expand_visual_controller().create_background_mask(
+		self,
+		_get_visual_color(&"mask_color", mask_color),
+		_get_visual_int(&"mask_layer", mask_layer)
+	)
 
 
 
@@ -290,7 +331,7 @@ func _init_background_grid():
 		grid_height,
 		slot_size,
 		spacing,
-		grid_cell_default_color,
+		_get_visual_color(&"grid_cell_default_color", grid_cell_default_color),
 		_on_grid_cell_gui_input,
 		_on_grid_cell_mouse_entered,
 		_on_grid_cell_mouse_exited
@@ -356,7 +397,7 @@ func _on_action_placed(action: TimelineAction):
 	var action_shape_visual_presenter = _get_action_shape_visual_presenter()
 	var action_shape_visual_config := _build_action_shape_visual_config()
 	var local_shape_coords: Array[Vector2i] = action_shape_visual_presenter.get_local_shape_coords(action.shape_coords, min_x, min_y)
-	if action_group_visual_enabled:
+	if _get_visual_bool(&"action_group_visual_enabled", action_group_visual_enabled):
 		# 底板先于 Panel 加入，专门填补同一意图内部的 spacing 缝隙。
 		# 这样 "11"、"11,1" 等多格意图会先有一个连起来的整体色块。
 		action_shape_visual_presenter.add_action_shape_visual_from_config(
@@ -368,7 +409,10 @@ func _on_action_placed(action: TimelineAction):
 		)
 
 	var action_block_presenter = _get_action_block_presenter()
-	var block_style: StyleBoxFlat = action_block_presenter.create_action_block_style(action.color, action_group_visual_enabled)
+	var block_style: StyleBoxFlat = action_block_presenter.create_action_block_style(
+		action.color,
+		_get_visual_bool(&"action_group_visual_enabled", action_group_visual_enabled)
+	)
 
 	for offset in action.shape_coords:
 		var target_grid_pos = action.origin_grid_pos + offset
@@ -403,7 +447,7 @@ func _on_action_placed(action: TimelineAction):
 		if not use_action_intro:
 			_animate_block_placement(block, action.color)
 
-	if action_group_visual_enabled:
+	if _get_visual_bool(&"action_group_visual_enabled", action_group_visual_enabled):
 		# 外轮廓最后加入，确保它压在方格和敌人意图 pulse overlay 之上。
 		# 它只画整个形状外侧，内部相邻边仅保留很淡的 seam，归属关系会更清楚。
 		action_shape_visual_presenter.add_action_shape_visual_from_config(
@@ -454,7 +498,7 @@ func toggle_expand():
 		tw,
 		background_mask,
 		is_expanded,
-		anim_duration,
+		_get_visual_float(&"anim_duration", anim_duration),
 		func(): return not is_expanded
 	)
 	
@@ -465,8 +509,8 @@ func toggle_expand():
 		tw,
 		self,
 		is_expanded,
-		expanded_scale,
-		anim_duration,
+		_get_visual_vector2(&"expanded_scale", expanded_scale),
+		_get_visual_float(&"anim_duration", anim_duration),
 		func():
 			_apply_anchor_layout()
 	)
@@ -506,8 +550,8 @@ func show_enemy_intent_preview(action: TimelineAction, is_valid: bool, pulse_col
 
 	_get_enemy_intent_overlay_presenter().apply_preview_state(
 		container,
-		enemy_intent_preview_scale,
-		enemy_intent_preview_z_index,
+		_get_visual_vector2(&"enemy_intent_preview_scale", enemy_intent_preview_scale),
+		_get_visual_int(&"enemy_intent_preview_z_index", enemy_intent_preview_z_index),
 		pulse_color,
 		_build_enemy_intent_overlay_config()
 	)
@@ -580,10 +624,10 @@ func animate_action_removal(action: TimelineAction, reason: String = "") -> void
 	_get_action_removal_animator().animate_removal(
 		ghost,
 		func(): return create_tween(),
-		action_removal_fade_color,
-		action_removal_drop_distance,
-		enemy_intent_removal_scale,
-		enemy_intent_removal_duration
+		_get_visual_color(&"action_removal_fade_color", action_removal_fade_color),
+		_get_visual_float(&"action_removal_drop_distance", action_removal_drop_distance),
+		_get_visual_vector2(&"enemy_intent_removal_scale", enemy_intent_removal_scale),
+		_get_visual_float(&"enemy_intent_removal_duration", enemy_intent_removal_duration)
 	)
 
 
@@ -595,13 +639,13 @@ func _create_action_removal_ghost(source_container: Control, action_id: int, rea
 		source_container,
 		action_id,
 		reason,
-		enemy_intent_preview_z_index
+		_get_visual_int(&"enemy_intent_preview_z_index", enemy_intent_preview_z_index)
 	)
 
 
 func _create_enemy_intent_overlay_material() -> ShaderMaterial:
 	return _get_enemy_intent_overlay_presenter().create_overlay_material_from_config(
-		enemy_intent_timeline_shader,
+		_get_enemy_intent_timeline_shader(),
 		_build_enemy_intent_overlay_config()
 	)
 
@@ -617,14 +661,14 @@ func _configure_enemy_intent_timeline_material(material: Material) -> void:
 
 func _build_enemy_intent_overlay_config() -> Dictionary:
 	return _get_enemy_intent_overlay_presenter().build_config(
-		enemy_intent_pulse_speed,
-		enemy_intent_pulse_min_alpha,
-		enemy_intent_pulse_max_alpha,
-		enemy_intent_stripe_color,
-		enemy_intent_stripe_speed,
-		enemy_intent_stripe_density,
-		enemy_intent_stripe_width,
-		enemy_intent_stripe_strength
+		_get_visual_float(&"enemy_intent_pulse_speed", enemy_intent_pulse_speed),
+		_get_visual_float(&"enemy_intent_pulse_min_alpha", enemy_intent_pulse_min_alpha),
+		_get_visual_float(&"enemy_intent_pulse_max_alpha", enemy_intent_pulse_max_alpha),
+		_get_visual_color(&"enemy_intent_stripe_color", enemy_intent_stripe_color),
+		_get_visual_float(&"enemy_intent_stripe_speed", enemy_intent_stripe_speed),
+		_get_visual_float(&"enemy_intent_stripe_density", enemy_intent_stripe_density),
+		_get_visual_float(&"enemy_intent_stripe_width", enemy_intent_stripe_width),
+		_get_visual_float(&"enemy_intent_stripe_strength", enemy_intent_stripe_strength)
 	)
 
 
@@ -632,10 +676,10 @@ func _build_action_shape_visual_config() -> Dictionary:
 	return _get_action_shape_visual_presenter().build_config(
 		slot_size,
 		spacing,
-		action_group_outline_color,
-		action_group_outline_width,
-		action_group_internal_seam_color,
-		action_group_internal_seam_width
+		_get_visual_color(&"action_group_outline_color", action_group_outline_color),
+		_get_visual_float(&"action_group_outline_width", action_group_outline_width),
+		_get_visual_color(&"action_group_internal_seam_color", action_group_internal_seam_color),
+		_get_visual_float(&"action_group_internal_seam_width", action_group_internal_seam_width)
 	)
 
 
@@ -661,7 +705,11 @@ func _on_grid_cell_mouse_entered(cell_index: int) -> void:
 	var grid_pos = _get_grid_cell_interaction_presenter().get_grid_pos(cell_index, grid_width)
 
 	# 高亮显示这个网格单元
-	_get_grid_cell_interaction_presenter().apply_cell_color(grid_cells, grid_pos, grid_cell_hover_color)
+	_get_grid_cell_interaction_presenter().apply_cell_color(
+		grid_cells,
+		grid_pos,
+		_get_visual_color(&"grid_cell_hover_color", grid_cell_hover_color)
+	)
 
 	emit_signal("grid_cell_hovered", grid_pos, true)
 
@@ -670,7 +718,11 @@ func _on_grid_cell_mouse_exited(cell_index: int) -> void:
 	var grid_pos = _get_grid_cell_interaction_presenter().get_grid_pos(cell_index, grid_width)
 
 	# 恢复网格单元颜色
-	_get_grid_cell_interaction_presenter().apply_cell_color(grid_cells, grid_pos, grid_cell_default_color)
+	_get_grid_cell_interaction_presenter().apply_cell_color(
+		grid_cells,
+		grid_pos,
+		_get_visual_color(&"grid_cell_default_color", grid_cell_default_color)
+	)
 
 	emit_signal("grid_cell_hovered", grid_pos, false)
 
@@ -696,7 +748,7 @@ func collapse() -> void:
 		tw,
 		background_mask,
 		false,
-		anim_duration,
+		_get_visual_float(&"anim_duration", anim_duration),
 		func(): return not is_expanded
 	)
 	
@@ -705,8 +757,8 @@ func collapse() -> void:
 		tw,
 		self,
 		false,
-		expanded_scale,
-		anim_duration,
+		_get_visual_vector2(&"expanded_scale", expanded_scale),
+		_get_visual_float(&"anim_duration", anim_duration),
 		func():
 			_apply_anchor_layout()
 	)
@@ -722,14 +774,17 @@ func update_grid_preview(shape_coords: Array[Vector2i], origin_pos: Vector2i, is
 		is_valid,
 		grid_width,
 		grid_height,
-		grid_cell_default_color,
+		_get_visual_color(&"grid_cell_default_color", grid_cell_default_color),
 		func(): return create_tween()
 	)
 
 
 ## 清除所有网格预览效果
 func clear_grid_preview() -> void:
-	_get_grid_preview_presenter().clear_grid_preview(grid_cells, grid_cell_default_color)
+	_get_grid_preview_presenter().clear_grid_preview(
+		grid_cells,
+		_get_visual_color(&"grid_cell_default_color", grid_cell_default_color)
+	)
 
 
 ## 清除时间轴UI（用于回合结束）

@@ -13,6 +13,107 @@ docs/hex-map-ultimate-operation-guide.md
 docs/ai-handoff-ultimate-operation-guide.md
 ```
 
+## 2026-06-09 TimelineUI 视觉配置 Resource 化
+
+### 读取与轮廓
+
+本批按接力规则先确认工作区干净，再读取固定文档。仓库内仍未发现 `AGENTS.md`，本批以当前对话中用户贴出的 AGENTS 约束为准。随后用 `rg` 输出了以下目标轮廓：
+
+```text
+scene/in_scene/timeline/timeline_ui.gd
+scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd
+scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd
+scene/in_scene/timeline/ui_modules/animation/TimelineBlockPlacementAnimator.gd
+scene/in_scene/timeline/ui_modules/bridges/TimelineManagerLocator.gd
+scene/in_scene/timeline/ui_modules/controllers/TimelineActionHoverStateController.gd
+scene/in_scene/timeline/ui_modules/grid/TimelineGridBuilder.gd
+scene/in_scene/timeline/ui_modules/grid/TimelineGridCellInteractionPresenter.gd
+scene/in_scene/timeline/ui_modules/grid/TimelineGridPreviewPresenter.gd
+scene/in_scene/timeline/ui_modules/layout/TimelineExpandVisualController.gd
+scene/in_scene/timeline/ui_modules/layout/TimelineLayoutController.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionBlockPresenter.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionGeometryPresenter.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineActionShapeVisualPresenter.gd
+scene/in_scene/timeline/ui_modules/presenters/TimelineEnemyIntentOverlayPresenter.gd
+```
+
+同时检查 `scene/in_scene/in_scene.tscn`，确认当前场景只覆盖了 `TimelineUI.mask_color` 和 `mask_layer`。因此默认视觉资源必须写入这两个场景实际值，避免新资源覆盖旧视觉。
+
+### 当前职责
+
+`timeline_ui.gd` 仍是时间轴 UI 的 composition root，负责连接 `TimelineManager`，维护 `action_containers`、`hovered_action`、网格格子和敌方意图预览状态，决定行动容器何时创建、何时播放 intro、何时连接 hover 信号、何时触发移除动画和网格预览。
+
+### 耦合点
+
+```text
+_on_action_placed() 同时处理行动容器创建、几何、方块视觉、overlay、hover 信号和 intro 动画，本批不继续硬拆。
+slot_size、spacing、grid_width 和 grid_height 仍影响布局契约与 TimelineClearEffect / timeline_visualizer 等外部读取，本批不搬入 Resource。
+纯视觉参数集中在网格颜色、展开动画、敌方意图 overlay、移除动画、整体轮廓和遮罩表现上，适合首批资源化。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TimelineVisualConfig` | 网格颜色、展开表现、敌方意图 overlay、移除动画、整体轮廓、遮罩表现 | 纯视觉静态参数，保留旧导出兜底 | 执行 |
+| 2 | 行动块生成剩余编排 | `_on_action_placed()` | 牵动创建时机、intro 动画和 hover 信号 | 不拆 |
+| 3 | 时间轴布局尺寸契约 | `slot_size`、`spacing`、`grid_width`、`grid_height` | 外部仍会直接读取，搬迁风险较高 | 暂缓 |
+| 4 | TimelineManager 规则 | 敌方意图落点、排序、占用 | 数据规则核心 | 不碰 |
+
+### 本批风险面
+
+本批只拆一个风险面：TimelineUI 纯视觉静态参数 Resource 化。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TimelineVisualConfig.gd，只保存时间轴 UI 的纯视觉静态参数。
+新增 default_timeline_visual_config.tres，并把当前场景已有 mask_color / mask_layer 覆盖值写入默认资源。
+timeline_ui.gd 新增 visual_config 资源入口和少量 typed helper，优先读资源、保留旧导出字段兜底。
+```
+
+不触碰：
+
+```text
+TimelineManager 数据结构、敌人意图规则和行动块生成时机。
+_on_action_placed() 的 action_containers 字典、hover 信号连接和 intro 动画触发。
+slot_size、spacing、grid_width、grid_height 这类布局/外部契约字段。
+```
+
+### 实现结果
+
+```text
+scene/in_scene/timeline/resources/TimelineVisualConfig.gd
+scene/in_scene/timeline/resources/default_timeline_visual_config.tres
+```
+
+职责：
+
+```text
+TimelineVisualConfig 只保存时间轴 UI 的纯视觉静态参数。
+它不创建行动块，不读写 TimelineManager，也不决定拖拽放置或敌人意图规则。
+```
+
+`timeline_ui.gd` 新增 `visual_config` 导出资源和 `_get_visual_*()` helper。旧导出字段仍保留为兜底，避免未挂资源或资源缺字段时改变旧行为。`in_scene.tscn` 的 `TimelineUI` 节点挂上默认视觉资源。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 150 个脚本模块和 4 个默认 Resource 文件。
+TimelineUI 现在有 14 个 ui_modules 脚本和 1 个视觉配置 Resource 脚本。
+timeline_ui.gd 约 807 行；本批不是为了降行数，而是把静态视觉调参收口到资源。
+下一批不建议继续硬拆 TimelineUI 行动块生成；可转向 tile.gd 的 timeline shape 解析、custom_card.gd 的形状解析或 timecoin_ui.gd 的全局查找/动画 runner。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 scene/in_scene/timeline/timeline_ui.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+覆盖率检查通过：154 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 150 个，默认 Resource 文件为 4 个。
+```
+
 ## 2026-06-08 TimelineUI 行动块视觉 presenter 拆分
 
 ### 读取与轮廓

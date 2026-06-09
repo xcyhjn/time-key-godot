@@ -30,6 +30,7 @@
 [ext_resource type="PackedScene" uid="uid://bh6q6oqow5tay" path="res://scene/in_scene/victory/combat_victory_banner.tscn" id="28_8xrm8"]
 [ext_resource type="PackedScene" uid="uid://c0tpr22lesut" path="res://scene/shared/ui/combat_cartoon_ui.tscn" id="29_cartoon"]
 [ext_resource type="Script" uid="uid://twuko3r63ago" path="res://scene/in_scene/timeline/TimelineIntroAnimator.gd" id="30_timeline_intro"]
+[ext_resource type="Resource" path="res://scene/in_scene/timeline/resources/default_timeline_visual_config.tres" id="31_timeline_visual_config"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_djuk3"]
 shader = ExtResource("4_tpwa4")
@@ -215,6 +216,7 @@ offset_left = 271.0
 offset_right = 955.0
 offset_bottom = 211.0
 script = ExtResource("23_1wmus")
+visual_config = ExtResource("31_timeline_visual_config")
 mask_color = Color(0.26657525, 0.26657513, 0.26657534, 0.6)
 mask_layer = 1
 

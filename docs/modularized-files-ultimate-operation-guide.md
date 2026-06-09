@@ -27,6 +27,7 @@ scene/in_scene/timeline/ui_modules/controllers/
 scene/in_scene/timeline/ui_modules/grid/
 scene/in_scene/timeline/ui_modules/layout/
 scene/in_scene/timeline/ui_modules/presenters/
+scene/in_scene/timeline/resources/
 scene/in_scene/rewards/animation/
 scene/in_scene/rewards/bridges/
 scene/in_scene/rewards/diagnostics/
@@ -335,7 +336,7 @@ scene/out_scene/out_scene_modules/
 - 用途：创建和配置时间轴敌方意图 overlay 材质，批量切换 overlay 显隐，并应用/清理敌方意图预览的容器视觉状态。
 - 入口：`build_config(...)`、`create_overlay_material_from_config(...)`、`set_overlay_visible_from_config(...)`、`apply_preview_state(...)`、`clear_preview_state(...)`、`configure_material_from_config(...)`；旧的逐参数入口仍保留作兼容包装。
 - 维护：不要决定何时进入预览，不创建行动块，不修改 `TimelineManager` 数据，也不处理移除动画。
-- 改进：敌方意图 overlay 的 shader 参数后续可从当前字典迁入 `TimelineVisualConfig`。
+- 改进：敌方意图 overlay 的 shader 参数已由 `timeline_ui.gd` 从 `TimelineVisualConfig` 读取；后续只补纯表现字段，不要把预览时机迁入资源。
 
 #### `scene/in_scene/timeline/ui_modules/presenters/TimelineActionBlockPresenter.gd`
 
@@ -356,7 +357,21 @@ scene/out_scene/out_scene_modules/
 - 用途：创建时间轴行动整体形状视觉层，包括局部坐标归一化、BACKPLATE 和 OUTLINE 绘制节点挂载。
 - 入口：`build_config(...)`、`get_local_shape_coords(...)`、`add_action_shape_visual_from_config(...)`；旧的逐参数入口仍保留作兼容包装。
 - 维护：不要创建行动方块，不连接 hover，不创建敌方意图 overlay，也不要修改 `TimelineManager` 数据。
-- 改进：如果行动整体轮廓参数资源化，可让这里接收视觉配置，但仍不要接管 `_on_action_placed()` 的完整生成流程。
+- 改进：行动整体轮廓参数已由 `timeline_ui.gd` 从 `TimelineVisualConfig` 读取并传入；这里仍不要接管 `_on_action_placed()` 的完整生成流程。
+
+### resources
+
+#### `scene/in_scene/timeline/resources/TimelineVisualConfig.gd`
+
+- 用途：保存时间轴 UI 的纯视觉静态参数，包括网格颜色、展开动画、敌方意图 overlay、移除动画、行动整体轮廓和遮罩表现。
+- 维护：不要在这里创建行动块，不读取或修改 `TimelineManager`，不决定拖拽放置、敌人意图规则或 hover 通知。
+- 改进：如果未来新增时间轴表现参数，优先补这里；`slot_size`、`spacing`、`grid_width` 和 `grid_height` 仍涉及布局契约与外部调用，暂时保留在 `timeline_ui.gd`。
+
+#### `scene/in_scene/timeline/resources/default_timeline_visual_config.tres`
+
+- 用途：默认时间轴视觉配置数据资产，当前覆盖网格默认/悬停色、展开缩放、敌方意图 shader 参数、移除动画、整体轮廓和遮罩表现。
+- 维护：这是数据资产，不是运行态状态；调参时只改静态表现值，不写 action、Tween、hover 状态或场景节点。
+- 改进：如果不同 UI 主题需要不同时间轴风格，可以新增多份 `.tres`，由场景或上层流程选择资源。
 
 ## InScene 拆分模块
 
@@ -1221,7 +1236,7 @@ git diff --check
 
 ### timeline_ui 剩余表现边界优先级更高
 
-`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知。当前如果继续时间轴，应先评估统一的纯视觉配置 Resource，但不要同批修改 TimelineManager 数据结构、敌人意图规则和行动块生成。
+`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
