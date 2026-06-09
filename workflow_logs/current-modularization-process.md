@@ -13,6 +13,105 @@ docs/hex-map-ultimate-operation-guide.md
 docs/ai-handoff-ultimate-operation-guide.md
 ```
 
+## 2026-06-09 CustomCard 节点查找 bridge 拆分
+
+### 读取与轮廓
+
+本批继续处理 `custom_card.gd`，先确认工作区干净，再读取固定文档和 Godot 脚本/场景组织相关规则。仓库内仍未发现 `AGENTS.md` 文件，本批遵守当前对话中用户贴出的 AGENTS 约束。随后使用 `rg` 输出了目标文件和既有 CustomCard 模块轮廓：
+
+```text
+scene/card/custom_card.gd
+scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd
+scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd
+scene/card/custom_card_modules/presenters/CustomCardSelectedVisualPresenter.gd
+scene/card/custom_card_modules/presenters/CustomCardHoverShaderPresenter.gd
+scene/card/custom_card_modules/bridges/CustomCardTooltipBridge.gd
+scene/card/custom_card_modules/bridges/CustomCardMapConditionalEffectBridge.gd
+```
+
+上一批已经把地图条件效果刷新查找拆到 `CustomCardMapConditionalEffectBridge.gd`。本批重新审查后，`custom_card.gd` 里仍有一个清晰的低风险查找边界：`MainBoard`、`CardManager`、玩家手牌和 `DragShapeController` 的节点定位散在旧入口与 `play_card()` 中。
+
+### 当前职责
+
+`custom_card.gd` 仍是卡牌节点的 composition root，负责适配插件 `Card` 父类状态、保存手牌原始状态、处理选中/取消选中、请求 tooltip、读取 `card_info`、把解析结果写回卡牌成员、把卡牌移交 DragShapeController，以及编排 hover/holding 状态进入。
+
+### 耦合点
+
+```text
+_enter_state() 同时适配父类 DraggableState、tween、shader、tooltip 和按压状态，本批不拆。
+toggle_selection() / force_deselect() 牵动 CardManager、手牌布局、tooltip、地图条件效果和 clear 卡自动进入时间轴，本批不改变流程。
+return_to_hand() 和 _restore_hand_fan_layout() 牵动 Hand/Cards 节点重挂和扇形布局刷新，本批只把 Hand 查找转发出去。
+play_card() 负责取消选中、查找 DragShapeController、调用 start_dragging 或 fallback，即使抽查找也继续留在主脚本编排。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `CustomCardNodeBridge.gd` | `_get_main_board()`、`get_card_manager()`、`_find_player_hand()` 和 `play_card()` 中的拖拽控制器查找 | 只集中路径/群组查找，不改状态和调用顺序 | 执行 |
+| 2 | `_enter_state()` 视觉状态编排 | hover/holding/idle 分支 | 同时牵动父类状态、tween、shader、tooltip 和 is_pressed | 暂缓 |
+| 3 | 选中/取消选中流程 | `toggle_selection()` / `force_deselect()` | 牵动 CardManager、Hand、地图条件效果和 clear 卡 | 暂缓 |
+| 4 | 回手牌流程 | `return_to_hand()` / `_restore_hand_fan_layout()` | 牵动父节点重挂、Hand 布局和兜底 tween | 暂缓 |
+| 5 | 出牌交接 | `play_card()` / `_play_no_target_timeline_card()` | 牵动 DragShapeController 和 fallback 即时结算 | 不拆流程 |
+
+### 本批风险面
+
+本批只拆一个风险面：CustomCard 需要的跨节点查找。
+
+涉及的 4 个小风险点：
+
+```text
+新增 CustomCardNodeBridge.gd，只负责 MainBoard、CardManager、玩家手牌和 DragShapeController 查找。
+custom_card.gd 保留旧 _get_main_board()、get_card_manager() 和 _find_player_hand() 入口，只转发给 bridge。
+play_card(target_hex) 仍负责取消选中、调用 start_dragging 或 fallback，只把 DragShapeController 查找交给 bridge。
+不修改 toggle_selection()、force_deselect()、return_to_hand() 和 _enter_state() 的编排顺序。
+```
+
+不触碰：
+
+```text
+CardManager 选中规则。
+Hand 扇形布局刷新规则。
+clear 卡自动进入时间轴。
+DragShapeController.start_dragging() 调用协议。
+出牌 fallback 和即时结算。
+```
+
+### 实现结果
+
+```text
+scene/card/custom_card_modules/bridges/CustomCardNodeBridge.gd
+```
+
+职责：
+
+```text
+CustomCardNodeBridge 只负责 CustomCard 需要的跨节点查找。
+它不负责判断卡牌状态、不修改手牌或地图数据，也不处理选中、拖拽或出牌流程。
+```
+
+`custom_card.gd` 新增 bridge preload 和 `_get_node_bridge()` 缓存 getter。旧 `_get_main_board()`、`get_card_manager()`、`_find_player_hand()` 继续存在并转发给 bridge；`play_card(target_hex)` 仍保留出牌交接编排，只通过 bridge 查找 `DragShapeController`。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 157 个脚本模块和 4 个默认 Resource 文件。
+CustomCard 现在有 7 个 custom_card_modules 脚本：3 个 bridges、2 个 rules 模块和 2 个 presenters 模块。
+custom_card.gd 当前约 599 行；本批继续缩小跨节点查找职责边界，不追求压行数。
+下一批如果继续 custom_card.gd，先重新审查剩余函数；不要为了降行数硬拆 _enter_state()、toggle_selection()、force_deselect()、return_to_hand() 或 play_card()。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有既有换行风格提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/card/custom_card.tscn 退出码为 0，错误筛选未出现关键脚本错误。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误。
+覆盖率检查通过：161 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 157 个，默认 Resource 文件为 4 个。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-09 CustomCard 地图条件效果 bridge 拆分
 
 ### 读取与轮廓

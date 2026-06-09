@@ -10,6 +10,7 @@ const CustomCardSelectedVisualPresenterScript = preload("res://scene/card/custom
 const CustomCardHoverShaderPresenterScript = preload("res://scene/card/custom_card_modules/presenters/CustomCardHoverShaderPresenter.gd")
 const CustomCardTooltipBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardTooltipBridge.gd")
 const CustomCardMapConditionalEffectBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardMapConditionalEffectBridge.gd")
+const CustomCardNodeBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardNodeBridge.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
@@ -19,6 +20,7 @@ var _selected_visual_presenter = null
 var _hover_shader_presenter = null
 var _tooltip_bridge = null
 var _map_conditional_effect_bridge = null
+var _node_bridge = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -64,6 +66,12 @@ func _get_map_conditional_effect_bridge():
 	if _map_conditional_effect_bridge == null:
 		_map_conditional_effect_bridge = CustomCardMapConditionalEffectBridgeScript.new()
 	return _map_conditional_effect_bridge
+
+
+func _get_node_bridge():
+	if _node_bridge == null:
+		_node_bridge = CustomCardNodeBridgeScript.new(self)
+	return _node_bridge
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -194,21 +202,15 @@ func update_drag_position(new_position: Vector2) -> void:
 
 ## 统一获取主面板 (MainBoard) 的快捷方法
 func _get_main_board() -> Node:
-	return get_tree().get_first_node_in_group("MainBoard")
+	return _get_node_bridge().get_main_board()
 
 ## 动态获取 CardManager 的函数
 func get_card_manager() -> Node:
-	var main = _get_main_board()
-	if main and main.get("manager_instance"):
-		return main.manager_instance
-	return null
+	return _get_node_bridge().get_card_manager()
 
 ## 查找玩家手牌容器
 func _find_player_hand() -> Node:
-	var main = _get_main_board()
-	if main and main.get("player_hand"):
-		return main.player_hand
-	return null
+	return _get_node_bridge().find_player_hand()
 
 
 ## 获取玩家手牌容器。回手牌必须交给 Hand 重新布局，不能只依赖卡牌保存的旧坐标。
@@ -563,7 +565,7 @@ func play_card(target_hex: Area2D):
 		cm.deselect_card()
 
 	# 直接通过群组寻找 DragShapeController
-	var drag_controller = get_tree().get_first_node_in_group("DragShapeController")
+	var drag_controller = _get_node_bridge().find_drag_shape_controller()
 
 	if drag_controller and drag_controller.has_method("start_dragging"):
 		drag_controller.start_dragging(self, target_hex)
