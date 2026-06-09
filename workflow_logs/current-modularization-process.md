@@ -13,6 +13,100 @@ docs/hex-map-ultimate-operation-guide.md
 docs/ai-handoff-ultimate-operation-guide.md
 ```
 
+## 2026-06-09 CustomCard tooltip bridge 拆分
+
+### 读取与轮廓
+
+本批按接力规则先确认工作区干净，再读取固定文档。仓库内仍未发现 `AGENTS.md`，本批以当前对话中用户贴出的 AGENTS 约束为准。随后用 `rg` 输出了以下目标轮廓：
+
+```text
+scene/card/custom_card.gd
+scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd
+scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd
+scene/card/custom_card_modules/presenters/CustomCardSelectedVisualPresenter.gd
+scene/card/custom_card_modules/presenters/CustomCardHoverShaderPresenter.gd
+```
+
+上一批已经把 hover shader 参数写入拆到 `CustomCardHoverShaderPresenter.gd`。本批重新审查后，`custom_card.gd` 中最小的剩余低风险边界是 `_request_tooltip(should_show)` 里的 `MainBoard` 查找和 `show_tooltip` / `hide_tooltip` 转发。
+
+### 当前职责
+
+`custom_card.gd` 仍是卡牌节点的 composition root，负责适配插件 `Card` 父类状态、保存手牌原始状态、处理选中/取消选中、请求 tooltip、读取 `card_info`、把解析结果写回卡牌成员、把卡牌移交 DragShapeController，以及编排 hover/holding 状态进入。
+
+### 耦合点
+
+```text
+toggle_selection() / force_deselect() 牵动 CardManager、手牌布局、tooltip、地图条件效果和 clear 卡自动进入时间轴，本批不碰。
+_enter_state() 同时适配父类 DraggableState、tween、shader、tooltip 和按压状态，本批不整段拆。
+play_card() 直接寻找 DragShapeController，失败时走 apply_effect_immediate()，本批不碰。
+_request_tooltip() 被 hover、holding、数值变化和视觉重置调用；本批只移动 MainBoard 查找与转发，不改变触发时机。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `CustomCardTooltipBridge.gd` | `_request_tooltip()` 的 MainBoard 查找与显隐转发 | 只查找节点并调用现有 tooltip 方法，不改状态 | 执行 |
+| 2 | `_enter_state()` 视觉状态编排 | hover/holding/idle 分支 | 同时牵动父类状态、tween、shader、tooltip 和 is_pressed | 暂缓 |
+| 3 | 选中/取消选中流程 | `toggle_selection()` / `force_deselect()` | 牵动 CardManager、Hand、地图条件效果和 clear 卡 | 暂缓 |
+| 4 | 出牌交接 | `play_card()` | 牵动 DragShapeController 和 fallback 即时结算 | 不拆 |
+
+### 本批风险面
+
+本批只拆一个风险面：CustomCard tooltip 的 MainBoard 查找和显隐转发。
+
+涉及的 3 个小风险点：
+
+```text
+新增 CustomCardTooltipBridge.gd，只查找 MainBoard 并调用 show_tooltip(card) / hide_tooltip(card)。
+custom_card.gd 保留旧 _request_tooltip(should_show) 入口，只转发 self 和 should_show。
+不修改 _enter_state()、apply_stat_modifier()、force_reset_visuals() 和 _restore_normal_visuals() 中调用 _request_tooltip() 的时机。
+```
+
+不触碰：
+
+```text
+tooltip 内容生成。
+CardManager 选中状态。
+手牌布局恢复。
+DragShapeController 交接和出牌 fallback。
+```
+
+### 实现结果
+
+```text
+scene/card/custom_card_modules/bridges/CustomCardTooltipBridge.gd
+```
+
+职责：
+
+```text
+CustomCardTooltipBridge 只负责为 CustomCard 查找 MainBoard 并转发 tooltip 显隐请求。
+它不负责生成 tooltip 内容、不判断卡牌状态、不创建 tween，也不处理选中、拖拽或出牌流程。
+```
+
+`custom_card.gd` 新增 bridge preload 和 `_get_tooltip_bridge()` 缓存 getter。旧 `_request_tooltip(should_show)` 入口继续存在，并只把 `self` 与 `should_show` 转发给 bridge。hover、holding、数值变化和视觉重置中的调用顺序没有改变。
+
+### 当前优化进度与下一步
+
+```text
+已拆模块统计更新为 155 个脚本模块和 4 个默认 Resource 文件。
+CustomCard 现在有 5 个 custom_card_modules 脚本：1 个 bridge、2 个 rules 模块和 2 个 presenters 模块。
+custom_card.gd 当前约 597 行；本批继续缩小跨节点查找职责边界，不追求压行数。
+下一批如果继续 custom_card.gd，先重新审查剩余函数；不要为了降行数硬拆 _enter_state()、toggle_selection()、force_deselect() 或 play_card()。
+```
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 scene/card/custom_card.gd 和 workflow_logs/current-modularization-process.md 的既有换行提示。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/card/custom_card.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+覆盖率检查通过：159 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 155 个，默认 Resource 文件为 4 个。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-09 CustomCard hover shader presenter 拆分
 
 ### 读取与轮廓

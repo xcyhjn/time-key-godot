@@ -8,6 +8,7 @@ const CustomCardTimelineShapeParserScript = preload("res://scene/card/custom_car
 const CustomCardEffectRangeParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd")
 const CustomCardSelectedVisualPresenterScript = preload("res://scene/card/custom_card_modules/presenters/CustomCardSelectedVisualPresenter.gd")
 const CustomCardHoverShaderPresenterScript = preload("res://scene/card/custom_card_modules/presenters/CustomCardHoverShaderPresenter.gd")
+const CustomCardTooltipBridgeScript = preload("res://scene/card/custom_card_modules/bridges/CustomCardTooltipBridge.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
@@ -15,6 +16,7 @@ var _timeline_shape_parser = null
 var _effect_range_parser = null
 var _selected_visual_presenter = null
 var _hover_shader_presenter = null
+var _tooltip_bridge = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -48,6 +50,12 @@ func _get_hover_shader_presenter():
 	if _hover_shader_presenter == null:
 		_hover_shader_presenter = CustomCardHoverShaderPresenterScript.new()
 	return _hover_shader_presenter
+
+
+func _get_tooltip_bridge():
+	if _tooltip_bridge == null:
+		_tooltip_bridge = CustomCardTooltipBridgeScript.new()
+	return _tooltip_bridge
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -489,12 +497,7 @@ func _set_shader(active: bool) -> void:
 
 
 func _request_tooltip(should_show: bool) -> void:
-	var main = get_tree().get_first_node_in_group("MainBoard")
-	if main and main.has_method("show_tooltip"):
-		if should_show:
-			main.show_tooltip(self)
-		else:
-			main.hide_tooltip(self)  # ★ 加上 self
+	_get_tooltip_bridge().request_tooltip(self, should_show)
 
 
 # 兜底恢复接口

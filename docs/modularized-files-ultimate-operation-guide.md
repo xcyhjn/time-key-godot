@@ -35,6 +35,7 @@ scene/in_scene/rewards/factory/
 scene/in_scene/rewards/presenters/
 scene/in_scene/rewards/rules/
 scene/in_scene/rewards/resources/
+scene/card/custom_card_modules/bridges/
 scene/card/custom_card_modules/presenters/
 scene/card/custom_card_modules/rules/
 scene/out_scene/out_scene_modules/
@@ -94,6 +95,15 @@ scene/out_scene/out_scene_modules/
 ## CustomCard 拆分模块
 
 这些文件服务于 `scene/card/custom_card.gd`。`custom_card.gd` 仍是卡牌节点的 composition root，继续负责父类 Card 状态适配、选中/拖拽入口、tooltip 请求、出牌交接和卡牌数据写回；新增模块只接管纯规则或纯表现小边界。
+
+### bridges
+
+#### `scene/card/custom_card_modules/bridges/CustomCardTooltipBridge.gd`
+
+- 用途：为 CustomCard 查找 `MainBoard`，并把 tooltip 显示或隐藏请求转发给 `show_tooltip(card)` / `hide_tooltip(card)`。
+- 入口：`request_tooltip(card, should_show)`。
+- 维护：不要生成 tooltip 内容，不判断卡牌状态，不创建 tween，不处理选中、拖拽、出牌或数值刷新。
+- 改进：如果 DraftCard 与 CustomCard 后续统一 tooltip provider 查找策略，可以先在这里增加可注入 provider，但不要让 bridge 持有卡牌状态。
 
 ### rules
 
@@ -1276,7 +1286,7 @@ git diff --check
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
 
-### custom_card 已完成形状、效果范围、选中跟随和 hover shader 拆分
+### custom_card 已完成形状、效果范围、选中跟随、hover shader 和 tooltip 查找拆分
 
 `custom_card.gd` 的时间轴 `shape` 解析已由 `CustomCardTimelineShapeParser.gd` 接管。旧 `_normalize_and_parse_shape()` 入口仍保留，并继续写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，避免影响 DragShapeController、时间轴预览和已有卡牌数据。
 
@@ -1286,7 +1296,9 @@ git diff --check
 
 hover shader 参数写入已由 `CustomCardHoverShaderPresenter.gd` 接管。旧 `_set_shader(active)` 入口仍保留，并只把当前材质和正面贴图转发给 presenter；它不判断状态，也不处理 tooltip。
 
-后续如果继续处理 `custom_card.gd`，优先评估 MainBoard tooltip 查找桥接。不要同批修改 `play_card()`、clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
+tooltip 的 MainBoard 查找与显隐转发已由 `CustomCardTooltipBridge.gd` 接管。旧 `_request_tooltip(should_show)` 入口仍保留，hover、holding、数值变化和视觉重置里的调用顺序没有改变。
+
+后续如果继续处理 `custom_card.gd`，先重新审查剩余函数，不要为了降行数硬拆 `_enter_state()`、`toggle_selection()`、`force_deselect()` 或 `play_card()`。不要同批修改 clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
