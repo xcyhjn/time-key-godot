@@ -6,11 +6,13 @@ extends Card  # 直接继承插件自带的 Card 类，白嫖它所有底层功�
 const TimelineClearEffectUtil = preload("res://scene/in_scene/timeline/TimelineClearEffect.gd")
 const CustomCardTimelineShapeParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardTimelineShapeParser.gd")
 const CustomCardEffectRangeParserScript = preload("res://scene/card/custom_card_modules/rules/CustomCardEffectRangeParser.gd")
+const CustomCardSelectedVisualPresenterScript = preload("res://scene/card/custom_card_modules/presenters/CustomCardSelectedVisualPresenter.gd")
 
 # ================= 我们的视觉变量 =================
 var tween: Tween
 var _timeline_shape_parser = null
 var _effect_range_parser = null
+var _selected_visual_presenter = null
 
 
 func _object_has_property(target: Object, property_name: StringName) -> bool:
@@ -32,6 +34,12 @@ func _get_effect_range_parser():
 	if _effect_range_parser == null:
 		_effect_range_parser = CustomCardEffectRangeParserScript.new()
 	return _effect_range_parser
+
+
+func _get_selected_visual_presenter():
+	if _selected_visual_presenter == null:
+		_selected_visual_presenter = CustomCardSelectedVisualPresenterScript.new()
+	return _selected_visual_presenter
 
 # ================= 卡牌状态机 =================
 enum CustomCardState {
@@ -525,23 +533,16 @@ func _process(delta: float):
 	if not is_selected: 
 		return
 
-	# 获取鼠标相对于卡牌中心的局部坐标
-	var center = size / 2.0
-	var mouse_local = get_local_mouse_position() - center
-
-	# 将距离限制在一定范围内，防止鼠标离得太远导致卡牌翻转过度
-	var clamped_offset = mouse_local.clamp(Vector2(-200, -200), Vector2(200, 200))
-
-	# 根据鼠标位置计算目标旋转角度 (鼠标在右，牌向右倾斜)
-	var target_rot = clamped_offset.x * (tilt_intensity * 0.01)
-
-	# 丝滑插值过度
-	rotation = lerp(rotation, target_rot, delta * selected_tilt_follow_speed)
-
-	# 立体视差效果：阴影向鼠标反方向移动
-	if shadow:
-		var target_shadow_pos = selected_shadow_base_offset - (clamped_offset * selected_shadow_parallax_ratio)
-		shadow.position = lerp(shadow.position, target_shadow_pos, delta * selected_shadow_follow_speed)
+	_get_selected_visual_presenter().update_selected_follow_visual(
+		self,
+		shadow,
+		delta,
+		tilt_intensity,
+		selected_tilt_follow_speed,
+		selected_shadow_follow_speed,
+		selected_shadow_base_offset,
+		selected_shadow_parallax_ratio
+	)
 ## 重构：打出卡牌不再直接生效，而是移交时间轴排程
 func play_card(target_hex: Area2D):
 	is_selected = false

@@ -1,6 +1,6 @@
 # 已拆模块终极使用、操作、改进与维护说明
 
-日期：2026-06-07
+日期：2026-06-09
 
 ## 先读这一段
 
@@ -35,6 +35,7 @@ scene/in_scene/rewards/factory/
 scene/in_scene/rewards/presenters/
 scene/in_scene/rewards/rules/
 scene/in_scene/rewards/resources/
+scene/card/custom_card_modules/presenters/
 scene/card/custom_card_modules/rules/
 scene/out_scene/out_scene_modules/
 ```
@@ -109,6 +110,15 @@ scene/out_scene/out_scene_modules/
 - 入口：`parse(range_data)`。
 - 维护：不要读取地图节点，不执行卡牌效果，不判断目标是否合法，也不要处理地图 AOE 高亮。
 - 改进：`EffectProcessor.gd` 和敌人意图解析里仍有相似的运行时范围解析；如果未来要统一，必须单独小批处理并同时验证玩家卡、结算命令和敌人意图。
+
+### presenters
+
+#### `scene/card/custom_card_modules/presenters/CustomCardSelectedVisualPresenter.gd`
+
+- 用途：更新卡牌选中状态下的鼠标跟随倾斜和阴影视差位置。
+- 入口：`update_selected_follow_visual(...)`。
+- 维护：不要修改 `is_selected`，不要请求 tooltip，不处理出牌、拖拽、CardManager 选中状态或手牌布局。
+- 改进：如果未来选中进入/退出动画也要拆，必须另开小批处理，避免把状态切换和逐帧视觉跟随混到同一个 presenter。
 
 ### animation
 
@@ -1259,13 +1269,15 @@ git diff --check
 
 `timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
 
-### custom_card 已完成形状与效果范围解析拆分
+### custom_card 已完成形状、效果范围和选中跟随视觉拆分
 
 `custom_card.gd` 的时间轴 `shape` 解析已由 `CustomCardTimelineShapeParser.gd` 接管。旧 `_normalize_and_parse_shape()` 入口仍保留，并继续写回 `timeline_shape_coords`、`timeline_shape_size` 和 `timeline_shape_key`，避免影响 DragShapeController、时间轴预览和已有卡牌数据。
 
 卡牌六边形 `effect_range` 解析已由 `CustomCardEffectRangeParser.gd` 接管。旧 `_parse_hex_effect_range()` 入口仍保留，并继续写回 `effect_range_offsets`，避免影响 `get_absolute_effect_range()`、`HexTargetRules.get_effect_range_stacks()` 和地图 AOE hover。
 
-后续如果继续处理 `custom_card.gd`，优先评估选中状态下的倾斜/阴影视觉 presenter，或 MainBoard tooltip 查找桥接。不要同批修改 `play_card()`、clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
+选中状态下的倾斜和阴影跟随已由 `CustomCardSelectedVisualPresenter.gd` 接管。旧 `_process(delta)` 入口仍保留，并只在 `is_selected` 为真时转发视觉参数；它不改变选中状态，也不请求 tooltip。
+
+后续如果继续处理 `custom_card.gd`，优先评估 MainBoard tooltip 查找桥接或 hover shader 小边界。不要同批修改 `play_card()`、clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析。
 
 ### out_scene_map_exp 已完成结算与揭示动画首批拆分
 
