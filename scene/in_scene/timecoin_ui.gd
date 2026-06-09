@@ -4,6 +4,7 @@
 extends PanelContainer
 
 const TimecoinGlobalBridgeScript = preload("res://scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd")
+const TimecoinHourglassShaderControllerScript = preload("res://scene/in_scene/timecoin_ui_modules/presenters/TimecoinHourglassShaderController.gd")
 
 ## ==========================================
 ## 节点引用 (必须在场景中正确连接)
@@ -63,6 +64,7 @@ var is_shaking: bool = false
 var animation_queue: Array[Dictionary] = []
 
 var _timecoin_global_bridge = null
+var _hourglass_shader_controller = null
 
 
 ## ==========================================
@@ -73,6 +75,12 @@ func _get_timecoin_global_bridge():
 	if _timecoin_global_bridge == null:
 		_timecoin_global_bridge = TimecoinGlobalBridgeScript.new()
 	return _timecoin_global_bridge
+
+
+func _get_hourglass_shader_controller():
+	if _hourglass_shader_controller == null:
+		_hourglass_shader_controller = TimecoinHourglassShaderControllerScript.new()
+	return _hourglass_shader_controller
 
 
 # 验证节点引用是否有效
@@ -439,46 +447,23 @@ var hourglass_shader_material: ShaderMaterial = null
 
 # 初始化Shader材质
 func _initialize_shader_material() -> void:
-	if not hourglass_icon:
-		return
-	
-	# 检查是否已有材质
-	if hourglass_icon.material == null:
-		# 创建新的ShaderMaterial
-		var new_material = ShaderMaterial.new()
-		new_material.shader = preload("res://shaders/hourglass_shake.gdshader")
-		hourglass_icon.material = new_material
-		hourglass_shader_material = new_material
-		print("[TimecoinUI] 已为沙漏图标创建Shader材质")
-	elif hourglass_icon.material is ShaderMaterial:
-		hourglass_shader_material = hourglass_icon.material
-		print("[TimecoinUI] 已获取现有Shader材质")
-	else:
-		push_warning("[TimecoinUI] 沙漏图标已有材质，但不是ShaderMaterial")
+	hourglass_shader_material = _get_hourglass_shader_controller().initialize_material(hourglass_icon)
 
 # 开始沙漏震动效果
 func start_hourglass_shake(intensity: float = 0.8, frequency: float = 20.0) -> void:
 	if not hourglass_shader_material:
 		_initialize_shader_material()
 	
-	if hourglass_shader_material:
-		hourglass_shader_material.set_shader_parameter("shake_enabled", 1.0)
-		hourglass_shader_material.set_shader_parameter("shake_intensity", intensity)
-		hourglass_shader_material.set_shader_parameter("shake_frequency", frequency)
-		print("[TimecoinUI] 已启动沙漏震动效果")
+	_get_hourglass_shader_controller().start_shake(hourglass_shader_material, intensity, frequency)
 
 # 停止沙漏震动效果
 func stop_hourglass_shake() -> void:
-	if hourglass_shader_material:
-		hourglass_shader_material.set_shader_parameter("shake_enabled", 0.0)
-		print("[TimecoinUI] 已停止沙漏震动效果")
+	_get_hourglass_shader_controller().stop_shake(hourglass_shader_material)
 
 # 设置震动强度
 func set_shake_intensity(intensity: float) -> void:
-	if hourglass_shader_material:
-		hourglass_shader_material.set_shader_parameter("shake_intensity", intensity)
+	_get_hourglass_shader_controller().set_shake_intensity(hourglass_shader_material, intensity)
 
 # 设置震动频率
 func set_shake_frequency(frequency: float) -> void:
-	if hourglass_shader_material:
-		hourglass_shader_material.set_shader_parameter("shake_frequency", frequency)
+	_get_hourglass_shader_controller().set_shake_frequency(hourglass_shader_material, frequency)

@@ -39,6 +39,7 @@ scene/card/custom_card_modules/bridges/
 scene/card/custom_card_modules/presenters/
 scene/card/custom_card_modules/rules/
 scene/in_scene/timecoin_ui_modules/bridges/
+scene/in_scene/timecoin_ui_modules/presenters/
 scene/out_scene/out_scene_modules/
 ```
 
@@ -171,6 +172,15 @@ scene/out_scene/out_scene_modules/
 - 入口：`find_timecoin_singleton(owner)`、`find_node_with_script(node, script_path)`。
 - 维护：只改全局时间币节点查找策略，不连接信号，不读取或修改时间币数值，不刷新 UI，也不播放动画。
 - 改进：如果后续 `GlobalTimecoin` 查找策略要和 Shop 统一，可以评估抽公共全局节点查找器；不要让该 bridge 持有 TimecoinUI 动画状态。
+
+### presenters
+
+#### `scene/in_scene/timecoin_ui_modules/presenters/TimecoinHourglassShaderController.gd`
+
+- 用途：为时间币沙漏图标准备或复用 `ShaderMaterial`，并写入 `shake_enabled`、`shake_intensity`、`shake_frequency` 参数。
+- 入口：`initialize_material(hourglass_icon)`、`start_shake(material, intensity, frequency)`、`stop_shake(material)`、`set_shake_intensity(material, intensity)`、`set_shake_frequency(material, frequency)`。
+- 维护：只处理沙漏 shader 材质和参数，不连接时间币信号，不读取时间币数值，不刷新标签，也不播放获得、消耗或不足动画。
+- 改进：如果后续 shader 参数继续增多，优先扩展这里；不要把普通 tween 动画或 `active_tweens` 管理挪进这个 controller。
 
 ### animation
 
