@@ -78,9 +78,17 @@ TimelineManager.gd 继续拆分
 
 ## 当前 Git 与工作区状态
 
-最近提交：
+最新提交以 `git log --oneline -1` 为准。本批提交主题：
 
 ```text
+refactor: extract timeline enemy intent candidate collector
+```
+
+上一批最近提交：
+
+```text
+2edfdcf refactor: extract timeline enemy intent target resolver
+1b2a367 docs: add next ai modularization handoff
 d52ec9a refactor: extract timeline enemy intent priority selector
 8ea3b88 refactor: extract timeline intro playback controller
 3ea760c refactor: extract timeline visual config reader
@@ -106,9 +114,9 @@ shaders/game_over.gdshader
 当前模块统计：
 
 ```text
-脚本模块：174
+脚本模块：175
 默认 Resource 文件：4
-总覆盖对象：178
+总覆盖对象：179
 docs/modularized-files-ultimate-operation-guide.md 覆盖缺失：0
 ```
 
@@ -191,14 +199,17 @@ TimelineVisualConfig 纯视觉参数资源化
 
 不要硬拆 `_on_action_placed()`。它仍同时牵动行动容器、方格创建、overlay、hover 信号、intro 动画和整体形状视觉层。
 
-### TimelineManager 已拆出两个敌方意图规则边界
+### TimelineManager 已拆出三个敌方意图规则边界
 
 已新增：
 
 ```text
+scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentCandidateCollector.gd
 scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentPrioritySelector.gd
 scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentTargetResolver.gd
 ```
+
+`TimelineEnemyIntentCandidateCollector.gd` 只负责从敌人列表收集本回合可进入时间轴的意图候选，包含协议检查、意图开关、`can_generate_intent(hex_map)` 和 shape 缓存。旧 `_collect_enemy_intent_candidates()` 仍保留并转发。
 
 `TimelineEnemyIntentPrioritySelector.gd` 只负责敌方意图优先级读取、降序优先级列表、同级候选过滤和同级可放置候选选择。`TimelineManager.gd` 仍保留旧入口：
 
@@ -211,7 +222,7 @@ _pick_placeable_candidate()
 
 `TimelineEnemyIntentTargetResolver.gd` 只负责把敌方意图声明的目标中心坐标映射为 `HexMap.stack_nodes` 里的地块节点。旧 `_resolve_intent_target_tile()` 仍保留并转发。
 
-不要重复拆优先级 selector 或目标地块 resolver。
+不要重复拆候选收集 collector、优先级 selector 或目标地块 resolver。`generate_enemy_intents()` 仍是主编排入口；当前不建议为了降行数继续硬拆它。
 
 ### TimecoinUI 已完成首批拆分
 
@@ -310,58 +321,18 @@ tile_data 仍是坐标到房间类型的逻辑地图，不要混入完成状态�
 
 ## 当前最推荐的下一步
 
-### 首选：继续 TimelineManager，但只拆候选收集
-
-目标文件：
-
-```text
-scene/in_scene/timeline/TimelineManager.gd
-```
-
-先读：
-
-```text
-workflow_logs/maintenance_guides/timeline_manager.md
-```
-
-推荐方向：
-
-```text
-敌方意图候选收集
-```
-
-候选收集可考虑的边界：
-
-```text
-_collect_enemy_intent_candidates()
-敌人协议检查
-is_intent_preview_enabled()
-can_generate_intent(hex_map)
-get_intent_shape()
-shape 缓存
-```
-
-目标地块映射已拆到 `TimelineEnemyIntentTargetResolver.gd`，不要重复拆。
-
-禁止同批触碰：
-
-```text
-grid 数据结构
-is_placement_valid()
-place_action()
-find_random_available_spot()
-TimelineAction.action_data 契约
-TimelineUI 表现
-敌方意图 tooltip
-回合结算 resolve_timeline()
-```
-
-### 备选：EnemyIntentPresentationController 的 tooltip 表现
+### 首选：EnemyIntentPresentationController 的 tooltip 表现
 
 目标文件：
 
 ```text
 scene/in_scene/enermy/enemy_intent_presentation_controller.gd
+```
+
+先读：
+
+```text
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
 ```
 
 只做一个方向：
@@ -396,6 +367,30 @@ scene/out_scene/out_scene_map_exp.gd
 进房
 切场景 executor
 房间完成状态持久化
+```
+
+### 暂不建议继续硬拆 TimelineManager
+
+```text
+scene/in_scene/timeline/TimelineManager.gd
+```
+
+已拆：
+
+```text
+候选收集 collector
+优先级 selector
+目标地块 resolver
+```
+
+继续前先重新审查剩余函数，不要重复拆：
+
+```text
+_collect_enemy_intent_candidates()
+_get_enemy_intent_priority()
+_pick_placeable_candidate()
+_resolve_intent_target_tile()
+generate_enemy_intents()
 ```
 
 ## 当前不建议继续的方向
@@ -483,7 +478,7 @@ $missing | Sort-Object
 当前预期输出：
 
 ```text
-scripts=174 resources=4 total=178 missing=0
+scripts=175 resources=4 total=179 missing=0
 ```
 
 如果新增模块，同步更新统计和文档后，新的统计可以增加，但 `missing` 必须仍为 0。
@@ -532,8 +527,8 @@ Invalid access
 不要回滚、stage、格式化或提交这些文件，除非我明确要求。
 
 当前模块化进度：
-- 最新提交：d52ec9a refactor: extract timeline enemy intent priority selector
-- 当前已拆脚本模块 174 个，另有 4 个默认 Resource 文件。
+- 最新提交：本批提交为 `refactor: extract timeline enemy intent candidate collector`；哈希以 `git log --oneline -1` 为准。
+- 当前已拆脚本模块 175 个，另有 4 个默认 Resource 文件。
 - docs/modularized-files-ultimate-operation-guide.md 覆盖缺失应为 0。
 - docs/ 目录只保留总结性说明；中间过程写 workflow_logs/current-modularization-process.md。
 
@@ -551,20 +546,17 @@ Invalid access
 - 每批单独 commit。
 
 推荐下一步：
-优先继续 scene/in_scene/timeline/TimelineManager.gd，但只选一个规则面：
-1. 敌方意图候选收集。
+- enemy_intent_presentation_controller.gd：只评估状态关键词副 tooltip presenter 或主 tooltip 定位 helper。
+- out_scene_map_exp.gd：只评估镜头限制小模块，不同批碰地图移动和场景切换 executor。
 
-如果选择 TimelineManager：
+如果重新评估 TimelineManager：
 - 先读 workflow_logs/maintenance_guides/timeline_manager.md。
+- 不要重复拆 TimelineEnemyIntentCandidateCollector.gd。
 - 不要重复拆 TimelineEnemyIntentPrioritySelector.gd。
 - 不要重复拆 TimelineEnemyIntentTargetResolver.gd。
 - 不要同批修改 grid、is_placement_valid()、place_action()、find_random_available_spot()。
 - 不要同批改 TimelineAction.action_data、TimelineUI 表现、敌方意图 tooltip 或 resolve_timeline()。
-- generate_enemy_intents() 仍作为组合候选、目标、action 创建和最终放置的主编排入口。
-
-备选方向：
-- enemy_intent_presentation_controller.gd：只评估状态关键词副 tooltip presenter 或主 tooltip 定位 helper。
-- out_scene_map_exp.gd：只评估镜头限制小模块，不同批碰地图移动和场景切换 executor。
+- generate_enemy_intents() 仍作为组合候选、目标、action 创建和最终放置的主编排入口，当前不建议为了降行数硬拆。
 
 不要继续硬拆：
 - timeline_ui.gd 的 _on_action_placed()
@@ -578,5 +570,5 @@ Invalid access
 - Godot headless 项目检查
 - 若改局内模块，加载 res://scene/in_scene/in_scene.tscn
 - 若改局外模块，加载 res://scene/out_scene/Out_Scene.tscn
-- 模块覆盖检查应输出 scripts=174 resources=4 total=178 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
+- 模块覆盖检查应输出 scripts=175 resources=4 total=179 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
 ```

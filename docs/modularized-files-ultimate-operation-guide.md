@@ -588,6 +588,13 @@ scene/out_scene/out_scene_modules/
 
 ### rules
 
+#### `scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentCandidateCollector.gd`
+
+- 用途：从敌人列表收集本回合可进入时间轴的意图候选，负责协议检查、意图开关、当前目标有效性和 shape 缓存。
+- 入口：`collect_candidates(enemies_on_board, hex_map, get_priority)`。
+- 维护：不要在这里排序候选，不寻找时间轴放置位置，不创建 `TimelineAction`，不修改 `grid`，也不要决定目标地块。
+- 改进：如果后续敌人意图生成协议增加字段，优先在这里集中补候选字典字段；优先级读取仍通过外部传入的 Callable 保持和 selector 解耦。
+
 #### `scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentPrioritySelector.gd`
 
 - 用途：读取敌方意图优先级，返回降序优先级列表，过滤同级候选，并在同级候选里挑出当前可放置的 candidate/spot。

@@ -3,6 +3,7 @@ extends Node
 
 const TimelineEnemyIntentPrioritySelectorScript = preload("res://scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentPrioritySelector.gd")
 const TimelineEnemyIntentTargetResolverScript = preload("res://scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentTargetResolver.gd")
+const TimelineEnemyIntentCandidateCollectorScript = preload("res://scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentCandidateCollector.gd")
 
 # 时间轴网格使用0-based索引系统（与GDScript数组索引一致）
 # X轴：时间轴位置，有效索引 0-11（共12个位置）
@@ -16,6 +17,7 @@ const GRID_HEIGHT: int = 3
 var grid: Dictionary = { }
 var _enemy_intent_priority_selector = null
 var _enemy_intent_target_resolver = null
+var _enemy_intent_candidate_collector = null
 @export var max_enemy_intents_per_turn: int = 5  # 每回合最多允许多少个敌人排入时间轴
 @export_group("敌人意图优先级")
 ## 没有声明 intent_priority / get_intent_priority() 的敌人使用这个默认优先级。
@@ -46,6 +48,12 @@ func _get_enemy_intent_target_resolver():
 	if _enemy_intent_target_resolver == null:
 		_enemy_intent_target_resolver = TimelineEnemyIntentTargetResolverScript.new()
 	return _enemy_intent_target_resolver
+
+
+func _get_enemy_intent_candidate_collector():
+	if _enemy_intent_candidate_collector == null:
+		_enemy_intent_candidate_collector = TimelineEnemyIntentCandidateCollectorScript.new()
+	return _enemy_intent_candidate_collector
 
 
 # ==========================================
@@ -316,34 +324,11 @@ func _get_current_hex_map() -> battle:
 ## 收集所有“本回合可以进入时间轴生成”的敌方意图候选。
 ## 这里只做协议检查、目标有效性检查和形状缓存，不直接写入时间轴。
 func _collect_enemy_intent_candidates(enemies_on_board: Array, hex_map: battle) -> Array[Dictionary]:
-	var candidates: Array[Dictionary] = []
-
-	for enemy in enemies_on_board:
-		if not is_instance_valid(enemy):
-			continue
-		if not enemy.has_method("get_intent_shape") or not enemy.has_method("get_intent_action"):
-			continue
-
-		# 只有显式启用“敌人意图展示系统”的单位，才参与新意图链路。
-		if enemy.has_method("is_intent_preview_enabled") and not enemy.is_intent_preview_enabled():
-			continue
-
-		# 时间轴生成只接收当前回合有合法目标的意图。
-		# 地图 hover 的灰态提示仍由 EnemyIntentPresentationController 处理。
-		if is_instance_valid(hex_map) and enemy.has_method("can_generate_intent") and not enemy.can_generate_intent(hex_map):
-			continue
-
-		var shape: Array[Vector2i] = enemy.get_intent_shape()
-		if shape.is_empty():
-			continue
-
-		candidates.append({
-			"enemy": enemy,
-			"shape": shape,
-			"priority": _get_enemy_intent_priority(enemy)
-		})
-
-	return candidates
+	return _get_enemy_intent_candidate_collector().collect_candidates(
+		enemies_on_board,
+		hex_map,
+		Callable(self, "_get_enemy_intent_priority")
+	)
 
 
 ## 读取敌人优先级。
