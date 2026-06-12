@@ -11,17 +11,19 @@
 已拆模块位于 `scene/in_scene/timeline/manager_modules/`：
 
 - `rules/TimelineEnemyIntentPrioritySelector.gd`：敌方意图优先级读取、优先级降序列表、同级候选过滤和同级可放置候选选择。
+- `rules/TimelineEnemyIntentTargetResolver.gd`：把敌方意图声明的目标中心坐标映射为 `HexMap.stack_nodes` 里的地块节点。
 
 ## 不要继续硬拆
 
 - 不要重复拆优先级读取、优先级排序、同级过滤或同级可放置选择。
+- 不要重复拆敌方意图目标中心坐标到 `HexMap.stack_nodes` 地块节点的映射。
 - 不要同批修改 `grid` 数据结构、`is_placement_valid()`、`place_action()` 和 `find_random_available_spot()`。
-- 不要同批改 `TimelineAction.action_data` 契约、敌方意图目标地块映射和 UI 表现。
+- 不要同批改 `TimelineAction.action_data` 契约和 UI 表现。
 - 不要把 `generate_enemy_intents()` 整体搬进模块；它仍负责组合候选、目标、action 创建和最终放置。
 
 ## 后续可做
 
-后续如果继续 `TimelineManager.gd`，优先单独评估敌方意图候选收集或目标地块映射。候选收集会触碰敌人协议、`can_generate_intent()` 和 shape 缓存；目标地块映射会触碰 `HexMap.stack_nodes` 契约，两者不要同批处理。
+后续如果继续 `TimelineManager.gd`，优先单独评估敌方意图候选收集。候选收集会触碰敌人协议、`can_generate_intent()` 和 shape 缓存；目标地块映射已拆到 `TimelineEnemyIntentTargetResolver.gd`，不要重复拆。
 
 ## 验证入口
 

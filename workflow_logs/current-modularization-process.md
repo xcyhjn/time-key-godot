@@ -2,6 +2,120 @@
 
 日期：2026-06-05
 
+## 2026-06-13 TimelineManager 敌方意图目标地块映射拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/timeline/TimelineManager.gd`。开工前确认仓库中没有实体 `AGENTS.md`，继续使用当前对话中用户贴出的 AGENTS 约束。已读取：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+workflow_logs/next-ai-handoff-current-status.md
+workflow_logs/maintenance_guides/timeline_manager.md
+```
+
+已按要求先读取 `godot-prompter:gdscript-patterns`；写 Markdown 前已读取 `docs-write`，它引用的共享 style guide 在本机缺失，因此本批文档继续按中文自然语言和当前项目文档风格维护。
+
+已用 `rg` 输出 `TimelineManager.gd` 的 `class_name`、`extends`、`signal`、`@export`、`const`、`var`、`func` 轮廓，并搜索敌方意图生成、候选收集、目标坐标、`can_generate_intent()`、`get_intent_shape()` 和 `HexMap.stack_nodes` 的相关调用。
+
+### 当前职责
+
+`TimelineManager.gd` 仍是时间轴规则核心，负责 `grid` 占用、放置校验、行动放置、回合结算、敌方意图生成编排、敌方意图重判、中途移除行动，以及 hover 信号转发。`generate_enemy_intents()` 继续作为组合候选、优先级、目标地块、`TimelineAction` 创建和最终放置的主编排入口。
+
+### 耦合点
+
+```text
+_collect_enemy_intent_candidates() 牵动敌人协议、is_intent_preview_enabled()、can_generate_intent()、shape 缓存和优先级读取。
+_resolve_intent_target_tile() 只牵动 enemy.get_intent_target_center_coord(hex_map) 与 hex_map.stack_nodes 读取。
+_apply_intent_priority_to_action() 会写 TimelineAction.action_data，本批不碰。
+generate_enemy_intents() 仍串起候选、优先级、目标、action 创建和 place_action()，本批不整体搬移。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 敌方意图目标地块映射 rules | `_resolve_intent_target_tile()` | 输入输出很小，只读 enemy 与 `HexMap.stack_nodes`，不改 grid/action/UI | 执行 |
+| 2 | 敌方意图候选收集 rules | `_collect_enemy_intent_candidates()` | 牵动协议检查、有效性检查、shape 缓存和优先级读取 | 暂缓 |
+| 3 | action priority 写入 | `_apply_intent_priority_to_action()` | 会碰 `TimelineAction.action_data` 契约 | 暂缓 |
+| 4 | 重判与中途移除 | `revalidate_enemy_intents()`、`remove_action_with_fade()` | 牵动 UI 移除动画和 hover 清理 | 不碰 |
+
+### 本批风险面
+
+本批只处理一个风险面：敌方意图目标中心坐标到地图地块节点的映射。
+
+涉及的小风险点：
+
+```text
+新增 TimelineEnemyIntentTargetResolver.gd，集中读取 enemy.get_intent_target_center_coord(hex_map) 和 hex_map.stack_nodes。
+TimelineManager.gd 保留旧 _resolve_intent_target_tile() 入口并转发。
+同步维护说明、模块总表和接力当前态，避免下一批重复拆目标映射。
+```
+
+不触碰：
+
+```text
+grid 数据结构、is_placement_valid()、place_action() 和 find_random_available_spot()。
+_collect_enemy_intent_candidates() 候选收集。
+TimelineAction.action_data 与 intent_priority 写入。
+TimelineUI 表现、敌方意图 tooltip 和 resolve_timeline()。
+HexMap.stack_nodes 写入、删除或数据契约本身。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentTargetResolver.gd
+```
+
+职责：
+
+```text
+TimelineEnemyIntentTargetResolver 负责把敌方意图声明的目标中心坐标映射为 HexMap.stack_nodes 里的地块节点。
+它不选择目标，不创建 TimelineAction，不修改 HexMap.stack_nodes，也不处理地图或时间轴表现。
+```
+
+`TimelineManager.gd` 新增 resolver preload、缓存 getter 和旧入口转发。`_resolve_intent_target_tile()` 仍作为旧私有入口保留，`generate_enemy_intents()` 的调用顺序和 action 创建、优先级写入、最终放置逻辑保持不变。
+
+同步更新：
+
+```text
+docs/modularized-files-ultimate-operation-guide.md
+docs/ai-handoff-ultimate-operation-guide.md
+workflow_logs/maintenance_guides/timeline_manager.md
+workflow_logs/next-ai-handoff-current-status.md
+```
+
+### 当前优化进度与下一步
+
+当前已拆脚本模块更新为 174 个，默认 Resource 文件仍为 4 个。`TimelineManager.gd` 已拆出 2 个规则模块：
+
+```text
+TimelineEnemyIntentPrioritySelector.gd
+TimelineEnemyIntentTargetResolver.gd
+```
+
+下一批如果继续 `TimelineManager.gd`，只建议单独评估敌方意图候选收集。不要重复拆优先级 selector 或目标地块 resolver，不要同批改 `grid`、`place_action()`、`TimelineAction.action_data` 或 UI 表现。
+
+### 回归检查
+
+`git diff --check` 通过；仅提示 `scene/in_scene/timeline/TimelineManager.gd` 与 `workflow_logs/current-modularization-process.md` 会被 Git 归一化换行。
+
+Godot headless 项目检查通过，退出码为 0；错误筛选未出现 `SCRIPT ERROR`、`Parse Error`、`Compile Error`、`Failed to load script`、`Compilation failed`、`Invalid call` 或 `Invalid access`。
+
+加载 `res://scene/in_scene/in_scene.tscn` 通过，退出码为 0；错误筛选未出现 `SCRIPT ERROR`、`Parse Error`、`Compile Error`、`Failed to load script`、`Compilation failed`、`Invalid call` 或 `Invalid access`。
+
+模块覆盖检查通过：
+
+```text
+scripts=174 resources=4 total=178 missing=0
+```
+
 ## 2026-06-13 下一位 AI 接力文档整理
 
 ### 读取与轮廓

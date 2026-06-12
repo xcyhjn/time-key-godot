@@ -595,6 +595,13 @@ scene/out_scene/out_scene_modules/
 - 维护：不要读取或修改 `TimelineManager.grid`，不要创建 `TimelineAction`，不要调用 `place_action()`，也不要决定敌人意图目标地块。
 - 改进：如果后续要调整“同优先级内随机/顺序”的策略，优先扩展这里；可放置判定仍通过外部传入的寻位 Callable 完成。
 
+#### `scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentTargetResolver.gd`
+
+- 用途：把敌方意图声明的目标中心坐标映射为 `HexMap.stack_nodes` 里的地块节点。
+- 入口：`resolve_target_tile(enemy, hex_map)`。
+- 维护：不要在这里选择目标，不要创建 `TimelineAction`，不要修改 `HexMap.stack_nodes`，也不要处理地图或时间轴表现。
+- 改进：如果后续 `HexMap.stack_nodes` 契约变化，优先在这里集中适配目标坐标到地块节点的读取方式。
+
 ## InScene 拆分模块
 
 这些文件服务于 `scene/in_scene/in_scene.gd`。`in_scene.gd` 仍是局内场景 composition root，模块不要反向接管整个局内生命周期。

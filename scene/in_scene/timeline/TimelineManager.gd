@@ -2,6 +2,7 @@ class_name TimelineManager
 extends Node
 
 const TimelineEnemyIntentPrioritySelectorScript = preload("res://scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentPrioritySelector.gd")
+const TimelineEnemyIntentTargetResolverScript = preload("res://scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentTargetResolver.gd")
 
 # 时间轴网格使用0-based索引系统（与GDScript数组索引一致）
 # X轴：时间轴位置，有效索引 0-11（共12个位置）
@@ -14,6 +15,7 @@ const GRID_HEIGHT: int = 3
 # 使用字典而不是二维数组，查找和删除更加灵活高效
 var grid: Dictionary = { }
 var _enemy_intent_priority_selector = null
+var _enemy_intent_target_resolver = null
 @export var max_enemy_intents_per_turn: int = 5  # 每回合最多允许多少个敌人排入时间轴
 @export_group("敌人意图优先级")
 ## 没有声明 intent_priority / get_intent_priority() 的敌人使用这个默认优先级。
@@ -38,6 +40,12 @@ func _get_enemy_intent_priority_selector():
 	if _enemy_intent_priority_selector == null:
 		_enemy_intent_priority_selector = TimelineEnemyIntentPrioritySelectorScript.new()
 	return _enemy_intent_priority_selector
+
+
+func _get_enemy_intent_target_resolver():
+	if _enemy_intent_target_resolver == null:
+		_enemy_intent_target_resolver = TimelineEnemyIntentTargetResolverScript.new()
+	return _enemy_intent_target_resolver
 
 
 # ==========================================
@@ -365,15 +373,7 @@ func _pick_placeable_candidate(candidates: Array[Dictionary]) -> Dictionary:
 
 ## 将地图上的“目标中心格”映射成 stack，确保时间轴意图与地图侧目标一致。
 func _resolve_intent_target_tile(enemy: Node, hex_map: battle) -> Node:
-	if not is_instance_valid(enemy) or not is_instance_valid(hex_map):
-		return null
-	if not enemy.has_method("get_intent_target_center_coord"):
-		return null
-
-	var target_coord = enemy.get_intent_target_center_coord(hex_map)
-	if target_coord != null and hex_map.stack_nodes.has(target_coord):
-		return hex_map.stack_nodes[target_coord]
-	return null
+	return _get_enemy_intent_target_resolver().resolve_target_tile(enemy, hex_map)
 
 
 ## 把生成时读取到的优先级写入 action，便于后续调试或展示层读取。
