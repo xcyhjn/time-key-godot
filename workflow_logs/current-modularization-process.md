@@ -2,6 +2,116 @@
 
 日期：2026-06-05
 
+## 2026-06-13 下一位 AI 接力文档整理
+
+### 读取与轮廓
+
+本批响应用户要求：总结前述 prompt、项目模块化进度和后续维护要求，写成详细接力 Markdown，并输出一份可直接交给下一位 AI 的接力 prompt。本批只处理文档，不改业务 GDScript。
+
+开工前已确认仓库中没有实体 `AGENTS.md`，继续使用当前对话中用户贴出的 AGENTS 约束。已读取：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+workflow_logs/next-ai-handoff-current-status.md
+workflow_logs/maintenance_guides/README.md
+workflow_logs/maintenance_guides/timeline_manager.md
+workflow_logs/maintenance_guides/timecoin_ui.md
+workflow_logs/maintenance_guides/tile.md
+```
+
+已使用 `rg` 输出当前重点大文件的 `class_name`、`extends`、`signal`、`@export`、`@onready`、`const`、`var`、`func` 轮廓，覆盖：
+
+```text
+scene/in_scene/timeline/TimelineManager.gd
+scene/in_scene/timeline/timeline_ui.gd
+scene/in_scene/timecoin_ui.gd
+scene/in_scene/tile.gd
+scene/in_scene/enermy/enemy_intent_presentation_controller.gd
+scene/out_scene/out_scene_map_exp.gd
+scene/card/custom_card.gd
+```
+
+### 当前职责
+
+`workflow_logs/next-ai-handoff-current-status.md` 是下一位 AI 的当前态导航文档。它不替代根基操作文档，而是把本轮对话中的连续指令、最新提交、用户已有改动、已完成模块、停止点和下一批建议汇总到一个可复制的接力入口。
+
+### 耦合点
+
+```text
+根基规则已经在 docs/ 和 maintenance_guides/ 中维护，接力文档不能变成第二份总手册。
+当前工作区还有用户已有改动 default_bus_layout.tres、shaders/color_BG.gdshader、shaders/game_over.gdshader，接力文档必须提醒下一位 AI 不要 stage 或回滚。
+模块统计、最新提交和“不要重复拆”的列表需要和 docs/modularized-files-ultimate-operation-guide.md、docs/ai-handoff-ultimate-operation-guide.md 对齐。
+下一步建议需要延续当前真实进度，不能把已经判定停止的 TimelineUI、Drag、Rewards、Tile 方向重新推为首选。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 接力文档升级 | `workflow_logs/next-ai-handoff-current-status.md` | 用户明确要求，且该文件已存在为未跟踪接力草稿 | 执行 |
+| 2 | 流程日志补记 | `workflow_logs/current-modularization-process.md` | 文档批次也要记录审查、风险面和验证 | 执行 |
+| 3 | 根基总结文档 | `docs/*.md` | 本批没有新增模块或状态变化，不应重复改总结文档 | 暂缓 |
+| 4 | 业务模块拆分 | GDScript 文件 | 用户本轮要求交接文档，不应顺手拆代码 | 不碰 |
+
+### 本批风险面
+
+本批只处理一个风险面：下一位 AI 接力说明的完整性和可执行性。
+
+涉及的小风险点：
+
+```text
+把前述所有用户 prompt 的工作规则和关注方向收束成可执行清单。
+同步最新项目进度、模块统计、工作区脏文件、最新提交和验证命令。
+给出下一位 AI 可直接复制使用的接力 prompt，并明确首选下一步与禁止重复拆分的边界。
+```
+
+不触碰：
+
+```text
+任何 GDScript 业务代码。
+docs/ 下已有总结性文档。
+用户已有 dirty 文件。
+模块统计本身和 Resource 内容。
+```
+
+### 实现结果
+
+重写并扩展 `workflow_logs/next-ai-handoff-current-status.md`。该文档现在包含：
+
+```text
+接手后必须读取的根基文档和维护入口。
+前述用户 prompt 的持续工作规则与关注顺序。
+当前 Git 提交、用户已有 dirty 文件和模块统计。
+HexMap、InScene、Drag、TimelineUI、TimelineManager、TimecoinUI、EnemyIntent、Tile、CustomCard、Rewards、OutScene 的当前完成情况。
+当前最推荐下一步：继续 TimelineManager，但只拆敌方意图候选收集或目标地块映射其中一个风险面。
+明确不建议继续硬拆的方向。
+验证命令、模块覆盖检查脚本和已知 Godot 旧噪声。
+可直接复制给下一位 AI 的接力 prompt。
+```
+
+本批没有修改 `docs/`，因为没有新增模块或总结状态变化；`docs/` 仍只保留最新版总结性说明。
+
+### 当前优化进度与下一步
+
+接力文档已成为当前流程的入口之一。下一位 AI 应先读根基文档，再读 `workflow_logs/next-ai-handoff-current-status.md`，然后按目标文件维护入口继续。
+
+下一批最推荐继续 `scene/in_scene/timeline/TimelineManager.gd`，但只在敌方意图候选收集或目标地块映射中选择一个风险面。不要重复拆 `TimelineEnemyIntentPrioritySelector.gd`，不要同批改 `grid`、`place_action()`、`TimelineAction.action_data` 或 UI 表现。
+
+### 回归检查
+
+`git diff --check` 通过；仅提示 `workflow_logs/current-modularization-process.md` 会被 Git 归一化换行。
+
+模块文档覆盖检查通过：
+
+```text
+scripts=173 resources=4 total=177 missing=0
+```
+
+本批只改 Markdown，没有运行 Godot headless 场景加载。当前未发现 `godot_*_check.log` 临时日志。
+
 ## 2026-06-13 TimelineManager 敌方意图优先级选择规则拆分
 
 ### 读取与轮廓
