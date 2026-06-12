@@ -2,6 +2,94 @@
 
 日期：2026-06-05
 
+## 2026-06-12 Tile 时间占位 shape parser 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/tile.gd`。开工前重新用 `rg` 输出 `tile.gd` 的函数、变量、信号轮廓，读取 `CustomCardTimelineShapeParser.gd` 作对照，并搜索 `parse_timeline_shape`、`get_intent_shape`、`set_timeline_shape` 和 `timeline_shape_coords` 的调用方。确认当前 shape 接口主要被敌方地貌脚本、`TimelineManager` 和旧敌人意图管理器读取。
+
+工作区仍存在用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。
+
+### 当前职责
+
+`tile.gd` 仍是地貌/建筑实体基类，负责地貌基础属性、状态组件、结算奖励、敌人意图协议、视觉挂接、血量状态、贴图切换和时间轴 shape 旧入口。
+
+### 耦合点
+
+```text
+血量死亡状态会清理 status_component、切换贴图、更新 damage_rate，并发出 tile_topology_changed。
+get_intent_action() 会创建 TimelineAction，牵动敌人意图和时间轴数据契约。
+_parse_matrix_shape() 只把矩阵字符串转为 timeline_shape_coords 和 timeline_shape_size，是本批最清晰边界。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TileTimelineShapeParser.gd` | `_parse_matrix_shape()` | 纯矩阵解析，不碰实体生命周期、不创建 TimelineAction | 执行 |
+| 2 | 血量状态服务 | `set_health()`、`take_damage()`、`die()`、`State_Update()` | 牵动贴图、状态和拓扑信号 | 暂缓 |
+| 3 | 敌人意图 action factory | `get_intent_action()` | 牵动 TimelineAction 数据契约 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：Tile 的时间占位矩阵 shape 解析。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TileTimelineShapeParser.gd，只返回 coords 和 size。
+tile.gd 新增 preload 与 _get_timeline_shape_parser() 缓存 getter。
+旧 _parse_matrix_shape() 入口继续存在，负责把 parser 结果写回 timeline_shape_coords 和 timeline_shape_size。
+```
+
+不触碰：
+
+```text
+parse_timeline_shape() 的幂等缓存语义。
+get_intent_shape()、get_timeline_shape_size() 和 set_timeline_shape() 的旧入口。
+血量、死亡、贴图切换和 tile_topology_changed。
+TimelineAction 创建与敌人意图目标规则。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/tile_modules/rules/TileTimelineShapeParser.gd
+```
+
+职责：
+
+```text
+TileTimelineShapeParser 只负责把地貌实体的时间占位矩阵解析为坐标和尺寸。
+它不读取场景树、不修改 tile 节点，也不创建 TimelineAction 或判断敌人意图是否合法。
+```
+
+`tile.gd::_parse_matrix_shape()` 仍是旧入口，内部转发给 parser 并继续写回原成员变量。
+
+### 当前优化进度与下一步
+
+已拆模块统计更新为 162 个脚本模块和 4 个默认 Resource 文件。`tile.gd` 当前约 678 行。下一批如果继续 Tile，先重新审查血量/死亡状态或敌人意图 action factory；不要同批碰贴图切换、拓扑信号和 TimelineAction 数据契约。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+覆盖检查通过：166 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 162 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 TimecoinUI 抖动 tween builder 拆分
 
 ### 读取与轮廓

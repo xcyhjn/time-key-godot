@@ -2,6 +2,7 @@
 extends  Node2D
 
 const StatusComponentScript = preload("res://scene/in_scene/status/status_component.gd")
+const TileTimelineShapeParserScript = preload("res://scene/in_scene/tile_modules/rules/TileTimelineShapeParser.gd")
 static var _texture_cache: Dictionary = {}
 
 signal Blood_change(Blood)
@@ -74,6 +75,7 @@ var step : int
 
 var sheild : int = 0
 var status_component: StatusComponent = null
+var _timeline_shape_parser = null
 
 @export_group("状态图标显示")
 ## 状态图标相对建筑本体的本地偏移。x 控制左右，y 越小越往上。
@@ -110,6 +112,11 @@ var _last_parsed_shape_key: String = ""
 ## 记录本场战斗结算里这个建筑奖励是否已经领取。
 ## 这个状态跟随建筑实例本身，方便 HexMap 刷新时仍能读到“已使用”。
 var settlement_reward_used: bool = false
+
+func _get_timeline_shape_parser():
+	if _timeline_shape_parser == null:
+		_timeline_shape_parser = TileTimelineShapeParserScript.new()
+	return _timeline_shape_parser
 
 func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2i, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
@@ -505,47 +512,11 @@ func attach_visual(parent: Node2D, height: int, current_step_h: float, tile_scal
 
 ## 核心二进制矩阵解析引擎
 func _parse_matrix_shape(matrix_str: String) -> void:
+	var parsed_shape: Dictionary = _get_timeline_shape_parser().parse(matrix_str)
 	timeline_shape_coords.clear()
-	var rows: Array[String] = []
-	var trimmed = matrix_str.strip_edges()
-	
-	# 智能分行：支持逗号、换行，或者单纯的 "011"
-	if trimmed.contains(","):
-		for row_text in trimmed.split(",", false):
-			rows.append(row_text)
-	elif trimmed.contains("\n"):
-		for row_text in trimmed.split("\n", false):
-			rows.append(row_text)
-	elif trimmed.contains(" ") and (trimmed.contains("0") or trimmed.contains("1")):
-		for row_text in trimmed.split(" ", false):
-			rows.append(row_text)
-	else:
-		rows.append(trimmed)
-	
-	if rows.is_empty(): 
-		return
-	
-	# ★ 严格按照你的需求：只寻找 "1" 并录入坐标
-	for y in range(rows.size()):
-		var row = rows[y].strip_edges()
-		for x in range(row.length()):
-			if row[x] == "1":
-				# ★ 确保装入的是 Vector2i
-				timeline_shape_coords.append(Vector2i(x, y))
-	
-	# 计算该形状占用的最大尺寸 (Size)
-	if not timeline_shape_coords.is_empty():
-		var max_x = 0
-		var max_y = 0
-		for coord in timeline_shape_coords:
-			max_x = max(max_x, coord.x)
-			max_y = max(max_y, coord.y)
-		# 尺寸 = 最大坐标 + 1
-		timeline_shape_size = Vector2i(max_x + 1, max_y + 1)
-	else:
-		# 兜底空白
-		timeline_shape_size = Vector2i(1, 1)
-		timeline_shape_coords.append(Vector2i(0, 0))
+	for coord: Vector2i in parsed_shape.get("coords", [Vector2i(0, 0)]):
+		timeline_shape_coords.append(coord)
+	timeline_shape_size = parsed_shape.get("size", Vector2i(1, 1))
 		
 
 ## 获取时间占位形状坐标 (供 TimelineManager 调用)

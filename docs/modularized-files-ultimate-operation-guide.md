@@ -49,6 +49,7 @@ scene/card/custom_card_modules/rules/
 scene/in_scene/timecoin_ui_modules/bridges/
 scene/in_scene/timecoin_ui_modules/animation/
 scene/in_scene/timecoin_ui_modules/presenters/
+scene/in_scene/tile_modules/rules/
 scene/out_scene/out_scene_modules/
 ```
 
@@ -199,6 +200,19 @@ scene/out_scene/out_scene_modules/
 - 入口：`append_shake(tween, target, original_position, shake_amount, duration)`。
 - 维护：不要在这里创建 Tween，不管理 `active_tweens`，不连接时间币信号，也不刷新数值显示。
 - 改进：如果后续获得、消耗和不足动画拆 runner，仍让 runner 或主脚本决定动画时机和完成回调，这里只保留抖动片段构造。
+
+## Tile 拆分模块
+
+这些文件服务于 `scene/in_scene/tile.gd`。`tile.gd` 仍是地貌和建筑实体基类，负责状态组件、血量、贴图、结算奖励、敌人意图协议和实体生命周期；新增模块只接管纯规则或纯适配小边界。
+
+### rules
+
+#### `scene/in_scene/tile_modules/rules/TileTimelineShapeParser.gd`
+
+- 用途：把地貌实体的时间占位矩阵解析为 `Vector2i` 坐标和形状尺寸。
+- 入口：`parse(matrix_data)`。
+- 维护：不要读取场景树，不修改 tile 节点，不创建 `TimelineAction`，也不判断敌人意图是否合法。
+- 改进：如果未来要和 CustomCard 共享 shape 解析，必须单独评估玩家卡和敌人意图的语义差异，不要顺手合并。
 
 ### animation
 
