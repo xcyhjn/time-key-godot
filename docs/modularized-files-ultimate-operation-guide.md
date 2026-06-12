@@ -13,6 +13,14 @@
 
 如果要改地图系统，先读 `docs/hex-map-ultimate-operation-guide.md`，再回到本文查具体模块。本文会列出 `hex_map_modules/` 下的每个拆分文件，但地图数据契约、`map_data`、`stack_nodes` 和 metadata 细节仍以 HexMap 手册为准。
 
+如果要改某个大主脚本，先读对应的单文件维护入口：
+
+```text
+workflow_logs/maintenance_guides/
+```
+
+这些维护入口只写当前职责、已拆模块、停止点和下一批候选；逐批过程仍写在 `workflow_logs/current-modularization-process.md`。
+
 ## 当前模块目录
 
 当前已归档的拆分目录：

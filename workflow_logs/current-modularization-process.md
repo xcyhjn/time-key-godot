@@ -2,6 +2,97 @@
 
 日期：2026-06-05
 
+## 2026-06-12 大文件单独维护说明补齐
+
+### 读取与轮廓
+
+本批按接力规则先确认工作区状态、最新提交和 `AGENTS.md`。仓库内仍没有实体 `AGENTS.md`，因此遵守当前对话中用户贴出的约束。工作区存在用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。随后读取固定文档，并用 `rg` 输出 `timecoin_ui.gd`、`tile.gd`、已有模块目录和文档引用轮廓。
+
+### 当前职责
+
+`docs/` 仍只保留总结性说明；逐批过程仍集中在 `workflow_logs/current-modularization-process.md`。用户指出很多大文件缺少单独维护 md，因此本批新增稳定的单文件维护入口，降低后续接力检索成本。
+
+### 耦合点
+
+```text
+docs/ 目录不能重新堆过程日志。
+current-modularization-process.md 已经很长，不适合承担单文件维护入口。
+大文件维护说明需要能快速说明职责、已拆模块、停止点、下一步和验证入口。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `workflow_logs/maintenance_guides/` | 大文件单独维护说明 | 不违反 docs 总结性规则，便于接力 | 执行 |
+| 2 | 总文档索引 | `docs/ai-handoff...` 和 `docs/modularized-files...` | 只加稳定入口说明，不写过程 | 执行 |
+| 3 | TimecoinUI 拆分 | `_apply_shake_effect()` 或动画 runner | 代码风险面，另开批次 | 暂缓 |
+| 4 | Tile 拆分 | timeline shape 解析 | 代码风险面，另开批次 | 暂缓 |
+
+### 本批风险面
+
+本批只处理文档维护入口补齐。
+
+涉及的风险点：
+
+```text
+新增 workflow_logs/maintenance_guides/README.md。
+新增 in_scene、DragShapeController、timeline_ui、custom_card、timecoin_ui、tile、out_scene_map_exp、rewards 的单文件维护说明。
+更新 docs 中的文档规则和模块总说明索引。
+```
+
+不触碰：
+
+```text
+GDScript 运行逻辑。
+docs/ 目录的过程日志结构。
+用户已有 shader 和 bus layout 改动。
+```
+
+### 实现结果
+
+新增维护入口：
+
+```text
+workflow_logs/maintenance_guides/README.md
+workflow_logs/maintenance_guides/in_scene.md
+workflow_logs/maintenance_guides/drag_shape_controller.md
+workflow_logs/maintenance_guides/timeline_ui.md
+workflow_logs/maintenance_guides/custom_card.md
+workflow_logs/maintenance_guides/timecoin_ui.md
+workflow_logs/maintenance_guides/tile.md
+workflow_logs/maintenance_guides/out_scene_map_exp.md
+workflow_logs/maintenance_guides/rewards.md
+```
+
+同步更新：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+```
+
+### 当前优化进度与下一步
+
+本批没有新增脚本模块。下一批继续代码拆分时，先处理 `timecoin_ui.gd` 的纯动画抖动 helper，再处理 `tile.gd` 的 timeline shape parser。两者分开提交，避免同批触碰两个运行风险面。
+
+### 回归检查
+
+待运行：
+
+```text
+git diff --check
+```
+
 ## 这份归档的用途
 
 这份文件保存前面 HexMap 解耦过程的中间信息，以及后续继续拆 `in_scene.gd` 和其他大文件时需要遵守的流程。它不是最终说明文档。最终给组员和 AI 快速阅读的文档放在 `docs/` 下，中间过程都集中放在这里。

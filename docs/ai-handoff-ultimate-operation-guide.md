@@ -166,6 +166,14 @@ docs/modularized-files-ultimate-operation-guide.md
 workflow_logs/current-modularization-process.md
 ```
 
+大文件的单独维护入口写到：
+
+```text
+workflow_logs/maintenance_guides/
+```
+
+这个目录只放“当前怎么维护这个大文件”的稳定说明，不写逐批过程。`hex_map.gd` 已经有 `docs/hex-map-ultimate-operation-guide.md`，继续以该文档为准。
+
 Markdown 必须用中文自然语言。不要在 `docs/optimization_logs/` 继续堆逐批日志。
 
 ## 验证命令
