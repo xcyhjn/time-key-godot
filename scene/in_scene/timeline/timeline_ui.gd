@@ -15,6 +15,7 @@ const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timel
 const TimelineActionRemovalGhostBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd")
 const TimelineActionRemovalAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd")
 const TimelineActionHoverStateControllerScript = preload("res://scene/in_scene/timeline/ui_modules/controllers/TimelineActionHoverStateController.gd")
+const TimelineIntroPlaybackControllerScript = preload("res://scene/in_scene/timeline/ui_modules/controllers/TimelineIntroPlaybackController.gd")
 const TimelineVisualConfigReaderScript = preload("res://scene/in_scene/timeline/ui_modules/config/TimelineVisualConfigReader.gd")
 
 @export_group("视觉资源配置")
@@ -104,8 +105,6 @@ var allow_click_to_expand: bool = false  # 是否允许通过点击缩放时间�
 var action_containers: Dictionary = {}
 var current_enemy_intent_preview_action: TimelineAction = null
 var enemy_intent_preview_tween: Tween = null
-var _timeline_intro_has_played: bool = false
-var _timeline_intro_in_progress: bool = false
 var _expand_visual_controller = null
 var _layout_controller = null
 var _grid_builder = null
@@ -120,6 +119,7 @@ var _block_placement_animator = null
 var _action_removal_ghost_builder = null
 var _action_removal_animator = null
 var _action_hover_state_controller = null
+var _intro_playback_controller = null
 var _visual_config_reader = null
 
 # 信号定义
@@ -213,6 +213,12 @@ func _get_action_hover_state_controller():
 	if _action_hover_state_controller == null:
 		_action_hover_state_controller = TimelineActionHoverStateControllerScript.new()
 	return _action_hover_state_controller
+
+
+func _get_intro_playback_controller():
+	if _intro_playback_controller == null:
+		_intro_playback_controller = TimelineIntroPlaybackControllerScript.new()
+	return _intro_playback_controller
 
 
 func _get_visual_config_reader():
@@ -343,32 +349,17 @@ func _init_background_grid():
 ## 初始化时间轴入场动画子节点。
 ## TimelineUI 只负责把自己创建好的格子/行动容器交给动画器，具体节奏与开关都在子节点导出参数里调。
 func _setup_timeline_intro_animator() -> void:
-	if not is_instance_valid(timeline_intro_animator):
-		return
-
-	timeline_intro_animator.setup(self, grid_background, shape_layer)
-	timeline_intro_animator.prepare_grid_for_intro(grid_cells)
+	_get_intro_playback_controller().setup(timeline_intro_animator, self, grid_background, shape_layer, grid_cells)
 
 
 ## 外部流程入口：播放时间轴背景格子的左下角涟漪入场。
 ## 返回时表示背景格子已经固定在最终位置，后续再生成敌人意图会更干净。
 func play_intro() -> void:
-	if not is_instance_valid(timeline_intro_animator):
-		return
-	if _timeline_intro_in_progress:
-		await timeline_intro_animator.grid_intro_finished
-		return
-	if _timeline_intro_has_played and timeline_intro_animator.play_grid_intro_once:
-		return
-
-	_timeline_intro_in_progress = true
-	await timeline_intro_animator.play_grid_intro(grid_cells, grid_width, grid_height)
-	_timeline_intro_in_progress = false
-	_timeline_intro_has_played = true
+	await _get_intro_playback_controller().play_intro(timeline_intro_animator, grid_cells, grid_width, grid_height)
 
 
 func is_intro_in_progress() -> bool:
-	return _timeline_intro_in_progress
+	return _get_intro_playback_controller().is_intro_in_progress()
 
 
 # ==========================================
@@ -461,22 +452,19 @@ func _on_action_placed(action: TimelineAction):
 		)
 
 	if use_action_intro:
-		timeline_intro_animator.play_action_intro(shape_container, action, grid_width, grid_height, true)
+		_get_intro_playback_controller().play_action_intro(timeline_intro_animator, shape_container, action, grid_width, grid_height, true)
 
 
 func _on_timeline_cleared():
 	clear_enemy_intent_preview()
-	if is_instance_valid(timeline_intro_animator):
-		timeline_intro_animator.stop_action_intros()
+	_get_intro_playback_controller().stop_action_intros(timeline_intro_animator)
 	action_containers.clear()
 	for child in shape_layer.get_children():
 		child.queue_free()
 
 
 func _should_play_action_intro(action: TimelineAction) -> bool:
-	if not is_instance_valid(timeline_intro_animator):
-		return false
-	return timeline_intro_animator.should_animate_action(action)
+	return _get_intro_playback_controller().should_play_action_intro(timeline_intro_animator, action)
 
 
 # ==========================================

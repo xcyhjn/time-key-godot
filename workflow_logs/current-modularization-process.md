@@ -2,6 +2,87 @@
 
 日期：2026-06-05
 
+## 2026-06-13 TimelineUI 入场动画编排 controller 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/timeline/timeline_ui.gd` 的时间轴部分。开工前 `git status --short` 只显示用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。仓库中没有实体 `AGENTS.md`，继续遵守当前对话中用户贴出的 AGENTS 约束。已重新读取 `docs/ai-handoff-ultimate-operation-guide.md`、`docs/hex-map-ultimate-operation-guide.md`、`docs/modularized-files-ultimate-operation-guide.md`、`workflow_logs/current-modularization-process.md` 与 `workflow_logs/maintenance_guides/timeline_ui.md`，并用 `rg` 输出 `timeline_ui.gd` 和 `timeline/ui_modules` 下的 `const`、`@export`、`@onready`、`var`、`signal`、`func` 轮廓。
+
+### 当前职责
+
+`timeline_ui.gd` 仍是时间轴 UI 的 composition root，负责连接 `TimelineManager`、维护 `action_containers`、创建行动容器、连接 hover 信号、触发敌方意图 overlay、展开/收起、网格预览、清理 UI 和向 `TimelineIntroAnimator` 转发入场动画。已拆出的模块覆盖布局、网格、TimelineManager 查找、视觉配置读取、敌方意图 overlay、行动方格放置动画、行动容器几何、行动方块视觉节点、整体形状视觉层、清理动画残影、残影 tween 和 hover 状态通知。
+
+### 耦合点
+
+```text
+_on_action_placed() 仍同时创建容器、计算几何、创建方格、连接 hover、配置敌方意图 overlay，并决定普通逐格动画或整体 intro 动画，不适合整体硬拆。
+TimelineIntroAnimator 自身负责实际 tween、格子预处理、行动容器入场和输入恢复；timeline_ui.gd 目前还保存 intro 是否播放/进行中的状态，并直接调用 setup/play/stop/should。
+_on_timeline_cleared() 同时清理敌方意图预览、停止 intro tween、清空 action_containers 和释放 shape_layer 子节点。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 入场动画编排 controller | `_setup_timeline_intro_animator()`、`play_intro()`、`is_intro_in_progress()`、`_should_play_action_intro()` 和 action intro 播放/停止转发 | 状态集中，输入输出简单，不改变实际 tween | 执行 |
+| 2 | 维护说明补充 | `timeline_ui.md` 与总结文档 | 新增模块必须记录边界 | 执行 |
+| 3 | `_on_action_placed()` 行动块生成编排 | 容器、方块、overlay、hover、intro | 耦合强，文档明确不要硬拆 | 暂缓 |
+| 4 | 敌方意图 preview 状态 controller | preview action、tween、overlay 清理 | 牵动 hover 和移除动画 | 暂缓 |
+| 5 | `clear_ui()` / `_on_timeline_cleared()` 清理编排 | preview、intro、字典、节点释放 | 与多个状态面相连 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：TimelineUI 入场动画编排状态与 `TimelineIntroAnimator` 调用转发。
+
+涉及的小风险点：
+
+```text
+新增 TimelineIntroPlaybackController.gd，只负责记录 intro 是否播放/进行中，并转发 setup、grid intro、action intro、stop 和 should 判断。
+timeline_ui.gd 保留旧入口和原有调用时机，只把状态字段与直接调用替换为 controller。
+_on_action_placed() 仍创建行动容器、方格、overlay 和 hover 信号，只把 use_action_intro 判断和最终 play_action_intro 转发给新模块。
+```
+
+不触碰：
+
+```text
+TimelineIntroAnimator.gd 的实际动画参数、tween 曲线和输入恢复逻辑。
+TimelineManager 数据结构、敌方意图规则和 action_placed/timeline_cleared 信号。
+TimelineVisualConfig 资源字段与读取逻辑。
+拖拽放置规则、网格预览、敌方意图 overlay 预览时机和移除动画时序。
+```
+
+### 实现结果
+
+新增 `scene/in_scene/timeline/ui_modules/controllers/TimelineIntroPlaybackController.gd`。该模块是 RefCounted controller，中文职责注释明确它只负责在 `TimelineUI` 与 `TimelineIntroAnimator` 之间维护入场动画播放状态，并转发初始化、背景格子入场、行动入场和停止请求；它不创建时间轴行动容器，不播放具体 Tween，不修改 `TimelineManager` 数据，也不决定敌人意图规则。
+
+`scene/in_scene/timeline/timeline_ui.gd` 新增 `TimelineIntroPlaybackControllerScript` preload、`_intro_playback_controller` 缓存和 `_get_intro_playback_controller()` getter。旧 `_setup_timeline_intro_animator()`、`play_intro()`、`is_intro_in_progress()`、`_should_play_action_intro()`、`_on_timeline_cleared()` 中停止 action intro 的入口都保留并转发给 controller。`_on_action_placed()` 仍负责行动容器、方格、overlay、hover 信号和整体形状视觉生成，只把 action intro 判断与播放转发给新模块。
+
+同步更新 `docs/modularized-files-ultimate-operation-guide.md`、`docs/ai-handoff-ultimate-operation-guide.md` 与 `workflow_logs/maintenance_guides/timeline_ui.md`。总结文档已记录 `controllers/TimelineIntroPlaybackController.gd`，并补上“不要重复拆 intro 状态转发、实际 tween 仍归 TimelineIntroAnimator”的停止点。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计更新为 172 个脚本模块和 4 个默认 Resource 文件。TimelineUI 已拆出 16 个 ui_modules 脚本，`timeline_ui.gd` 当前约 800 行。剩余核心仍是 `_on_action_placed()` 的行动容器/方格/overlay/hover 信号生成编排；它仍不建议硬拆。
+
+下一批如果继续时间轴，只建议做明确的小表现配置补充或扩展已有 presenter。不要重复拆 `TimelineVisualConfigReader.gd` 或 `TimelineIntroPlaybackController.gd`，不要同批修改 `TimelineManager` 数据、敌方意图规则和行动块生成编排。
+
+### 回归检查
+
+`git diff --check` 通过；仅提示 `scene/in_scene/timeline/timeline_ui.gd` 与 `workflow_logs/current-modularization-process.md` 会被 Git 归一化换行。
+
+模块文档覆盖检查通过：`scripts=172 resources=4 total=176 missing=0`。
+
+Godot headless 项目检查通过，无新增脚本解析错误；仍有既有退出时 `ObjectDB instances leaked` 与资源占用提示。
+
+加载 `res://scene/in_scene/in_scene.tscn` 通过，无新增脚本解析错误；仍有既有 TileSet atlas 坐标错误、RID/resource 退出泄漏提示。
+
 ## 2026-06-13 TimelineUI 视觉配置读取 reader 拆分
 
 ### 读取与轮廓

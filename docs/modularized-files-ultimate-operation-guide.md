@@ -439,7 +439,7 @@ scene/out_scene/out_scene_modules/
 
 ## TimelineUI 拆分模块
 
-这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、视觉配置读取、敌方意图 overlay、行动方格动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知。`timeline_ui.gd` 仍负责连接 `TimelineManager`、维护行动容器字典、持有当前 hover 引用和决定清理动画触发时机。
+这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、视觉配置读取、敌方意图 overlay、行动方格动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放、行动块 hover 状态通知和入场动画编排状态。`timeline_ui.gd` 仍负责连接 `TimelineManager`、维护行动容器字典、持有当前 hover 引用和决定清理动画触发时机。
 
 ### animation
 
@@ -490,6 +490,13 @@ scene/out_scene/out_scene_modules/
 - 入口：`enter_hover(...)`、`exit_hover(...)`、`clear_removed_action_hover(...)`。
 - 维护：不要创建行动方块，不展示 tooltip，不处理敌方意图预览，也不要修改 `TimelineManager` 的网格数据。
 - 改进：如果未来需要区分重复 hover 或跨行动切换时的旧 action 清理，可在这里扩展状态转换结果，但不要直接读取场景树。
+
+#### `scene/in_scene/timeline/ui_modules/controllers/TimelineIntroPlaybackController.gd`
+
+- 用途：维护时间轴入场动画是否已播放、是否正在播放的状态，并转发 `TimelineIntroAnimator` 的初始化、背景格子入场、行动入场和停止请求。
+- 入口：`setup(...)`、`play_intro(...)`、`is_intro_in_progress()`、`should_play_action_intro(...)`、`play_action_intro(...)`、`stop_action_intros(...)`。
+- 维护：不要创建行动容器，不播放具体 Tween，不修改 `TimelineManager` 数据，也不要决定敌人意图规则。
+- 改进：如果后续要扩展 intro 播放策略，可只在这里增加状态判断；实际动画曲线和节点输入恢复仍留在 `TimelineIntroAnimator.gd`。
 
 ### grid
 
@@ -1437,7 +1444,7 @@ git diff --check
 
 ### timeline_ui 剩余表现边界优先级更高
 
-`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
+`timeline_ui.gd` 已经拆出展开遮罩表现、背景网格构建、网格交互表现、顶部锚点布局、网格预览样式、TimelineManager 查找、敌方意图 overlay、行动方格放置动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放、行动块 hover 状态通知和入场动画编排状态，并已完成 `TimelineVisualConfig` 首批纯视觉参数资源化。当前不要硬拆 `_on_action_placed()` 的剩余生成编排；后续只在需要新增纯视觉调参时小批进入。
 
 ### custom_card 已完成节点查找、描述解析、形状、效果范围、选中跟随、hover shader、tooltip 查找和地图条件效果刷新拆分
 
