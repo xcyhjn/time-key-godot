@@ -7,6 +7,7 @@ const PHASE_TIMELINE_DRAG := "timeline_drag"
 const PHASE_BLOCKED := "blocked"
 const EnemyIntentTooltipTextBuilderScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd")
 const EnemyIntentStatusKeywordTooltipPresenterScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd")
+const EnemyIntentTooltipPositionHelperScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipPositionHelper.gd")
 
 # ==========================================
 # 脚本名称: enemy_intent_presentation_controller.gd
@@ -100,6 +101,7 @@ var current_hover_origin: String = ""
 var last_phase: String = ""
 var _tooltip_text_builder = null
 var _status_keyword_tooltip_presenter = null
+var _tooltip_position_helper = null
 
 
 func _ready() -> void:
@@ -117,6 +119,12 @@ func _get_status_keyword_tooltip_presenter():
 	if _status_keyword_tooltip_presenter == null:
 		_status_keyword_tooltip_presenter = EnemyIntentStatusKeywordTooltipPresenterScript.new()
 	return _status_keyword_tooltip_presenter
+
+
+func _get_tooltip_position_helper():
+	if _tooltip_position_helper == null:
+		_tooltip_position_helper = EnemyIntentTooltipPositionHelperScript.new()
+	return _tooltip_position_helper
 
 
 func _resolve_references() -> void:
@@ -283,19 +291,26 @@ func _position_intent_tooltip(source_coord: Vector2i) -> void:
 	if not is_instance_valid(main_board) or not is_instance_valid(main_board.get("cursor_tooltip")):
 		return
 
-	var source_stack = _find_stack_for_coord(source_coord)
-	var tooltip_pos = source_stack.global_position + tooltip_offset if is_instance_valid(source_stack) else get_viewport().get_visible_rect().size * 0.5
+	var source_stack: Area2D = _find_stack_for_coord(source_coord)
+	var has_source_stack := is_instance_valid(source_stack)
+	var screen_size := get_viewport().get_visible_rect().size
 
-	var panel_size = Vector2(220.0, 80.0)
+	var panel_size := Vector2(220.0, 80.0)
 	var cursor_tooltip_panel := _get_cursor_tooltip_panel()
 	if is_instance_valid(cursor_tooltip_panel):
 		panel_size = cursor_tooltip_panel.size
 	else:
 		panel_size = main_board.cursor_tooltip.get_combined_minimum_size()
 
-	var screen_size = get_viewport().get_visible_rect().size
-	tooltip_pos.x = clampf(tooltip_pos.x, tooltip_screen_margin.x, screen_size.x - panel_size.x - tooltip_screen_margin.x)
-	tooltip_pos.y = clampf(tooltip_pos.y, tooltip_screen_margin.y, screen_size.y - panel_size.y - tooltip_screen_margin.y)
+	var tooltip_pos: Vector2 = _get_tooltip_position_helper().calculate_position(
+		source_stack.global_position if has_source_stack else Vector2.ZERO,
+		screen_size * 0.5,
+		has_source_stack,
+		tooltip_offset,
+		panel_size,
+		screen_size,
+		tooltip_screen_margin
+	)
 
 	if main_board.has_method("set_cursor_tooltip_position"):
 		main_board.set_cursor_tooltip_position(tooltip_pos)

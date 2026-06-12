@@ -81,12 +81,14 @@ TimelineManager.gd 继续拆分
 最新提交以 `git log --oneline -1` 为准。本批提交主题：
 
 ```text
-refactor: extract timeline enemy intent candidate collector
+refactor: extract enemy intent tooltip position helper
 ```
 
 上一批最近提交：
 
 ```text
+f8ff476 refactor: extract enemy intent status keyword tooltip presenter
+a33d06e refactor: extract timeline enemy intent candidate collector
 2edfdcf refactor: extract timeline enemy intent target resolver
 1b2a367 docs: add next ai modularization handoff
 d52ec9a refactor: extract timeline enemy intent priority selector
@@ -114,9 +116,9 @@ shaders/game_over.gdshader
 当前模块统计：
 
 ```text
-脚本模块：176
+脚本模块：177
 默认 Resource 文件：4
-总覆盖对象：180
+总覆盖对象：181
 docs/modularized-files-ultimate-operation-guide.md 覆盖缺失：0
 ```
 
@@ -239,18 +241,21 @@ scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd
 
 如果继续 TimecoinUI，只评估 `active_tweens` 清理 controller。不要重复拆全局查找、沙漏 shader、普通抖动或获得/消耗/不足动画片段。
 
-### EnemyIntentPresentationController 已拆主 tooltip 文本和状态关键词副 tooltip
+### EnemyIntentPresentationController 已拆三个 tooltip 表现边界
 
 已新增：
 
 ```text
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd
+scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipPositionHelper.gd
 ```
 
 `EnemyIntentTooltipTextBuilder.gd` 只组装主 tooltip 文本行。`EnemyIntentStatusKeywordTooltipPresenter.gd` 只创建、定位和销毁状态关键词副 tooltip。
 
-控制器仍负责引用查找、hover phase 判断、地图/时间轴表现、主 tooltip 写入、关键词列表读取、tooltip host 选择和延迟定位。后续如果继续，只单批处理主 tooltip 定位 helper；不要重复拆文本 builder 或状态关键词副 tooltip presenter。
+`EnemyIntentTooltipPositionHelper.gd` 只计算主 tooltip 的屏幕位置和边界 clamp。
+
+控制器仍负责引用查找、hover phase 判断、地图/时间轴表现、主 tooltip 写入、关键词列表读取、tooltip host 选择、source stack 查找、`MainBoard.set_cursor_tooltip_position()` 调用和延迟定位。Tooltip 低风险表现面已经基本收口；后续如果继续，只谨慎评估引用查找 bridge，不要重复拆文本 builder、状态关键词副 tooltip presenter 或主 tooltip 定位 helper。
 
 ### Tile 已完成多个低风险边界
 
@@ -322,36 +327,7 @@ tile_data 仍是坐标到房间类型的逻辑地图，不要混入完成状态�
 
 ## 当前最推荐的下一步
 
-### 首选：EnemyIntentPresentationController 的 tooltip 表现
-
-目标文件：
-
-```text
-scene/in_scene/enermy/enemy_intent_presentation_controller.gd
-```
-
-先读：
-
-```text
-workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
-```
-
-只做一个方向：
-
-```text
-主 tooltip 定位 helper
-```
-
-不要同批动：
-
-```text
-EnemyIntentResolver
-EnemyIntentData 字段契约
-TimelineManager 数据结构
-地图/时间轴联动规则
-```
-
-### 备选：OutScene 镜头限制小模块
+### 首选：OutScene 镜头限制小模块
 
 目标文件：
 
@@ -359,7 +335,19 @@ TimelineManager 数据结构
 scene/out_scene/out_scene_map_exp.gd
 ```
 
-只评估镜头限制，不同批碰：
+先读：
+
+```text
+workflow_logs/maintenance_guides/out_scene_map_exp.md
+```
+
+只评估：
+
+```text
+镜头限制
+```
+
+不要同批碰：
 
 ```text
 地图移动
@@ -367,6 +355,22 @@ scene/out_scene/out_scene_map_exp.gd
 进房
 切场景 executor
 房间完成状态持久化
+```
+
+### 备选：EnemyIntentPresentationController 引用查找 bridge
+
+目标文件：
+
+```text
+scene/in_scene/enermy/enemy_intent_presentation_controller.gd
+```
+
+如果继续，只谨慎评估 `_resolve_references()` 的引用查找 bridge。不要重复拆：
+
+```text
+EnemyIntentTooltipTextBuilder.gd
+EnemyIntentStatusKeywordTooltipPresenter.gd
+EnemyIntentTooltipPositionHelper.gd
 ```
 
 ### 暂不建议继续硬拆 TimelineManager
@@ -478,7 +482,7 @@ $missing | Sort-Object
 当前预期输出：
 
 ```text
-scripts=176 resources=4 total=180 missing=0
+scripts=177 resources=4 total=181 missing=0
 ```
 
 如果新增模块，同步更新统计和文档后，新的统计可以增加，但 `missing` 必须仍为 0。
@@ -527,8 +531,8 @@ Invalid access
 不要回滚、stage、格式化或提交这些文件，除非我明确要求。
 
 当前模块化进度：
-- 最新提交：本批提交为 `refactor: extract timeline enemy intent candidate collector`；哈希以 `git log --oneline -1` 为准。
-- 当前已拆脚本模块 176 个，另有 4 个默认 Resource 文件。
+- 最新提交：本批提交为 `refactor: extract enemy intent tooltip position helper`；哈希以 `git log --oneline -1` 为准。
+- 当前已拆脚本模块 177 个，另有 4 个默认 Resource 文件。
 - docs/modularized-files-ultimate-operation-guide.md 覆盖缺失应为 0。
 - docs/ 目录只保留总结性说明；中间过程写 workflow_logs/current-modularization-process.md。
 
@@ -546,8 +550,8 @@ Invalid access
 - 每批单独 commit。
 
 推荐下一步：
-- enemy_intent_presentation_controller.gd：只评估主 tooltip 定位 helper，不重复拆状态关键词副 tooltip presenter。
 - out_scene_map_exp.gd：只评估镜头限制小模块，不同批碰地图移动和场景切换 executor。
+- enemy_intent_presentation_controller.gd：只谨慎评估引用查找 bridge，不重复拆 tooltip text builder、status keyword presenter 或 tooltip position helper。
 
 如果重新评估 TimelineManager：
 - 先读 workflow_logs/maintenance_guides/timeline_manager.md。
@@ -570,5 +574,5 @@ Invalid access
 - Godot headless 项目检查
 - 若改局内模块，加载 res://scene/in_scene/in_scene.tscn
 - 若改局外模块，加载 res://scene/out_scene/Out_Scene.tscn
-- 模块覆盖检查应输出 scripts=176 resources=4 total=180 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
+- 模块覆盖检查应输出 scripts=177 resources=4 total=181 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
 ```

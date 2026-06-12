@@ -2,6 +2,123 @@
 
 日期：2026-06-05
 
+## 2026-06-13 EnemyIntentPresentationController 主 tooltip 定位拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd`。开工前确认仓库中没有实体 `AGENTS.md`，继续使用当前对话中用户贴出的 AGENTS 约束。当前工作区仍有用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不 stage、不提交这些文件。已读取：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+workflow_logs/next-ai-handoff-current-status.md
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+```
+
+已按要求先读取 `godot-prompter:gdscript-patterns`；写 Markdown 前已读取 `docs-write`。已用 `rg` 输出目标文件的 `class_name`、`extends`、`signal`、`@export`、`@onready`、`const`、`var`、`func` 轮廓，并搜索主 tooltip 定位、`set_cursor_tooltip_position()`、副 tooltip 重定位和已有 tooltip presenter/helper 边界。
+
+### 当前职责
+
+`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责地图 hover 与时间轴 hover 入口、阶段判断、地图/时间轴高亮、主 tooltip 写入、状态关键词读取、tooltip host 选择、source stack 查找、调用 `MainBoard.set_cursor_tooltip_position()`、副 tooltip 重定位，以及 hover 退出、阶段切换和意图重判时的清理。
+
+### 耦合点
+
+```text
+_position_intent_tooltip() 同时做 source stack 查找、fallback 位置、主 tooltip panel size 选择、屏幕边界 clamp、MainBoard.set_cursor_tooltip_position() 调用和副 tooltip 重定位。
+主 tooltip 文本已经由 EnemyIntentTooltipTextBuilder.gd 接管，本批不能重复拆。
+状态关键词副 tooltip 已经由 EnemyIntentStatusKeywordTooltipPresenter.gd 接管，本批不能重复拆。
+引用查找 _resolve_references() 牵动 MainBoard、HexMap、TimelineManager 和 hover 信号连接顺序，本批不碰。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 主 tooltip 定位 helper | `_position_intent_tooltip()` 中的位置计算和 clamp | 纯坐标计算，输入输出清晰，不写节点状态 | 执行 |
+| 2 | 引用查找 bridge | `_resolve_references()` | 牵动多节点引用和信号连接顺序 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：主 tooltip 屏幕位置计算。
+
+涉及的小风险点：
+
+```text
+新增 EnemyIntentTooltipPositionHelper.gd，集中根据锚点、fallback、offset、panel size、screen size 和 margin 计算主 tooltip 位置。
+enemy_intent_presentation_controller.gd 保留旧 _position_intent_tooltip() 入口。
+旧入口继续负责 source stack 查找、主 tooltip panel size 选择、MainBoard.set_cursor_tooltip_position() 调用和 _position_status_keyword_tooltips()。
+```
+
+不触碰：
+
+```text
+EnemyIntentResolver 与 EnemyIntentData 字段契约。
+TimelineManager 数据结构。
+地图高亮与时间轴高亮联动规则。
+主 tooltip 文本 builder。
+状态关键词副 tooltip presenter。
+引用查找和信号连接顺序。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipPositionHelper.gd
+```
+
+职责：
+
+```text
+EnemyIntentTooltipPositionHelper 只负责计算敌人意图主 tooltip 的屏幕位置。
+它不读取节点树，不写入 MainBoard，不创建或销毁 tooltip，也不处理状态关键词副 tooltip。
+```
+
+`enemy_intent_presentation_controller.gd` 新增 helper preload、缓存 getter 和旧入口转发。`_position_intent_tooltip()` 仍保留旧入口，继续收集 source stack、panel size 和 viewport 信息，再把纯位置计算交给 helper。
+
+同步更新：
+
+```text
+docs/modularized-files-ultimate-operation-guide.md
+docs/ai-handoff-ultimate-operation-guide.md
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+workflow_logs/next-ai-handoff-current-status.md
+```
+
+### 当前优化进度与下一步
+
+当前已拆脚本模块更新为 177 个，默认 Resource 文件仍为 4 个。`EnemyIntentPresentationController` 已拆出 3 个 tooltip 表现模块：
+
+```text
+EnemyIntentTooltipTextBuilder.gd
+EnemyIntentStatusKeywordTooltipPresenter.gd
+EnemyIntentTooltipPositionHelper.gd
+```
+
+Tooltip 低风险表现面已经基本收口。下一批优先转向 `out_scene_map_exp.gd` 的镜头限制小模块；如果继续 `enemy_intent_presentation_controller.gd`，只谨慎评估引用查找 bridge，不要重复拆 tooltip 三个模块。
+
+### 回归检查
+
+已运行：
+
+```text
+git diff --check 通过；仅有 Git 换行归一化提示，无空白错误。
+Godot headless 项目检查通过：EXIT=0。
+加载 res://scene/in_scene/in_scene.tscn 通过：EXIT=0。
+模块覆盖检查通过：scripts=177 resources=4 total=181 missing=0。
+```
+
 ## 2026-06-13 EnemyIntentPresentationController 状态关键词副 tooltip 拆分
 
 ### 读取与轮廓
