@@ -238,6 +238,13 @@ scene/out_scene/out_scene_modules/
 - 维护：不要发 `Blood_change`，不要调用 `die()`、`Captured()` 或 `Revived()`，不切换贴图，不清理状态组件，也不通知 HexMap 拓扑变化。
 - 改进：如果未来拆死亡执行流程，仍应由主脚本或单独 controller 执行状态组件清理、贴图切换和 `tile_topology_changed`，不要把副作用塞回纯规则模块。
 
+#### `scene/in_scene/tile_modules/rules/TileDamageProtectionRules.gd`
+
+- 用途：判断 Tile 受击时 `protected` 副状态是否吸收伤害，并返回更新后的副状态位。
+- 入口：`resolve_damage(current_state_vice, protected_flag)`。
+- 维护：不要扣血，不发信号，不播放受击表现，也不要处理死亡、贴图切换或子类 `locked` 规则。
+- 改进：如果后续有更多副状态吸收伤害规则，可以扩展明确字段返回值；不要让它直接读取或修改 `tile.gd` 成员。
+
 ### animation
 
 #### `scene/in_scene/drag_modules/animation/DragPlacementAnimationRunner.gd`

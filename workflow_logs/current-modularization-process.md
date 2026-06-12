@@ -2,6 +2,95 @@
 
 日期：2026-06-05
 
+## 2026-06-12 Tile protected 受击规则拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/tile.gd`。开工前确认仓库内没有实体 `AGENTS.md` 内容，因此继续遵守当前对话中的 AGENTS 约束。随后重新读取接力说明、HexMap 手册、模块维护说明和 `workflow_logs/maintenance_guides/tile.md`，并用 `rg` 输出 `tile.gd` 与 `tile_modules/` 的函数、变量、信号轮廓，重点确认 `take_damage()`、`State_Vice`、`Vice_State_Pool.protected`、`set_health()` 和已拆死亡收尾 controller 的边界。
+
+工作区仍存在用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。
+
+### 当前职责
+
+`tile.gd` 仍是地貌/建筑实体基类，负责地貌基础属性、状态组件、结算奖励、敌人意图协议、视觉挂接、血量状态、贴图切换和旧公共入口。时间轴 shape 解析、默认敌人意图 action 构造、血量纯规则和 Broken 后死亡收尾已经拆出；`take_damage()` 仍在主脚本里同时判断 protected 副状态、清除 protected 位并决定是否扣血。
+
+### 耦合点
+
+```text
+take_damage() 当前同时读取 State_Vice、清除 Vice_State_Pool.protected，并决定是否调用 set_health(HP - amount)。
+set_health() 后续会触发 Blood_change、State_Update()、死亡收尾和贴图切换，本批不改变这条链路。
+altar.gd 会给相邻地貌设置 protected 位；radar.gd 自己覆盖 take_damage() 并叠加 locked 规则，本批不改子类覆盖逻辑。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TileDamageProtectionRules.gd` | `take_damage()` 中 protected 位判断与清除 | 纯位运算规则，输入输出清楚；主脚本继续决定是否扣血 | 执行 |
+| 2 | 贴图选择 presenter/rules | `tex_toggle()`、`tex_picker()`、`damaged_tex_picker()` | 牵动主状态与贴图数组兜底，需单独审查 | 暂缓 |
+| 3 | 子类敌人意图 action 数据统一 | 多个敌方地貌覆盖 `get_intent_action()` | 牵动 `effect_range`、`invalid_reason`、`target_affiliation` 和 TimelineAction 数据契约 | 暂缓 |
+| 4 | radar locked 受击规则统一 | `scene/in_scene/enermy/radar.gd::take_damage()` | 子类额外 locked 语义不同于基础 protected，不应顺手合并 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：基础 Tile 受击时 protected 副状态的吸收规则。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TileDamageProtectionRules.gd，只根据 State_Vice 和 protected flag 返回是否吸收以及新的 State_Vice。
+tile.gd 新增 preload 与 _get_damage_protection_rules() 缓存 getter。
+take_damage() 旧入口继续存在，仍由主脚本写回 State_Vice，并在未吸收时调用 set_health(HP - amount)。
+```
+
+不触碰：
+
+```text
+set_health()、State_Update()、die() 和死亡收尾 controller。
+tex_toggle()、tex_picker()、damaged_tex_picker() 的贴图选择规则。
+radar.gd 的 locked 覆盖逻辑。
+默认或子类 get_intent_action() 的 TimelineAction 数据。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/tile_modules/rules/TileDamageProtectionRules.gd
+```
+
+职责：
+
+```text
+TileDamageProtectionRules 只负责判断 Tile 受击时 protected 副状态是否吸收伤害。
+它不扣血、不发信号、不播放受击表现，也不处理死亡、贴图切换或子类 locked 规则。
+```
+
+`tile.gd::take_damage(amount)` 仍是旧入口，继续由主脚本写回 `State_Vice`，并在 protected 没有吸收伤害时调用 `set_health(HP - amount)`。这保持了受击入口、血量链路、`Blood_change`、死亡收尾和贴图切换的旧调用顺序。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计将更新为 166 个脚本模块和 4 个默认 Resource 文件。`tile.gd` 的 protected 受击吸收规则已经拆出；下一批如果继续 Tile，优先重新审查 `tex_toggle()` 贴图选择边界或多个敌方地貌子类的意图 action 数据统一。不要重复拆死亡执行 controller 或 protected 受击规则，也不要同批修改贴图选择和 TimelineAction 数据契约。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+覆盖检查通过：170 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 166 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 Tile 死亡收尾执行 controller 拆分
 
 ### 读取与轮廓

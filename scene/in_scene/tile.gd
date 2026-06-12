@@ -6,6 +6,7 @@ const TileTimelineShapeParserScript = preload("res://scene/in_scene/tile_modules
 const TileIntentActionFactoryScript = preload("res://scene/in_scene/tile_modules/rules/TileIntentActionFactory.gd")
 const TileHealthStateRulesScript = preload("res://scene/in_scene/tile_modules/rules/TileHealthStateRules.gd")
 const TileDeathExecutionControllerScript = preload("res://scene/in_scene/tile_modules/controllers/TileDeathExecutionController.gd")
+const TileDamageProtectionRulesScript = preload("res://scene/in_scene/tile_modules/rules/TileDamageProtectionRules.gd")
 static var _texture_cache: Dictionary = {}
 
 signal Blood_change(Blood)
@@ -82,6 +83,7 @@ var _timeline_shape_parser = null
 var _intent_action_factory = null
 var _health_state_rules = null
 var _death_execution_controller = null
+var _damage_protection_rules = null
 
 @export_group("状态图标显示")
 ## 状态图标相对建筑本体的本地偏移。x 控制左右，y 越小越往上。
@@ -138,6 +140,11 @@ func _get_death_execution_controller():
 	if _death_execution_controller == null:
 		_death_execution_controller = TileDeathExecutionControllerScript.new()
 	return _death_execution_controller
+
+func _get_damage_protection_rules():
+	if _damage_protection_rules == null:
+		_damage_protection_rules = TileDamageProtectionRulesScript.new()
+	return _damage_protection_rules
 
 func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2i, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
@@ -574,8 +581,12 @@ func heal(amount: float) -> void:
 
 ## 重写：受伤逻辑（更新 damage_rate 和 damage 状态）
 func take_damage(amount: int) -> void:
-	if State_Vice & Vice_State_Pool.protected != 0:
-		State_Vice &= ~Vice_State_Pool.protected
+	var protection_result: Dictionary = _get_damage_protection_rules().resolve_damage(
+		State_Vice,
+		Vice_State_Pool.protected
+	)
+	State_Vice = int(protection_result.get("state_vice", State_Vice))
+	if bool(protection_result.get("absorbed", false)):
 		return
 	# 这里可以播放通用的受伤动画，比如 $AnimationPlayer.play("hurt")
 	set_health(HP - amount)
