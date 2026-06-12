@@ -247,14 +247,14 @@ func get_intent_action(target_tile: Node = null) -> TimelineAction:
 	# 对村庄来说：
 	# - "位置" = 村庄自己当前站的格子
 	# - "目标" = 村庄准备扩张过去的那一格
-	var action_data = {
-		"效果": get_intent_description(),
-		"类型": landform_name,
-		"位置": location, # 发出者自身的位置（逻辑六边形坐标）
-		"目标": target_tile.position if target_tile else Vector2.ZERO, # 本次意图瞄准的目标中心（场景像素坐标）
-		"effect_range": get_intent_effect_range(),
-		"invalid_reason": get_intent_invalid_reason(owner_battle)
-	}
+	var action_data: Dictionary = _get_intent_action_data_builder().build_standard_action_data(
+		get_intent_description(),
+		landform_name,
+		location,
+		target_tile,
+		get_intent_effect_range(),
+		get_intent_invalid_reason(owner_battle)
+	)
 
 	var action = TimelineAction.new(
 		TimelineAction.Type.ENEMY,

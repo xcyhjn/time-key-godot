@@ -2,6 +2,113 @@
 
 日期：2026-06-05
 
+## 2026-06-13 Tile 剩余 action_data 子类收口
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/tile.gd` 的子类意图数据拆分。开工前确认工作区仍只有用户已有的资源与 shader 改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。随后重新读取接力说明、HexMap 手册、模块总表、`workflow_logs/current-modularization-process.md` 与 `workflow_logs/maintenance_guides/tile.md`，并用 `rg` 输出 `village.gd`、`radar.gd`、`tile.gd` 和 `TileIntentActionDataBuilder.gd` 中 `class_name`、`extends`、`var`、`func`、`get_intent_action()`、`action_data`、`TimelineAction.new()`、`effect_range`、`invalid_reason`、`target_affiliation` 与 `does_intent_include_self()` 的轮廓。
+
+### 当前职责
+
+`tile.gd` 仍是地貌/建筑实体基类，负责敌人意图协议旧入口、默认意图工厂接入、状态组件、血量和贴图副作用。`TileIntentActionDataBuilder.gd` 已负责组装标准 `action_data` 字典，当前已接入 `altar.gd`、`iron_mine.gd`、`Animal_husbandry.gd` 与 `center_altar.gd`。`village.gd` 与 `radar.gd` 仍在各自 `get_intent_action()` 中手写同一套标准字段，但它们保留了“位置/目标”语义说明注释。
+
+### 耦合点
+
+```text
+village.gd 与 radar.gd 的 get_intent_action() 同时构造 action_data 并调用 TimelineAction.new(...)。
+action_data 的 "效果"、"类型"、"位置"、"目标"、"effect_range"、"invalid_reason" 字段被时间轴放置、地图 hover 展示和 EnemyIntentData 解析读取，字段名和存在性不能改变。
+两处注释明确 "位置" 是发出者逻辑坐标、"目标" 是 target_tile.position 像素坐标；本批必须保留这段语义说明。
+effect_range、invalid_reason、target_affiliation、does_intent_include_self()、can_generate_intent() 和目标中心选择仍由子类自己的接口决定。
+radar.gd 还有 locked 受击和死亡联动，village.gd 还有扩张行为；本批不触碰这些行为。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `village.gd` action_data 构建 | 标准字段字典 | 与 builder 输入匹配，保留语义注释即可 | 执行 |
+| 2 | `radar.gd` action_data 构建 | 标准字段字典 | 与 builder 输入匹配，保留语义注释即可 | 执行 |
+| 3 | 子类 `TimelineAction.new(...)` 工厂统一 | 所有覆盖实现 | 会扩大到颜色、shape、target 和展示契约 | 暂缓 |
+| 4 | 子类 picker/死亡/扩张规则 | `tex_picker()`、`die()`、`Behavior()` 等 | 牵动地图规则和状态副作用 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：剩余两个 Tile 子类的标准 `action_data` 字典构造入口。
+
+涉及的小风险点：
+
+```text
+village.gd 只把原 action_data 字典改为调用 _get_intent_action_data_builder().build_standard_action_data(...)。
+radar.gd 只把原 action_data 字典改为调用 _get_intent_action_data_builder().build_standard_action_data(...)。
+保留原有字段语义注释，不新增模块，不改 TileIntentActionDataBuilder.gd 的字段输出。
+```
+
+不触碰：
+
+```text
+TimelineAction.new(...) 参数顺序、颜色、shape 和 target_tile。
+get_intent_effect_range()、get_intent_invalid_reason()、can_generate_intent()、target_affiliation 和 includes_self。
+village.gd 的扩张逻辑、radar.gd 的 locked/take_damage/die 逻辑。
+TileIntentActionFactory.gd、TileTextureStateSelector.gd、TileHealthStateRules.gd、TileDeathExecutionController.gd 与 TileDamageProtectionRules.gd。
+血量、死亡、贴图、地图拓扑、时间轴落点和敌人意图排序。
+```
+
+### 实现结果
+
+本批没有新增模块，也没有改 `tile.gd` 或 `TileIntentActionDataBuilder.gd`。只把最后两个仍手写标准字典的子类接入现有 builder：
+
+```text
+scene/in_scene/enermy/village.gd
+scene/in_scene/enermy/radar.gd
+```
+
+两处仍保留原来的 `get_intent_action(target_tile)`、长段“位置/目标”语义说明、`TimelineAction.new(...)`、颜色、shape、target_tile 和返回值，只把原字段完全一致的 action_data 字典改为：
+
+```text
+_get_intent_action_data_builder().build_standard_action_data(...)
+```
+
+字段仍保持：
+
+```text
+"效果"
+"类型"
+"位置"
+"目标"
+"effect_range"
+"invalid_reason"
+```
+
+同步更新：
+
+```text
+docs/modularized-files-ultimate-operation-guide.md
+docs/ai-handoff-ultimate-operation-guide.md
+workflow_logs/maintenance_guides/tile.md
+```
+
+### 当前优化进度与下一步
+
+当前已拆模块统计保持为 168 个脚本模块和 4 个默认 Resource 文件。`TileIntentActionDataBuilder.gd` 当前已接入 `altar.gd`、`iron_mine.gd`、`Animal_husbandry.gd`、`center_altar.gd`、`village.gd` 与 `radar.gd`。Tile 标准 action_data 字典迁移已收口；下一批建议转向 `timecoin_ui.gd` 的获得/消耗/不足动画 runner，或 `enemy_intent_presentation_controller.gd` 的 tooltip 表现拆分。若继续 Tile，只单独重新审查子类 picker 策略，不要同批改 `TimelineAction.new(...)`、目标选择、`effect_range`、`invalid_reason`、死亡、血量、贴图或地图拓扑。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+覆盖检查通过：172 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 168 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 Tile 剩余子类 action_data 小批迁移
 
 ### 读取与轮廓

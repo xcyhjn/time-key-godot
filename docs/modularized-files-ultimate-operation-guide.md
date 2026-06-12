@@ -233,10 +233,10 @@ scene/out_scene/out_scene_modules/
 
 #### `scene/in_scene/tile_modules/rules/TileIntentActionDataBuilder.gd`
 
-- 用途：为 Tile 敌人意图组装标准 `action_data` 字典，当前已接入 `altar.gd`、`iron_mine.gd`、`Animal_husbandry.gd` 与 `center_altar.gd`。
+- 用途：为 Tile 敌人意图组装标准 `action_data` 字典，当前已接入 `altar.gd`、`iron_mine.gd`、`Animal_husbandry.gd`、`center_altar.gd`、`village.gd` 与 `radar.gd`。
 - 入口：`build_standard_action_data(description, landform_name, location, target_tile, effect_range, invalid_reason)`。
 - 维护：不要创建 `TimelineAction`，不要选择目标，不判断意图是否合法，不读取地图，也不要修改血量、贴图或状态组件。
-- 改进：如果继续迁移其他子类，只逐批替换重复字典构造；不要同批修改 `TimelineAction.new(...)`、目标选择、`effect_range` 或 `invalid_reason` 规则。
+- 改进：当前标准 action_data 子类迁移已收口；未来若新增类似子类，只逐批替换重复字典构造，不要同批修改 `TimelineAction.new(...)`、目标选择、`effect_range` 或 `invalid_reason` 规则。
 
 #### `scene/in_scene/tile_modules/rules/TileHealthStateRules.gd`
 
