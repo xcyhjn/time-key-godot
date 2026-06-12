@@ -49,6 +49,7 @@ scene/card/custom_card_modules/rules/
 scene/in_scene/timecoin_ui_modules/bridges/
 scene/in_scene/timecoin_ui_modules/animation/
 scene/in_scene/timecoin_ui_modules/presenters/
+scene/in_scene/enermy/intent_presentation_modules/presenters/
 scene/in_scene/tile_modules/controllers/
 scene/in_scene/tile_modules/rules/
 scene/out_scene/out_scene_modules/
@@ -208,6 +209,19 @@ scene/out_scene/out_scene_modules/
 - 入口：`append_gain_animation(...)`、`append_consume_animation(...)`、`append_warning_animation(...)`。
 - 维护：只负责 tween 片段构造，不创建 Tween，不登记或清理 `active_tweens`，不连接 `GlobalTimecoin` 信号，不刷新数值文本，也不控制沙漏 shader。
 - 改进：如果后续只调整反馈动画颜色、缩放、闪烁或时长，可以优先进入这里；动画触发时机、冲突清理和完成回调仍留在 `timecoin_ui.gd`。
+
+## EnemyIntentPresentationController 拆分模块
+
+这些文件服务于 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd`。`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责 hover phase 判断、地图与时间轴表现同步、主 tooltip 写入、状态关键词副 tooltip 生命周期和定位；新增模块只接管纯文本、纯表现或引用查找小边界。
+
+### presenters
+
+#### `scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd`
+
+- 用途：把 `EnemyIntentData` 与来源状态文本行组装成主 tooltip 文本行。
+- 入口：`build_lines(intent_data, source_status_lines)`。
+- 维护：只处理意图描述、状态行和无效原因 BBCode，不写入 `MainBoard.cursor_tooltip`，不创建状态关键词副 tooltip，不定位 tooltip，也不判断地图或时间轴 hover 规则。
+- 改进：如果主 tooltip 文案结构继续变化，可以优先扩展这里；状态关键词副 tooltip panel 创建、tooltip host 选择和屏幕位置仍留在 controller 或另开小批拆分。
 
 ## Tile 拆分模块
 

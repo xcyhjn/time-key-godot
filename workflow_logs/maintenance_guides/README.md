@@ -1,6 +1,6 @@
 # 大文件维护入口索引
 
-日期：2026-06-12
+日期：2026-06-13
 
 ## 用途
 
@@ -22,6 +22,7 @@
 | `scene/in_scene/timeline/timeline_ui.gd` | `workflow_logs/maintenance_guides/timeline_ui.md` |
 | `scene/card/custom_card.gd` | `workflow_logs/maintenance_guides/custom_card.md` |
 | `scene/in_scene/timecoin_ui.gd` | `workflow_logs/maintenance_guides/timecoin_ui.md` |
+| `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | `workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md` |
 | `scene/in_scene/tile.gd` | `workflow_logs/maintenance_guides/tile.md` |
 | `scene/out_scene/out_scene_map_exp.gd` | `workflow_logs/maintenance_guides/out_scene_map_exp.md` |
 | `scene/in_scene/rewards/*.gd` | `workflow_logs/maintenance_guides/rewards.md` |

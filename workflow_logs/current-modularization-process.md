@@ -2,6 +2,89 @@
 
 日期：2026-06-05
 
+## 2026-06-13 EnemyIntentPresentationController 主 tooltip 文本 builder 拆分
+
+### 读取与轮廓
+
+本批处理 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd`。开工前确认工作区只有用户已有的资源与 shader 改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。随后重新读取接力说明、HexMap 手册、模块总表和 `workflow_logs/current-modularization-process.md`，并用 `rg` 输出 `enemy_intent_presentation_controller.gd` 的 `class_name`、`const`、`@export`、`var`、`func`、主 tooltip、状态关键词副 tooltip、定位和隐藏入口轮廓。当前没有 `workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md`，本批先补单文件维护说明。
+
+### 当前职责
+
+`enemy_intent_presentation_controller.gd` 是敌人意图表现协调器，继续负责收集 `MainBoard`、`HexMap`、`TimelineManager`、`TimelineUI` 和 `DragShapeController` 引用，根据当前交互阶段响应地图 hover 与时间轴 hover，把同一份 `EnemyIntentData` 同步展示到地图、时间轴和 tooltip，并在 hover 退出或阶段切换时统一清理表现。
+
+### 耦合点
+
+```text
+_show_intent_tooltip() 当前同时组装主 tooltip 文本、写入 MainBoard.cursor_tooltip、重建状态关键词副 tooltip，并延迟定位主 tooltip。
+_get_source_status_lines() 负责从 source_node 拉取建筑状态文本，结果只给主 tooltip 文本使用。
+_rebuild_status_keyword_tooltips()、_create_status_keyword_panel()、_position_status_keyword_tooltips() 和 _hide_status_keyword_tooltips() 负责副 tooltip 控件生命周期，和主 tooltip 文本组装不是同一个风险面。
+_position_intent_tooltip() 依赖 HexMap stack 坐标、MainBoard tooltip panel 和屏幕边界，不和文本 builder 同批拆。
+地图高亮、时间轴高亮、EnemyIntentResolver 数据契约和 TimelineManager 查找不属于本批范围。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 主 tooltip 文本 builder | `intent_data.description`、状态行、无效原因 BBCode | 纯文本组装，输入输出简单 | 执行 |
+| 2 | 单文件维护说明 | `workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md` 和索引 | 用户要求大文件有对应维护说明 | 执行 |
+| 3 | 状态关键词副 tooltip presenter | HBox、PanelContainer、KeywordTooltipPanel 实例化和定位 | 涉及节点生命周期与 host 选择 | 暂缓 |
+| 4 | tooltip 定位 helper | `_position_intent_tooltip()` | 依赖屏幕边界、MainBoard panel 和地图 stack | 暂缓 |
+| 5 | 引用查找 bridge | `_resolve_references()` | 会触碰 MainBoard、HexMap、TimelineManager、信号连接 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：敌人意图主 tooltip 的文本行组装。
+
+涉及的小风险点：
+
+```text
+新增 EnemyIntentTooltipTextBuilder.gd，只负责把 EnemyIntentData 和状态行转成主 tooltip 文本行。
+enemy_intent_presentation_controller.gd 新增 preload 与 builder getter。
+_show_intent_tooltip() 保留 cursor_tooltip 写入、show、状态关键词副 tooltip 重建和 deferred 定位，只把文本数组构造转发给 builder。
+补充 enemy_intent_presentation_controller.gd 单文件维护说明和维护索引。
+```
+
+不触碰：
+
+```text
+地图与时间轴意图显示规则。
+EnemyIntentResolver 和 EnemyIntentData 字段契约。
+状态关键词副 tooltip 的节点创建、布局和定位。
+主 tooltip 的定位策略、屏幕 clamp 和 MainBoard set_cursor_tooltip_position 调用。
+hover phase 判断、revalidate 流程和 TimelineManager 数据结构。
+```
+
+### 实现结果
+
+新增 `scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd`。该模块是 RefCounted builder，中文职责注释明确它只负责组装敌人意图主 tooltip 文本行；它不写入 `MainBoard.cursor_tooltip`、不创建状态关键词副 tooltip、不定位 tooltip，也不判断地图或时间轴 hover 规则。
+
+`scene/in_scene/enermy/enemy_intent_presentation_controller.gd` 新增 `EnemyIntentTooltipTextBuilderScript` preload、`_tooltip_text_builder` 缓存和 `_get_tooltip_text_builder()` getter。`_show_intent_tooltip()` 继续负责校验 `MainBoard.cursor_tooltip`、写入 BBCode、显示主 tooltip、重建状态关键词副 tooltip 和延迟定位；原本的 `intent_data.description`、来源状态行和无效原因 BBCode 组装转交给 builder。
+
+新增 `workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md`，并更新维护索引。同步更新 `docs/modularized-files-ultimate-operation-guide.md` 与 `docs/ai-handoff-ultimate-operation-guide.md`，记录新模块和停止点。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计更新为 170 个脚本模块和 4 个默认 Resource 文件。EnemyIntentPresentationController 的主 tooltip 文本组装已拆出；controller 仍合理保留 hover phase、引用查找、地图/时间轴表现同步、主 tooltip 写入/定位和状态关键词副 tooltip 生命周期。
+
+下一批如果继续该文件，优先二选一：状态关键词副 tooltip presenter，或主 tooltip 定位 helper。不要同批修改 `EnemyIntentResolver`、`EnemyIntentData`、`TimelineManager` 和地图/时间轴联动规则。
+
+### 回归检查
+
+`git diff --check` 通过；仅提示 `workflow_logs/current-modularization-process.md` 会被 Git 归一化换行。
+
+模块文档覆盖检查通过：170 个已拆脚本模块和 4 个默认 Resource 文件都出现在 `docs/modularized-files-ultimate-operation-guide.md`，覆盖缺失为 0。
+
+Godot headless 项目检查可启动并退出，输出仍有既有退出资源占用警告。加载 `res://scene/in_scene/in_scene.tscn` 通过，主场景 ready、地图构建、CardManager 注册和 TimecoinUI 初始化都正常执行；新 `EnemyIntentTooltipTextBuilder.gd` preload 与 `EnemyIntentData` 类型解析没有报错。该场景检查仍输出既有 TileSet atlas 坐标报错和退出资源泄漏警告，本批没有修改 TileSet、地图资源或退出流程。
+
 ## 2026-06-13 TimecoinUI 获得/消耗/不足动画 runner 拆分
 
 ### 读取与轮廓

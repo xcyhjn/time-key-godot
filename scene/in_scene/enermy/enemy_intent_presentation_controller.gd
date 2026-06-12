@@ -6,6 +6,7 @@ const PHASE_TARGET_SELECT := "target_select"
 const PHASE_TIMELINE_DRAG := "timeline_drag"
 const PHASE_BLOCKED := "blocked"
 const KEYWORD_TOOLTIP_PANEL_SCENE := preload("res://scene/shared/tooltip/keyword_tooltip_panel.tscn")
+const EnemyIntentTooltipTextBuilderScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd")
 
 # ==========================================
 # 脚本名称: enemy_intent_presentation_controller.gd
@@ -98,11 +99,18 @@ var current_hover_origin: String = ""
 ## 上一帧记录的系统阶段，用于侦测阶段切换并及时清掉不该残留的意图预览。
 var last_phase: String = ""
 var status_keyword_tooltip_hbox: HBoxContainer = null
+var _tooltip_text_builder = null
 
 
 func _ready() -> void:
 	set_process(true)
 	call_deferred("_resolve_references")
+
+
+func _get_tooltip_text_builder():
+	if _tooltip_text_builder == null:
+		_tooltip_text_builder = EnemyIntentTooltipTextBuilderScript.new()
+	return _tooltip_text_builder
 
 
 func _resolve_references() -> void:
@@ -238,11 +246,10 @@ func _show_intent_tooltip(intent_data: EnemyIntentData) -> void:
 	if not is_instance_valid(main_board) or not is_instance_valid(main_board.get("cursor_tooltip")):
 		return
 
-	var tooltip_lines: Array[String] = []
-	tooltip_lines.append(intent_data.description)
-	tooltip_lines.append_array(_get_source_status_lines(intent_data.source_node))
-	if not intent_data.is_valid:
-		tooltip_lines.append("[color=#ff5555]%s[/color]" % (intent_data.invalid_reason if intent_data.invalid_reason != "" else "无可用目标"))
+	var tooltip_lines: Array[String] = _get_tooltip_text_builder().build_lines(
+		intent_data,
+		_get_source_status_lines(intent_data.source_node)
+	)
 
 	main_board.cursor_tooltip.bbcode_enabled = true
 	main_board.cursor_tooltip.clear()
