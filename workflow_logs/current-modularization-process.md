@@ -2,6 +2,95 @@
 
 日期：2026-06-05
 
+## 2026-06-12 Tile 死亡收尾执行 controller 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/tile.gd`。开工前确认仓库内没有实体 `AGENTS.md` 内容，因此继续遵守当前对话中的 AGENTS 约束。随后重新读取接力说明、HexMap 手册、模块维护说明和 `workflow_logs/maintenance_guides/tile.md`，并用 `rg` 输出 `tile.gd` 与 `tile_modules/` 的函数、变量、信号轮廓，重点确认 `set_health()`、`State_Update()`、`die()`、`tex_toggle()`、`get_intent_action()` 与当前已拆 Tile 模块的边界。
+
+工作区仍存在用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。
+
+### 当前职责
+
+`tile.gd` 仍是地貌/建筑实体基类，负责地貌基础属性、状态组件、结算奖励、敌人意图协议、视觉挂接、血量状态、贴图切换和旧公共入口。时间轴 shape 解析、默认敌人意图 action 构造、血量 clamp/damage_rate/主状态判定已经拆出；死亡后的状态组件清理、Broken 贴图切换、`damage_rate = 1.0` 和拓扑信号通知仍集中在 `die()`。
+
+### 耦合点
+
+```text
+State_Update() 已经只从 TileHealthStateRules 取下一主状态标签，但仍由主脚本调用 die()/Captured()/Revived() 执行副作用。
+die() 同时负责写 State_Main、清理 status_component、切换贴图、写 damage_rate，并通知 owner_battle.tile_topology_changed。
+tex_toggle() 内部仍包含主状态到贴图数组的选择规则，死亡收尾不应顺手拆贴图选择。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TileDeathExecutionController.gd` | `die()` 中已经判定 Broken 后的通用收尾 | 可作为小 controller 承接状态组件清理、贴图回调、damage_rate 结果和拓扑通知；不判断血量、不选择贴图规则 | 执行 |
+| 2 | 贴图选择 presenter/rules | `tex_toggle()`、`tex_picker()`、`damaged_tex_picker()` | 牵动主状态与贴图数组兜底，和死亡执行相邻但不是同一风险面 | 暂缓 |
+| 3 | protected 受击规则 | `take_damage()` | 与 `Vice_State_Pool.protected` 消耗和伤害命令体验绑定，需单独验证 | 暂缓 |
+| 4 | 子类敌人意图 action 数据统一 | 多个敌方地貌覆盖 `get_intent_action()` | 牵动 `effect_range`、`invalid_reason`、`target_affiliation` 和 TimelineAction 数据契约 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：Tile 已进入 Broken 后的死亡收尾执行。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TileDeathExecutionController.gd，只执行 status_component 清理、贴图回调、拓扑信号通知，并返回 damage_rate 结果。
+tile.gd 新增 preload 与 _get_death_execution_controller() 缓存 getter。
+die() 旧入口继续存在，仍先写 State_Main = Broken，再委托 controller 执行收尾。
+```
+
+不触碰：
+
+```text
+set_health() 和 State_Update() 的血量判定。
+take_damage() 的 protected 消耗。
+tex_toggle()、tex_picker()、damaged_tex_picker() 的贴图选择规则。
+默认或子类 get_intent_action() 的 TimelineAction 数据。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/tile_modules/controllers/TileDeathExecutionController.gd
+```
+
+职责：
+
+```text
+TileDeathExecutionController 只负责执行 Tile 已进入 Broken 后的通用死亡收尾。
+它不判断血量、不扣血、不释放 tile 节点、不重建地图视觉，也不选择死亡贴图。
+```
+
+`tile.gd::die()` 仍是旧入口，继续先写 `State_Main = Main_State_Pool.Broken`，再把状态组件清理、Broken 贴图回调和 `damage_rate` 结果委托给 controller。`damage_rate` 写回后，再由 controller 通知 `owner_battle.tile_topology_changed`，保持外部监听方看到的死亡状态已经完整写回。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计将更新为 165 个脚本模块和 4 个默认 Resource 文件。`tile.gd` 的死亡收尾已经拆出；下一批如果继续 Tile，优先重新审查 `tex_toggle()` 贴图选择边界、`take_damage()` 的 protected 消耗规则，或多个敌方地貌子类的意图 action 数据统一。不要重复拆死亡执行 controller，也不要同批修改贴图选择和 TimelineAction 数据契约。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+覆盖检查通过：169 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 165 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 Tile 血量状态纯规则拆分
 
 ### 读取与轮廓

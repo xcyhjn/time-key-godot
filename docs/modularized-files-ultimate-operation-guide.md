@@ -49,6 +49,7 @@ scene/card/custom_card_modules/rules/
 scene/in_scene/timecoin_ui_modules/bridges/
 scene/in_scene/timecoin_ui_modules/animation/
 scene/in_scene/timecoin_ui_modules/presenters/
+scene/in_scene/tile_modules/controllers/
 scene/in_scene/tile_modules/rules/
 scene/out_scene/out_scene_modules/
 ```
@@ -204,6 +205,15 @@ scene/out_scene/out_scene_modules/
 ## Tile 拆分模块
 
 这些文件服务于 `scene/in_scene/tile.gd`。`tile.gd` 仍是地貌和建筑实体基类，负责状态组件、血量、贴图、结算奖励、敌人意图协议和实体生命周期；新增模块只接管纯规则或纯适配小边界。
+
+### controllers
+
+#### `scene/in_scene/tile_modules/controllers/TileDeathExecutionController.gd`
+
+- 用途：执行 Tile 已进入 Broken 后的通用死亡收尾，包括清理状态组件、调用 Broken 贴图回调、返回 `damage_rate` 结果和通知地形拓扑变化。
+- 入口：`execute(status_component, tex_toggle_callback)`、`notify_topology_changed(owner_battle)`。
+- 维护：不要判断血量，不扣血，不释放 tile 节点，不重建地图视觉，也不要选择死亡贴图；贴图规则仍在 `tile.gd::tex_toggle()`。
+- 改进：如果后续死亡收尾继续增长，优先拆成更小的状态清理或拓扑通知适配，不要让它接管 `set_health()` 或敌人意图数据。
 
 ### rules
 

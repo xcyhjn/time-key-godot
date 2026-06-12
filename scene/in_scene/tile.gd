@@ -5,6 +5,7 @@ const StatusComponentScript = preload("res://scene/in_scene/status/status_compon
 const TileTimelineShapeParserScript = preload("res://scene/in_scene/tile_modules/rules/TileTimelineShapeParser.gd")
 const TileIntentActionFactoryScript = preload("res://scene/in_scene/tile_modules/rules/TileIntentActionFactory.gd")
 const TileHealthStateRulesScript = preload("res://scene/in_scene/tile_modules/rules/TileHealthStateRules.gd")
+const TileDeathExecutionControllerScript = preload("res://scene/in_scene/tile_modules/controllers/TileDeathExecutionController.gd")
 static var _texture_cache: Dictionary = {}
 
 signal Blood_change(Blood)
@@ -80,6 +81,7 @@ var status_component: StatusComponent = null
 var _timeline_shape_parser = null
 var _intent_action_factory = null
 var _health_state_rules = null
+var _death_execution_controller = null
 
 @export_group("状态图标显示")
 ## 状态图标相对建筑本体的本地偏移。x 控制左右，y 越小越往上。
@@ -131,6 +133,11 @@ func _get_health_state_rules():
 	if _health_state_rules == null:
 		_health_state_rules = TileHealthStateRulesScript.new()
 	return _health_state_rules
+
+func _get_death_execution_controller():
+	if _death_execution_controller == null:
+		_death_execution_controller = TileDeathExecutionControllerScript.new()
+	return _death_execution_controller
 
 func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2i, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
@@ -587,28 +594,14 @@ func State_Update():
 
 func die() -> void:
 	State_Main = Main_State_Pool.Broken
-	if is_instance_valid(status_component):
-		status_component.clear_statuses()
-	
-	# 因为上面【修复1】赋值了 self.tex，现在可以直接无缝切换为战损贴图了
-	tex_toggle()
-	
-	damage_rate = 1.0
-	
-	# 【修复 3】既然已经用 tex_toggle() 切换了贴图，就不需要再通知 HexMap 重新生成整个视觉了
-	# 注释掉下面这两行，彻底切断死循环路径
-	# if owner_battle and owner_battle.has_method("add_landform_visual_at"):
-	# 	owner_battle.add_landform_visual_at(location)
-	
-	# 【修复 4】删掉 free()！！！
-	# 地貌变成“废墟”后，它依然是一个占据格子的实体，只是贴图变了。
-	# 如果直接 free() 销毁内存，HexMap 去查这个格子时就会导致 Null 空指针崩溃！
-	# free()
-
-	# Broken 虽然不 queue_free，但它的战斗行为/敌人意图应当视作已失效。
-	# 这里主动通知 HexMap 触发一次地形拓扑/意图重判。
-	if is_instance_valid(owner_battle) and owner_battle.has_signal("tile_topology_changed"):
-		owner_battle.tile_topology_changed.emit()
+	# Broken 保留废墟占位，不 queue_free；controller 只执行通用收尾。
+	var death_controller = _get_death_execution_controller()
+	var death_result: Dictionary = death_controller.execute(
+		status_component,
+		Callable(self, "tex_toggle")
+	)
+	damage_rate = float(death_result.get("damage_rate", 1.0))
+	death_controller.notify_topology_changed(owner_battle)
 
 # ==========================================
 # ★ 敌人意图接口
