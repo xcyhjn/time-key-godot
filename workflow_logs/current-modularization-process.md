@@ -2,6 +2,90 @@
 
 日期：2026-06-05
 
+## 2026-06-13 TimelineManager 敌方意图优先级选择规则拆分
+
+### 读取与轮廓
+
+本批处理 `scene/in_scene/timeline/TimelineManager.gd`。开工前 `git status --short` 只显示用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。仓库中没有实体 `AGENTS.md`，继续遵守当前对话中用户贴出的 AGENTS 约束。已读取 `docs/ai-handoff-ultimate-operation-guide.md`、`docs/hex-map-ultimate-operation-guide.md`、`docs/modularized-files-ultimate-operation-guide.md`、`workflow_logs/current-modularization-process.md` 与 `workflow_logs/maintenance_guides/timeline_ui.md`。当前没有单独的 `workflow_logs/maintenance_guides/timeline_manager.md`，本批需要补齐。已用 `rg` 输出 `TimelineManager.gd`、`TimelineIntroAnimator.gd`、`timeline_ui.gd` 和 `timeline/ui_modules` 下的 `class_name`、`signal`、`@export`、`const`、`var`、`func` 轮廓。
+
+### 当前职责
+
+`TimelineManager.gd` 是时间轴规则核心。它负责保存 `grid` 占用、校验/放置行动、回合结算、发射行动放置/结算/清理/hover 信号、生成敌方意图、重判敌方意图有效性，并提供中途移除行动的规则入口。当前 UI 表现已拆到 `timeline_ui.gd` 及 `timeline/ui_modules`，但 `TimelineManager.gd` 内部敌方意图候选收集、优先级排序、同级候选选择、目标映射和 action priority 写入仍集中在一个脚本里。
+
+### 耦合点
+
+```text
+generate_enemy_intents() 同时读取当前 HexMap、收集候选、按优先级循环、选择可放置候选、解析目标地块、创建 TimelineAction、写入 priority、调用 place_action() 修改 grid。
+_collect_enemy_intent_candidates() 同时做敌人协议检查、意图开关检查、can_generate_intent() 检查、shape 缓存和优先级读取。
+_get_enemy_intent_priority()、_get_sorted_priority_values()、_filter_candidates_by_priority() 和 _pick_placeable_candidate() 是纯规则/选择逻辑，适合先拆；但 _pick_placeable_candidate() 仍需要通过 Callable 调用现有寻位逻辑，避免同批复制 grid 校验。
+_resolve_intent_target_tile() 读取 HexMap.stack_nodes，和地图数据契约相关，本批不碰。
+_apply_intent_priority_to_action() 会写 TimelineAction.action_data，本批不改变 action 数据契约。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 敌方意图优先级/同级选择规则 | `_get_enemy_intent_priority()`、`_get_sorted_priority_values()`、`_filter_candidates_by_priority()`、`_pick_placeable_candidate()` | 纯规则为主，输入输出清晰，只需要传入寻位 Callable | 执行 |
+| 2 | 维护说明补充 | 新增 `timeline_manager.md`、更新总结文档 | `TimelineManager.gd` 首个规则拆分需要单独维护入口 | 执行 |
+| 3 | 候选收集 | `_collect_enemy_intent_candidates()` | 牵动敌人协议、HexMap 和 shape 缓存 | 暂缓 |
+| 4 | 目标地块映射 | `_resolve_intent_target_tile()` | 读取 `hex_map.stack_nodes`，要对齐 HexMap 数据契约 | 暂缓 |
+| 5 | action priority 写入 | `_apply_intent_priority_to_action()` | 改 `TimelineAction.action_data`，涉及展示/调试读取 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：敌方意图候选的优先级排序与同级可放置选择。
+
+涉及的小风险点：
+
+```text
+新增 TimelineEnemyIntentPrioritySelector.gd，读取敌人优先级、返回降序优先级列表、过滤同级候选，并在同级中挑出当前可放置的 candidate/spot。
+TimelineManager.gd 保留旧私有入口，内部转发给 selector，减少调用点变化。
+_pick_placeable_candidate() 通过 Callable 继续使用现有 find_random_available_spot()，不复制占位校验和 grid 规则。
+```
+
+不触碰：
+
+```text
+grid 数据结构、is_placement_valid()、place_action() 和 find_random_available_spot()。
+generate_enemy_intents() 的 action 创建、place_action() 写入、max_enemy_intents_per_turn 限制和 action_placed 信号。
+HexMap.stack_nodes 目标映射。
+TimelineAction.action_data 与 intent_priority 写入语义。
+TimelineUI、敌方意图 overlay、tooltip 和移除动画。
+```
+
+### 实现结果
+
+新增 `scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentPrioritySelector.gd`。该模块是 RefCounted rules，中文职责注释明确它只负责敌方意图候选的优先级读取、优先级分层排序和同级可放置候选选择；它不读取或修改 `TimelineManager.grid`，不创建 `TimelineAction`，不调用 `place_action()`，也不决定敌人意图目标地块。
+
+`scene/in_scene/timeline/TimelineManager.gd` 新增 selector preload、缓存和 `_get_enemy_intent_priority_selector()` getter。旧 `_get_enemy_intent_priority()`、`_get_sorted_priority_values()`、`_filter_candidates_by_priority()` 和 `_pick_placeable_candidate()` 入口全部保留并转发给 selector；`_pick_placeable_candidate()` 通过 `Callable(self, "find_random_available_spot")` 继续使用原寻位逻辑，避免复制 grid 校验。
+
+同步更新 `docs/modularized-files-ultimate-operation-guide.md`、`docs/ai-handoff-ultimate-operation-guide.md`，并新增 `workflow_logs/maintenance_guides/timeline_manager.md`。总结文档已记录 `manager_modules/rules/TimelineEnemyIntentPrioritySelector.gd`，维护说明也补上不要重复拆 selector、不要同批改 `grid` / `place_action()` / `TimelineAction.action_data` / UI 表现的停止点。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计更新为 173 个脚本模块和 4 个默认 Resource 文件。`TimelineManager.gd` 从约 517 行降到约 493 行；敌方意图优先级读取、优先级列表、同级过滤和同级可放置选择已经收口到 selector。
+
+下一批如果继续 `TimelineManager.gd`，只建议单独评估敌方意图候选收集或目标地块映射。候选收集牵动敌人协议、`can_generate_intent()` 和 shape 缓存；目标地块映射牵动 `HexMap.stack_nodes` 契约，两者不要同批处理。
+
+### 回归检查
+
+`git diff --check` 通过；仅提示 `scene/in_scene/timeline/TimelineManager.gd` 与 `workflow_logs/current-modularization-process.md` 会被 Git 归一化换行。
+
+模块文档覆盖检查通过：`scripts=173 resources=4 total=177 missing=0`。
+
+Godot headless 项目检查通过，无新增脚本解析错误；仍有既有退出时 `ObjectDB instances leaked` 与资源占用提示。
+
+加载 `res://scene/in_scene/in_scene.tscn` 通过，无新增脚本解析错误；仍有既有 TileSet atlas 坐标错误、RID/resource 退出泄漏提示。
+
 ## 2026-06-13 TimelineUI 入场动画编排 controller 拆分
 
 ### 读取与轮廓

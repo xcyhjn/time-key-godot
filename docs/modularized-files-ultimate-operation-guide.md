@@ -36,6 +36,7 @@ scene/in_scene/timeline/ui_modules/controllers/
 scene/in_scene/timeline/ui_modules/grid/
 scene/in_scene/timeline/ui_modules/layout/
 scene/in_scene/timeline/ui_modules/presenters/
+scene/in_scene/timeline/manager_modules/rules/
 scene/in_scene/timeline/resources/
 scene/in_scene/rewards/animation/
 scene/in_scene/rewards/bridges/
@@ -580,6 +581,19 @@ scene/out_scene/out_scene_modules/
 - 用途：默认时间轴视觉配置数据资产，当前覆盖网格默认/悬停色、展开缩放、敌方意图 shader 参数、移除动画、整体轮廓和遮罩表现。
 - 维护：这是数据资产，不是运行态状态；调参时只改静态表现值，不写 action、Tween、hover 状态或场景节点。
 - 改进：如果不同 UI 主题需要不同时间轴风格，可以新增多份 `.tres`，由场景或上层流程选择资源。
+
+## TimelineManager 拆分模块
+
+这些文件服务于 `scene/in_scene/timeline/TimelineManager.gd`。它们处理时间轴规则里的小块纯规则，主脚本仍负责 `grid` 占用、放置/结算信号、敌方意图生成编排和中途移除。
+
+### rules
+
+#### `scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentPrioritySelector.gd`
+
+- 用途：读取敌方意图优先级，返回降序优先级列表，过滤同级候选，并在同级候选里挑出当前可放置的 candidate/spot。
+- 入口：`get_enemy_intent_priority(...)`、`get_sorted_priority_values(...)`、`filter_candidates_by_priority(...)`、`pick_placeable_candidate(...)`。
+- 维护：不要读取或修改 `TimelineManager.grid`，不要创建 `TimelineAction`，不要调用 `place_action()`，也不要决定敌人意图目标地块。
+- 改进：如果后续要调整“同优先级内随机/顺序”的策略，优先扩展这里；可放置判定仍通过外部传入的寻位 Callable 完成。
 
 ## InScene 拆分模块
 

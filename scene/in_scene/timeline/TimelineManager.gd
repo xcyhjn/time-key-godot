@@ -1,6 +1,8 @@
 class_name TimelineManager
 extends Node
 
+const TimelineEnemyIntentPrioritySelectorScript = preload("res://scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentPrioritySelector.gd")
+
 # 时间轴网格使用0-based索引系统（与GDScript数组索引一致）
 # X轴：时间轴位置，有效索引 0-11（共12个位置）
 # Y轴：并发层，有效索引 0-2（共3层）
@@ -11,6 +13,7 @@ const GRID_HEIGHT: int = 3
 # 核心网格字典：键为 Vector2i(x,y)，值为 TimelineAction
 # 使用字典而不是二维数组，查找和删除更加灵活高效
 var grid: Dictionary = { }
+var _enemy_intent_priority_selector = null
 @export var max_enemy_intents_per_turn: int = 5  # 每回合最多允许多少个敌人排入时间轴
 @export_group("敌人意图优先级")
 ## 没有声明 intent_priority / get_intent_priority() 的敌人使用这个默认优先级。
@@ -29,6 +32,13 @@ signal action_placed(action: TimelineAction)
 signal action_executed(action: TimelineAction)
 signal timeline_cleared
 signal action_hovered_changed(action: TimelineAction, is_hovering: bool)
+
+
+func _get_enemy_intent_priority_selector():
+	if _enemy_intent_priority_selector == null:
+		_enemy_intent_priority_selector = TimelineEnemyIntentPrioritySelectorScript.new()
+	return _enemy_intent_priority_selector
+
 
 # ==========================================
 # ★ 占位与校验逻辑
@@ -331,60 +341,26 @@ func _collect_enemy_intent_candidates(enemies_on_board: Array, hex_map: battle) 
 ## 读取敌人优先级。
 ## 优先使用 get_intent_priority()，其次读取 intent_priority 变量，最后回退到默认值。
 func _get_enemy_intent_priority(enemy: Node) -> int:
-	if not is_instance_valid(enemy):
-		return default_enemy_intent_priority
-	if enemy.has_method("get_intent_priority"):
-		return int(enemy.get_intent_priority())
-	var property_value = enemy.get("intent_priority")
-	if property_value != null:
-		return int(property_value)
-	return default_enemy_intent_priority
+	return _get_enemy_intent_priority_selector().get_enemy_intent_priority(enemy, default_enemy_intent_priority)
 
 
 ## 返回从高到低排序后的优先级列表。
 func _get_sorted_priority_values(candidates: Array[Dictionary]) -> Array[int]:
-	var priority_lookup: Dictionary = {}
-	for candidate in candidates:
-		priority_lookup[int(candidate["priority"])] = true
-
-	var priorities: Array[int] = []
-	for priority in priority_lookup.keys():
-		priorities.append(int(priority))
-
-	priorities.sort()
-	priorities.reverse()
-	return priorities
+	return _get_enemy_intent_priority_selector().get_sorted_priority_values(candidates)
 
 
 func _filter_candidates_by_priority(candidates: Array[Dictionary], priority: int) -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	for candidate in candidates:
-		if int(candidate["priority"]) == priority:
-			result.append(candidate)
-	return result
+	return _get_enemy_intent_priority_selector().filter_candidates_by_priority(candidates, priority)
 
 
 ## 同级内先筛出当前能放进时间轴的候选，再随机/顺序选择一个。
 ## 返回值包含 candidate 与已算好的 spot，避免重复寻位。
 func _pick_placeable_candidate(candidates: Array[Dictionary]) -> Dictionary:
-	var placeable: Array[Dictionary] = []
-
-	for candidate in candidates:
-		var shape: Array[Vector2i] = candidate["shape"]
-		var spot := find_random_available_spot(shape)
-		if spot == Vector2i(-1, -1):
-			continue
-		placeable.append({
-			"candidate": candidate,
-			"spot": spot
-		})
-
-	if placeable.is_empty():
-		return {}
-
-	if randomize_same_priority_enemy_intents:
-		return placeable.pick_random()
-	return placeable[0]
+	return _get_enemy_intent_priority_selector().pick_placeable_candidate(
+		candidates,
+		Callable(self, "find_random_available_spot"),
+		randomize_same_priority_enemy_intents
+	)
 
 
 ## 将地图上的“目标中心格”映射成 stack，确保时间轴意图与地图侧目标一致。
