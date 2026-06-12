@@ -114,9 +114,9 @@ shaders/game_over.gdshader
 当前模块统计：
 
 ```text
-脚本模块：175
+脚本模块：176
 默认 Resource 文件：4
-总覆盖对象：179
+总覆盖对象：180
 docs/modularized-files-ultimate-operation-guide.md 覆盖缺失：0
 ```
 
@@ -239,17 +239,18 @@ scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd
 
 如果继续 TimecoinUI，只评估 `active_tweens` 清理 controller。不要重复拆全局查找、沙漏 shader、普通抖动或获得/消耗/不足动画片段。
 
-### EnemyIntentPresentationController 已拆主 tooltip 文本
+### EnemyIntentPresentationController 已拆主 tooltip 文本和状态关键词副 tooltip
 
 已新增：
 
 ```text
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd
+scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd
 ```
 
-它只组装主 tooltip 文本行。控制器仍负责引用查找、hover phase 判断、地图/时间轴表现、主 tooltip 写入、状态关键词副 tooltip 创建/定位/清理和延迟定位。
+`EnemyIntentTooltipTextBuilder.gd` 只组装主 tooltip 文本行。`EnemyIntentStatusKeywordTooltipPresenter.gd` 只创建、定位和销毁状态关键词副 tooltip。
 
-后续如果继续，只单批处理状态关键词副 tooltip presenter 或主 tooltip 定位 helper。
+控制器仍负责引用查找、hover phase 判断、地图/时间轴表现、主 tooltip 写入、关键词列表读取、tooltip host 选择和延迟定位。后续如果继续，只单批处理主 tooltip 定位 helper；不要重复拆文本 builder 或状态关键词副 tooltip presenter。
 
 ### Tile 已完成多个低风险边界
 
@@ -338,8 +339,7 @@ workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
 只做一个方向：
 
 ```text
-状态关键词副 tooltip presenter
-或主 tooltip 定位 helper
+主 tooltip 定位 helper
 ```
 
 不要同批动：
@@ -478,7 +478,7 @@ $missing | Sort-Object
 当前预期输出：
 
 ```text
-scripts=175 resources=4 total=179 missing=0
+scripts=176 resources=4 total=180 missing=0
 ```
 
 如果新增模块，同步更新统计和文档后，新的统计可以增加，但 `missing` 必须仍为 0。
@@ -528,7 +528,7 @@ Invalid access
 
 当前模块化进度：
 - 最新提交：本批提交为 `refactor: extract timeline enemy intent candidate collector`；哈希以 `git log --oneline -1` 为准。
-- 当前已拆脚本模块 175 个，另有 4 个默认 Resource 文件。
+- 当前已拆脚本模块 176 个，另有 4 个默认 Resource 文件。
 - docs/modularized-files-ultimate-operation-guide.md 覆盖缺失应为 0。
 - docs/ 目录只保留总结性说明；中间过程写 workflow_logs/current-modularization-process.md。
 
@@ -546,7 +546,7 @@ Invalid access
 - 每批单独 commit。
 
 推荐下一步：
-- enemy_intent_presentation_controller.gd：只评估状态关键词副 tooltip presenter 或主 tooltip 定位 helper。
+- enemy_intent_presentation_controller.gd：只评估主 tooltip 定位 helper，不重复拆状态关键词副 tooltip presenter。
 - out_scene_map_exp.gd：只评估镜头限制小模块，不同批碰地图移动和场景切换 executor。
 
 如果重新评估 TimelineManager：
@@ -570,5 +570,5 @@ Invalid access
 - Godot headless 项目检查
 - 若改局内模块，加载 res://scene/in_scene/in_scene.tscn
 - 若改局外模块，加载 res://scene/out_scene/Out_Scene.tscn
-- 模块覆盖检查应输出 scripts=175 resources=4 total=179 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
+- 模块覆盖检查应输出 scripts=176 resources=4 total=180 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
 ```

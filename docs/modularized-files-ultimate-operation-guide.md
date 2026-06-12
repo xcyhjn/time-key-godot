@@ -225,6 +225,13 @@ scene/out_scene/out_scene_modules/
 - 维护：只处理意图描述、状态行和无效原因 BBCode，不写入 `MainBoard.cursor_tooltip`，不创建状态关键词副 tooltip，不定位 tooltip，也不判断地图或时间轴 hover 规则。
 - 改进：如果主 tooltip 文案结构继续变化，可以优先扩展这里；状态关键词副 tooltip panel 创建、tooltip host 选择和屏幕位置仍留在 controller 或另开小批拆分。
 
+#### `scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd`
+
+- 用途：创建、定位和销毁敌人意图状态关键词副 tooltip。
+- 入口：`rebuild(keywords, host, main_panel, screen_size, gap, width, margin)`、`update_position(main_panel, screen_size, gap, margin)`、`hide()`。
+- 维护：只管理副 tooltip 的 HBox、关键词 Panel 样式、屏幕边界定位和销毁，不读取敌人状态，不写入主 tooltip 文本，不判断 hover 阶段，也不驱动地图或时间轴表现。
+- 改进：如果状态关键词副 tooltip 的样式或布局继续变化，优先改这里；关键词列表读取、host 选择和主 tooltip panel 选择仍留在 controller 旧入口。
+
 ## Tile 拆分模块
 
 这些文件服务于 `scene/in_scene/tile.gd`。`tile.gd` 仍是地貌和建筑实体基类，负责状态组件、血量、贴图、结算奖励、敌人意图协议和实体生命周期；新增模块只接管纯规则或纯适配小边界。

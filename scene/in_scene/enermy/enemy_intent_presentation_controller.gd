@@ -5,8 +5,8 @@ const PHASE_IDLE := "idle"
 const PHASE_TARGET_SELECT := "target_select"
 const PHASE_TIMELINE_DRAG := "timeline_drag"
 const PHASE_BLOCKED := "blocked"
-const KEYWORD_TOOLTIP_PANEL_SCENE := preload("res://scene/shared/tooltip/keyword_tooltip_panel.tscn")
 const EnemyIntentTooltipTextBuilderScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd")
+const EnemyIntentStatusKeywordTooltipPresenterScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd")
 
 # ==========================================
 # 脚本名称: enemy_intent_presentation_controller.gd
@@ -98,8 +98,8 @@ var current_intent_data: EnemyIntentData = null
 var current_hover_origin: String = ""
 ## 上一帧记录的系统阶段，用于侦测阶段切换并及时清掉不该残留的意图预览。
 var last_phase: String = ""
-var status_keyword_tooltip_hbox: HBoxContainer = null
 var _tooltip_text_builder = null
+var _status_keyword_tooltip_presenter = null
 
 
 func _ready() -> void:
@@ -111,6 +111,12 @@ func _get_tooltip_text_builder():
 	if _tooltip_text_builder == null:
 		_tooltip_text_builder = EnemyIntentTooltipTextBuilderScript.new()
 	return _tooltip_text_builder
+
+
+func _get_status_keyword_tooltip_presenter():
+	if _status_keyword_tooltip_presenter == null:
+		_status_keyword_tooltip_presenter = EnemyIntentStatusKeywordTooltipPresenterScript.new()
+	return _status_keyword_tooltip_presenter
 
 
 func _resolve_references() -> void:
@@ -341,91 +347,47 @@ func _rebuild_status_keyword_tooltips(source_node: Node) -> void:
 	if not is_instance_valid(host):
 		return
 
-	status_keyword_tooltip_hbox = HBoxContainer.new()
-	status_keyword_tooltip_hbox.name = "EnemyStatusKeywordTooltips"
-	status_keyword_tooltip_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	status_keyword_tooltip_hbox.add_theme_constant_override("separation", int(status_keyword_tooltip_gap))
-	host.add_child(status_keyword_tooltip_hbox)
-
-	for keyword_name in keywords:
-		var panel := _create_status_keyword_panel(keyword_name)
-		if is_instance_valid(panel):
-			status_keyword_tooltip_hbox.add_child(panel)
-
-	_position_status_keyword_tooltips()
+	_get_status_keyword_tooltip_presenter().rebuild(
+		keywords,
+		host,
+		_get_status_keyword_main_panel(),
+		get_viewport().get_visible_rect().size,
+		status_keyword_tooltip_gap,
+		status_keyword_tooltip_width,
+		tooltip_screen_margin
+	)
 
 
 func _create_status_keyword_panel(keyword_name: String) -> PanelContainer:
-	if not GlobalDB.KEYWORDS.has(keyword_name):
-		return null
-
-	var keyword_data: Dictionary = GlobalDB.KEYWORDS[keyword_name]
-	var panel := KEYWORD_TOOLTIP_PANEL_SCENE.instantiate() as PanelContainer
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.12, 0.95)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.8, 0.6, 0.2, 1.0)
-	style.set_corner_radius_all(6)
-	panel.add_theme_stylebox_override("panel", style)
-
-	var margin := panel.get_node_or_null("Margin") as MarginContainer
-	if is_instance_valid(margin):
-		margin.add_theme_constant_override("margin_left", 12)
-		margin.add_theme_constant_override("margin_right", 12)
-		margin.add_theme_constant_override("margin_top", 10)
-		margin.add_theme_constant_override("margin_bottom", 10)
-
-	var title_label := panel.get_node_or_null("Margin/ContentVBox/TitleLabel") as Label
-	if is_instance_valid(title_label):
-		title_label.text = keyword_name
-		title_label.add_theme_color_override("font_color", Color(str(keyword_data.get("color", "#ffffff"))))
-
-	var desc_label := panel.get_node_or_null("Margin/ContentVBox/DescriptionLabel") as RichTextLabel
-	if is_instance_valid(desc_label):
-		desc_label.custom_minimum_size = Vector2(status_keyword_tooltip_width, 0.0)
-		desc_label.clear()
-		desc_label.append_text(str(keyword_data.get("desc", "")))
-
-	return panel
+	return _get_status_keyword_tooltip_presenter().create_panel(keyword_name, status_keyword_tooltip_width)
 
 
 func _position_status_keyword_tooltips() -> void:
-	if not is_instance_valid(status_keyword_tooltip_hbox):
+	if _status_keyword_tooltip_presenter == null:
 		return
 	if not is_instance_valid(main_board):
 		return
 
-	var main_panel: Control = _get_cursor_tooltip_panel() if is_instance_valid(_get_cursor_tooltip_panel()) else main_board.cursor_tooltip
-	if not is_instance_valid(main_panel):
-		return
-
-	var screen_size := get_viewport().get_visible_rect().size
-	var main_pos: Vector2 = main_panel.global_position
-	var main_size: Vector2 = main_panel.size if main_panel.size != Vector2.ZERO else main_panel.get_combined_minimum_size()
-	var keywords_size: Vector2 = status_keyword_tooltip_hbox.size if status_keyword_tooltip_hbox.size != Vector2.ZERO else status_keyword_tooltip_hbox.get_combined_minimum_size()
-
-	var target_x := main_pos.x + main_size.x + status_keyword_tooltip_gap
-	if target_x + keywords_size.x > screen_size.x - tooltip_screen_margin.x:
-		target_x = main_pos.x - keywords_size.x - status_keyword_tooltip_gap
-
-	var target_y := clampf(
-		main_pos.y,
-		tooltip_screen_margin.y,
-		screen_size.y - keywords_size.y - tooltip_screen_margin.y
+	_status_keyword_tooltip_presenter.update_position(
+		_get_status_keyword_main_panel(),
+		get_viewport().get_visible_rect().size,
+		status_keyword_tooltip_gap,
+		tooltip_screen_margin
 	)
-
-	status_keyword_tooltip_hbox.global_position = Vector2(target_x, target_y)
 
 
 func _hide_status_keyword_tooltips() -> void:
-	if is_instance_valid(status_keyword_tooltip_hbox):
-		status_keyword_tooltip_hbox.queue_free()
-	status_keyword_tooltip_hbox = null
+	if _status_keyword_tooltip_presenter != null:
+		_status_keyword_tooltip_presenter.hide()
+
+
+func _get_status_keyword_main_panel() -> Control:
+	if not is_instance_valid(main_board):
+		return null
+	var cursor_tooltip_panel := _get_cursor_tooltip_panel()
+	if is_instance_valid(cursor_tooltip_panel):
+		return cursor_tooltip_panel
+	return main_board.cursor_tooltip
 
 
 func _get_status_tooltip_host() -> Node:

@@ -2,6 +2,122 @@
 
 日期：2026-06-05
 
+## 2026-06-13 EnemyIntentPresentationController 状态关键词副 tooltip 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd`。开工前确认仓库中没有实体 `AGENTS.md`，继续使用当前对话中用户贴出的 AGENTS 约束。当前工作区仍有用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不 stage、不提交这些文件。已读取：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+workflow_logs/next-ai-handoff-current-status.md
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+```
+
+已按要求先读取 `godot-prompter:gdscript-patterns`；写 Markdown 前已读取 `docs-write`。`docs-write` 引用的共享 style guide 在本机缺失，因此本批文档继续按中文自然语言和当前项目文档风格维护。已用 `rg` 输出目标文件的 `class_name`、`extends`、`signal`、`@export`、`@onready`、`const`、`var`、`func` 轮廓，并搜索 tooltip、状态关键词、副 tooltip 和已有 `EnemyIntentTooltipTextBuilder.gd` 的调用边界。
+
+### 当前职责
+
+`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责解析地图 hover 与时间轴 hover 入口、判断当前交互阶段、驱动地图高亮、驱动时间轴高亮、写入主 tooltip、读取状态关键词、选择 tooltip host、延迟定位，以及在 hover 退出、阶段切换和意图重判时清理表现。
+
+### 耦合点
+
+```text
+_show_intent_tooltip() 仍负责把主 tooltip 文本写到 MainBoard.cursor_tooltip，并触发副 tooltip 重建和延迟定位。
+_get_source_status_keywords() 读取敌人状态关键词协议，本批不改变。
+_get_status_tooltip_host() 和 _get_cursor_tooltip_panel() 保留主脚本旧语义，本批不改变 host 选择。
+_rebuild_status_keyword_tooltips()、_create_status_keyword_panel()、_position_status_keyword_tooltips()、_hide_status_keyword_tooltips() 混合了副 tooltip HBox、Panel 样式、定位和销毁，本批只拆这一块。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 状态关键词副 tooltip presenter | `_rebuild_status_keyword_tooltips()`、`_create_status_keyword_panel()`、`_position_status_keyword_tooltips()`、`_hide_status_keyword_tooltips()` | 纯 UI 表现，输入输出清晰，不改 hover 判定和规则数据 | 执行 |
+| 2 | 主 tooltip 定位 helper | `_position_intent_tooltip()` | 只处理坐标、panel size 和屏幕 clamp，但会影响主 tooltip 位置 | 暂缓 |
+| 3 | 引用查找 bridge | `_resolve_references()` | 牵动 MainBoard、HexMap、TimelineManager 和 hover 信号连接顺序 | 不碰 |
+
+### 本批风险面
+
+本批只处理一个风险面：状态关键词副 tooltip 的创建、定位和销毁。
+
+涉及的小风险点：
+
+```text
+新增 EnemyIntentStatusKeywordTooltipPresenter.gd，集中管理副 tooltip HBox、关键词 Panel 样式、屏幕边界定位和销毁。
+enemy_intent_presentation_controller.gd 保留旧 _rebuild_status_keyword_tooltips()、_create_status_keyword_panel()、_position_status_keyword_tooltips() 和 _hide_status_keyword_tooltips() 入口并转发。
+关键词列表读取、host 选择和主 tooltip panel 选择仍在 controller 中，避免同批改变来源协议。
+```
+
+不触碰：
+
+```text
+EnemyIntentResolver 与 EnemyIntentData 字段契约。
+TimelineManager 数据结构。
+地图高亮与时间轴高亮联动规则。
+主 tooltip 文本 builder。
+主 tooltip 坐标和屏幕 clamp helper。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd
+```
+
+职责：
+
+```text
+EnemyIntentStatusKeywordTooltipPresenter 只负责敌人意图状态关键词副 tooltip 的创建、定位和销毁。
+它不读取敌人状态，不写入主 tooltip 文本，不判断 hover 阶段，也不驱动地图或时间轴表现。
+```
+
+`enemy_intent_presentation_controller.gd` 新增 presenter preload、缓存 getter 和旧入口转发。旧 `_rebuild_status_keyword_tooltips()` 仍先读取关键词并选择 host，再把关键词、host、主 tooltip panel、屏幕大小、间距、宽度和边距传给 presenter。旧 `_create_status_keyword_panel()`、`_position_status_keyword_tooltips()` 与 `_hide_status_keyword_tooltips()` 仍保留，外部行为和调用顺序不变。
+
+同步更新：
+
+```text
+docs/modularized-files-ultimate-operation-guide.md
+docs/ai-handoff-ultimate-operation-guide.md
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+workflow_logs/next-ai-handoff-current-status.md
+```
+
+### 当前优化进度与下一步
+
+当前已拆脚本模块更新为 176 个，默认 Resource 文件仍为 4 个。`EnemyIntentPresentationController` 已拆出 2 个 presenter：
+
+```text
+EnemyIntentTooltipTextBuilder.gd
+EnemyIntentStatusKeywordTooltipPresenter.gd
+```
+
+下一批如果继续 `enemy_intent_presentation_controller.gd`，建议只评估主 tooltip 定位 helper，不要重复拆文本 builder 或状态关键词副 tooltip presenter。备选仍是 `out_scene_map_exp.gd` 的镜头限制小模块。
+
+### 回归检查
+
+已运行：
+
+```text
+git diff --check 通过；仅有 Git 换行归一化提示，无空白错误。
+Godot headless 项目检查通过：EXIT=0。
+加载 res://scene/in_scene/in_scene.tscn 通过：EXIT=0。
+模块覆盖检查通过：scripts=176 resources=4 total=180 missing=0。
+```
+
 ## 2026-06-13 TimelineManager 敌方意图候选收集拆分
 
 ### 读取与轮廓
