@@ -2,6 +2,94 @@
 
 日期：2026-06-05
 
+## 2026-06-12 Tile 贴图状态选择规则审查与拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/tile.gd`。开工前确认工作区仍只有用户已有的资源与 shader 改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。随后重新读取接力说明、HexMap 手册、模块维护说明和 `workflow_logs/maintenance_guides/tile.md`，并用 `rg` 输出 `tile.gd`、`tile_modules/` 与敌方地貌子类中 `tex_toggle()`、`tex_picker()`、`damaged_tex_picker()`、`get_intent_action()` 的轮廓。
+
+### 当前职责
+
+`tile.gd` 仍是地貌和建筑实体基类，负责状态组件、血量状态、结算奖励、敌人意图协议、贴图节点挂接和实体生命周期。时间轴 shape 解析、默认敌人意图 action 构造、血量纯规则、Broken 后死亡收尾执行和 protected 受击吸收规则已经拆出；`tex_toggle()` 仍在主脚本里同时判断主状态、选择普通或破损贴图数组，并直接写入 `Sprite2D.texture`。
+
+### 耦合点
+
+```text
+tex_toggle() 同时读取 State_Main、landform_tex、landform_damaged_tex 和 tex.texture，并调用 tex_picker()/damaged_tex_picker() 写回 Sprite2D。
+Revived()、Captured()、die() 和部分子类死亡流程会调用 tex_toggle()，所以旧入口必须保留。
+Animal_husbandry.gd、background.gd、radar.gd、tower.gd 等仍覆写 tex_picker() 或 damaged_tex_picker()，这些是子类多态定制点，本批不统一。
+多个敌方地貌子类仍各自覆写 get_intent_action()，但意图 action 数据契约涉及 effect_range、invalid_reason、target_affiliation 和 TimelineAction 展示，本批不碰。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 贴图状态选择规则 | `tex_toggle()` 中普通态、占领态、破损态与贴图数组归属判断 | 纯选择规则，输入输出清楚；主脚本仍写 Sprite2D 并保留子类 picker | 执行 |
+| 2 | 子类 picker 策略统一 | 多个敌方地貌覆写 `tex_picker()` 或 `damaged_tex_picker()` | 依赖 `rivet_land`、`Underlings`、地图高度等子类语义，容易扩大风险 | 暂缓 |
+| 3 | 子类敌人意图 action 数据统一 | 多个敌方地貌覆写 `get_intent_action()` | 牵动 TimelineAction 数据契约和敌人意图展示规则 | 暂缓 |
+| 4 | 贴图节点创建流程 | `_ready()` 中 Sprite2D 创建、位置、血条信号和 owner_battle 交互 | 绑定场景树和血条信号，不适合与贴图选择同批 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：`tex_toggle()` 中根据主状态和当前贴图归属选择下一张贴图的纯规则。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TileTextureStateSelector.gd，只根据当前贴图和目标贴图数组返回是否需要切换。
+tile.gd 新增 preload 与 _get_texture_state_selector() 缓存 getter。
+tex_toggle() 旧入口继续存在，仍由 tile.gd 判断状态、调用子类 picker 并写回 tex.texture。
+```
+
+不触碰：
+
+```text
+死亡收尾 controller、protected 受击规则、血量状态规则和 TimelineAction 构造。
+子类 tex_picker()/damaged_tex_picker() 的多态选择逻辑。
+get_intent_action() 及敌人意图 action 数据契约。
+Sprite2D 创建、血条信号和地图拓扑通知。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/tile_modules/rules/TileTextureStateSelector.gd
+```
+
+职责：
+
+```text
+TileTextureStateSelector 只负责根据 Tile 主状态对应的贴图组和当前贴图，判断是否需要切换贴图。
+它不修改 Sprite2D、不读取场景树、不加载资源，也不处理死亡、血量、状态组件或子类贴图选择策略。
+```
+
+`tile.gd::tex_toggle()` 仍是旧入口。普通态和占领态仍检查 `landform_tex`，破损态仍优先检查 `landform_damaged_tex`，破损贴图缺失时仍回退到普通贴图。新模块只承接原来的 `!landform_tex.has(tex.texture)` 和 `!landform_damaged_tex.has(tex.texture)` 判断，`tex_picker()`、`damaged_tex_picker()` 与 `tex.texture` 写回仍保留在主脚本里，因此子类覆写 picker 的行为不变。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计将更新为 167 个脚本模块和 4 个默认 Resource 文件。`tile.gd` 的贴图数组归属切换判断已经拆出；下一批如果继续 Tile，优先重新审查多个敌方地貌子类的意图 action 数据是否能统一，或停止 Tile 转向其他大文件。不要重复拆死亡收尾 controller、protected 受击规则或贴图归属判断，也不要同批修改子类 picker 策略和 TimelineAction 数据契约。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+覆盖检查通过：171 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 167 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 Tile protected 受击规则拆分
 
 ### 读取与轮廓

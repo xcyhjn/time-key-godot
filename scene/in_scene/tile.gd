@@ -7,6 +7,7 @@ const TileIntentActionFactoryScript = preload("res://scene/in_scene/tile_modules
 const TileHealthStateRulesScript = preload("res://scene/in_scene/tile_modules/rules/TileHealthStateRules.gd")
 const TileDeathExecutionControllerScript = preload("res://scene/in_scene/tile_modules/controllers/TileDeathExecutionController.gd")
 const TileDamageProtectionRulesScript = preload("res://scene/in_scene/tile_modules/rules/TileDamageProtectionRules.gd")
+const TileTextureStateSelectorScript = preload("res://scene/in_scene/tile_modules/rules/TileTextureStateSelector.gd")
 static var _texture_cache: Dictionary = {}
 
 signal Blood_change(Blood)
@@ -84,6 +85,7 @@ var _intent_action_factory = null
 var _health_state_rules = null
 var _death_execution_controller = null
 var _damage_protection_rules = null
+var _texture_state_selector = null
 
 @export_group("状态图标显示")
 ## 状态图标相对建筑本体的本地偏移。x 控制左右，y 越小越往上。
@@ -145,6 +147,11 @@ func _get_damage_protection_rules():
 	if _damage_protection_rules == null:
 		_damage_protection_rules = TileDamageProtectionRulesScript.new()
 	return _damage_protection_rules
+
+func _get_texture_state_selector():
+	if _texture_state_selector == null:
+		_texture_state_selector = TileTextureStateSelectorScript.new()
+	return _texture_state_selector
 
 func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2i, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
@@ -647,18 +654,19 @@ func tex_toggle():
 	if tex == null:
 		# print("纹理模块为空")
 		return
+	var texture_selector = _get_texture_state_selector()
 		
 	# 根据不同的主状态切换纹理
 	if State_Main == Main_State_Pool.Normal or State_Main == Main_State_Pool.Captured:
 		# 检查数组是否为空，并且当前纹理是否不是我们要的那个（避免重复赋值）
 		if landform_tex.size() > 0:
-			if !landform_tex.has(tex.texture):
+			if texture_selector.should_switch_texture(tex.texture, landform_tex):
 				tex.texture = tex_picker()
 				
 	elif State_Main == Main_State_Pool.Broken:
 		# 修复点：对于损坏状态，应该使用 landform_damaged_tex 数组
 		if landform_damaged_tex.size() > 0:
-			if !landform_damaged_tex.has(tex.texture):
+			if texture_selector.should_switch_texture(tex.texture, landform_damaged_tex):
 				tex.texture = damaged_tex_picker()
 		else:
 			# 如果万一没有配置损坏贴图，作为兜底，可以使用原图

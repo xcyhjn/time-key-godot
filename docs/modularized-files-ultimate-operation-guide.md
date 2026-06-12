@@ -212,7 +212,7 @@ scene/out_scene/out_scene_modules/
 
 - 用途：执行 Tile 已进入 Broken 后的通用死亡收尾，包括清理状态组件、调用 Broken 贴图回调、返回 `damage_rate` 结果和通知地形拓扑变化。
 - 入口：`execute(status_component, tex_toggle_callback)`、`notify_topology_changed(owner_battle)`。
-- 维护：不要判断血量，不扣血，不释放 tile 节点，不重建地图视觉，也不要选择死亡贴图；贴图规则仍在 `tile.gd::tex_toggle()`。
+- 维护：不要判断血量，不扣血，不释放 tile 节点，不重建地图视觉，也不要选择死亡贴图；贴图写入和子类 picker 调用仍在 `tile.gd::tex_toggle()`。
 - 改进：如果后续死亡收尾继续增长，优先拆成更小的状态清理或拓扑通知适配，不要让它接管 `set_health()` 或敌人意图数据。
 
 ### rules
@@ -244,6 +244,13 @@ scene/out_scene/out_scene_modules/
 - 入口：`resolve_damage(current_state_vice, protected_flag)`。
 - 维护：不要扣血，不发信号，不播放受击表现，也不要处理死亡、贴图切换或子类 `locked` 规则。
 - 改进：如果后续有更多副状态吸收伤害规则，可以扩展明确字段返回值；不要让它直接读取或修改 `tile.gd` 成员。
+
+#### `scene/in_scene/tile_modules/rules/TileTextureStateSelector.gd`
+
+- 用途：判断当前 `Sprite2D.texture` 是否已经属于目标贴图数组，从而决定 `tex_toggle()` 是否需要调用对应 picker 切换贴图。
+- 入口：`should_switch_texture(current_texture, allowed_textures)`。
+- 维护：不要写 `Sprite2D.texture`，不要调用 `tex_picker()` 或 `damaged_tex_picker()`，不判断 `State_Main`，不加载资源，也不处理死亡、血量或状态组件。
+- 改进：如果未来要统一子类 `tex_picker()` 策略，必须单独审查 `rivet_land`、`Underlings`、地图高度和具体建筑破损图语义，不要把这些子类规则塞进本模块。
 
 ### animation
 
