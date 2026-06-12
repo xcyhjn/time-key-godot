@@ -85,6 +85,12 @@ scene/out_scene/out_scene_modules/
 - 维护：不要在这里加载 PackedScene，不挂树，不替换 `current_scene`，不释放旧场景，也不解析 payload 内容。
 - 改进：如果后续教程场景和正式局内场景的 payload 协议完全统一，可以把旧 `received_text` 兜底逐步删掉，但要先验证教程入口。
 
+#### `scene/out_scene/out_scene_modules/OutSceneCameraLimitController.gd`
+
+- 用途：计算并写入局外地图 `Camera2D` 的层级边界和选角后扇区边界。
+- 维护：不要在这里移动镜头，不锁定或解锁镜头，不修改地图数据，也不处理玩家移动、进房、保存或场景切换。
+- 改进：如果后续要把镜头边界参数调成配置，先保留 `out_scene_map_exp.gd` 的旧入口，再把纯数值参数移入小配置对象。
+
 #### `scene/out_scene/out_scene_modules/RoomResolutionController.gd`
 
 - 用途：统一处理局外房间结算 payload 的读取、坐标解析、boss 房判定和 tier 推进计划。
@@ -1508,9 +1514,9 @@ tooltip 的 MainBoard 查找与显隐转发已由 `CustomCardTooltipBridge.gd` �
 
 后续如果继续处理 `custom_card.gd`，先重新审查剩余函数，不要为了降行数硬拆 `_enter_state()`、`toggle_selection()`、`force_deselect()`、`return_to_hand()`、`apply_stat_modifier()` 或 `play_card()`。不要同批修改 clear 卡牌自动进入时间轴、CardManager 选中状态、EffectProcessor 运行时范围解析和敌人意图范围解析；当前剩余低风险边界已经基本清空。
 
-### out_scene_map_exp 已完成结算与揭示动画首批拆分
+### out_scene_map_exp 已完成结算、揭示、payload 与镜头限制拆分
 
-`out_scene_map_exp.gd` 已拆出 `RoomResolutionController.gd`、`ChapterRevealAnimationRunner.gd` 和 `OutScenePayloadBridge.gd`。当前返回战斗后的结算读取、boss 后 tier 推进判断、坐标解析、章节揭示地块动画和切场前 payload 注入已经有独立模块承接。房间完成状态回写目前缺少既有状态字段，继续前要先设计数据契约；不要同批改地图移动、镜头限制和场景切换 executor。
+`out_scene_map_exp.gd` 已拆出 `RoomResolutionController.gd`、`ChapterRevealAnimationRunner.gd`、`OutScenePayloadBridge.gd` 和 `OutSceneCameraLimitController.gd`。当前返回战斗后的结算读取、boss 后 tier 推进判断、坐标解析、章节揭示地块动画、切场前 payload 注入和镜头限制写入已经有独立模块承接。房间完成状态回写目前缺少既有状态字段，继续前要先设计数据契约；不要重复拆镜头限制，也不要同批改地图移动和场景切换 executor。
 
 本轮已审查房间完成状态回写契约，结论是暂不复用任何现有字段。`path_gone` 表示路径坍塌记录，不能表示房间是否完成；`active_room_context` 与 `pending_room_resolution` 只负责跨场景上下文和一次性返回 payload，不能作为长期状态；`tile_data` 仍应保持“坐标 -> 房间类型”的简单逻辑地图，避免影响 `map_renderer.gd`、移动判断和存档恢复。后续如果需要房间完成状态，应新增独立字典，例如按 `Vector2i` 记录 `completed`、`cleared`、`reward_claimed` 等语义，再单独补 `Saver.gd` 保存/读取和局外视觉刷新。这个实现应作为单独批次处理。
 

@@ -5,6 +5,7 @@ extends Control
 const RoomResolutionControllerScript = preload("res://scene/out_scene/out_scene_modules/RoomResolutionController.gd")
 const ChapterRevealAnimationRunnerScript = preload("res://scene/out_scene/out_scene_modules/ChapterRevealAnimationRunner.gd")
 const OutScenePayloadBridgeScript = preload("res://scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd")
+const OutSceneCameraLimitControllerScript = preload("res://scene/out_scene/out_scene_modules/OutSceneCameraLimitController.gd")
 
 # ==========================================
 # 1. 变量与配置
@@ -63,6 +64,7 @@ var chosen_char_index: int = -1
 var _room_resolution_controller: Variant = null
 var _chapter_reveal_animation_runner: Variant = null
 var _payload_bridge: Variant = null
+var _camera_limit_controller: Variant = null
 ## 从其它场景切回来时注入的外部事件。
 ## 这里不直接在 apply_external_event() 里处理，是为了确保 OutScene 的节点树先 ready 完成。
 var pending_external_event: Variant = null
@@ -100,6 +102,12 @@ func _get_payload_bridge() -> Variant:
 	if _payload_bridge == null:
 		_payload_bridge = OutScenePayloadBridgeScript.new()
 	return _payload_bridge
+
+
+func _get_camera_limit_controller() -> Variant:
+	if _camera_limit_controller == null:
+		_camera_limit_controller = OutSceneCameraLimitControllerScript.new()
+	return _camera_limit_controller
 
 
 func _get_chapter_reveal_animation_config() -> Dictionary:
@@ -240,37 +248,17 @@ func _init_exist_map():
 	MapState.is_initialized = true
 
 func apply_tier_camera_limit(tier_index: int):
-	var max_idx = gen.layer_boundaries.size() - 1
-	var safe_tier = clamp(tier_index, 0, max_idx)
-	var radius = gen.layer_boundaries[safe_tier]
-	var margin = 300.0
-	var w_limit = radius * step_x + margin
-	var h_limit = radius * (step_y + stagger_y) + margin
-	camera.limit_left = int(-w_limit-1000)
-	camera.limit_right = int(w_limit+1000)
-	camera.limit_top = int(-h_limit+500)
-	camera.limit_bottom = int(h_limit-500)
-	camera.limit_smoothed = true
+	_get_camera_limit_controller().apply_tier_limit(
+		camera,
+		gen.layer_boundaries,
+		tier_index,
+		step_x,
+		step_y,
+		stagger_y
+	)
 
 func _apply_sector_camera_limits(chosen_hex: Vector2i):
-	var margin = 1400.0 # 留一点缓冲区
-	if chosen_hex == Vector2i(0, -1): # 正上方 (或靠近上方的扇区)
-		camera.limit_bottom = int(margin)
-	elif chosen_hex == Vector2i(0, 1): # 正下方
-		camera.limit_top = int(-margin)
-	elif chosen_hex == Vector2i(-1, 0): # 左上方
-		camera.limit_right = int(margin)
-		camera.limit_bottom = int(margin)
-	elif chosen_hex == Vector2i(-1, 1): # 左下方
-		camera.limit_right = int(margin)
-		camera.limit_top = int(-margin)
-	elif chosen_hex == Vector2i(1, -1): # 右上方
-		camera.limit_left = int(-margin)
-		camera.limit_bottom = int(margin)
-	elif chosen_hex == Vector2i(1, 0): # 右下方
-		camera.limit_left = int(-margin)
-		camera.limit_top = int(-margin)
-	camera.limit_smoothed = true
+	_get_camera_limit_controller().apply_sector_limit(camera, chosen_hex)
 
 func _load_from_global():
 	map_seed = MapState.map_seed

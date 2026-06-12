@@ -2,6 +2,123 @@
 
 日期：2026-06-05
 
+## 2026-06-13 OutScene 镜头限制拆分
+
+### 读取与轮廓
+
+本批处理 `scene/out_scene/out_scene_map_exp.gd` 的镜头限制小风险面。开工前确认仓库中没有实体 `AGENTS.md`，继续使用当前对话中用户贴出的 AGENTS 约束。当前工作区仍有用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不 stage、不提交这些文件。已读取：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+workflow_logs/next-ai-handoff-current-status.md
+workflow_logs/maintenance_guides/out_scene_map_exp.md
+```
+
+已按要求先读取 `godot-prompter:gdscript-patterns`；写 Markdown 前已读取 `docs-write`。已用 `rg` 输出目标文件的 `class_name`、`extends`、`signal`、`@export`、`@onready`、`const`、`var`、`func` 轮廓，并搜索 `apply_tier_camera_limit()`、`_apply_sector_camera_limits()`、`Camera2D.limit_*`、`current_tier`、`step_x`、`step_y` 与 `stagger_y` 的耦合边界。
+
+### 当前职责
+
+`out_scene_map_exp.gd` 仍是局外地图 composition root，负责地图生成/恢复、玩家移动、路径坍塌、镜头限制入口、进房、保存、章节推进和场景切换。旧 `apply_tier_camera_limit()` 与 `_apply_sector_camera_limits()` 仍作为主文件入口保留。
+
+### 耦合点
+
+```text
+apply_tier_camera_limit() 同时读取 gen.layer_boundaries、step_x、step_y、stagger_y，并直接写 Camera2D.limit_*。
+_apply_sector_camera_limits() 根据选角扇区坐标直接裁剪 Camera2D 边界。
+镜头动画、镜头锁定、玩家移动、路径坍塌和切场景与镜头限制相邻，但本批不触碰。
+房间完成状态回写缺少独立持久化字段，本批不处理。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 镜头限制 controller | `apply_tier_camera_limit()` 与 `_apply_sector_camera_limits()` | 只计算并写入 `Camera2D.limit_*`，旧入口可转发，风险清晰 | 执行 |
+| 2 | 房间完成状态持久化 | `MapState`、`Saver`、结算 payload 消费 | 需要新增数据契约，不适合作为顺手拆分 | 暂缓 |
+| 3 | 地图移动/路径坍塌 | `_move_to()` 与扇区裁剪流程 | 牵动玩家移动、动画、视觉刷新和进房 | 不碰 |
+| 4 | 场景切换 executor | `_switch_scene_with_data()` | 牵动保存、资源加载、挂树和 payload 注入 | 不碰 |
+
+### 本批风险面
+
+本批只处理一个风险面：局外地图镜头边界限制。
+涉及的小风险点：
+
+```text
+新增 OutSceneCameraLimitController.gd，集中处理层级边界和扇区边界的 Camera2D limit 写入。
+out_scene_map_exp.gd 保留 apply_tier_camera_limit() 和 _apply_sector_camera_limits() 旧入口，并只转发参数。
+文档同步新增模块、统计和后续停止点，避免下一批重复拆镜头限制。
+```
+
+不触碰：
+
+```text
+地图移动、路径坍塌、进房、场景切换 executor。
+镜头 focus_on_position()、restore_camera()、_is_locked 与 _target_zoom。
+房间完成状态、MapState 新字段、Saver 持久化。
+tile_data、tile_features、view.tiles 数据契约。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/out_scene/out_scene_modules/OutSceneCameraLimitController.gd
+```
+
+职责：
+
+```text
+OutSceneCameraLimitController 只负责计算并写入局外地图 Camera2D 的边界限制。
+它不移动镜头，不锁定或解锁镜头，不修改地图数据，也不处理玩家移动、进房、保存或场景切换。
+```
+
+`out_scene_map_exp.gd` 新增 `OutSceneCameraLimitControllerScript` preload、缓存 getter 和旧入口转发。`apply_tier_camera_limit()` 仍由主文件接收 tier，并把 `gen.layer_boundaries` 与步距参数传给 controller；`_apply_sector_camera_limits()` 仍由选角/恢复流程调用，并把扇区坐标传给 controller。
+
+同步更新：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/maintenance_guides/out_scene_map_exp.md
+workflow_logs/next-ai-handoff-current-status.md
+```
+
+### 当前优化进度与下一步
+
+当前已拆脚本模块更新为 178 个，默认 Resource 文件仍为 4 个。OutScene 现在有 4 个 `out_scene_modules` 脚本：
+
+```text
+RoomResolutionController.gd
+ChapterRevealAnimationRunner.gd
+OutScenePayloadBridge.gd
+OutSceneCameraLimitController.gd
+```
+
+下一批不要重复拆镜头限制。如果继续 OutScene，先重新审查剩余函数；房间完成状态必须先设计独立 `MapState` 字段和 Saver 持久化，不要复用 `path_gone`。更稳妥的备选方向是 `enemy_intent_presentation_controller.gd` 的引用查找 bridge，或 `timecoin_ui.gd` 的 `active_tweens` 清理 controller。
+
+### 回归检查
+
+已运行：
+
+```text
+git diff --check 通过；仅有 workflow_logs/current-modularization-process.md 的既有换行归一化提示，无空白错误。
+Godot headless 项目检查通过：EXIT=0。
+加载 res://scene/out_scene/Out_Scene.tscn 通过：EXIT=0。
+模块覆盖检查通过：scripts=178 resources=4 total=182 missing=0。
+```
+
 ## 2026-06-13 EnemyIntentPresentationController 主 tooltip 定位拆分
 
 ### 读取与轮廓

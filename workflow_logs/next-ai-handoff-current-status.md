@@ -81,12 +81,13 @@ TimelineManager.gd 继续拆分
 最新提交以 `git log --oneline -1` 为准。本批提交主题：
 
 ```text
-refactor: extract enemy intent tooltip position helper
+refactor: extract out scene camera limit controller
 ```
 
 上一批最近提交：
 
 ```text
+b055634 refactor: extract enemy intent tooltip position helper
 f8ff476 refactor: extract enemy intent status keyword tooltip presenter
 a33d06e refactor: extract timeline enemy intent candidate collector
 2edfdcf refactor: extract timeline enemy intent target resolver
@@ -116,9 +117,9 @@ shaders/game_over.gdshader
 当前模块统计：
 
 ```text
-脚本模块：177
+脚本模块：178
 默认 Resource 文件：4
-总覆盖对象：181
+总覆盖对象：182
 docs/modularized-files-ultimate-operation-guide.md 覆盖缺失：0
 ```
 
@@ -304,7 +305,7 @@ Shop 生成依赖检查、商品槽注册、购买/刷新/升级处理、隐藏�
 
 不要继续硬拆 Craft 确认/关闭链或 Shop 单商品生成编排。
 
-### OutScene 已拆结算、章节揭示和 payload 注入
+### OutScene 已拆结算、章节揭示、payload 注入和镜头限制
 
 已拆：
 
@@ -312,6 +313,7 @@ Shop 生成依赖检查、商品槽注册、购买/刷新/升级处理、隐藏�
 scene/out_scene/out_scene_modules/RoomResolutionController.gd
 scene/out_scene/out_scene_modules/ChapterRevealAnimationRunner.gd
 scene/out_scene/out_scene_modules/OutScenePayloadBridge.gd
+scene/out_scene/out_scene_modules/OutSceneCameraLimitController.gd
 ```
 
 房间完成状态回写已经做过数据契约评估：
@@ -323,41 +325,11 @@ tile_data 仍是坐标到房间类型的逻辑地图，不要混入完成状态�
 如果实现房间完成/已清空/已领奖，必须新增独立 MapState 字段和 Saver 持久化字段。
 ```
 
-如果继续 OutScene，可考虑镜头限制小模块。不要同批碰地图移动和场景切换 executor。
+镜头限制小模块已经完成，`apply_tier_camera_limit()` 与 `_apply_sector_camera_limits()` 旧入口仍保留并转发到 `OutSceneCameraLimitController.gd`。不要重复拆这一面，也不要同批碰地图移动和场景切换 executor。
 
 ## 当前最推荐的下一步
 
-### 首选：OutScene 镜头限制小模块
-
-目标文件：
-
-```text
-scene/out_scene/out_scene_map_exp.gd
-```
-
-先读：
-
-```text
-workflow_logs/maintenance_guides/out_scene_map_exp.md
-```
-
-只评估：
-
-```text
-镜头限制
-```
-
-不要同批碰：
-
-```text
-地图移动
-路径坍塌
-进房
-切场景 executor
-房间完成状态持久化
-```
-
-### 备选：EnemyIntentPresentationController 引用查找 bridge
+### 首选：EnemyIntentPresentationController 引用查找 bridge
 
 目标文件：
 
@@ -365,13 +337,49 @@ workflow_logs/maintenance_guides/out_scene_map_exp.md
 scene/in_scene/enermy/enemy_intent_presentation_controller.gd
 ```
 
-如果继续，只谨慎评估 `_resolve_references()` 的引用查找 bridge。不要重复拆：
+先读：
+
+```text
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+```
+
+只评估：
+
+```text
+_resolve_references() 的引用查找 bridge
+```
+
+不要同批碰：
 
 ```text
 EnemyIntentTooltipTextBuilder.gd
 EnemyIntentStatusKeywordTooltipPresenter.gd
 EnemyIntentTooltipPositionHelper.gd
+EnemyIntentResolver
+TimelineManager
+地图/时间轴联动规则
 ```
+
+### 备选：TimecoinUI active_tweens 清理 controller
+
+目标文件：
+
+```text
+scene/in_scene/timecoin_ui.gd
+```
+
+如果继续，只评估 `active_tweens` 清理 controller。不要重复拆：
+
+```text
+TimecoinGlobalBridge.gd
+TimecoinHourglassShaderController.gd
+TimecoinShakeTweenBuilder.gd
+TimecoinFeedbackAnimationRunner.gd
+```
+
+### OutScene 继续前先重新审查
+
+`out_scene_map_exp.gd` 已经完成镜头限制拆分。如果继续，只能先重新审查剩余函数；房间完成状态必须先设计独立 `MapState` 字段和 Saver 持久化，不要复用 `path_gone`，也不要同批碰地图移动和场景切换 executor。
 
 ### 暂不建议继续硬拆 TimelineManager
 
@@ -482,7 +490,7 @@ $missing | Sort-Object
 当前预期输出：
 
 ```text
-scripts=177 resources=4 total=181 missing=0
+scripts=178 resources=4 total=182 missing=0
 ```
 
 如果新增模块，同步更新统计和文档后，新的统计可以增加，但 `missing` 必须仍为 0。
@@ -531,8 +539,8 @@ Invalid access
 不要回滚、stage、格式化或提交这些文件，除非我明确要求。
 
 当前模块化进度：
-- 最新提交：本批提交为 `refactor: extract enemy intent tooltip position helper`；哈希以 `git log --oneline -1` 为准。
-- 当前已拆脚本模块 177 个，另有 4 个默认 Resource 文件。
+- 最新提交：本批提交为 `refactor: extract out scene camera limit controller`；哈希以 `git log --oneline -1` 为准。
+- 当前已拆脚本模块 178 个，另有 4 个默认 Resource 文件。
 - docs/modularized-files-ultimate-operation-guide.md 覆盖缺失应为 0。
 - docs/ 目录只保留总结性说明；中间过程写 workflow_logs/current-modularization-process.md。
 
@@ -550,8 +558,9 @@ Invalid access
 - 每批单独 commit。
 
 推荐下一步：
-- out_scene_map_exp.gd：只评估镜头限制小模块，不同批碰地图移动和场景切换 executor。
 - enemy_intent_presentation_controller.gd：只谨慎评估引用查找 bridge，不重复拆 tooltip text builder、status keyword presenter 或 tooltip position helper。
+- timecoin_ui.gd：只评估 active_tweens 清理 controller，不重复拆 GlobalTimecoin 查找、shader controller 或反馈动画 runner。
+- out_scene_map_exp.gd：镜头限制小模块已完成；若继续必须先重新审查剩余函数，不同批碰地图移动和场景切换 executor。
 
 如果重新评估 TimelineManager：
 - 先读 workflow_logs/maintenance_guides/timeline_manager.md。
@@ -574,5 +583,5 @@ Invalid access
 - Godot headless 项目检查
 - 若改局内模块，加载 res://scene/in_scene/in_scene.tscn
 - 若改局外模块，加载 res://scene/out_scene/Out_Scene.tscn
-- 模块覆盖检查应输出 scripts=177 resources=4 total=181 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
+- 模块覆盖检查应输出 scripts=178 resources=4 total=182 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
 ```
