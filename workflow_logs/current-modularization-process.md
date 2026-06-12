@@ -2,6 +2,93 @@
 
 日期：2026-06-05
 
+## 2026-06-12 TimecoinUI 抖动 tween builder 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/timecoin_ui.gd`。文档维护入口已在上一批补齐并提交。开工前再次用 `rg` 输出 `timecoin_ui.gd` 与 `timecoin_ui_modules/` 的函数、变量和模块轮廓，并读取现有 `TimecoinGlobalBridge.gd` 与 `TimecoinHourglassShaderController.gd`，确认本批不重复拆 `GlobalTimecoin` 查找或沙漏 shader 控制。
+
+工作区仍存在用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。
+
+### 当前职责
+
+`timecoin_ui.gd` 仍是时间币 UI 的 composition root，负责节点引用校验、连接 `GlobalTimecoin` 信号、刷新数量文本、播放获得/消耗/不足动画、维护 `active_tweens`、重置原始视觉状态，并保留沙漏 shader 的旧入口。
+
+### 耦合点
+
+```text
+_play_gain_animation()、_play_consume_animation() 和 _play_warning_animation() 共享 active_tweens、原始位置、缩放、图标颜色和动画完成回调。
+_apply_shake_effect() 只把位置抖动片段追加到传入 Tween，输入输出清楚。
+TimecoinHourglassShaderController.gd 只处理 shader 参数，不应该接管普通 tween 动画。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TimecoinShakeTweenBuilder.gd` | `_apply_shake_effect()` | 纯动画片段构造，不改信号、数值、active_tweens 或完成回调 | 执行 |
+| 2 | 获得/消耗/不足动画 runner | `_play_gain_animation()`、`_play_consume_animation()`、`_play_warning_animation()` | 共享参数和收尾较多，应另开批次 | 暂缓 |
+| 3 | tween 状态清理 controller | `_cleanup_active_tweens()`、`_reset_to_original_state()`、`_remove_tween_from_active()` | 与所有动画共享状态 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：TimecoinUI 普通动画的位置抖动片段构造。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TimecoinShakeTweenBuilder.gd，只负责 append_shake。
+timecoin_ui.gd 新增 preload 与 _get_shake_tween_builder() 缓存 getter。
+旧 _apply_shake_effect() 入口继续存在，只转发给 builder。
+```
+
+不触碰：
+
+```text
+GlobalTimecoin 查找、信号连接和 get_timecoins() 数值来源。
+三类动画的触发时机、active_tweens 记录和完成回调。
+沙漏 shader controller。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/timecoin_ui_modules/animation/TimecoinShakeTweenBuilder.gd
+```
+
+职责：
+
+```text
+TimecoinShakeTweenBuilder 只负责把时间币 UI 的位置抖动片段追加到传入 Tween。
+它不创建 Tween、不管理 active_tweens，也不连接时间币信号或修改数值显示。
+```
+
+`timecoin_ui.gd::_apply_shake_effect()` 仍是旧入口，内部转发给 builder。获得、消耗和不足动画的调用顺序不变。
+
+### 当前优化进度与下一步
+
+已拆模块统计更新为 161 个脚本模块和 4 个默认 Resource 文件。`timecoin_ui.gd` 当前约 461 行。下一批如果继续 TimecoinUI，可审查获得/消耗/不足动画 runner；也可以转向 `tile.gd` 的 timeline shape parser。两者应分开提交。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+覆盖检查通过：165 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 161 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 大文件单独维护说明补齐
 
 ### 读取与轮廓

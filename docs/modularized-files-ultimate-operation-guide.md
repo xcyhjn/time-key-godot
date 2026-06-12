@@ -47,6 +47,7 @@ scene/card/custom_card_modules/bridges/
 scene/card/custom_card_modules/presenters/
 scene/card/custom_card_modules/rules/
 scene/in_scene/timecoin_ui_modules/bridges/
+scene/in_scene/timecoin_ui_modules/animation/
 scene/in_scene/timecoin_ui_modules/presenters/
 scene/out_scene/out_scene_modules/
 ```
@@ -189,6 +190,15 @@ scene/out_scene/out_scene_modules/
 - 入口：`initialize_material(hourglass_icon)`、`start_shake(material, intensity, frequency)`、`stop_shake(material)`、`set_shake_intensity(material, intensity)`、`set_shake_frequency(material, frequency)`。
 - 维护：只处理沙漏 shader 材质和参数，不连接时间币信号，不读取时间币数值，不刷新标签，也不播放获得、消耗或不足动画。
 - 改进：如果后续 shader 参数继续增多，优先扩展这里；不要把普通 tween 动画或 `active_tweens` 管理挪进这个 controller。
+
+### animation
+
+#### `scene/in_scene/timecoin_ui_modules/animation/TimecoinShakeTweenBuilder.gd`
+
+- 用途：把时间币 UI 普通动画中的位置抖动片段追加到传入 Tween。
+- 入口：`append_shake(tween, target, original_position, shake_amount, duration)`。
+- 维护：不要在这里创建 Tween，不管理 `active_tweens`，不连接时间币信号，也不刷新数值显示。
+- 改进：如果后续获得、消耗和不足动画拆 runner，仍让 runner 或主脚本决定动画时机和完成回调，这里只保留抖动片段构造。
 
 ### animation
 

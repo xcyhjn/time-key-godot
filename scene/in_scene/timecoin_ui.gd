@@ -5,6 +5,7 @@ extends PanelContainer
 
 const TimecoinGlobalBridgeScript = preload("res://scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd")
 const TimecoinHourglassShaderControllerScript = preload("res://scene/in_scene/timecoin_ui_modules/presenters/TimecoinHourglassShaderController.gd")
+const TimecoinShakeTweenBuilderScript = preload("res://scene/in_scene/timecoin_ui_modules/animation/TimecoinShakeTweenBuilder.gd")
 
 ## ==========================================
 ## 节点引用 (必须在场景中正确连接)
@@ -65,6 +66,7 @@ var animation_queue: Array[Dictionary] = []
 
 var _timecoin_global_bridge = null
 var _hourglass_shader_controller = null
+var _shake_tween_builder = null
 
 
 ## ==========================================
@@ -81,6 +83,12 @@ func _get_hourglass_shader_controller():
 	if _hourglass_shader_controller == null:
 		_hourglass_shader_controller = TimecoinHourglassShaderControllerScript.new()
 	return _hourglass_shader_controller
+
+
+func _get_shake_tween_builder():
+	if _shake_tween_builder == null:
+		_shake_tween_builder = TimecoinShakeTweenBuilderScript.new()
+	return _shake_tween_builder
 
 
 # 验证节点引用是否有效
@@ -337,23 +345,7 @@ func _play_warning_animation() -> void:
 
 # 应用抖动效果到 Tween
 func _apply_shake_effect(tween: Tween, shake_amount: float, duration: float) -> void:
-	# 创建随机抖动序列
-	var shake_points = 5
-	for i in range(shake_points):
-		var time_point = float(i) / shake_points * duration
-		var shake_direction = Vector2(
-			randf_range(-shake_amount, shake_amount),
-			randf_range(-shake_amount * 0.3, shake_amount * 0.3)
-		)
-		
-		tween.tween_property(ui_container, "position", 
-			original_position + shake_direction, duration / shake_points * 0.8
-		).set_delay(time_point).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
-	# 最终回到原始位置
-	tween.tween_property(ui_container, "position", 
-		original_position, duration / shake_points * 0.2
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_get_shake_tween_builder().append_shake(tween, ui_container, original_position, shake_amount, duration)
 
 
 # 清理活跃的 Tween 实例
