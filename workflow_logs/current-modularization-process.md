@@ -2,6 +2,106 @@
 
 日期：2026-06-05
 
+## 2026-06-12 Tile 子类意图 action_data 构建规则拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/tile.gd` 与少量敌方地貌子类。开工前确认工作区仍只有用户已有的资源与 shader 改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。随后重新读取接力说明、HexMap 手册、模块维护说明和 `workflow_logs/maintenance_guides/tile.md`，并用 `rg` 输出 `tile.gd`、`tile_modules/` 与 `scene/in_scene/enermy/*.gd` 中 `get_intent_action()`、`action_data`、`TimelineAction.new()`、`effect_range`、`invalid_reason`、`target_affiliation` 的轮廓。
+
+### 当前职责
+
+`tile.gd` 仍是地貌/建筑实体基类，负责状态组件、血量、结算奖励、敌人意图协议、贴图切换和旧公共入口。默认 `TimelineAction` 构造已经拆到 `TileIntentActionFactory.gd`；多个敌方地貌子类仍在各自 `get_intent_action()` 中重复组装 `"效果"`、`"类型"`、`"位置"`、`"目标"`、`"effect_range"` 和 `"invalid_reason"` 字段。
+
+### 耦合点
+
+```text
+子类 get_intent_action() 同时负责 action_data 字典构造和 TimelineAction.new(...)。
+action_data 字段被时间轴放置、地图 hover 展示和 EnemyIntentData 解析读取，不能顺手改字段名或增删字段。
+target_tile.position 仍是旧契约，当前只移动重复字典构造，不改变目标来源或坐标类型。
+effect_range、invalid_reason、can_generate_intent()、target_affiliation 和 includes_self 仍由各子类自己的接口提供，本批不统一规则。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 标准 action_data 构建器 | 子类 `get_intent_action()` 中重复的 action_data 字段 | 纯字典构造，输入输出清楚；不创建 TimelineAction | 执行 |
+| 2 | 接入少量重复子类 | `altar.gd`、`iron_mine.gd` 的 action_data 字典 | 两者结构完全一致，能验证继承 getter 和字段保持不变 | 执行 |
+| 3 | 继续迁移其他子类 | `Animal_husbandry.gd`、`center_altar.gd`、`village.gd`、`radar.gd` | 文件更多，注释和目标规则差异更大，需后续小批 | 暂缓 |
+| 4 | TimelineAction 工厂统一 | 所有子类 `TimelineAction.new(...)` | 会改变更大范围构造入口，牵动时间轴契约 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：子类意图 `action_data` 字典构造。
+
+涉及的 4 个小风险点：
+
+```text
+新增 TileIntentActionDataBuilder.gd，只组装 action_data 字典。
+tile.gd 新增 preload 与 _get_intent_action_data_builder() 缓存 getter，供子类继承使用。
+altar.gd 改为通过 builder 构造原字段完全相同的 action_data。
+iron_mine.gd 改为通过 builder 构造原字段完全相同的 action_data。
+```
+
+不触碰：
+
+```text
+TimelineAction.new(...) 参数顺序、颜色、shape 和 target_tile。
+get_intent_effect_range()、get_intent_invalid_reason()、can_generate_intent() 与目标选择规则。
+TileIntentActionFactory.gd 的默认行动构造。
+死亡、血量、贴图、拓扑通知和地图数据。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/tile_modules/rules/TileIntentActionDataBuilder.gd
+```
+
+职责：
+
+```text
+TileIntentActionDataBuilder 只负责组装 Tile 敌人意图使用的 action_data 字典。
+它不创建 TimelineAction、不选择目标、不判断意图是否合法，也不读取或修改地图、血量、贴图和状态组件。
+```
+
+`tile.gd` 新增 `TileIntentActionDataBuilderScript` preload、`_intent_action_data_builder` 缓存和 `_get_intent_action_data_builder()` getter，供继承自 `landform` 的子类复用。`altar.gd` 与 `iron_mine.gd` 的 `get_intent_action()` 仍保留旧入口和原来的 `TimelineAction.new(...)` 参数，只把原字段完全一致的 action_data 字典改为通过 builder 构造：
+
+```text
+"效果"
+"类型"
+"位置"
+"目标"
+"effect_range"
+"invalid_reason"
+```
+
+本批没有迁移 `Animal_husbandry.gd`、`center_altar.gd`、`village.gd` 或 `radar.gd`，因为这些文件数量更多，且部分注释和目标规则差异更大，应后续小批处理。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计将更新为 168 个脚本模块和 4 个默认 Resource 文件。`tile.gd` 的子类意图 action_data 字典构造已有第一批 builder；下一批如果继续 Tile，只评估 1 到 2 个剩余子类是否能迁移到 builder，或者停止 Tile 转向其他大文件。不要同批统一 `TimelineAction.new(...)`、目标选择、`effect_range`、`invalid_reason` 或子类 picker 策略。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有 CRLF/LF 提示。
+覆盖检查通过：172 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 168 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 Tile 贴图状态选择规则审查与拆分
 
 ### 读取与轮廓

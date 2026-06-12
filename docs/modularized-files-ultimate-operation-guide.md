@@ -229,7 +229,14 @@ scene/out_scene/out_scene_modules/
 - 用途：为 `tile.gd` 默认敌人意图创建 `TimelineAction`，并保持原有默认 `action_data` 字段。
 - 入口：`create_default_action(source_tile, target_tile, shape_coords, landform_name, location)`。
 - 维护：不要选择目标，不判断意图是否合法，不解析 shape，不修改血量、贴图或地图拓扑。
-- 改进：如果未来要统一敌方地貌子类的 `get_intent_action()`，必须单独评估 `effect_range`、`invalid_reason`、`target_affiliation` 和敌人意图展示协议，不要在这里顺手兼容所有子类。
+- 改进：如果未来要统一敌方地貌子类的 `TimelineAction.new(...)`，必须单独评估 `effect_range`、`invalid_reason`、`target_affiliation` 和敌人意图展示协议，不要在这里顺手兼容所有子类。
+
+#### `scene/in_scene/tile_modules/rules/TileIntentActionDataBuilder.gd`
+
+- 用途：为 Tile 敌人意图组装标准 `action_data` 字典，当前已接入 `altar.gd` 与 `iron_mine.gd`。
+- 入口：`build_standard_action_data(description, landform_name, location, target_tile, effect_range, invalid_reason)`。
+- 维护：不要创建 `TimelineAction`，不要选择目标，不判断意图是否合法，不读取地图，也不要修改血量、贴图或状态组件。
+- 改进：如果继续迁移其他子类，只逐批替换重复字典构造；不要同批修改 `TimelineAction.new(...)`、目标选择、`effect_range` 或 `invalid_reason` 规则。
 
 #### `scene/in_scene/tile_modules/rules/TileHealthStateRules.gd`
 

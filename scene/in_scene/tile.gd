@@ -4,6 +4,7 @@ extends  Node2D
 const StatusComponentScript = preload("res://scene/in_scene/status/status_component.gd")
 const TileTimelineShapeParserScript = preload("res://scene/in_scene/tile_modules/rules/TileTimelineShapeParser.gd")
 const TileIntentActionFactoryScript = preload("res://scene/in_scene/tile_modules/rules/TileIntentActionFactory.gd")
+const TileIntentActionDataBuilderScript = preload("res://scene/in_scene/tile_modules/rules/TileIntentActionDataBuilder.gd")
 const TileHealthStateRulesScript = preload("res://scene/in_scene/tile_modules/rules/TileHealthStateRules.gd")
 const TileDeathExecutionControllerScript = preload("res://scene/in_scene/tile_modules/controllers/TileDeathExecutionController.gd")
 const TileDamageProtectionRulesScript = preload("res://scene/in_scene/tile_modules/rules/TileDamageProtectionRules.gd")
@@ -82,6 +83,7 @@ var sheild : int = 0
 var status_component: StatusComponent = null
 var _timeline_shape_parser = null
 var _intent_action_factory = null
+var _intent_action_data_builder = null
 var _health_state_rules = null
 var _death_execution_controller = null
 var _damage_protection_rules = null
@@ -132,6 +134,11 @@ func _get_intent_action_factory():
 	if _intent_action_factory == null:
 		_intent_action_factory = TileIntentActionFactoryScript.new()
 	return _intent_action_factory
+
+func _get_intent_action_data_builder():
+	if _intent_action_data_builder == null:
+		_intent_action_data_builder = TileIntentActionDataBuilderScript.new()
+	return _intent_action_data_builder
 
 func _get_health_state_rules():
 	if _health_state_rules == null:
