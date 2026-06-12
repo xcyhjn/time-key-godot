@@ -81,7 +81,7 @@ TimelineManager.gd 继续拆分
 最新提交以 `git log --oneline -1` 为准。本批提交主题：
 
 ```text
-refactor: extract enemy intent reference bridge
+refactor: extract timecoin tween state controller
 ```
 
 上一批最近提交：
@@ -118,9 +118,9 @@ shaders/game_over.gdshader
 当前模块统计：
 
 ```text
-脚本模块：179
+脚本模块：180
 默认 Resource 文件：4
-总覆盖对象：183
+总覆盖对象：184
 docs/modularized-files-ultimate-operation-guide.md 覆盖缺失：0
 ```
 
@@ -228,7 +228,7 @@ _pick_placeable_candidate()
 
 不要重复拆候选收集 collector、优先级 selector 或目标地块 resolver。`generate_enemy_intents()` 仍是主编排入口；当前不建议为了降行数继续硬拆它。
 
-### TimecoinUI 已完成首批拆分
+### TimecoinUI 低风险拆分面已基本收口
 
 已拆：
 
@@ -237,11 +237,12 @@ scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd
 scene/in_scene/timecoin_ui_modules/presenters/TimecoinHourglassShaderController.gd
 scene/in_scene/timecoin_ui_modules/animation/TimecoinShakeTweenBuilder.gd
 scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd
+scene/in_scene/timecoin_ui_modules/animation/TimecoinTweenStateController.gd
 ```
 
-`timecoin_ui.gd` 仍负责节点引用、`GlobalTimecoin` 信号连接、数值显示、动画触发入口、`active_tweens` 管理和旧 shader 控制入口。
+`timecoin_ui.gd` 仍负责节点引用、`GlobalTimecoin` 信号连接、数值显示、动画触发入口、UI 原始状态恢复和旧 shader 控制入口。
 
-如果继续 TimecoinUI，只评估 `active_tweens` 清理 controller。不要重复拆全局查找、沙漏 shader、普通抖动或获得/消耗/不足动画片段。
+TimecoinUI 的全局查找、沙漏 shader、普通抖动、反馈动画片段和 `active_tweens` 列表维护都已拆出。后续若继续，先重新审查剩余函数，不要重复拆全局查找、沙漏 shader、普通抖动、获得/消耗/不足动画片段或 tween 状态 controller。
 
 ### EnemyIntentPresentationController 已拆引用 bridge 与三个 tooltip 表现边界
 
@@ -333,36 +334,44 @@ tile_data 仍是坐标到房间类型的逻辑地图，不要混入完成状态�
 
 ## 当前最推荐的下一步
 
-### 首选：TimecoinUI active_tweens 清理 controller
+### 首选：OutScene 房间完成状态前置设计
 
 目标文件：
 
 ```text
-scene/in_scene/timecoin_ui.gd
+scene/out_scene/out_scene_map_exp.gd
 ```
 
 先读：
 
 ```text
-workflow_logs/maintenance_guides/timecoin_ui.md
+workflow_logs/maintenance_guides/out_scene_map_exp.md
 ```
 
 只评估：
 
 ```text
-active_tweens 的登记、清理和完成回调小边界
+房间完成/已清空/已领奖状态的数据契约，不直接复用 path_gone、active_room_context、pending_room_resolution 或 tile_data
 ```
 
 不要同批碰：
 
 ```text
-TimecoinGlobalBridge.gd
-TimecoinHourglassShaderController.gd
-TimecoinShakeTweenBuilder.gd
-TimecoinFeedbackAnimationRunner.gd
-GlobalTimecoin 信号协议
-时间币数值来源
+地图移动
+路径坍塌
+场景切换 executor
+镜头限制
 ```
+
+### 备选：CustomCard 剩余函数重新审查
+
+目标文件：
+
+```text
+scene/card/custom_card.gd
+```
+
+继续前先重新审查剩余函数，避免硬拆出牌和选中状态链。不要重复拆 node bridge、description parser、timeline shape parser、effect range parser、selected follow presenter、hover shader presenter、tooltip bridge 或 map conditional bridge。
 
 ### 备选：EnemyIntentPresentationController 剩余函数重新审查
 
@@ -418,7 +427,7 @@ generate_enemy_intents()
 不要继续包 DragShapeController 的成功收尾或 fallback 收尾
 不要硬拆 Craft/Shop 奖励页确认、关闭或单商品生成编排
 不要继续 Tile 已完成的 action_data、死亡、protected、贴图选择方向
-不要重复拆 TimecoinUI 的反馈动画 runner、GlobalTimecoin 查找、shader controller
+不要重复拆 TimecoinUI 的反馈动画 runner、active_tweens controller、GlobalTimecoin 查找、shader controller
 不要把运行态对象、节点、Tween、tile_data、path_gone 或真实卡节点注册成 Resource
 不要把 out_scene 的 path_gone 复用成房间完成状态
 ```
@@ -496,7 +505,7 @@ $missing | Sort-Object
 当前预期输出：
 
 ```text
-scripts=179 resources=4 total=183 missing=0
+scripts=180 resources=4 total=184 missing=0
 ```
 
 如果新增模块，同步更新统计和文档后，新的统计可以增加，但 `missing` 必须仍为 0。
@@ -545,8 +554,8 @@ Invalid access
 不要回滚、stage、格式化或提交这些文件，除非我明确要求。
 
 当前模块化进度：
-- 最新提交：本批提交为 `refactor: extract out scene camera limit controller`；哈希以 `git log --oneline -1` 为准。
-- 当前已拆脚本模块 179 个，另有 4 个默认 Resource 文件。
+- 最新提交：本批提交为 `refactor: extract timecoin tween state controller`；哈希以 `git log --oneline -1` 为准。
+- 当前已拆脚本模块 180 个，另有 4 个默认 Resource 文件。
 - docs/modularized-files-ultimate-operation-guide.md 覆盖缺失应为 0。
 - docs/ 目录只保留总结性说明；中间过程写 workflow_logs/current-modularization-process.md。
 
@@ -564,9 +573,10 @@ Invalid access
 - 每批单独 commit。
 
 推荐下一步：
-- timecoin_ui.gd：只评估 active_tweens 清理 controller，不重复拆 GlobalTimecoin 查找、shader controller 或反馈动画 runner。
+- out_scene_map_exp.gd：若继续必须先重新审查剩余函数；房间完成状态需要独立数据契约，不复用 path_gone，不同批碰地图移动和场景切换 executor。
+- custom_card.gd：只重新审查剩余函数，避免硬拆出牌和选中状态链。
+- timecoin_ui.gd：低风险拆分面已基本收口；若继续先重新审查剩余函数，不重复拆 GlobalTimecoin 查找、shader controller、反馈动画 runner 或 active_tweens controller。
 - enemy_intent_presentation_controller.gd：引用查找 bridge 和 tooltip 三个模块已完成；若继续先重新审查剩余函数，不重复拆 reference bridge、tooltip text builder、status keyword presenter 或 tooltip position helper。
-- out_scene_map_exp.gd：镜头限制小模块已完成；若继续必须先重新审查剩余函数，不同批碰地图移动和场景切换 executor。
 
 如果重新评估 TimelineManager：
 - 先读 workflow_logs/maintenance_guides/timeline_manager.md。
@@ -582,12 +592,12 @@ Invalid access
 - DragShapeController 成功收尾和 fallback 收尾
 - Craft/Shop 奖励页确认、关闭或单商品生成编排
 - Tile 已完成的 action_data、死亡、protected、贴图选择方向
-- TimecoinUI 的反馈动画 runner、GlobalTimecoin 查找、shader controller
+- TimecoinUI 的反馈动画 runner、active_tweens controller、GlobalTimecoin 查找、shader controller
 
 验证要求：
 - git diff --check
 - Godot headless 项目检查
 - 若改局内模块，加载 res://scene/in_scene/in_scene.tscn
 - 若改局外模块，加载 res://scene/out_scene/Out_Scene.tscn
-- 模块覆盖检查应输出 scripts=179 resources=4 total=183 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
+- 模块覆盖检查应输出 scripts=180 resources=4 total=184 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
 ```

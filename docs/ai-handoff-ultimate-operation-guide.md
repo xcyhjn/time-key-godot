@@ -21,7 +21,7 @@ D:/godot/时之钥/时之钥
 
 ## 当前状态一览
 
-当前模块化工作已经完成多条主线。当前已拆脚本模块共 `179` 个，另有 `4` 个默认 Resource 文件；`docs/modularized-files-ultimate-operation-guide.md` 对这些脚本和资源路径的覆盖缺失数为 `0`。
+当前模块化工作已经完成多条主线。当前已拆脚本模块共 `180` 个，另有 `4` 个默认 Resource 文件；`docs/modularized-files-ultimate-operation-guide.md` 对这些脚本和资源路径的覆盖缺失数为 `0`。
 
 | 文件 | 当前状态 | 接下来怎么处理 |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ D:/godot/时之钥/时之钥
 | `scene/in_scene/timeline/TimelineManager.gd` | 约 478 行，`timeline/manager_modules/` 下已有 3 个规则模块。敌方意图候选收集、优先级读取、优先级分层排序、同级候选过滤、同级可放置选择和目标地块映射已拆出。 | 敌方意图生成链路里的低风险规则面已基本收口；后续不要硬拆 `generate_enemy_intents()`，也不要同批修改 `grid` 占用、`place_action()`、`TimelineAction.action_data` 契约和 UI 表现。 |
 | `scene/in_scene/rewards/*.gd` | 奖励页下已有 49 个拆分脚本模块和 3 个默认资源。Acquire/Remove 已接近页面编排；Shop 生成前依赖检查、商店定价 Resource、时代权重 Resource 和临时牌堆隐藏创建已收口，Craft 结果预览、预览卡 UI、预览 DraftCard 工厂复用、合成结果牌组写入和合成配方 Resource 已完成。 | Craft 预览创建链、确认写入链和 Shop 单商品生成都不建议继续硬拆；Shop 临时牌堆释放仍绑定异步生成循环，除非要统一多个奖励页生命周期，否则转向时间轴 UI 或局外地图。 |
 | `scene/card/custom_card.gd` | 约 569 行，`custom_card_modules/` 下已有 8 个模块：节点查找 bridge、描述解析规则、时间轴形状解析、六边形效果范围解析、选中态跟随视觉 presenter、hover shader presenter、tooltip bridge 和地图条件效果刷新 bridge。旧 `_get_main_board()`、`get_card_manager()`、`_find_player_hand()`、`_get_player_hand_container()`、`get_parsed_description()`、`_normalize_and_parse_shape()`、`_parse_hex_effect_range()`、`_process(delta)`、`_set_shader(active)`、`_request_tooltip()` 与 `_update_map_conditional_effects()` 仍保留入口。 | 继续前先重新审查剩余函数；不要为了降行数硬拆 `_enter_state()`、选中/取消选中、数值修改、回手牌或 `play_card()`。 |
-| `scene/in_scene/timecoin_ui.gd` | 约 417 行，已拆出 `TimecoinGlobalBridge.gd`、`TimecoinHourglassShaderController.gd`、`TimecoinShakeTweenBuilder.gd` 和 `TimecoinFeedbackAnimationRunner.gd`，分别处理 `GlobalTimecoin` 查找、沙漏 shader 材质/震动参数写入、普通动画抖动 tween 片段构造，以及获得/消耗/不足反馈动画片段构造。旧 `_get_timecoin_singleton()`、`_initialize_shader_material()`、`start_hourglass_shake()`、`stop_hourglass_shake()`、`_apply_shake_effect()`、`_play_gain_animation()`、`_play_consume_animation()` 和 `_play_warning_animation()` 等入口仍保留。 | 后续如继续 TimecoinUI，只评估 `active_tweens` 清理 controller；不要重复拆反馈动画 runner，也不要同批改时间币数值来源、信号协议和多个动画收尾状态。 |
+| `scene/in_scene/timecoin_ui.gd` | 约 433 行，已拆出 `TimecoinGlobalBridge.gd`、`TimecoinHourglassShaderController.gd`、`TimecoinShakeTweenBuilder.gd`、`TimecoinFeedbackAnimationRunner.gd` 和 `TimecoinTweenStateController.gd`，分别处理 `GlobalTimecoin` 查找、沙漏 shader 材质/震动参数写入、普通动画抖动 tween 片段构造、获得/消耗/不足反馈动画片段构造，以及 `active_tweens` 列表维护。旧 `_get_timecoin_singleton()`、`_initialize_shader_material()`、`start_hourglass_shake()`、`stop_hourglass_shake()`、`_apply_shake_effect()`、`_play_gain_animation()`、`_play_consume_animation()`、`_play_warning_animation()`、`_cleanup_active_tweens()`、`_reset_to_original_state()` 和 `_remove_tween_from_active()` 等入口仍保留。 | TimecoinUI 低风险拆分面已基本收口。后续若继续，先重新审查剩余函数；不要重复拆 feedback runner、tween state controller、GlobalTimecoin 查找或 shader controller，也不要同批改时间币数值来源和信号协议。 |
 | `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | 约 549 行，已拆出 `EnemyIntentPresentationReferenceBridge.gd`、`EnemyIntentTooltipTextBuilder.gd`、`EnemyIntentStatusKeywordTooltipPresenter.gd` 和 `EnemyIntentTooltipPositionHelper.gd`，分别处理引用查找与接线、主 tooltip 文本行、状态关键词副 tooltip 以及主 tooltip 屏幕位置计算。 | 引用查找和 Tooltip 低风险表现面已收口。后续若继续，先重新审查剩余函数；不要重复拆 reference bridge、文本 builder、状态关键词副 tooltip presenter 或主 tooltip 定位 helper，也不要同批动 EnemyIntentResolver、TimelineManager 或地图/时间轴联动规则。 |
 | `scene/out_scene/out_scene_map_exp.gd` | 约 786 行，已拆出 `RoomResolutionController.gd`、`ChapterRevealAnimationRunner.gd`、`OutScenePayloadBridge.gd` 和 `OutSceneCameraLimitController.gd`，分别处理房间结算、章节揭示动画、切场前 payload 注入和镜头限制写入。 | 房间完成状态回写缺少既有状态字段，继续前先设计数据契约；不要重复拆镜头限制，地图移动和切场景 executor 不要同批拆。 |
 
@@ -268,7 +268,7 @@ git commit -m "<类型>: <本批清晰描述>"
 | 7 | `scene/card/custom_card.gd` | 选中/取消选中、状态进入、数值修改、回手牌和出牌逻辑仍耦合；节点查找、描述解析、时间轴形状解析、六边形效果范围解析、选中跟随视觉、hover shader 参数写入、tooltip 查找和地图条件效果刷新已拆到 `custom_card_modules/`。 | 继续前先重新审查剩余函数；避免直接改出牌逻辑。 |
 | 8 | `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | 引用查找 bridge、主 tooltip 文本 builder、状态关键词副 tooltip presenter 和主 tooltip 定位 helper 已拆出；hover phase 判断、主 tooltip 写入、地图和时间轴表现仍由 controller 编排。 | 引用查找和 tooltip 表现方向先暂停；后续若继续，先重新审查剩余函数，不动地图/时间轴联动规则。 |
 | 9 | `scene/in_scene/timeline/TimelineManager.gd` | 敌方意图候选收集、优先级、同级可放置选择和目标地块映射已拆出；action priority 写入、重判失效和中途移除仍在主脚本。 | 当前建议暂停 TimelineManager 硬拆；后续先重新审查剩余函数，不要同批改 `grid`、`place_action()`、结算或 UI 表现。 |
-| 10 | `scene/in_scene/timecoin_ui.gd` | 全局 Timecoin 查找已拆到 `TimecoinGlobalBridge.gd`，沙漏 shader 控制已拆到 `TimecoinHourglassShaderController.gd`，普通动画抖动片段已拆到 `TimecoinShakeTweenBuilder.gd`，获得/消耗/不足反馈动画片段已拆到 `TimecoinFeedbackAnimationRunner.gd`；数值显示、动画触发入口和 tween 清理仍在 UI 脚本里。 | 后续如继续，只评估 `active_tweens` 清理 controller；不要重复拆 GlobalTimecoin 查找、shader controller 或反馈动画 runner。 |
+| 10 | `scene/in_scene/timecoin_ui.gd` | 全局 Timecoin 查找已拆到 `TimecoinGlobalBridge.gd`，沙漏 shader 控制已拆到 `TimecoinHourglassShaderController.gd`，普通动画抖动片段已拆到 `TimecoinShakeTweenBuilder.gd`，获得/消耗/不足反馈动画片段已拆到 `TimecoinFeedbackAnimationRunner.gd`，`active_tweens` 列表维护已拆到 `TimecoinTweenStateController.gd`；数值显示、信号响应、动画触发入口和 UI 原始状态恢复仍在 UI 脚本里。 | TimecoinUI 当前建议暂停硬拆；后续先重新审查剩余函数，不要重复拆已完成模块。 |
 
 ## 各重点文件的第一批低风险拆法
 
@@ -314,6 +314,7 @@ scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd
 scene/in_scene/timecoin_ui_modules/presenters/TimecoinHourglassShaderController.gd
 scene/in_scene/timecoin_ui_modules/animation/TimecoinShakeTweenBuilder.gd
 scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd
+scene/in_scene/timecoin_ui_modules/animation/TimecoinTweenStateController.gd
 scene/in_scene/enermy/intent_presentation_modules/bridges/EnemyIntentPresentationReferenceBridge.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd
@@ -336,6 +337,8 @@ scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentTargetResolver.
 `TimecoinShakeTweenBuilder.gd` 只为 `timecoin_ui.gd` 给传入的 `Tween` 追加普通动画位置抖动片段。旧 `_apply_shake_effect()` 入口仍保留并转发给 builder；它不创建 Tween、不登记 `active_tweens`，也不处理动画完成回调。
 
 `TimecoinFeedbackAnimationRunner.gd` 只为 `timecoin_ui.gd` 给传入的 `Tween` 追加获得、消耗和余额不足反馈动画片段。旧 `_play_gain_animation()`、`_play_consume_animation()` 和 `_play_warning_animation()` 仍保留清理、重置、创建 Tween、登记 `active_tweens` 和完成回调；runner 不连接 `GlobalTimecoin`、不刷新数值文本、不控制沙漏 shader。
+
+`TimecoinTweenStateController.gd` 只为 `timecoin_ui.gd` 维护 `active_tweens` 列表，包括登记、容量清理、过滤无效引用、停止全部 tween 和完成后移除。旧 `_cleanup_active_tweens()`、`_reset_to_original_state()`、`_remove_tween_from_active()` 和三类完成回调仍保留；controller 不创建 Tween，不拼接动画片段，也不恢复 UI 位置、缩放或颜色。
 
 `EnemyIntentPresentationReferenceBridge.gd` 只为 `enemy_intent_presentation_controller.gd` 查找 `MainBoard`、`HexMap`、`TimelineManager`、`TimelineUI` 与 `DragShapeController`，并按旧 `_resolve_references()` 顺序连接时间轴 hover 和地图重判信号。旧 `_resolve_references()` 仍保留入口并负责隐藏旧 tooltip、接收 bridge 返回的引用；bridge 不判断 hover phase，不解析意图，不驱动地图或时间轴表现，也不创建、写入或定位 tooltip。
 
@@ -487,11 +490,11 @@ scene/out_scene/out_scene_modules/OutSceneCameraLimitController.gd
 
 先分析目标文件，再列待拆清单，最后每批只拆 1 个清晰风险面，最多触碰 3 到 4 个风险点。不要直接改代码。
 
-当前已拆脚本模块共 179 个，另有 4 个默认 Resource 文件，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd、RemoveReward.gd 或 CraftReward.gd 的确认关闭链。下一阶段优先处理：
-1. scene/in_scene/timecoin_ui.gd 的 active_tweens 清理 controller，只评估 tween 登记、清理和完成回调，不重复拆获得/消耗/不足动画 runner
-2. scene/out_scene/out_scene_map_exp.gd 的房间完成状态实现前置设计：契约已评估，后续如实现必须新增独立状态字段，不复用 path_gone
-3. scene/card/custom_card.gd 剩余函数的重新审查，避免硬拆出牌和选中状态链
-4. enemy_intent_presentation_controller.gd 若继续，先重新审查剩余函数；不要重复拆引用查找 bridge 或三个 tooltip 模块，不要同批碰地图/时间轴联动规则
+当前已拆脚本模块共 180 个，另有 4 个默认 Resource 文件，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd、RemoveReward.gd 或 CraftReward.gd 的确认关闭链。下一阶段优先处理：
+1. scene/out_scene/out_scene_map_exp.gd 的房间完成状态实现前置设计：契约已评估，后续如实现必须新增独立状态字段，不复用 path_gone
+2. scene/card/custom_card.gd 剩余函数的重新审查，避免硬拆出牌和选中状态链
+3. enemy_intent_presentation_controller.gd 若继续，先重新审查剩余函数；不要重复拆引用查找 bridge 或三个 tooltip 模块，不要同批碰地图/时间轴联动规则
+4. timecoin_ui.gd 低风险拆分面已基本收口；若继续，先重新审查剩余函数，不要重复拆 GlobalTimecoin 查找、shader controller、反馈动画 runner 或 active_tweens controller
 
 工作方式：
 - 先用 rg 输出目标文件函数、变量、信号轮廓。

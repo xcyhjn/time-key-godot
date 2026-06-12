@@ -2,6 +2,126 @@
 
 日期：2026-06-05
 
+## 2026-06-13 TimecoinUI active_tweens 状态 controller 拆分
+
+### 读取与轮廓
+
+本批处理 `scene/in_scene/timecoin_ui.gd` 的 `active_tweens` 状态清理小风险面。开工前确认仓库中没有实体 `AGENTS.md`，继续使用当前对话中用户贴出的 AGENTS 约束。当前工作区仍有用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不 stage、不提交这些文件。已读取：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+workflow_logs/next-ai-handoff-current-status.md
+workflow_logs/maintenance_guides/timecoin_ui.md
+```
+
+已按要求先读取 `godot-prompter:gdscript-patterns`；写 Markdown 前已读取 `docs-write`。已用 `rg` 输出 `timecoin_ui.gd` 与 `timecoin_ui_modules/` 的 `class_name`、`extends`、`signal`、`@export`、`@onready`、`const`、`var`、`func` 轮廓，并搜索 `active_tweens`、`create_tween()`、`finished`、`kill()`、`_cleanup_active_tweens()`、`_reset_to_original_state()`、`_remove_tween_from_active()` 和三个 `_play_*_animation()` 的调用边界。
+
+### 当前职责
+
+`timecoin_ui.gd` 仍是时间币 UI 的 composition root，负责节点引用校验、`GlobalTimecoin` 信号连接、数值刷新、获得/消耗/不足动画触发、UI 原始状态恢复，以及旧 shader 控制入口转发。已拆模块分别处理全局节点查找、沙漏 shader、普通抖动片段和三类反馈动画片段。
+
+### 耦合点
+
+```text
+_play_gain_animation()、_play_consume_animation() 和 _play_warning_animation() 都会按旧顺序执行清理、重置、创建 Tween、拼接动画、登记 active_tweens 和连接完成回调。
+_cleanup_active_tweens() 负责容量限制和无效引用过滤。
+_reset_to_original_state() 负责停止现有 tween 后恢复 UI 位置、缩放和图标颜色。
+_remove_tween_from_active() 由三类完成回调复用。
+数值来源、GlobalTimecoin 信号协议、反馈动画片段、抖动片段和沙漏 shader 不是本批范围。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | tween 状态 controller | `active_tweens` 登记、容量清理、失效过滤、全部停止、完成后移除 | 只维护列表状态，旧入口可保留 | 执行 |
+| 2 | UI 原始状态恢复 | `_reset_to_original_state()` 中 position/scale/color 写回 | 直接写 UI 节点，仍应留在主脚本 | 不碰 |
+| 3 | 反馈动画片段 | `TimecoinFeedbackAnimationRunner.gd` | 已拆完成，不能重复拆 | 不碰 |
+| 4 | 数值和信号 | `_connect_global_signals()`、`_on_timecoin_updated()`、`_update_display()` | 牵动全局协议 | 不碰 |
+
+### 本批风险面
+
+本批只处理一个风险面：TimecoinUI 的 `active_tweens` 列表状态维护。
+
+涉及的小风险点：
+
+```text
+新增 TimecoinTweenStateController.gd，只维护 active_tweens 列表。
+旧 _cleanup_active_tweens()、_reset_to_original_state()、_remove_tween_from_active() 保留入口。
+三类 _play_*_animation() 只把 active_tweens.append(tween) 换成旧入口风格的 _register_active_tween(tween)。
+```
+
+不触碰：
+
+```text
+GlobalTimecoin 查找、信号连接和 get_timecoins() 数值来源。
+TimecoinFeedbackAnimationRunner.gd、TimecoinShakeTweenBuilder.gd 和 TimecoinHourglassShaderController.gd。
+UI 原始位置、缩放、颜色恢复顺序。
+三类动画的触发时机和完成回调打印。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/timecoin_ui_modules/animation/TimecoinTweenStateController.gd
+```
+
+职责：
+
+```text
+TimecoinTweenStateController 只负责维护 TimecoinUI 的 active_tweens 列表。
+它不创建 Tween，不拼接动画片段，不重置 UI 位置、缩放或颜色，也不连接 GlobalTimecoin 信号或控制沙漏 shader。
+```
+
+`timecoin_ui.gd` 新增 `TimecoinTweenStateControllerScript` preload、缓存 getter 和 `_register_active_tween()` 旧式入口。`_cleanup_active_tweens()` 仍保留并转发容量清理和失效过滤；`_reset_to_original_state()` 仍保留 UI 节点恢复，只把停止所有 tween 的循环转发给 controller；`_remove_tween_from_active()` 仍由三类完成回调调用并转发给 controller。
+
+同步更新：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/maintenance_guides/timecoin_ui.md
+workflow_logs/next-ai-handoff-current-status.md
+```
+
+### 当前优化进度与下一步
+
+当前已拆脚本模块更新为 180 个，默认 Resource 文件仍为 4 个。TimecoinUI 现在有 5 个拆分模块：
+
+```text
+TimecoinGlobalBridge.gd
+TimecoinHourglassShaderController.gd
+TimecoinShakeTweenBuilder.gd
+TimecoinFeedbackAnimationRunner.gd
+TimecoinTweenStateController.gd
+```
+
+TimecoinUI 低风险拆分面已经基本收口。下一批不要重复拆 GlobalTimecoin 查找、沙漏 shader、普通抖动、反馈动画 runner 或 active_tweens controller。更稳妥的下一步是 `out_scene_map_exp.gd` 的房间完成状态数据契约前置设计，或 `custom_card.gd` 剩余函数重新审查。
+
+### 回归检查
+
+已运行：
+
+```text
+git diff --check：通过；仅提示 workflow_logs/current-modularization-process.md 工作区 CRLF 将在 Git 触碰时转为 LF。
+Godot headless 项目检查：EXIT=0，未匹配到 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call、Invalid access 或 Timecoin 相关错误。
+加载 res://scene/in_scene/in_scene.tscn：EXIT=0，未匹配到 TimecoinTweenStateController、timecoin_ui、timecoin_ui_modules 相关脚本错误。
+模块覆盖检查：scripts=180 resources=4 total=184 missing=0。
+```
+
 ## 2026-06-13 EnemyIntentPresentationController 引用查找 bridge 拆分
 
 ### 读取与轮廓

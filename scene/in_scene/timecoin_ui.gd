@@ -7,6 +7,7 @@ const TimecoinGlobalBridgeScript = preload("res://scene/in_scene/timecoin_ui_mod
 const TimecoinHourglassShaderControllerScript = preload("res://scene/in_scene/timecoin_ui_modules/presenters/TimecoinHourglassShaderController.gd")
 const TimecoinShakeTweenBuilderScript = preload("res://scene/in_scene/timecoin_ui_modules/animation/TimecoinShakeTweenBuilder.gd")
 const TimecoinFeedbackAnimationRunnerScript = preload("res://scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd")
+const TimecoinTweenStateControllerScript = preload("res://scene/in_scene/timecoin_ui_modules/animation/TimecoinTweenStateController.gd")
 
 ## ==========================================
 ## 节点引用 (必须在场景中正确连接)
@@ -69,6 +70,7 @@ var _timecoin_global_bridge = null
 var _hourglass_shader_controller = null
 var _shake_tween_builder = null
 var _feedback_animation_runner = null
+var _tween_state_controller = null
 
 
 ## ==========================================
@@ -97,6 +99,12 @@ func _get_feedback_animation_runner():
 	if _feedback_animation_runner == null:
 		_feedback_animation_runner = TimecoinFeedbackAnimationRunnerScript.new()
 	return _feedback_animation_runner
+
+
+func _get_tween_state_controller():
+	if _tween_state_controller == null:
+		_tween_state_controller = TimecoinTweenStateControllerScript.new()
+	return _tween_state_controller
 
 
 # 验证节点引用是否有效
@@ -263,7 +271,7 @@ func _play_gain_animation(amount_gained: int) -> void:
 	)
 	
 	# 记录活跃 Tween
-	active_tweens.append(tween)
+	_register_active_tween(tween)
 	
 	# 动画结束时清理
 	tween.finished.connect(_on_gain_animation_finished.bind(tween))
@@ -293,7 +301,7 @@ func _play_consume_animation(amount_spent: int) -> void:
 	)
 	
 	# 记录活跃 Tween
-	active_tweens.append(tween)
+	_register_active_tween(tween)
 	
 	# 动画结束时清理
 	tween.finished.connect(_on_consume_animation_finished.bind(tween))
@@ -319,7 +327,7 @@ func _play_warning_animation() -> void:
 		Callable(self, "_apply_shake_effect")
 	)
 	
-	active_tweens.append(tween)
+	_register_active_tween(tween)
 	
 	tween.finished.connect(_on_warning_animation_finished.bind(tween))
 
@@ -331,32 +339,17 @@ func _apply_shake_effect(tween: Tween, shake_amount: float, duration: float) -> 
 
 # 清理活跃的 Tween 实例
 func _cleanup_active_tweens() -> void:
-	# 限制同时运行的 Tween 数量
-	if active_tweens.size() >= max_concurrent_tweens:
-		print("[TimecoinUI] 达到最大 Tween 数量限制 (%d)，清理旧动画" % max_concurrent_tweens)
-		
-		# 停止并移除最旧的 Tween
-		var oldest_tween = active_tweens.pop_front()
-		if oldest_tween and oldest_tween.is_valid():
-			oldest_tween.kill()
-	
-	# 清理所有无效的 Tween 引用
-	var valid_tweens: Array[Tween] = []
-	for tween in active_tweens:
-		if tween and tween.is_valid():
-			valid_tweens.append(tween)
-		else:
-			print("[TimecoinUI] 清理无效的 Tween 引用")
-	
-	active_tweens = valid_tweens
+	active_tweens = _get_tween_state_controller().cleanup(active_tweens, max_concurrent_tweens)
+
+
+func _register_active_tween(tween: Tween) -> void:
+	active_tweens = _get_tween_state_controller().register(active_tweens, tween)
 
 
 # 重置到原始状态
 func _reset_to_original_state() -> void:
 	# 立即停止所有位置和缩放相关的补间
-	for tween in active_tweens:
-		if tween and tween.is_valid():
-			tween.kill()
+	_get_tween_state_controller().kill_all(active_tweens)
 	
 	# 立即重置到原始状态
 	ui_container.position = original_position
@@ -386,9 +379,7 @@ func _on_warning_animation_finished(tween: Tween) -> void:
 
 # 从活跃列表移除 Tween
 func _remove_tween_from_active(tween: Tween) -> void:
-	var index = active_tweens.find(tween)
-	if index != -1:
-		active_tweens.remove_at(index)
+	active_tweens = _get_tween_state_controller().remove(active_tweens, tween)
 
 
 ## ==========================================

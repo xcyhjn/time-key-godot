@@ -219,6 +219,13 @@ scene/out_scene/out_scene_modules/
 - 维护：只负责 tween 片段构造，不创建 Tween，不登记或清理 `active_tweens`，不连接 `GlobalTimecoin` 信号，不刷新数值文本，也不控制沙漏 shader。
 - 改进：如果后续只调整反馈动画颜色、缩放、闪烁或时长，可以优先进入这里；动画触发时机、冲突清理和完成回调仍留在 `timecoin_ui.gd`。
 
+#### `scene/in_scene/timecoin_ui_modules/animation/TimecoinTweenStateController.gd`
+
+- 用途：维护 `timecoin_ui.gd` 的 `active_tweens` 列表，包括登记新 tween、限制并清理过量 tween、过滤失效引用、停止全部 tween 和完成后移除。
+- 入口：`register(active_tweens, tween)`、`cleanup(active_tweens, max_concurrent_tweens)`、`kill_all(active_tweens)`、`remove(active_tweens, tween)`。
+- 维护：只处理 Tween 列表状态，不创建 Tween，不拼接动画片段，不重置 UI 位置、缩放或颜色，也不连接 `GlobalTimecoin` 信号或控制沙漏 shader。
+- 改进：如果未来要改变动画冲突策略，优先在这里调整列表策略；动画触发时机、UI 原始状态恢复和具体反馈动画片段仍留在 `timecoin_ui.gd` 或既有 runner。
+
 ## EnemyIntentPresentationController 拆分模块
 
 这些文件服务于 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd`。`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责 hover phase 判断、地图与时间轴表现同步、主 tooltip 写入、状态关键词副 tooltip 生命周期和定位；新增模块只接管纯文本、纯表现或引用查找小边界。
