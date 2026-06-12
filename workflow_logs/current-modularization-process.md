@@ -2,6 +2,93 @@
 
 日期：2026-06-05
 
+## 2026-06-12 Tile 默认敌人意图 action factory 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/tile.gd`。开工前已确认仓库内没有实体 `AGENTS.md`，因此继续遵守当前对话中的 AGENTS 约束：先审查、保持小步、只做可验证的改动。随后重新读取接力说明、HexMap 手册、模块维护说明和 `workflow_logs/maintenance_guides/tile.md`，并用 `rg` 输出 `tile.gd` 的函数、变量、信号轮廓，以及 `set_health()`、`take_damage()`、`die()`、`get_intent_action()`、`get_intent_shape()` 等相关调用方。
+
+工作区仍存在用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。
+
+### 当前职责
+
+`tile.gd` 仍是地貌/建筑实体基类，负责地貌基础属性、状态组件、结算奖励、敌人意图协议、视觉挂接、血量状态、贴图切换和旧公共入口。时间轴 shape 解析已拆到 `TileTimelineShapeParser.gd`，但 shape 旧入口仍由主脚本写回成员。
+
+### 耦合点
+
+```text
+血量链路：set_health()、take_damage()、State_Update() 和 die() 会同时牵动 protected 状态、Blood_change、damage_rate、状态清理、贴图切换和 tile_topology_changed。
+默认敌人意图链路：get_intent_action() 只组装 action_data 并创建 TimelineAction，但依赖 landform_name、location、target_tile.position 和 get_intent_shape() 的旧契约。
+子类覆盖链路：altar、village、radar 等敌方地貌已有自己的 get_intent_action()，它们补充 effect_range、invalid_reason、target_affiliation 等字段，本批不能改这些子类数据契约。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TileIntentActionFactory.gd` | 默认 `get_intent_action()` 中的 `TimelineAction` 构造 | 输入输出清楚，只搬默认 action_data 和构造，不改目标选择、shape 解析或时间轴落点 | 执行 |
+| 2 | 血量状态服务 | `set_health()`、`take_damage()`、`State_Update()`、`die()` | 同时牵动贴图、状态组件和拓扑信号，风险高 | 暂缓 |
+| 3 | 子类意图 action 数据统一 | 多个 `enermy/*.gd::get_intent_action()` | 跨多个敌方地貌和 EnemyIntentData 字段，风险高 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：Tile 默认敌人意图 `TimelineAction` 构造。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TileIntentActionFactory.gd，只负责默认 action_data 与 TimelineAction.new。
+tile.gd 新增 preload 与 _get_intent_action_factory() 缓存 getter。
+旧 get_intent_action(target_tile) 入口继续存在，只把原有字段和 get_intent_shape() 结果传给 factory。
+```
+
+不触碰：
+
+```text
+can_generate_intent()、get_intent_target_*()、get_intent_shape() 和 TimelineManager 落点选择。
+子类 get_intent_action() 覆盖实现。
+血量、死亡、贴图切换、状态清理和 tile_topology_changed。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/tile_modules/rules/TileIntentActionFactory.gd
+```
+
+职责：
+
+```text
+TileIntentActionFactory 只负责为 Tile 默认敌人意图创建 TimelineAction。
+它不选择目标、不判断意图是否合法、不解析时间轴 shape，也不修改 tile 血量、贴图或地图拓扑。
+```
+
+`tile.gd::get_intent_action(target_tile)` 仍是旧入口，内部只把 `self`、`target_tile`、`get_intent_shape()`、`landform_name` 和 `location` 传给 factory。默认 `action_data` 字段保持为 `"效果"`、`"类型"`、`"位置"`、`"目标"`，默认颜色仍是 `Color(0.8, 0.2, 0.2, 0.8)`。
+
+### 当前优化进度与下一步
+
+已拆模块统计更新为 163 个脚本模块和 4 个默认 Resource 文件。`tile.gd` 当前约 674 行。下一批如果继续 Tile，先重新审查血量/死亡状态或多个子类意图 action 数据统一；不要同批碰贴图切换、拓扑信号和 TimelineAction 数据契约。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+覆盖检查通过：167 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 163 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 Tile 时间占位 shape parser 拆分
 
 ### 读取与轮廓

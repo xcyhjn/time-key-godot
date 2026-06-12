@@ -3,6 +3,7 @@ extends  Node2D
 
 const StatusComponentScript = preload("res://scene/in_scene/status/status_component.gd")
 const TileTimelineShapeParserScript = preload("res://scene/in_scene/tile_modules/rules/TileTimelineShapeParser.gd")
+const TileIntentActionFactoryScript = preload("res://scene/in_scene/tile_modules/rules/TileIntentActionFactory.gd")
 static var _texture_cache: Dictionary = {}
 
 signal Blood_change(Blood)
@@ -76,6 +77,7 @@ var step : int
 var sheild : int = 0
 var status_component: StatusComponent = null
 var _timeline_shape_parser = null
+var _intent_action_factory = null
 
 @export_group("状态图标显示")
 ## 状态图标相对建筑本体的本地偏移。x 控制左右，y 越小越往上。
@@ -117,6 +119,11 @@ func _get_timeline_shape_parser():
 	if _timeline_shape_parser == null:
 		_timeline_shape_parser = TileTimelineShapeParserScript.new()
 	return _timeline_shape_parser
+
+func _get_intent_action_factory():
+	if _intent_action_factory == null:
+		_intent_action_factory = TileIntentActionFactoryScript.new()
+	return _intent_action_factory
 
 func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2i, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
@@ -599,24 +606,13 @@ func die() -> void:
 
 ## 获取敌人的意图行动（实现 enemy_intent_manager 接口）
 func get_intent_action(target_tile: Node = null) -> TimelineAction:
-	# 创建时间轴行动 - 使用正确的构造函数参数
-	var action_data = {
-		"效果": "地形实体行动",
-		"类型": landform_name,
-		"位置": location,
-		"目标": target_tile.position if target_tile else Vector2.ZERO
-	}
-	
-	var action = TimelineAction.new(
-		TimelineAction.Type.ENEMY,  # p_type
-		self,                       # p_source
-		target_tile,                # p_target
-		get_intent_shape(),         # p_coords
-		Color(0.8, 0.2, 0.2, 0.8), # p_color
-		action_data                 # p_data
+	return _get_intent_action_factory().create_default_action(
+		self,
+		target_tile,
+		get_intent_shape(),
+		landform_name,
+		location
 	)
-	
-	return action
 
 
 ## 设置时间占位形状 (供外部调用，如 village.gd 里的 set_timeline_shape("011"))

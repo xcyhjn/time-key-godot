@@ -214,6 +214,13 @@ scene/out_scene/out_scene_modules/
 - 维护：不要读取场景树，不修改 tile 节点，不创建 `TimelineAction`，也不判断敌人意图是否合法。
 - 改进：如果未来要和 CustomCard 共享 shape 解析，必须单独评估玩家卡和敌人意图的语义差异，不要顺手合并。
 
+#### `scene/in_scene/tile_modules/rules/TileIntentActionFactory.gd`
+
+- 用途：为 `tile.gd` 默认敌人意图创建 `TimelineAction`，并保持原有默认 `action_data` 字段。
+- 入口：`create_default_action(source_tile, target_tile, shape_coords, landform_name, location)`。
+- 维护：不要选择目标，不判断意图是否合法，不解析 shape，不修改血量、贴图或地图拓扑。
+- 改进：如果未来要统一敌方地貌子类的 `get_intent_action()`，必须单独评估 `effect_range`、`invalid_reason`、`target_affiliation` 和敌人意图展示协议，不要在这里顺手兼容所有子类。
+
 ### animation
 
 #### `scene/in_scene/drag_modules/animation/DragPlacementAnimationRunner.gd`
