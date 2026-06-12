@@ -2,6 +2,122 @@
 
 日期：2026-06-05
 
+## 2026-06-13 EnemyIntentPresentationController 引用查找 bridge 拆分
+
+### 读取与轮廓
+
+本批处理 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` 的引用查找小风险面。开工前确认仓库中没有实体 `AGENTS.md`，继续使用当前对话中用户贴出的 AGENTS 约束。当前工作区仍有用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不 stage、不提交这些文件。已读取：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+workflow_logs/next-ai-handoff-current-status.md
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+```
+
+已按要求先读取 `godot-prompter:gdscript-patterns`；写 Markdown 前已读取 `docs-write`。已用 `rg` 输出目标文件的 `class_name`、`extends`、`signal`、`@export`、`@onready`、`const`、`var`、`func` 轮廓，并搜索 `_resolve_references()`、`MainBoard`、`HexMap`、`TimelineManager`、`TimelineUI`、`DragShapeController` 与 hover/重判信号连接。
+
+### 当前职责
+
+`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责地图 hover、时间轴 hover、交互阶段门禁、地图与时间轴预览同步、主 tooltip 写入、状态关键词副 tooltip 展示清理，以及 hover 退出、阶段切换和意图重判时的统一清理。
+
+### 耦合点
+
+```text
+_resolve_references() 同时查找 MainBoard、HexMap、TimelineManager、TimelineUI 和 DragShapeController。
+同一入口还连接 TimelineManager.action_hovered_changed、HexMap.enemy_roster_changed 和 HexMap.tile_topology_changed。
+tooltip 文本、tooltip 定位、状态关键词副 tooltip、hover phase 判断和地图/时间轴表现与引用查找相邻，但本批不触碰。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 引用查找 bridge | `_resolve_references()` 的节点收集与信号接线 | 旧入口可保留，路径和接线顺序清晰 | 执行 |
+| 2 | hover phase 判断 | `_is_map_hover_allowed()`、`_is_timeline_hover_allowed()`、`_get_phase()` | 牵动主交互状态和恢复预览 | 不碰 |
+| 3 | 地图/时间轴表现同步 | `show_intent_preview()`、`clear_intent_preview()` | 同时驱动 HexMap、TimelineUI 和 tooltip | 不碰 |
+| 4 | tooltip 剩余入口 | 主 tooltip 写入、host 选择、source stack 查找 | 已拆三个低风险表现模块，继续硬拆收益低 | 不碰 |
+
+### 本批风险面
+
+本批只处理一个风险面：敌人意图表现控制器的跨系统引用查找与旧信号接线。
+
+涉及的小风险点：
+
+```text
+新增 EnemyIntentPresentationReferenceBridge.gd，集中查找 MainBoard、HexMap、TimelineManager、TimelineUI 和 DragShapeController。
+旧 _resolve_references() 保留入口，继续先拿 MainBoard、隐藏旧 tooltip，再接收 bridge 返回引用。
+hover 与重判信号仍按原顺序连接，避免改变时间轴 hover 和地图拓扑变更后的重判行为。
+```
+
+不触碰：
+
+```text
+EnemyIntentResolver、EnemyIntentData、TimelineManager 数据结构。
+地图/时间轴联动规则、TimelineUI 表现和敌方意图 tooltip 文案。
+hover phase 判断、resolve_timeline()、generate_enemy_intents()。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/enermy/intent_presentation_modules/bridges/EnemyIntentPresentationReferenceBridge.gd
+```
+
+职责：
+
+```text
+EnemyIntentPresentationReferenceBridge 只负责为敌人意图表现协调器查找跨系统节点，并按旧入口顺序连接 hover 与重判信号。
+它不判断交互阶段，不解析敌人意图，不驱动地图或时间轴表现，也不创建、写入或定位 tooltip。
+```
+
+`enemy_intent_presentation_controller.gd` 新增 `EnemyIntentPresentationReferenceBridgeScript` preload、缓存 getter 和旧入口转发。`_resolve_references()` 仍保留主入口，继续在拿到 `MainBoard` 后隐藏旧 tooltip，并把引用结果写回 `hex_map`、`timeline_manager`、`timeline_ui` 和 `drag_shape_controller`。
+
+同步更新：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+workflow_logs/next-ai-handoff-current-status.md
+```
+
+### 当前优化进度与下一步
+
+当前已拆脚本模块更新为 179 个，默认 Resource 文件仍为 4 个。EnemyIntentPresentationController 现在有 4 个拆分模块：
+
+```text
+EnemyIntentPresentationReferenceBridge.gd
+EnemyIntentTooltipTextBuilder.gd
+EnemyIntentStatusKeywordTooltipPresenter.gd
+EnemyIntentTooltipPositionHelper.gd
+```
+
+引用查找和 tooltip 低风险表现面已收口。下一批不要重复拆 reference bridge、tooltip text builder、status keyword presenter 或 tooltip position helper。更稳妥的下一步是 `scene/in_scene/timecoin_ui.gd` 的 `active_tweens` 清理 controller；如果继续 EnemyIntentPresentationController，必须先重新审查剩余函数，不要同批触碰 `EnemyIntentResolver`、`TimelineManager` 或地图/时间轴联动规则。
+
+### 回归检查
+
+已运行：
+
+```text
+git diff --check 通过；仅有 workflow_logs/current-modularization-process.md 的既有换行归一化提示，无空白错误。
+Godot headless 项目检查通过：EXIT=0；仍有项目既有 ObjectDB/resource 退出噪声。
+加载 res://scene/in_scene/in_scene.tscn 通过：EXIT=0；过滤 enemy_intent_presentation_controller 与 intent_presentation_modules 相关输出后没有脚本错误，场景加载仍有项目既有 TileSet atlas 噪声。
+模块覆盖检查通过：scripts=179 resources=4 total=183 missing=0。
+```
+
 ## 2026-06-13 OutScene 镜头限制拆分
 
 ### 读取与轮廓

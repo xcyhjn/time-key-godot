@@ -8,6 +8,7 @@ const PHASE_BLOCKED := "blocked"
 const EnemyIntentTooltipTextBuilderScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd")
 const EnemyIntentStatusKeywordTooltipPresenterScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd")
 const EnemyIntentTooltipPositionHelperScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipPositionHelper.gd")
+const EnemyIntentPresentationReferenceBridgeScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/bridges/EnemyIntentPresentationReferenceBridge.gd")
 
 # ==========================================
 # 脚本名称: enemy_intent_presentation_controller.gd
@@ -102,6 +103,7 @@ var last_phase: String = ""
 var _tooltip_text_builder = null
 var _status_keyword_tooltip_presenter = null
 var _tooltip_position_helper = null
+var _reference_bridge = null
 
 
 func _ready() -> void:
@@ -127,28 +129,32 @@ func _get_tooltip_position_helper():
 	return _tooltip_position_helper
 
 
+func _get_reference_bridge():
+	if _reference_bridge == null:
+		_reference_bridge = EnemyIntentPresentationReferenceBridgeScript.new()
+	return _reference_bridge
+
+
 func _resolve_references() -> void:
-	# 统一在这里收集依赖节点，避免各个函数中重复 find_child / get_node_or_null。
-	main_board = get_tree().get_first_node_in_group("MainBoard")
+	# 旧入口保留；跨系统引用查找和信号接线交给 bridge，表现编排仍留在本文件。
+	var reference_bridge = _get_reference_bridge()
+	main_board = reference_bridge.find_main_board(self)
 	if not is_instance_valid(main_board):
 		return
 	_hide_intent_tooltip()
 
-	hex_map = main_board.get_node_or_null("../../map/HexMap")
-	timeline_manager = main_board.get_node_or_null("../TimelineSystem/TimelineManager")
-	timeline_ui = main_board.get_node_or_null("../TimelineUI")
-	drag_shape_controller = get_tree().get_first_node_in_group("DragShapeController")
+	var references: Dictionary = reference_bridge.collect_references(self, main_board)
+	hex_map = references.get("hex_map") as battle
+	timeline_manager = references.get("timeline_manager") as TimelineManager
+	timeline_ui = references.get("timeline_ui") as Control
+	drag_shape_controller = references.get("drag_shape_controller") as Node
 
-	if is_instance_valid(timeline_manager):
-		if not timeline_manager.action_hovered_changed.is_connected(handle_timeline_action_hover):
-			timeline_manager.action_hovered_changed.connect(handle_timeline_action_hover)
-
-	if is_instance_valid(hex_map) and hex_map.has_signal("enemy_roster_changed"):
-		if not hex_map.enemy_roster_changed.is_connected(revalidate_enemy_intents):
-			hex_map.enemy_roster_changed.connect(revalidate_enemy_intents)
-	if is_instance_valid(hex_map) and hex_map.has_signal("tile_topology_changed"):
-		if not hex_map.tile_topology_changed.is_connected(revalidate_enemy_intents):
-			hex_map.tile_topology_changed.connect(revalidate_enemy_intents)
+	reference_bridge.connect_reference_signals(
+		timeline_manager,
+		hex_map,
+		handle_timeline_action_hover,
+		revalidate_enemy_intents
+	)
 
 
 func handle_map_stack_hover(stack: Area2D, is_entered: bool) -> void:

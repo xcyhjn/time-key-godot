@@ -51,6 +51,7 @@ scene/card/custom_card_modules/rules/
 scene/in_scene/timecoin_ui_modules/bridges/
 scene/in_scene/timecoin_ui_modules/animation/
 scene/in_scene/timecoin_ui_modules/presenters/
+scene/in_scene/enermy/intent_presentation_modules/bridges/
 scene/in_scene/enermy/intent_presentation_modules/presenters/
 scene/in_scene/tile_modules/controllers/
 scene/in_scene/tile_modules/rules/
@@ -221,6 +222,15 @@ scene/out_scene/out_scene_modules/
 ## EnemyIntentPresentationController 拆分模块
 
 这些文件服务于 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd`。`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责 hover phase 判断、地图与时间轴表现同步、主 tooltip 写入、状态关键词副 tooltip 生命周期和定位；新增模块只接管纯文本、纯表现或引用查找小边界。
+
+### bridges
+
+#### `scene/in_scene/enermy/intent_presentation_modules/bridges/EnemyIntentPresentationReferenceBridge.gd`
+
+- 用途：为敌人意图表现协调器查找 `MainBoard`、`HexMap`、`TimelineManager`、`TimelineUI` 和 `DragShapeController`，并按旧入口顺序连接时间轴 hover 与地图重判信号。
+- 入口：`find_main_board(owner)`、`collect_references(owner, main_board)`、`connect_reference_signals(timeline_manager, hex_map, timeline_hover_callable, revalidate_callable)`。
+- 维护：只处理跨系统引用和旧 `_resolve_references()` 的信号接线，不判断 hover phase，不解析敌人意图，不驱动地图或时间轴表现，也不创建、写入或定位 tooltip。
+- 改进：如果这些节点的挂载路径或分组继续变化，优先改这里；敌人意图预览、tooltip 文本和地图/时间轴联动规则仍留在 controller 或既有模块。
 
 ### presenters
 
