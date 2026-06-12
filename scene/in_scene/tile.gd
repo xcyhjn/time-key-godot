@@ -4,6 +4,7 @@ extends  Node2D
 const StatusComponentScript = preload("res://scene/in_scene/status/status_component.gd")
 const TileTimelineShapeParserScript = preload("res://scene/in_scene/tile_modules/rules/TileTimelineShapeParser.gd")
 const TileIntentActionFactoryScript = preload("res://scene/in_scene/tile_modules/rules/TileIntentActionFactory.gd")
+const TileHealthStateRulesScript = preload("res://scene/in_scene/tile_modules/rules/TileHealthStateRules.gd")
 static var _texture_cache: Dictionary = {}
 
 signal Blood_change(Blood)
@@ -78,6 +79,7 @@ var sheild : int = 0
 var status_component: StatusComponent = null
 var _timeline_shape_parser = null
 var _intent_action_factory = null
+var _health_state_rules = null
 
 @export_group("状态图标显示")
 ## 状态图标相对建筑本体的本地偏移。x 控制左右，y 越小越往上。
@@ -124,6 +126,11 @@ func _get_intent_action_factory():
 	if _intent_action_factory == null:
 		_intent_action_factory = TileIntentActionFactoryScript.new()
 	return _intent_action_factory
+
+func _get_health_state_rules():
+	if _health_state_rules == null:
+		_health_state_rules = TileHealthStateRulesScript.new()
+	return _health_state_rules
 
 func _init(name_in : String, tex_in : Array[String], damaged_tex_in : Array[String], rules_in : Dictionary, location_in : Vector2i, is_Underlings : bool,battle_in) -> void:
 	if tex_in.is_empty() or damaged_tex_in.is_empty():
@@ -542,13 +549,14 @@ func get_timeline_shape_size() -> Vector2:
 
 
 func set_health(new_hp: float) -> void:
-	HP = clampf(new_hp, 0.0, Max_Blood)
+	var health_result: Dictionary = _get_health_state_rules().normalize_health(new_hp, Max_Blood)
+	HP = float(health_result.get("hp", 0.0))
 	State_Update()
 	Blood_change.emit(HP)
 	
 	# 更新 damage_rate 基于当前生命值
 	if Max_Blood > 0:
-		damage_rate = 1.0 - (float(HP) / float(Max_Blood))
+		damage_rate = float(health_result.get("damage_rate", damage_rate))
 
 
 func heal(amount: float) -> void:
@@ -568,12 +576,14 @@ func take_damage(amount: int) -> void:
 
 
 func State_Update():
-	if HP <= 0:
-		die()
-	elif HP < Max_Blood * Capture_rate and HP > 0:
-		Captured()
-	else: 
-		Revived()
+	var next_state: StringName = _get_health_state_rules().get_main_state_for_health(HP, Max_Blood, Capture_rate)
+	match next_state:
+		TileHealthStateRulesScript.STATE_BROKEN:
+			die()
+		TileHealthStateRulesScript.STATE_CAPTURED:
+			Captured()
+		_:
+			Revived()
 
 func die() -> void:
 	State_Main = Main_State_Pool.Broken

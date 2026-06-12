@@ -221,6 +221,13 @@ scene/out_scene/out_scene_modules/
 - 维护：不要选择目标，不判断意图是否合法，不解析 shape，不修改血量、贴图或地图拓扑。
 - 改进：如果未来要统一敌方地貌子类的 `get_intent_action()`，必须单独评估 `effect_range`、`invalid_reason`、`target_affiliation` 和敌人意图展示协议，不要在这里顺手兼容所有子类。
 
+#### `scene/in_scene/tile_modules/rules/TileHealthStateRules.gd`
+
+- 用途：计算 Tile 血量 clamp、damage_rate 和下一主状态标签。
+- 入口：`normalize_health(new_hp, max_blood)`、`get_main_state_for_health(current_hp, max_blood, capture_rate)`。
+- 维护：不要发 `Blood_change`，不要调用 `die()`、`Captured()` 或 `Revived()`，不切换贴图，不清理状态组件，也不通知 HexMap 拓扑变化。
+- 改进：如果未来拆死亡执行流程，仍应由主脚本或单独 controller 执行状态组件清理、贴图切换和 `tile_topology_changed`，不要把副作用塞回纯规则模块。
+
 ### animation
 
 #### `scene/in_scene/drag_modules/animation/DragPlacementAnimationRunner.gd`

@@ -2,6 +2,95 @@
 
 日期：2026-06-05
 
+## 2026-06-12 Tile 血量状态纯规则拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/tile.gd`。开工前确认仓库内没有实体 `AGENTS.md`，因此继续遵守当前对话中的 AGENTS 约束。随后重新读取接力说明、HexMap 手册、模块维护说明和 `workflow_logs/maintenance_guides/tile.md`，并用 `rg` 输出 `tile.gd` 的函数、变量、信号轮廓，以及 `State_Update()`、`set_health()`、`damage_rate`、`Capture_rate`、`die()`、`Captured()` 和 `Revived()` 的调用与引用。
+
+工作区仍存在用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。
+
+### 当前职责
+
+`tile.gd` 仍是地貌/建筑实体基类，负责地貌基础属性、状态组件、结算奖励、敌人意图协议、视觉挂接、血量状态、贴图切换和旧公共入口。时间轴 shape 解析、默认敌人意图 action 构造已经拆出；血量链路仍同时包含纯数值判断和副作用执行。
+
+### 耦合点
+
+```text
+set_health() 会 clamp HP、调用 State_Update()、发出 Blood_change，并计算 damage_rate。
+State_Update() 会根据 HP、Max_Blood 和 Capture_rate 决定 die()/Captured()/Revived()，这些函数会改 State_Main 并触发贴图切换。
+die() 额外清理 status_component、把 damage_rate 置 1，并发出 tile_topology_changed。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | `TileHealthStateRules.gd` | `set_health()` 中的 clamp/damage_rate 与 `State_Update()` 的状态判定 | 纯数值规则，输入输出清楚；主脚本继续执行 die/Captured/Revived 副作用 | 执行 |
+| 2 | 死亡执行 controller | `die()` | 牵动状态清理、贴图、拓扑信号和 Broken 占位语义，风险高 | 暂缓 |
+| 3 | protected 受击规则 | `take_damage()` | 与 `Vice_State_Pool.protected` 消耗和伤害命令体验绑定，需单独验证 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：Tile 血量状态的纯规则计算。
+
+涉及的 3 个小风险点：
+
+```text
+新增 TileHealthStateRules.gd，只返回 clamp 后 HP、damage_rate 和下一状态标签。
+tile.gd 新增 preload 与 _get_health_state_rules() 缓存 getter。
+set_health() 与 State_Update() 旧入口继续存在，仍由主脚本发信号并调用 die()/Captured()/Revived()。
+```
+
+不触碰：
+
+```text
+take_damage() 的 protected 消耗。
+die() 内状态清理、贴图切换、damage_rate=1.0 和 tile_topology_changed。
+Captured()、Revived()、tex_toggle() 的贴图行为。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/tile_modules/rules/TileHealthStateRules.gd
+```
+
+职责：
+
+```text
+TileHealthStateRules 只负责计算 Tile 血量相关的纯规则结果。
+它不发信号、不切换贴图、不清理状态组件，也不通知 HexMap 拓扑变化。
+```
+
+`tile.gd::set_health(new_hp)` 仍是旧入口，继续负责写回 `HP`、调用 `State_Update()`、发出 `Blood_change`，并保持旧行为：只有 `Max_Blood > 0` 时才更新 `damage_rate`。
+
+`tile.gd::State_Update()` 仍是旧入口，继续由主脚本调用 `die()`、`Captured()` 或 `Revived()`，因此贴图切换、状态清理和拓扑信号没有进入规则模块。
+
+### 当前优化进度与下一步
+
+已拆模块统计更新为 164 个脚本模块和 4 个默认 Resource 文件。`tile.gd` 当前约 684 行。下一批如果继续 Tile，先重新审查死亡执行 controller 或多个子类意图 action 数据统一；不要同批碰贴图切换、拓扑信号和 TimelineAction 数据契约。
+
+### 回归检查
+
+```text
+git diff --check 通过，仅有 workflow_logs/current-modularization-process.md 的既有换行提示。
+覆盖检查通过：168 个已拆脚本和资源路径都出现在 docs/modularized-files-ultimate-operation-guide.md，缺失数为 0；其中脚本模块为 164 个，默认 Resource 文件为 4 个。
+Godot 项目 headless 检查退出码为 0，错误筛选未出现 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call 或 Invalid access。
+Godot 加载 res://scene/in_scene/in_scene.tscn 退出码为 0，错误筛选未出现关键脚本错误；仍输出既有 TileSetAtlasSource atlas tile 资源错误和退出资源占用 warning，本批未改 TileSet。
+临时 Godot 日志已清理。
+```
+
 ## 2026-06-12 Tile 默认敌人意图 action factory 拆分
 
 ### 读取与轮廓
