@@ -1,6 +1,6 @@
 # 已拆模块终极使用、操作、改进与维护说明
 
-日期：2026-06-09
+日期：2026-06-13
 
 ## 先读这一段
 
@@ -173,7 +173,7 @@ scene/out_scene/out_scene_modules/
 
 ## TimecoinUI 拆分模块
 
-这些文件服务于 `scene/in_scene/timecoin_ui.gd`。`timecoin_ui.gd` 仍是时间币 UI 的 composition root，负责节点引用校验、GlobalTimecoin 信号连接、数值显示、获得/消耗/不足动画、tween 防冲突和沙漏 shader 控制；新增模块只接管跨节点查找、纯动画或纯 shader 小边界。
+这些文件服务于 `scene/in_scene/timecoin_ui.gd`。`timecoin_ui.gd` 仍是时间币 UI 的 composition root，负责节点引用校验、GlobalTimecoin 信号连接、数值显示、获得/消耗/不足动画触发、tween 防冲突和沙漏 shader 控制；新增模块只接管跨节点查找、纯动画或纯 shader 小边界。
 
 ### bridges
 
@@ -200,7 +200,14 @@ scene/out_scene/out_scene_modules/
 - 用途：把时间币 UI 普通动画中的位置抖动片段追加到传入 Tween。
 - 入口：`append_shake(tween, target, original_position, shake_amount, duration)`。
 - 维护：不要在这里创建 Tween，不管理 `active_tweens`，不连接时间币信号，也不刷新数值显示。
-- 改进：如果后续获得、消耗和不足动画拆 runner，仍让 runner 或主脚本决定动画时机和完成回调，这里只保留抖动片段构造。
+- 改进：如果后续抖动曲线要统一调参，可以继续扩展这里；不要让它接管获得、消耗和不足动画的完整时序。
+
+#### `scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd`
+
+- 用途：把时间币 UI 获得、消耗和余额不足三类反馈动画片段追加到传入 Tween。
+- 入口：`append_gain_animation(...)`、`append_consume_animation(...)`、`append_warning_animation(...)`。
+- 维护：只负责 tween 片段构造，不创建 Tween，不登记或清理 `active_tweens`，不连接 `GlobalTimecoin` 信号，不刷新数值文本，也不控制沙漏 shader。
+- 改进：如果后续只调整反馈动画颜色、缩放、闪烁或时长，可以优先进入这里；动画触发时机、冲突清理和完成回调仍留在 `timecoin_ui.gd`。
 
 ## Tile 拆分模块
 

@@ -2,6 +2,87 @@
 
 日期：2026-06-05
 
+## 2026-06-13 TimecoinUI 获得/消耗/不足动画 runner 拆分
+
+### 读取与轮廓
+
+本批继续处理 `scene/in_scene/timecoin_ui.gd`。开工前确认工作区仍只有用户已有的资源与 shader 改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。随后重新读取接力说明、HexMap 手册、模块总表、`workflow_logs/current-modularization-process.md` 与 `workflow_logs/maintenance_guides/timecoin_ui.md`，并用 `rg` 输出 `timecoin_ui.gd` 与 `enemy_intent_presentation_controller.gd` 中 `class_name`、`extends`、`@export`、`@onready`、`const`、`var`、`func`、`_play_gain_animation()`、`_play_consume_animation()`、`_play_warning_animation()`、`active_tweens`、`original_*`、`_apply_shake_effect()` 和 tooltip 相关函数轮廓。
+
+### 当前职责
+
+`timecoin_ui.gd` 是时间币 UI 的 composition root，继续负责节点引用校验、`GlobalTimecoin` 信号连接、数值显示、动画触发时机、`active_tweens` 清理和完成回调、原始位置/缩放/颜色恢复以及旧 shader 控制入口。当前已拆出 `TimecoinGlobalBridge.gd`、`TimecoinHourglassShaderController.gd` 和 `TimecoinShakeTweenBuilder.gd`；获得、消耗和余额不足三段动画仍在主脚本里直接拼接 tween 片段。
+
+### 耦合点
+
+```text
+_play_gain_animation()、_play_consume_animation()、_play_warning_animation() 都会先清理 active_tweens、重置 UI，再创建 Tween、拼接动画、登记 active_tweens 和完成回调。
+active_tweens 数组、_cleanup_active_tweens()、_reset_to_original_state()、_remove_tween_from_active() 和完成回调必须继续留在主脚本，避免改变动画冲突管理语义。
+TimecoinShakeTweenBuilder.gd 已负责位置抖动片段，新 runner 应复用主脚本旧 _apply_shake_effect() 入口或传入 Callable，不直接接管 shake builder。
+数值来源、GlobalTimecoin 信号、amount_label 文本刷新和沙漏 shader 控制都不是本批范围。
+EnemyIntentPresentationController tooltip 是下一批候选，不和 Timecoin 动画同批提交。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | Timecoin 动画 runner | 获得/消耗/不足三段 tween 片段构造 | 纯表现，输入为节点、颜色、时长、抖动回调和原始状态 | 执行 |
+| 2 | 主脚本旧入口保留 | `_play_gain_animation()` 等 | 保留清理、重置、创建 tween、登记和完成回调 | 执行 |
+| 3 | active_tweens 管理 controller | `_cleanup_active_tweens()`、`_reset_to_original_state()` | 会改变冲突管理和完成回调语义 | 暂缓 |
+| 4 | EnemyIntent tooltip presenter | 敌人意图 tooltip 文本/定位/关键词面板 | 独立风险面，需要补维护说明后另批处理 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：TimecoinUI 获得、消耗、余额不足三段动画的 tween 片段构造。
+
+涉及的小风险点：
+
+```text
+新增 TimecoinFeedbackAnimationRunner.gd，只负责向传入 Tween 追加 gain/consume/warning 动画片段。
+timecoin_ui.gd 新增 preload 与 runner getter。
+_play_gain_animation()、_play_consume_animation()、_play_warning_animation() 保留旧入口和完成回调，只把 tween 片段构造转发给 runner。
+```
+
+不触碰：
+
+```text
+GlobalTimecoin 查找、信号连接和数值刷新。
+active_tweens 清理、登记、完成回调和 reset 顺序。
+TimecoinHourglassShaderController.gd 与 TimecoinShakeTweenBuilder.gd 的职责。
+沙漏 shader 控制旧入口。
+EnemyIntentPresentationController tooltip。
+```
+
+### 实现结果
+
+新增 `scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd`。该模块是 RefCounted runner，中文职责注释明确它只负责把时间币 UI 的获得、消耗和余额不足反馈动画片段追加到传入 Tween；它不创建 Tween、不管理 `active_tweens`、不连接 `GlobalTimecoin` 信号，也不刷新数值文本或控制沙漏 shader。
+
+`scene/in_scene/timecoin_ui.gd` 新增 `TimecoinFeedbackAnimationRunnerScript` preload、`_feedback_animation_runner` 缓存和 `_get_feedback_animation_runner()` 旧式 getter。`_play_gain_animation()`、`_play_consume_animation()` 与 `_play_warning_animation()` 仍保留清理旧动画、重置状态、创建 Tween、登记 `active_tweens` 与连接完成回调；获得/消耗/不足的 tween 片段构造转交给 runner，并继续通过 `Callable(self, "_apply_shake_effect")` 复用已有 `TimecoinShakeTweenBuilder.gd`。
+
+同步更新 `docs/modularized-files-ultimate-operation-guide.md`、`docs/ai-handoff-ultimate-operation-guide.md` 与 `workflow_logs/maintenance_guides/timecoin_ui.md`。总结文档已记录新 runner，单文件维护说明也补上“不要重复拆反馈动画 runner、不要把 `active_tweens` 塞进表现模块”的停止点。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计更新为 169 个脚本模块和 4 个默认 Resource 文件。TimecoinUI 的全局查找、沙漏 shader、普通抖动片段和反馈动画片段均已拆出；主脚本剩余合理职责是数值显示、信号响应、动画触发入口、`active_tweens` 冲突清理和旧 shader 入口转发。
+
+下一批按用户关注转向 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` 的 tooltip 拆分，并先补该大文件的维护说明。若继续 TimecoinUI，只单独评估 `active_tweens` 清理 controller，不重复拆获得/消耗/不足动画 runner。
+
+### 回归检查
+
+`git diff --check` 通过；仅提示 `workflow_logs/current-modularization-process.md` 会被 Git 归一化换行。
+
+模块文档覆盖检查通过：169 个已拆脚本模块和 4 个默认 Resource 文件都出现在 `docs/modularized-files-ultimate-operation-guide.md`，覆盖缺失为 0。
+
+Godot headless 项目检查可启动并退出，输出仍有既有退出资源占用警告。加载 `res://scene/in_scene/in_scene.tscn` 通过：TimecoinUI 成功连接 `GlobalTimecoin.timecoin_updated` 与 `GlobalTimecoin.timecoin_insufficient`，完成初始显示刷新和 UI 初始化。该场景检查仍输出既有 TileSet atlas 坐标报错和退出资源泄漏警告，本批没有修改 TileSet、贴图资源或退出流程。
+
 ## 2026-06-13 Tile 剩余 action_data 子类收口
 
 ### 读取与轮廓

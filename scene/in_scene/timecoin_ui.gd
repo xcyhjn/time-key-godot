@@ -6,6 +6,7 @@ extends PanelContainer
 const TimecoinGlobalBridgeScript = preload("res://scene/in_scene/timecoin_ui_modules/bridges/TimecoinGlobalBridge.gd")
 const TimecoinHourglassShaderControllerScript = preload("res://scene/in_scene/timecoin_ui_modules/presenters/TimecoinHourglassShaderController.gd")
 const TimecoinShakeTweenBuilderScript = preload("res://scene/in_scene/timecoin_ui_modules/animation/TimecoinShakeTweenBuilder.gd")
+const TimecoinFeedbackAnimationRunnerScript = preload("res://scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd")
 
 ## ==========================================
 ## 节点引用 (必须在场景中正确连接)
@@ -67,6 +68,7 @@ var animation_queue: Array[Dictionary] = []
 var _timecoin_global_bridge = null
 var _hourglass_shader_controller = null
 var _shake_tween_builder = null
+var _feedback_animation_runner = null
 
 
 ## ==========================================
@@ -89,6 +91,12 @@ func _get_shake_tween_builder():
 	if _shake_tween_builder == null:
 		_shake_tween_builder = TimecoinShakeTweenBuilderScript.new()
 	return _shake_tween_builder
+
+
+func _get_feedback_animation_runner():
+	if _feedback_animation_runner == null:
+		_feedback_animation_runner = TimecoinFeedbackAnimationRunnerScript.new()
+	return _feedback_animation_runner
 
 
 # 验证节点引用是否有效
@@ -241,27 +249,18 @@ func _play_gain_animation(amount_gained: int) -> void:
 	var tween = create_tween()
 	tween.set_parallel(true)  # 并行执行多个动画
 	
-	# 1. 弹性缩放动画
-	tween.tween_property(ui_container, "scale", 
-		original_scale * gain_scale_amount, gain_scale_duration * 0.5
-	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	
-	tween.tween_property(ui_container, "scale", 
-		original_scale, gain_scale_duration * 0.5
-	).set_delay(gain_scale_duration * 0.5).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-	
-	# 2. 位置抖动动画
-	_apply_shake_effect(tween, gain_shake_amount, gain_shake_duration)
-	
-	# 3. 图标高亮效果 (如果存在图标)
-	if hourglass_icon:
-		tween.tween_property(hourglass_icon, "modulate", 
-			Color(1.5, 1.5, 1.0, 1.0), gain_scale_duration * 0.3
-		).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		
-		tween.tween_property(hourglass_icon, "modulate", 
-			original_icon_color, gain_scale_duration * 0.7
-		).set_delay(gain_scale_duration * 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_get_feedback_animation_runner().append_gain_animation(
+		tween,
+		ui_container,
+		hourglass_icon,
+		original_scale,
+		original_icon_color,
+		gain_scale_amount,
+		gain_scale_duration,
+		gain_shake_amount,
+		gain_shake_duration,
+		Callable(self, "_apply_shake_effect")
+	)
 	
 	# 记录活跃 Tween
 	active_tweens.append(tween)
@@ -283,18 +282,15 @@ func _play_consume_animation(amount_spent: int) -> void:
 	# 创建新的 Tween
 	var tween = create_tween()
 	
-	# 1. 快速左右震动
-	_apply_shake_effect(tween, consume_shake_amount, consume_shake_duration)
-	
-	# 2. 红色半透明覆盖 (短暂提示)
-	if hourglass_icon:
-		tween.tween_property(hourglass_icon, "modulate", 
-			consume_color_tint, consume_shake_duration * 0.2
-		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		
-		tween.tween_property(hourglass_icon, "modulate", 
-			original_icon_color, consume_shake_duration * 0.8
-		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_get_feedback_animation_runner().append_consume_animation(
+		tween,
+		hourglass_icon,
+		original_icon_color,
+		consume_shake_amount,
+		consume_shake_duration,
+		consume_color_tint,
+		Callable(self, "_apply_shake_effect")
+	)
 	
 	# 记录活跃 Tween
 	active_tweens.append(tween)
@@ -316,27 +312,12 @@ func _play_warning_animation() -> void:
 	var tween = create_tween()
 	tween.set_parallel(true)
 	
-	# 快速红色闪烁
-	if hourglass_icon:
-		tween.tween_property(hourglass_icon, "modulate", 
-			Color(2.0, 0.2, 0.2, 1.0), 0.1
-		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		
-		tween.chain().tween_property(hourglass_icon, "modulate", 
-			original_icon_color, 0.1
-		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		
-		# 重复两次
-		tween.chain().tween_property(hourglass_icon, "modulate", 
-			Color(2.0, 0.2, 0.2, 1.0), 0.1
-		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		
-		tween.chain().tween_property(hourglass_icon, "modulate", 
-			original_icon_color, 0.1
-		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
-	# 轻微震动
-	_apply_shake_effect(tween, 3.0, 0.4)
+	_get_feedback_animation_runner().append_warning_animation(
+		tween,
+		hourglass_icon,
+		original_icon_color,
+		Callable(self, "_apply_shake_effect")
+	)
 	
 	active_tweens.append(tween)
 	
