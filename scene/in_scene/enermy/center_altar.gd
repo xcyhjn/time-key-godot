@@ -149,14 +149,14 @@ func does_intent_include_self(_hex_map: battle) -> bool:
 ## - 地图 hover 展示
 ## - 敌人意图解析器生成 EnemyIntentData
 func get_intent_action(target_tile: Node = null) -> TimelineAction:
-	var action_data = {
-		"效果": get_intent_description(),
-		"类型": landform_name,
-		"位置": location,
-		"目标": target_tile.position if target_tile else Vector2.ZERO,
-		"effect_range": get_intent_effect_range(),
-		"invalid_reason": get_intent_invalid_reason(owner_battle)
-	}
+	var action_data: Dictionary = _get_intent_action_data_builder().build_standard_action_data(
+		get_intent_description(),
+		landform_name,
+		location,
+		target_tile,
+		get_intent_effect_range(),
+		get_intent_invalid_reason(owner_battle)
+	)
 
 	var action = TimelineAction.new(
 		TimelineAction.Type.ENEMY,

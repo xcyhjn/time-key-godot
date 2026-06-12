@@ -13,7 +13,7 @@
 - `controllers/TileDeathExecutionController.gd`：执行 Tile 已进入 Broken 后的状态组件清理、贴图回调、damage_rate 结果和拓扑通知，不判断血量、不释放节点、不选择贴图规则。
 - `rules/TileTimelineShapeParser.gd`：把时间占位矩阵解析为坐标和尺寸，不读取场景树、不创建 TimelineAction。
 - `rules/TileIntentActionFactory.gd`：为默认敌人意图创建 `TimelineAction`，不选择目标、不判断合法性、不修改血量或地图拓扑。
-- `rules/TileIntentActionDataBuilder.gd`：组装敌人意图标准 `action_data` 字典，当前已接入 `altar.gd` 与 `iron_mine.gd`，不创建 TimelineAction、不选择目标、不判断合法性。
+- `rules/TileIntentActionDataBuilder.gd`：组装敌人意图标准 `action_data` 字典，当前已接入 `altar.gd`、`iron_mine.gd`、`Animal_husbandry.gd` 与 `center_altar.gd`，不创建 TimelineAction、不选择目标、不判断合法性。
 - `rules/TileHealthStateRules.gd`：计算 HP clamp、damage_rate 和下一主状态标签，不发信号、不切贴图、不通知 HexMap。
 - `rules/TileDamageProtectionRules.gd`：判断受击时 protected 位是否吸收伤害，并返回新的副状态位，不扣血、不处理死亡或贴图。
 - `rules/TileTextureStateSelector.gd`：判断当前贴图是否已经属于目标贴图数组，决定 `tex_toggle()` 是否需要切换，不写 Sprite2D、不调用 picker、不处理死亡或血量。
@@ -22,7 +22,7 @@
 
 - 状态组件与中毒扩散会访问 `owner_battle`、邻居地块和 VFX。
 - 结算奖励接口读取地貌规则、死亡状态和 used 状态。
-- 敌人意图接口仍同时包含目标描述、目标范围、时间轴 shape 和优先级；默认行动创建已委托给 `TileIntentActionFactory.gd`，`altar.gd` 与 `iron_mine.gd` 的 action_data 字典已委托给 `TileIntentActionDataBuilder.gd`，其他子类覆盖实现仍各自维护。
+- 敌人意图接口仍同时包含目标描述、目标范围、时间轴 shape 和优先级；默认行动创建已委托给 `TileIntentActionFactory.gd`，`altar.gd`、`iron_mine.gd`、`Animal_husbandry.gd` 与 `center_altar.gd` 的 action_data 字典已委托给 `TileIntentActionDataBuilder.gd`，其他子类覆盖实现仍各自维护。
 - 血量纯规则、死亡收尾执行和 protected 吸收规则已拆出，但 `take_damage()`、`set_health()`、`State_Update()` 和 `die()` 的旧入口仍负责调用顺序、写回成员、发信号和保持 Broken 占位语义。
 - `tex_toggle()` 仍判断主状态、调用子类 `tex_picker()` 或 `damaged_tex_picker()` 并写回 `tex.texture`；新模块只承接贴图数组归属判断。
 - `timeline_shape_key`、`timeline_shape_coords` 和 `timeline_shape_size` 的旧入口还在主脚本内，解析细节已委托给 `TileTimelineShapeParser.gd`。
@@ -35,7 +35,7 @@
 
 ## 后续可做
 
-下一步可单独小批评估 `Animal_husbandry.gd`、`center_altar.gd`、`village.gd` 或 `radar.gd` 的 action_data 字典是否能迁移到 builder，或停止 Tile 转向其他大文件。若继续 Tile，必须保持 `Blood_change`、Broken 贴图、`tile_topology_changed`、`effect_range`、`invalid_reason` 和 `TimelineAction` 数据契约不变，不要同批改 `TimelineAction.new(...)`。
+下一步可单独小批评估 `village.gd` 或 `radar.gd` 的 action_data 字典是否能迁移到 builder，或停止 Tile 转向其他大文件。若继续 Tile，必须保持 `Blood_change`、Broken 贴图、`tile_topology_changed`、`effect_range`、`invalid_reason` 和 `TimelineAction` 数据契约不变，不要同批改 `TimelineAction.new(...)`。
 
 ## 验证入口
 
