@@ -53,6 +53,7 @@ scene/in_scene/timecoin_ui_modules/animation/
 scene/in_scene/timecoin_ui_modules/presenters/
 scene/in_scene/enermy/intent_presentation_modules/bridges/
 scene/in_scene/enermy/intent_presentation_modules/presenters/
+scene/in_scene/enermy/intent_presentation_modules/rules/
 scene/in_scene/tile_modules/controllers/
 scene/in_scene/tile_modules/rules/
 scene/out_scene/out_scene_modules/
@@ -228,7 +229,7 @@ scene/out_scene/out_scene_modules/
 
 ## EnemyIntentPresentationController 拆分模块
 
-这些文件服务于 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd`。`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责 hover phase 判断、地图与时间轴表现同步、主 tooltip 写入、状态关键词副 tooltip 生命周期和定位；新增模块只接管纯文本、纯表现或引用查找小边界。
+这些文件服务于 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd`。`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责 hover phase 判断、地图与时间轴表现同步、主 tooltip 写入、状态关键词副 tooltip 生命周期和定位；新增模块只接管纯文本、纯表现、状态读取或引用查找小边界。
 
 ### bridges
 
@@ -238,6 +239,15 @@ scene/out_scene/out_scene_modules/
 - 入口：`find_main_board(owner)`、`collect_references(owner, main_board)`、`connect_reference_signals(timeline_manager, hex_map, timeline_hover_callable, revalidate_callable)`。
 - 维护：只处理跨系统引用和旧 `_resolve_references()` 的信号接线，不判断 hover phase，不解析敌人意图，不驱动地图或时间轴表现，也不创建、写入或定位 tooltip。
 - 改进：如果这些节点的挂载路径或分组继续变化，优先改这里；敌人意图预览、tooltip 文本和地图/时间轴联动规则仍留在 controller 或既有模块。
+
+### rules
+
+#### `scene/in_scene/enermy/intent_presentation_modules/rules/EnemyIntentSourceStatusReader.gd`
+
+- 用途：从敌人意图来源节点读取状态说明行和状态关键词，供主 tooltip 文本与状态关键词副 tooltip 使用。
+- 入口：`get_status_lines(source_node)`、`get_status_keywords(source_node)`。
+- 维护：只读取来源节点的旧状态协议并返回字符串数组，不创建 tooltip，不写入 `MainBoard`，不定位 UI，也不驱动地图或时间轴表现。
+- 改进：如果来源状态协议后续改名或改成结构化数据，优先在这里兼容；tooltip 展示、关键词 Panel 创建和主 tooltip 定位仍留在 controller 或既有 presenter。
 
 ### presenters
 

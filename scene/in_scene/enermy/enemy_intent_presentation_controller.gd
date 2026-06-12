@@ -9,6 +9,7 @@ const EnemyIntentTooltipTextBuilderScript = preload("res://scene/in_scene/enermy
 const EnemyIntentStatusKeywordTooltipPresenterScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd")
 const EnemyIntentTooltipPositionHelperScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipPositionHelper.gd")
 const EnemyIntentPresentationReferenceBridgeScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/bridges/EnemyIntentPresentationReferenceBridge.gd")
+const EnemyIntentSourceStatusReaderScript = preload("res://scene/in_scene/enermy/intent_presentation_modules/rules/EnemyIntentSourceStatusReader.gd")
 
 # ==========================================
 # 脚本名称: enemy_intent_presentation_controller.gd
@@ -104,6 +105,7 @@ var _tooltip_text_builder = null
 var _status_keyword_tooltip_presenter = null
 var _tooltip_position_helper = null
 var _reference_bridge = null
+var _source_status_reader = null
 
 
 func _ready() -> void:
@@ -133,6 +135,12 @@ func _get_reference_bridge():
 	if _reference_bridge == null:
 		_reference_bridge = EnemyIntentPresentationReferenceBridgeScript.new()
 	return _reference_bridge
+
+
+func _get_source_status_reader():
+	if _source_status_reader == null:
+		_source_status_reader = EnemyIntentSourceStatusReaderScript.new()
+	return _source_status_reader
 
 
 func _resolve_references() -> void:
@@ -324,37 +332,11 @@ func _position_intent_tooltip(source_coord: Vector2i) -> void:
 
 
 func _get_source_status_lines(source_node: Node) -> Array[String]:
-	if not is_instance_valid(source_node):
-		return []
-	if not source_node.has_method("get_status_tooltip_lines"):
-		return []
-
-	var raw_lines: Variant = source_node.get_status_tooltip_lines()
-	if not (raw_lines is Array):
-		return []
-
-	var result: Array[String] = []
-	for line in raw_lines:
-		result.append(str(line))
-	return result
+	return _get_source_status_reader().get_status_lines(source_node)
 
 
 func _get_source_status_keywords(source_node: Node) -> Array[String]:
-	if not is_instance_valid(source_node):
-		return []
-	if not source_node.has_method("get_status_keyword_names"):
-		return []
-
-	var raw_keywords: Variant = source_node.get_status_keyword_names()
-	if not (raw_keywords is Array):
-		return []
-
-	var result: Array[String] = []
-	for keyword in raw_keywords:
-		var keyword_name := str(keyword)
-		if keyword_name != "" and not result.has(keyword_name):
-			result.append(keyword_name)
-	return result
+	return _get_source_status_reader().get_status_keywords(source_node)
 
 
 func _rebuild_status_keyword_tooltips(source_node: Node) -> void:

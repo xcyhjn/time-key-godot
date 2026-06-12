@@ -2,6 +2,125 @@
 
 日期：2026-06-05
 
+## 2026-06-13 EnemyIntentPresentationController 来源状态读取 reader 拆分
+
+### 读取与轮廓
+
+本批处理 `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` 的来源状态读取小风险面。开工前确认仓库中没有实体 `AGENTS.md`，继续使用当前对话中用户贴出的 AGENTS 约束。当前工作区仍有用户已有改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不 stage、不提交这些文件。已读取：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/hex-map-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/current-modularization-process.md
+workflow_logs/next-ai-handoff-current-status.md
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+```
+
+已按要求先读取 `godot-prompter:gdscript-patterns`；写 Markdown 前已读取 `docs-write`。已用 `rg` 输出 `enemy_intent_presentation_controller.gd` 与 `intent_presentation_modules/` 的 `class_name`、`extends`、`signal`、`@export`、`@onready`、`const`、`var`、`func` 轮廓，并搜索 `_get_source_status_lines()`、`_get_source_status_keywords()`、`get_status_tooltip_lines()`、`get_status_keyword_names()`、`_show_intent_tooltip()` 和 `_rebuild_status_keyword_tooltips()` 的调用边界。
+
+### 当前职责
+
+`enemy_intent_presentation_controller.gd` 仍是敌人意图表现协调器，负责地图 hover、时间轴 hover、交互阶段门禁、地图与时间轴预览同步、主 tooltip 写入、状态关键词副 tooltip 生命周期和定位，以及 hover 退出、阶段切换和意图重判时的清理。
+
+### 耦合点
+
+```text
+_show_intent_tooltip() 需要来源状态说明行来组装主 tooltip 文本。
+_rebuild_status_keyword_tooltips() 需要来源状态关键词来创建副 tooltip。
+_get_source_status_lines() 和 _get_source_status_keywords() 只读取 source_node 的旧状态协议并转成字符串数组。
+主 tooltip 写入、状态关键词副 tooltip 创建/定位、source stack 查找、hover phase 判断和地图/时间轴表现不是本批范围。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 来源状态 reader | `_get_source_status_lines()`、`_get_source_status_keywords()` | 只读 source node 协议，输入输出清楚 | 执行 |
+| 2 | 颜色选择 resolver | `show_intent_preview()` 的 source/target/timeline 颜色选择 | 低风险但收益较小，留作备选 | 不碰 |
+| 3 | hover phase 判断 | `_is_map_hover_allowed()`、`_is_timeline_hover_allowed()`、`_get_phase()` | 牵动交互门禁和恢复预览 | 不碰 |
+| 4 | 预览恢复 | `_process()`、`_try_restore_preview_from_current_hover()` | 牵动鼠标悬停恢复和阶段切换 | 不碰 |
+
+### 本批风险面
+
+本批只处理一个风险面：敌人意图来源节点的状态说明行和状态关键词读取。
+
+涉及的小风险点：
+
+```text
+新增 EnemyIntentSourceStatusReader.gd，只读取 source_node 的状态文本和关键词协议。
+旧 _get_source_status_lines() 与 _get_source_status_keywords() 保留入口并转发给 reader。
+文档同步新增 rules 模块目录、统计和后续停止点，避免下一批重复拆同一面。
+```
+
+不触碰：
+
+```text
+EnemyIntentResolver、EnemyIntentData、TimelineManager 数据结构。
+HexMap 和 TimelineUI 的敌方意图表现调用。
+主 tooltip 文本 builder、状态关键词副 tooltip presenter、主 tooltip 定位 helper。
+hover phase 判断、当前 hover 恢复和 revalidate_enemy_intents()。
+```
+
+### 实现结果
+
+新增：
+
+```text
+scene/in_scene/enermy/intent_presentation_modules/rules/EnemyIntentSourceStatusReader.gd
+```
+
+职责：
+
+```text
+EnemyIntentSourceStatusReader 只负责从敌人意图来源节点读取状态说明行和状态关键词。
+它不创建 tooltip，不写入 MainBoard，不定位任何 UI，也不驱动地图或时间轴表现。
+```
+
+`enemy_intent_presentation_controller.gd` 新增 `EnemyIntentSourceStatusReaderScript` preload、缓存 getter 和旧入口转发。`_get_source_status_lines()` 仍由 `_show_intent_tooltip()` 调用；`_get_source_status_keywords()` 仍由 `_rebuild_status_keyword_tooltips()` 调用，因此主 tooltip 写入、副 tooltip 创建和定位顺序保持不变。
+
+同步更新：
+
+```text
+docs/ai-handoff-ultimate-operation-guide.md
+docs/modularized-files-ultimate-operation-guide.md
+workflow_logs/maintenance_guides/enemy_intent_presentation_controller.md
+workflow_logs/next-ai-handoff-current-status.md
+```
+
+### 当前优化进度与下一步
+
+当前已拆脚本模块更新为 181 个，默认 Resource 文件仍为 4 个。EnemyIntentPresentationController 现在有 5 个拆分模块：
+
+```text
+EnemyIntentPresentationReferenceBridge.gd
+EnemyIntentSourceStatusReader.gd
+EnemyIntentTooltipTextBuilder.gd
+EnemyIntentStatusKeywordTooltipPresenter.gd
+EnemyIntentTooltipPositionHelper.gd
+```
+
+引用查找、来源状态读取和 tooltip 低风险表现面已收口。下一批不要重复拆 reference bridge、source status reader、tooltip text builder、status keyword presenter 或 tooltip position helper。如果继续这个文件，必须先重新审查剩余函数；更稳妥的是转向其他文件的单一小风险面。
+
+### 回归检查
+
+已运行：
+
+```text
+git diff --check：通过；仅提示 workflow_logs/current-modularization-process.md 工作区 CRLF 将在 Git 触碰时转为 LF。
+Godot headless 项目检查：EXIT=0，未匹配到 SCRIPT ERROR、Parse Error、Compile Error、Failed to load script、Compilation failed、Invalid call、Invalid access 或 EnemyIntent 相关错误。
+加载 res://scene/in_scene/in_scene.tscn：EXIT=0，未匹配到 EnemyIntentSourceStatusReader、enemy_intent_presentation_controller、intent_presentation_modules 相关脚本错误。
+模块覆盖检查：scripts=181 resources=4 total=185 missing=0。
+```
+
 ## 2026-06-13 TimecoinUI active_tweens 状态 controller 拆分
 
 ### 读取与轮廓

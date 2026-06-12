@@ -81,7 +81,7 @@ TimelineManager.gd 继续拆分
 最新提交以 `git log --oneline -1` 为准。本批提交主题：
 
 ```text
-refactor: extract timecoin tween state controller
+refactor: extract enemy intent source status reader
 ```
 
 上一批最近提交：
@@ -118,9 +118,9 @@ shaders/game_over.gdshader
 当前模块统计：
 
 ```text
-脚本模块：180
+脚本模块：181
 默认 Resource 文件：4
-总覆盖对象：184
+总覆盖对象：185
 docs/modularized-files-ultimate-operation-guide.md 覆盖缺失：0
 ```
 
@@ -244,12 +244,13 @@ scene/in_scene/timecoin_ui_modules/animation/TimecoinTweenStateController.gd
 
 TimecoinUI 的全局查找、沙漏 shader、普通抖动、反馈动画片段和 `active_tweens` 列表维护都已拆出。后续若继续，先重新审查剩余函数，不要重复拆全局查找、沙漏 shader、普通抖动、获得/消耗/不足动画片段或 tween 状态 controller。
 
-### EnemyIntentPresentationController 已拆引用 bridge 与三个 tooltip 表现边界
+### EnemyIntentPresentationController 已拆引用 bridge、来源状态读取与三个 tooltip 表现边界
 
 已新增：
 
 ```text
 scene/in_scene/enermy/intent_presentation_modules/bridges/EnemyIntentPresentationReferenceBridge.gd
+scene/in_scene/enermy/intent_presentation_modules/rules/EnemyIntentSourceStatusReader.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipPositionHelper.gd
@@ -257,11 +258,13 @@ scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipP
 
 `EnemyIntentPresentationReferenceBridge.gd` 只查找 `MainBoard`、`HexMap`、`TimelineManager`、`TimelineUI` 和 `DragShapeController`，并按旧入口顺序连接时间轴 hover 与地图重判信号。
 
+`EnemyIntentSourceStatusReader.gd` 只从意图来源节点读取状态说明行和状态关键词，供主 tooltip 文本和状态关键词副 tooltip 使用。
+
 `EnemyIntentTooltipTextBuilder.gd` 只组装主 tooltip 文本行。`EnemyIntentStatusKeywordTooltipPresenter.gd` 只创建、定位和销毁状态关键词副 tooltip。
 
 `EnemyIntentTooltipPositionHelper.gd` 只计算主 tooltip 的屏幕位置和边界 clamp。
 
-控制器仍负责 hover phase 判断、地图/时间轴表现、主 tooltip 写入、关键词列表读取、tooltip host 选择、source stack 查找、`MainBoard.set_cursor_tooltip_position()` 调用和延迟定位。引用查找和 tooltip 低风险表现面已经收口；后续如果继续，先重新审查剩余函数，不要重复拆 reference bridge、文本 builder、状态关键词副 tooltip presenter 或主 tooltip 定位 helper。
+控制器仍负责 hover phase 判断、地图/时间轴表现、主 tooltip 写入、tooltip host 选择、source stack 查找、`MainBoard.set_cursor_tooltip_position()` 调用和延迟定位。引用查找、来源状态读取和 tooltip 低风险表现面已经收口；后续如果继续，先重新审查剩余函数，不要重复拆 reference bridge、source status reader、文本 builder、状态关键词副 tooltip presenter 或主 tooltip 定位 helper。
 
 ### Tile 已完成多个低风险边界
 
@@ -381,10 +384,11 @@ scene/card/custom_card.gd
 scene/in_scene/enermy/enemy_intent_presentation_controller.gd
 ```
 
-引用查找 bridge 和三个 tooltip 模块已经完成。后续如果继续，只能先重新审查剩余函数；不要重复拆：
+引用查找 bridge、来源状态读取和三个 tooltip 模块已经完成。后续如果继续，只能先重新审查剩余函数；不要重复拆：
 
 ```text
 EnemyIntentPresentationReferenceBridge.gd
+EnemyIntentSourceStatusReader.gd
 EnemyIntentTooltipTextBuilder.gd
 EnemyIntentStatusKeywordTooltipPresenter.gd
 EnemyIntentTooltipPositionHelper.gd
@@ -505,7 +509,7 @@ $missing | Sort-Object
 当前预期输出：
 
 ```text
-scripts=180 resources=4 total=184 missing=0
+scripts=181 resources=4 total=185 missing=0
 ```
 
 如果新增模块，同步更新统计和文档后，新的统计可以增加，但 `missing` 必须仍为 0。
@@ -554,8 +558,8 @@ Invalid access
 不要回滚、stage、格式化或提交这些文件，除非我明确要求。
 
 当前模块化进度：
-- 最新提交：本批提交为 `refactor: extract timecoin tween state controller`；哈希以 `git log --oneline -1` 为准。
-- 当前已拆脚本模块 180 个，另有 4 个默认 Resource 文件。
+- 最新提交：本批提交为 `refactor: extract enemy intent source status reader`；哈希以 `git log --oneline -1` 为准。
+- 当前已拆脚本模块 181 个，另有 4 个默认 Resource 文件。
 - docs/modularized-files-ultimate-operation-guide.md 覆盖缺失应为 0。
 - docs/ 目录只保留总结性说明；中间过程写 workflow_logs/current-modularization-process.md。
 
@@ -576,7 +580,7 @@ Invalid access
 - out_scene_map_exp.gd：若继续必须先重新审查剩余函数；房间完成状态需要独立数据契约，不复用 path_gone，不同批碰地图移动和场景切换 executor。
 - custom_card.gd：只重新审查剩余函数，避免硬拆出牌和选中状态链。
 - timecoin_ui.gd：低风险拆分面已基本收口；若继续先重新审查剩余函数，不重复拆 GlobalTimecoin 查找、shader controller、反馈动画 runner 或 active_tweens controller。
-- enemy_intent_presentation_controller.gd：引用查找 bridge 和 tooltip 三个模块已完成；若继续先重新审查剩余函数，不重复拆 reference bridge、tooltip text builder、status keyword presenter 或 tooltip position helper。
+- enemy_intent_presentation_controller.gd：引用查找 bridge、来源状态读取和 tooltip 三个模块已完成；若继续先重新审查剩余函数，不重复拆 reference bridge、source status reader、tooltip text builder、status keyword presenter 或 tooltip position helper。
 
 如果重新评估 TimelineManager：
 - 先读 workflow_logs/maintenance_guides/timeline_manager.md。
@@ -593,11 +597,12 @@ Invalid access
 - Craft/Shop 奖励页确认、关闭或单商品生成编排
 - Tile 已完成的 action_data、死亡、protected、贴图选择方向
 - TimecoinUI 的反馈动画 runner、active_tweens controller、GlobalTimecoin 查找、shader controller
+- EnemyIntentPresentationController 的 reference bridge、source status reader、tooltip text builder、status keyword presenter、tooltip position helper
 
 验证要求：
 - git diff --check
 - Godot headless 项目检查
 - 若改局内模块，加载 res://scene/in_scene/in_scene.tscn
 - 若改局外模块，加载 res://scene/out_scene/Out_Scene.tscn
-- 模块覆盖检查应输出 scripts=180 resources=4 total=184 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
+- 模块覆盖检查应输出 scripts=181 resources=4 total=185 missing=0；若新增模块则同步更新统计和 docs，missing 仍必须为 0。
 ```

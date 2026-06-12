@@ -21,7 +21,7 @@ D:/godot/时之钥/时之钥
 
 ## 当前状态一览
 
-当前模块化工作已经完成多条主线。当前已拆脚本模块共 `180` 个，另有 `4` 个默认 Resource 文件；`docs/modularized-files-ultimate-operation-guide.md` 对这些脚本和资源路径的覆盖缺失数为 `0`。
+当前模块化工作已经完成多条主线。当前已拆脚本模块共 `181` 个，另有 `4` 个默认 Resource 文件；`docs/modularized-files-ultimate-operation-guide.md` 对这些脚本和资源路径的覆盖缺失数为 `0`。
 
 | 文件 | 当前状态 | 接下来怎么处理 |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ D:/godot/时之钥/时之钥
 | `scene/in_scene/rewards/*.gd` | 奖励页下已有 49 个拆分脚本模块和 3 个默认资源。Acquire/Remove 已接近页面编排；Shop 生成前依赖检查、商店定价 Resource、时代权重 Resource 和临时牌堆隐藏创建已收口，Craft 结果预览、预览卡 UI、预览 DraftCard 工厂复用、合成结果牌组写入和合成配方 Resource 已完成。 | Craft 预览创建链、确认写入链和 Shop 单商品生成都不建议继续硬拆；Shop 临时牌堆释放仍绑定异步生成循环，除非要统一多个奖励页生命周期，否则转向时间轴 UI 或局外地图。 |
 | `scene/card/custom_card.gd` | 约 569 行，`custom_card_modules/` 下已有 8 个模块：节点查找 bridge、描述解析规则、时间轴形状解析、六边形效果范围解析、选中态跟随视觉 presenter、hover shader presenter、tooltip bridge 和地图条件效果刷新 bridge。旧 `_get_main_board()`、`get_card_manager()`、`_find_player_hand()`、`_get_player_hand_container()`、`get_parsed_description()`、`_normalize_and_parse_shape()`、`_parse_hex_effect_range()`、`_process(delta)`、`_set_shader(active)`、`_request_tooltip()` 与 `_update_map_conditional_effects()` 仍保留入口。 | 继续前先重新审查剩余函数；不要为了降行数硬拆 `_enter_state()`、选中/取消选中、数值修改、回手牌或 `play_card()`。 |
 | `scene/in_scene/timecoin_ui.gd` | 约 433 行，已拆出 `TimecoinGlobalBridge.gd`、`TimecoinHourglassShaderController.gd`、`TimecoinShakeTweenBuilder.gd`、`TimecoinFeedbackAnimationRunner.gd` 和 `TimecoinTweenStateController.gd`，分别处理 `GlobalTimecoin` 查找、沙漏 shader 材质/震动参数写入、普通动画抖动 tween 片段构造、获得/消耗/不足反馈动画片段构造，以及 `active_tweens` 列表维护。旧 `_get_timecoin_singleton()`、`_initialize_shader_material()`、`start_hourglass_shake()`、`stop_hourglass_shake()`、`_apply_shake_effect()`、`_play_gain_animation()`、`_play_consume_animation()`、`_play_warning_animation()`、`_cleanup_active_tweens()`、`_reset_to_original_state()` 和 `_remove_tween_from_active()` 等入口仍保留。 | TimecoinUI 低风险拆分面已基本收口。后续若继续，先重新审查剩余函数；不要重复拆 feedback runner、tween state controller、GlobalTimecoin 查找或 shader controller，也不要同批改时间币数值来源和信号协议。 |
-| `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | 约 549 行，已拆出 `EnemyIntentPresentationReferenceBridge.gd`、`EnemyIntentTooltipTextBuilder.gd`、`EnemyIntentStatusKeywordTooltipPresenter.gd` 和 `EnemyIntentTooltipPositionHelper.gd`，分别处理引用查找与接线、主 tooltip 文本行、状态关键词副 tooltip 以及主 tooltip 屏幕位置计算。 | 引用查找和 Tooltip 低风险表现面已收口。后续若继续，先重新审查剩余函数；不要重复拆 reference bridge、文本 builder、状态关键词副 tooltip presenter 或主 tooltip 定位 helper，也不要同批动 EnemyIntentResolver、TimelineManager 或地图/时间轴联动规则。 |
+| `scene/in_scene/enermy/enemy_intent_presentation_controller.gd` | 约 531 行，已拆出 `EnemyIntentPresentationReferenceBridge.gd`、`EnemyIntentSourceStatusReader.gd`、`EnemyIntentTooltipTextBuilder.gd`、`EnemyIntentStatusKeywordTooltipPresenter.gd` 和 `EnemyIntentTooltipPositionHelper.gd`，分别处理引用查找与接线、来源状态读取、主 tooltip 文本行、状态关键词副 tooltip 以及主 tooltip 屏幕位置计算。 | 引用查找、来源状态读取和 Tooltip 低风险表现面已收口。后续若继续，先重新审查剩余函数；不要重复拆 reference bridge、source status reader、文本 builder、状态关键词副 tooltip presenter 或主 tooltip 定位 helper，也不要同批动 EnemyIntentResolver、TimelineManager 或地图/时间轴联动规则。 |
 | `scene/out_scene/out_scene_map_exp.gd` | 约 786 行，已拆出 `RoomResolutionController.gd`、`ChapterRevealAnimationRunner.gd`、`OutScenePayloadBridge.gd` 和 `OutSceneCameraLimitController.gd`，分别处理房间结算、章节揭示动画、切场前 payload 注入和镜头限制写入。 | 房间完成状态回写缺少既有状态字段，继续前先设计数据契约；不要重复拆镜头限制，地图移动和切场景 executor 不要同批拆。 |
 
 不要继续优先拆 `addons/dialogic/` 或其他插件目录，除非明确是在改插件行为。插件大文件不计入当前项目解耦优先级。
@@ -316,6 +316,7 @@ scene/in_scene/timecoin_ui_modules/animation/TimecoinShakeTweenBuilder.gd
 scene/in_scene/timecoin_ui_modules/animation/TimecoinFeedbackAnimationRunner.gd
 scene/in_scene/timecoin_ui_modules/animation/TimecoinTweenStateController.gd
 scene/in_scene/enermy/intent_presentation_modules/bridges/EnemyIntentPresentationReferenceBridge.gd
+scene/in_scene/enermy/intent_presentation_modules/rules/EnemyIntentSourceStatusReader.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipTextBuilder.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentStatusKeywordTooltipPresenter.gd
 scene/in_scene/enermy/intent_presentation_modules/presenters/EnemyIntentTooltipPositionHelper.gd
@@ -341,6 +342,8 @@ scene/in_scene/timeline/manager_modules/rules/TimelineEnemyIntentTargetResolver.
 `TimecoinTweenStateController.gd` 只为 `timecoin_ui.gd` 维护 `active_tweens` 列表，包括登记、容量清理、过滤无效引用、停止全部 tween 和完成后移除。旧 `_cleanup_active_tweens()`、`_reset_to_original_state()`、`_remove_tween_from_active()` 和三类完成回调仍保留；controller 不创建 Tween，不拼接动画片段，也不恢复 UI 位置、缩放或颜色。
 
 `EnemyIntentPresentationReferenceBridge.gd` 只为 `enemy_intent_presentation_controller.gd` 查找 `MainBoard`、`HexMap`、`TimelineManager`、`TimelineUI` 与 `DragShapeController`，并按旧 `_resolve_references()` 顺序连接时间轴 hover 和地图重判信号。旧 `_resolve_references()` 仍保留入口并负责隐藏旧 tooltip、接收 bridge 返回的引用；bridge 不判断 hover phase，不解析意图，不驱动地图或时间轴表现，也不创建、写入或定位 tooltip。
+
+`EnemyIntentSourceStatusReader.gd` 只为 `enemy_intent_presentation_controller.gd` 从意图来源节点读取状态说明行和状态关键词。旧 `_get_source_status_lines()` 与 `_get_source_status_keywords()` 仍保留并转发；reader 不创建 tooltip，不写入 `MainBoard`，不定位 UI，也不驱动地图或时间轴表现。
 
 `EnemyIntentTooltipTextBuilder.gd` 只为 `enemy_intent_presentation_controller.gd` 组装主 tooltip 文本行，包括意图描述、来源状态文本和无效原因 BBCode。旧 `_show_intent_tooltip()` 仍写入 `MainBoard.cursor_tooltip`、显示 tooltip、重建状态关键词副 tooltip 并延迟定位；builder 不读取节点树、不创建 Panel，也不判断 hover phase。
 
@@ -490,7 +493,7 @@ scene/out_scene/out_scene_modules/OutSceneCameraLimitController.gd
 
 先分析目标文件，再列待拆清单，最后每批只拆 1 个清晰风险面，最多触碰 3 到 4 个风险点。不要直接改代码。
 
-当前已拆脚本模块共 180 个，另有 4 个默认 Resource 文件，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd、RemoveReward.gd 或 CraftReward.gd 的确认关闭链。下一阶段优先处理：
+当前已拆脚本模块共 181 个，另有 4 个默认 Resource 文件，docs/modularized-files-ultimate-operation-guide.md 覆盖缺失为 0。不要继续机械拆 hex_map.gd、in_scene.gd、AcquireReward.gd、RemoveReward.gd 或 CraftReward.gd 的确认关闭链。下一阶段优先处理：
 1. scene/out_scene/out_scene_map_exp.gd 的房间完成状态实现前置设计：契约已评估，后续如实现必须新增独立状态字段，不复用 path_gone
 2. scene/card/custom_card.gd 剩余函数的重新审查，避免硬拆出牌和选中状态链
 3. enemy_intent_presentation_controller.gd 若继续，先重新审查剩余函数；不要重复拆引用查找 bridge 或三个 tooltip 模块，不要同批碰地图/时间轴联动规则
