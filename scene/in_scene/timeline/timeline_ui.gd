@@ -15,6 +15,7 @@ const TimelineBlockPlacementAnimatorScript = preload("res://scene/in_scene/timel
 const TimelineActionRemovalGhostBuilderScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalGhostBuilder.gd")
 const TimelineActionRemovalAnimatorScript = preload("res://scene/in_scene/timeline/ui_modules/animation/TimelineActionRemovalAnimator.gd")
 const TimelineActionHoverStateControllerScript = preload("res://scene/in_scene/timeline/ui_modules/controllers/TimelineActionHoverStateController.gd")
+const TimelineVisualConfigReaderScript = preload("res://scene/in_scene/timeline/ui_modules/config/TimelineVisualConfigReader.gd")
 
 @export_group("视觉资源配置")
 @export var visual_config: Resource
@@ -119,6 +120,7 @@ var _block_placement_animator = null
 var _action_removal_ghost_builder = null
 var _action_removal_animator = null
 var _action_hover_state_controller = null
+var _visual_config_reader = null
 
 # 信号定义
 signal grid_cell_clicked(grid_pos: Vector2i, is_right_click: bool)
@@ -213,38 +215,38 @@ func _get_action_hover_state_controller():
 	return _action_hover_state_controller
 
 
+func _get_visual_config_reader():
+	if _visual_config_reader == null:
+		_visual_config_reader = TimelineVisualConfigReaderScript.new()
+	return _visual_config_reader
+
+
 func _get_visual_config_value(property_name: StringName, fallback_value: Variant) -> Variant:
-	if visual_config == null:
-		return fallback_value
-	var value: Variant = visual_config.get(property_name)
-	return fallback_value if value == null else value
+	return _get_visual_config_reader().get_value(visual_config, property_name, fallback_value)
 
 
 func _get_visual_color(property_name: StringName, fallback_value: Color) -> Color:
-	var value: Variant = _get_visual_config_value(property_name, fallback_value)
-	return value if value is Color else fallback_value
+	return _get_visual_config_reader().get_color(visual_config, property_name, fallback_value)
 
 
 func _get_visual_vector2(property_name: StringName, fallback_value: Vector2) -> Vector2:
-	var value: Variant = _get_visual_config_value(property_name, fallback_value)
-	return value if value is Vector2 else fallback_value
+	return _get_visual_config_reader().get_vector2(visual_config, property_name, fallback_value)
 
 
 func _get_visual_float(property_name: StringName, fallback_value: float) -> float:
-	return float(_get_visual_config_value(property_name, fallback_value))
+	return _get_visual_config_reader().get_float(visual_config, property_name, fallback_value)
 
 
 func _get_visual_int(property_name: StringName, fallback_value: int) -> int:
-	return int(_get_visual_config_value(property_name, fallback_value))
+	return _get_visual_config_reader().get_int(visual_config, property_name, fallback_value)
 
 
 func _get_visual_bool(property_name: StringName, fallback_value: bool) -> bool:
-	return bool(_get_visual_config_value(property_name, fallback_value))
+	return _get_visual_config_reader().get_bool(visual_config, property_name, fallback_value)
 
 
 func _get_enemy_intent_timeline_shader() -> Shader:
-	var value: Variant = _get_visual_config_value(&"enemy_intent_timeline_shader", enemy_intent_timeline_shader)
-	return value if value is Shader else enemy_intent_timeline_shader
+	return _get_visual_config_reader().get_shader(visual_config, &"enemy_intent_timeline_shader", enemy_intent_timeline_shader)
 
 
 ## 查找TimelineManager节点

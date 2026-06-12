@@ -2,6 +2,87 @@
 
 日期：2026-06-05
 
+## 2026-06-13 TimelineUI 视觉配置读取 reader 拆分
+
+### 读取与轮廓
+
+本批处理 `scene/in_scene/timeline/timeline_ui.gd`。开工前确认工作区只有用户已有的资源与 shader 改动：
+
+```text
+default_bus_layout.tres
+shaders/color_BG.gdshader
+shaders/game_over.gdshader
+```
+
+本批不回滚、不触碰这些文件。仓库中没有实体 `AGENTS.md`，因此继续遵守当前对话中用户贴出的 AGENTS 约束。随后重新读取接力说明、HexMap 手册、模块总表、`workflow_logs/current-modularization-process.md` 与 `workflow_logs/maintenance_guides/timeline_ui.md`，并用 `rg` 输出 `timeline_ui.gd` 和 `timeline/ui_modules`、`timeline/resources` 下模块的 `class_name`、`extends`、`const`、`@export`、`@onready`、`var`、`signal`、`func`、`visual_config`、`_on_action_placed()`、hover、preview、overlay、remove、tween 等轮廓。
+
+### 当前职责
+
+`timeline_ui.gd` 是时间轴 UI 的 composition root，继续负责连接 `TimelineManager`，维护 `action_containers`，接收 `action_placed` 与 `timeline_cleared` 信号，编排行动容器创建、hover 状态、敌方意图 overlay、放置动画、移除动画、展开/收起、网格预览和 UI 清理。当前已拆出布局、网格、TimelineManager 查找、敌方意图 overlay、行动方块视觉、行动容器几何、行动整体形状视觉、放置动画、移除残影、移除动画、hover 状态和首批 `TimelineVisualConfig` 资源。
+
+### 耦合点
+
+```text
+_on_action_placed() 仍同时串联容器创建、几何计算、整体形状视觉、单格 Panel、敌方意图 Overlay、hover 信号和 intro 动画，不适合本批硬拆。
+show_enemy_intent_preview()、clear_enemy_intent_preview() 和 animate_action_removal() 牵动 action_containers、hover 状态、overlay 状态和移除动画，不和配置读取同批改。
+_get_visual_config_value()、_get_visual_color()、_get_visual_vector2()、_get_visual_float()、_get_visual_int()、_get_visual_bool() 和 _get_enemy_intent_timeline_shader() 只负责从 visual_config 读取静态视觉参数并回退到导出变量。
+TimelineVisualConfig.gd 是静态 Resource；读取 helper 不应创建 Resource、不应写回配置、不应读取 TimelineManager 或节点树。
+```
+
+### 待办清单
+
+| 优先级 | 候选事项 | 当前范围 | 判断 | 本批处理 |
+| --- | --- | --- | --- | --- |
+| 1 | 视觉配置 reader | `_get_visual_*()` 与 `_get_enemy_intent_timeline_shader()` | 纯 Resource 读取和 fallback，输入输出简单 | 执行 |
+| 2 | 维护说明补充 | `timeline_ui.md` 与总结文档 | 新增模块必须记录边界 | 执行 |
+| 3 | `_on_action_placed()` 行动块生成编排 | 容器、方块、overlay、hover、intro | 多职责但耦合强，文档明确不要硬拆 | 暂缓 |
+| 4 | 敌方意图 preview 状态 controller | preview action、tween、overlay 清理 | 牵动 hover 和移除动画 | 暂缓 |
+| 5 | 展开/收起状态 controller | `toggle_expand()`、`collapse()` | 会触碰地图交互锁和动画回调 | 暂缓 |
+
+### 本批风险面
+
+本批只处理一个风险面：TimelineUI 视觉配置读取与类型兜底。
+
+涉及的小风险点：
+
+```text
+新增 TimelineVisualConfigReader.gd，只负责读取 visual_config 上的静态视觉参数并返回 fallback。
+timeline_ui.gd 新增 preload、缓存和 reader getter。
+保留 _get_visual_*() 旧入口，内部转发给 reader，避免改动既有调用点。
+```
+
+不触碰：
+
+```text
+TimelineManager 数据结构与 action_placed/timeline_cleared 信号。
+_on_action_placed() 行动块生成编排。
+敌人意图规则、Overlay 显隐规则和移除动画时序。
+TimelineVisualConfig.gd 字段、默认资源内容和导出变量默认值。
+网格预览、hover 状态和展开/收起动画时序。
+```
+
+### 实现结果
+
+新增 `scene/in_scene/timeline/ui_modules/config/TimelineVisualConfigReader.gd`。该模块是 RefCounted reader，中文职责注释明确它只负责从时间轴视觉配置 Resource 读取静态视觉参数并提供类型兜底；它不创建或修改 Resource，不读取 `TimelineManager`，不创建行动块，也不播放或控制任何 UI 动画。
+
+`scene/in_scene/timeline/timeline_ui.gd` 新增 `TimelineVisualConfigReaderScript` preload、`_visual_config_reader` 缓存和 `_get_visual_config_reader()` getter。旧 `_get_visual_config_value()`、`_get_visual_color()`、`_get_visual_vector2()`、`_get_visual_float()`、`_get_visual_int()`、`_get_visual_bool()` 与 `_get_enemy_intent_timeline_shader()` 入口全部保留，并转发给 reader；现有调用点、`_on_action_placed()`、敌方意图 overlay、移除动画、网格预览和展开/收起流程不变。
+
+同步更新 `docs/modularized-files-ultimate-operation-guide.md`、`docs/ai-handoff-ultimate-operation-guide.md` 与 `workflow_logs/maintenance_guides/timeline_ui.md`。总结文档已记录 `config/TimelineVisualConfigReader.gd`，维护说明也补上“不要重复拆视觉配置读取、不要让 reader 接管行动块生成或动画时机”的停止点。
+
+### 当前优化进度与下一步
+
+当前已拆模块统计更新为 171 个脚本模块和 4 个默认 Resource 文件。TimelineUI 的布局、网格、预览、TimelineManager 查找、视觉配置读取、敌方意图 overlay、放置动画、行动几何、行动块视觉、整体形状视觉、移除残影、移除动画和 hover 状态通知都已拆出。`timeline_ui.gd` 剩余主要是 composition root 编排，尤其 `_on_action_placed()` 仍不建议硬拆。
+
+下一批如果继续时间轴，只考虑新增纯视觉配置字段或扩展已有 presenter；不要重复拆 `TimelineVisualConfigReader.gd`，不要同批修改 `TimelineManager` 数据、敌人意图规则和行动块生成编排。
+
+### 回归检查
+
+`git diff --check` 通过；仅提示 `timeline_ui.gd` 和 `workflow_logs/current-modularization-process.md` 会被 Git 归一化换行。
+
+模块文档覆盖检查通过：171 个已拆脚本模块和 4 个默认 Resource 文件都出现在 `docs/modularized-files-ultimate-operation-guide.md`，覆盖缺失为 0。
+
+Godot headless 项目检查可启动并退出，输出仍有既有退出资源占用警告。加载 `res://scene/in_scene/in_scene.tscn` 通过，主场景 ready、地图构建、CardManager 注册和 TimecoinUI 初始化都正常执行；新 `TimelineVisualConfigReader.gd` preload 与 `timeline_ui.gd` 解析没有报错。该场景检查仍输出既有 TileSet atlas 坐标报错和退出资源泄漏警告，本批没有修改 TileSet、地图资源或退出流程。
+
 ## 2026-06-13 EnemyIntentPresentationController 主 tooltip 文本 builder 拆分
 
 ### 读取与轮廓

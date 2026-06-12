@@ -31,6 +31,7 @@ scene/in_scene/in_scene_modules/
 scene/in_scene/drag_modules/
 scene/in_scene/timeline/ui_modules/animation/
 scene/in_scene/timeline/ui_modules/bridges/
+scene/in_scene/timeline/ui_modules/config/
 scene/in_scene/timeline/ui_modules/controllers/
 scene/in_scene/timeline/ui_modules/grid/
 scene/in_scene/timeline/ui_modules/layout/
@@ -438,7 +439,7 @@ scene/out_scene/out_scene_modules/
 
 ## TimelineUI 拆分模块
 
-这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、敌方意图 overlay、行动方格动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知。`timeline_ui.gd` 仍负责连接 `TimelineManager`、维护行动容器字典、持有当前 hover 引用和决定清理动画触发时机。
+这些文件服务于 `scene/in_scene/timeline/timeline_ui.gd`。它们处理时间轴 UI 的布局、背景网格、拖拽预览、视觉配置读取、敌方意图 overlay、行动方格动画、行动容器几何计算、行动方块视觉节点创建、行动整体形状视觉层、清理动画残影创建、原容器运行时视觉清理、残影 tween 播放和行动块 hover 状态通知。`timeline_ui.gd` 仍负责连接 `TimelineManager`、维护行动容器字典、持有当前 hover 引用和决定清理动画触发时机。
 
 ### animation
 
@@ -471,6 +472,15 @@ scene/out_scene/out_scene_modules/
 - 入口：`find_timeline_manager(...)`。
 - 维护：只负责查找路径和兜底顺序，不连接信号，不读取时间轴数据。
 - 改进：后续可改为由 `in_scene.gd` 注入 manager，减少运行时查找。
+
+### config
+
+#### `scene/in_scene/timeline/ui_modules/config/TimelineVisualConfigReader.gd`
+
+- 用途：从时间轴视觉配置 Resource 读取静态视觉参数，并在缺失或类型不匹配时返回旧导出变量 fallback。
+- 入口：`get_value(...)`、`get_color(...)`、`get_vector2(...)`、`get_float(...)`、`get_int(...)`、`get_bool(...)`、`get_shader(...)`。
+- 维护：不要创建或修改 Resource，不读取 `TimelineManager`，不创建行动块，也不播放或控制 UI 动画。
+- 改进：如果后续继续 Resource 化时间轴纯表现字段，优先让 `timeline_ui.gd` 保留旧入口并通过这个 reader 做类型兜底；不要把配置读取和行动块生成流程合并。
 
 ### controllers
 
