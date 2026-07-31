@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Wave 02B2A 实现与全部验证已完成；Git 门禁进行中
+> 状态：Wave 02B2A 已完成并推送；下一切片为 Wave 02B2B
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -19,7 +19,7 @@ Slice 01、Wave 02A 和 Wave 02B1 的既有契约继续成立。七张真实 fix
 
 当前画面仍是技术垂直切片，不是最终战斗 UI。下一单元收紧为 Wave 02B2B：只实现 `recover` 的 MaxHP 钳制、`poison` 的可累加层数，以及 `tower/built` 在空地创建一个 HP 100 occupant；Tower 自损、poison tick/传播、clear 和敌人完整行动继续留在后续波次。
 
-Git 状态：Wave 02B2A 实现和证据已完成，正在执行精确暂存、diff 审查、提交和 `origin/unity_7.31` 推送。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
+Git 状态：Wave 02B2A 功能检查点 `cdb09ab` 已于 2026-08-01 推送至 `origin/unity_7.31`，本状态账本随后的文档检查点也已推送。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 
 下一位接手 AI 应完整读取并执行 `00-bootstrap/NEXT_STAGE_EFFECTS_B_PROMPT.md` 的“主 Prompt”；不得重跑已关闭的 Wave 00/01/02A/02B1/02B2A。
 
