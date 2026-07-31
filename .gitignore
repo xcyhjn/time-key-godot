@@ -58,3 +58,4 @@ docs/.obsidian/
 # Unity verification keeps structured evidence in Git; raw Editor/Player logs stay local.
 /docs/migration/unity-3d/04-verification/evidence/unity-slice-01/*.log
 /docs/migration/unity-3d/04-verification/evidence/unity-slice-01/template-file-list.txt
+/docs/migration/unity-3d/04-verification/evidence/unity-slice-02-board/*.log

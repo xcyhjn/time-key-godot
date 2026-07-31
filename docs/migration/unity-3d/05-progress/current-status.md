@@ -1,19 +1,21 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Wave 01 / Slice 01 已完成
+> 状态：Wave 02A / 局内 3D 棋盘已完成
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
 
 ## 结论
 
-迁移结论为 `CONDITIONAL GO`，总体难度 4/5。环境、Godot 运行基线、源系统/依赖/数据盘点、3D 产品边界、共享契约、所有权图和三个独立 Prompt 已落盘并完成路径互斥审查。
+迁移结论为 `CONDITIONAL GO`，总体难度 4/5。环境、Godot 运行基线、源系统/依赖/数据盘点、3D 产品边界、共享契约和所有权图已落盘。Wave 02A 另新增并审查了六边形地块美术 Prompt，子智能体已在独占路径内完成交付。
 
 ## 当前切片
 
 Slice 01 目标是：真实 `lighting.json` -> 纯 C# 规则 -> 12×3 时间轴 -> 一次合法放置 -> 伤害结算 -> 3D 目标 10 HP 变 0 -> 固定敌人意图顺序 -> 双视口视觉证据。
 
-当前阶段：Agent 01 Domain 与 Agent 02 adapter 已完成并交回；主智能体完成 Presentation、场景、PlayMode 与 Editor harness 集成。真实 Unity Test Runner 的 EditMode 19/19、PlayMode 2/2 均通过；场景校验、三张渲染证据、Windows build 和构建产物交互冒烟均通过，Slice 01 Definition of Done 已关闭。
+在 Slice 01 之上，Wave 02A 完成 19 格透视战斗棋盘、360° 轨道镜头、UI/世界输入互斥、四向目标选择、真实实体高度堆叠和 Blender FBX 地块。Unity EditMode 19/19、PlayMode 4/4、四向 1920×1080、1280×720、Windows build 与 Player 冒烟均通过。
+
+范围决策：接下来只扩展局内卡牌、敌人、建筑和胜负；局外流程保持 Godot 现状。
 
 ## 分支与工作区保护
 
@@ -23,4 +25,4 @@ Slice 01 目标是：真实 `lighting.json` -> 纯 C# 规则 -> 12×3 时间轴 
 
 ## 用户决策
 
-当前实现没有产品或环境决策阻塞。旧 Godot CFG 是否兼容、素材授权和最终平台在后续波次进入前再决策；这些不阻塞已完成的 Slice 01。
+当前实现没有产品或环境决策阻塞。用户已决定先完成局内战斗，局外保持原状。旧 Godot CFG 是否兼容、素材发布授权和最终平台在相关波次进入前再决策。

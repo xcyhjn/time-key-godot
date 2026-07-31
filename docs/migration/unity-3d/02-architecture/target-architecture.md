@@ -12,6 +12,8 @@
 - 首切片只建立实际有代码的 `Domain`、`Infrastructure`、`Presentation` 和测试程序集，不建立空的 Application 层。
 - `Domain` 是无 `UnityEngine` 引用的纯 C#；MonoBehaviour 只负责输入、生命周期和表现适配。
 - 运行时状态是普通实例，由场景 bootstrap 组合；不新增全局静态 singleton。
+- 当前只迁移局内战斗；局外 Godot 流程不引入 Unity 依赖。
+- 棋盘镜头、UI 门禁和世界 raycast 属于 Presentation；elevation 整数层仍属于 Domain 数据。
 
 ## 目录与程序集
 
@@ -19,6 +21,8 @@
 unity/
   Assets/_Project/
     Content/Cards/                 # 真实 JSON fixture
+    ArtSource/HexTiles/            # 可复现 Blender 源文件/生成脚本
+    Resources/Art/Battle/Models/  # Unity 可导入 FBX 可视层
     Runtime/Domain/                # TimeKey.Domain，无 UnityEngine
     Runtime/Infrastructure/        # TimeKey.Infrastructure，解析/适配
     Runtime/Presentation/Battle/   # TimeKey.Presentation，3D 与 uGUI
@@ -45,6 +49,8 @@ unity/
 首切片由 `VerticalSliceController` 作为场景 composition root，显式创建领域状态并把视图事件转为领域命令。代码生命周期使用普通 C# event；外部能力通过接口注入；UnityEvent 仅允许用于 Inspector 可配置的表现回调。本切片不需要跨场景 event bus。
 
 运行顺序固定为：加载 fixture -> 构建状态 -> 选择卡牌 -> 选择世界目标 -> 放置时间轴 -> 按列/行结算 -> 更新 3D 目标与结构化快照。
+
+空间表现契约：`HexCoord` 转 XZ，每个 elevation 层生成一个高 `0.32` 的实体模型和 collider。FBX 不存坐标或玩法状态，只做可替换可视层。
 
 ## 配置与运行态
 

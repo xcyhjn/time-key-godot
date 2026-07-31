@@ -14,10 +14,12 @@ namespace TimeKey.Presentation
         public const string LightingCardId = "lighting";
         public const string TargetId = "target-01";
         public const int FixtureSeed = 731;
+        public const float HexBlockHeight = 0.32f;
 
         [SerializeField] private TextAsset lightingFixture = null;
 
         private readonly List<Button> _timelineButtons = new List<Button>(36);
+        private readonly Dictionary<HexCoord, BoardTileView> _tiles = new Dictionary<HexCoord, BoardTileView>();
         private GameObject _generatedRoot;
         private CardDefinition _lightingCard;
         private CombatSliceState _state;
@@ -31,9 +33,14 @@ namespace TimeKey.Presentation
         private Button _cardButton;
         private Button _resolveButton;
         private Renderer _targetRenderer;
+        private GameObject _targetObject;
         private Material _targetMaterial;
-        private Material _tileMaterial;
+        private Material _groundMaterial;
         private Mesh _hexMesh;
+        private Sprite _centerAltarSprite;
+        private GameObject _grassTilePrefab;
+        private GameObject _dirtTilePrefab;
+        private BoardTileView _selectedTile;
 
         public int CurrentTargetHp => _state == null ? 0 : _state.TargetHp;
 
@@ -41,13 +48,34 @@ namespace TimeKey.Presentation
 
         public int TimelineSlotCount => _timelineButtons.Count;
 
+        public int BoardTileCount => _tiles.Count;
+
+        public HexCoord? SelectedTile => _selectedTile == null ? (HexCoord?)null : _selectedTile.Coordinate;
+
+        public Vector3 TargetWorldPosition => _targetObject == null ? Vector3.zero : _targetObject.transform.position;
+
         public Camera SceneCamera { get; private set; }
 
         public Canvas SceneCanvas { get; private set; }
 
+        public BoardOrbitCameraController BoardCamera { get; private set; }
+
         private void Awake()
         {
             BuildSceneGraph();
+        }
+
+        private void Update()
+        {
+            if (_generatedRoot == null || BoardCamera == null || BoardCamera.IsManipulating)
+            {
+                return;
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                TrySelectWorldAtScreenPoint(Input.mousePosition);
+            }
         }
 
         private IEnumerator Start()
@@ -133,6 +161,99 @@ namespace TimeKey.Presentation
             return true;
         }
 
+        public bool SelectTile(HexCoord coordinate)
+        {
+            EnsureBuilt();
+            if (!_tiles.TryGetValue(coordinate, out var tile))
+            {
+                return false;
+            }
+
+            if (_selectedTile != null)
+            {
+                _selectedTile.SetSelected(false);
+            }
+
+            _selectedTile = tile;
+            _selectedTile.SetSelected(true);
+            SetStatus(string.Format("HEX {0},{1} selected.", coordinate.Q, coordinate.R));
+            return true;
+        }
+
+        public void SetBoardView(float yaw, float pitch = 48f, float distance = 15.5f)
+        {
+            EnsureBuilt();
+            BoardCamera.SetView(yaw, pitch, distance, new Vector3(0f, 0.45f, 0f), true);
+            foreach (var billboard in _generatedRoot.GetComponentsInChildren<CameraFacingBillboard>())
+            {
+                billboard.FaceCamera();
+            }
+        }
+
+        public bool TrySelectWorldAtScreenPoint(Vector2 screenPoint)
+        {
+            EnsureBuilt();
+            if (IsScreenPointOverInterface(screenPoint))
+            {
+                return false;
+            }
+
+            var ray = SceneCamera.ScreenPointToRay(screenPoint);
+            if (!Physics.Raycast(ray, out var hit, SceneCamera.farClipPlane))
+            {
+                return false;
+            }
+
+            var target = hit.collider.GetComponentInParent<WorldTargetView>();
+            if (target != null)
+            {
+                return SelectTarget(target.TargetId);
+            }
+
+            var tile = hit.collider.GetComponentInParent<BoardTileView>();
+            return tile != null && SelectTile(tile.Coordinate);
+        }
+
+        public bool IsScreenPointOverInterface(Vector2 screenPoint)
+        {
+            if (SceneCanvas == null)
+            {
+                return false;
+            }
+
+            foreach (var graphic in SceneCanvas.GetComponentsInChildren<Graphic>(false))
+            {
+                if (graphic.raycastTarget &&
+                    graphic.gameObject.activeInHierarchy &&
+                    RectTransformUtility.RectangleContainsScreenPoint(
+                        graphic.rectTransform,
+                        screenPoint,
+                        SceneCanvas.worldCamera))
+                {
+                    return true;
+                }
+            }
+
+            if (EventSystem.current == null)
+            {
+                return false;
+            }
+
+            var pointer = new PointerEventData(EventSystem.current) { position = screenPoint };
+            var results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointer, results);
+            foreach (var result in results)
+            {
+                var canvas = result.gameObject.GetComponentInParent<Canvas>();
+                if (canvas == SceneCanvas)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool TryPlaceSelected(int column, int row)
         {
             EnsureBuilt();
@@ -177,14 +298,14 @@ namespace TimeKey.Presentation
             var cameraObject = new GameObject("SliceCamera");
             cameraObject.transform.SetParent(_generatedRoot.transform, false);
             SceneCamera = cameraObject.AddComponent<Camera>();
-            SceneCamera.orthographic = true;
-            SceneCamera.orthographicSize = 6.8f;
+            SceneCamera.orthographic = false;
+            SceneCamera.fieldOfView = 38f;
             SceneCamera.clearFlags = CameraClearFlags.SolidColor;
             SceneCamera.backgroundColor = new Color(0.035f, 0.047f, 0.055f, 1f);
             SceneCamera.nearClipPlane = 0.1f;
             SceneCamera.farClipPlane = 100f;
-            cameraObject.transform.position = new Vector3(7.5f, 9f, -10.5f);
-            cameraObject.transform.LookAt(new Vector3(0f, 0.2f, 0f));
+            BoardCamera = cameraObject.AddComponent<BoardOrbitCameraController>();
+            BoardCamera.Initialize(SceneCamera, new Vector3(0f, 0.45f, 0f), 32f, 48f, 15.5f);
 
             var lightObject = new GameObject("KeyLight");
             lightObject.transform.SetParent(_generatedRoot.transform, false);
@@ -202,30 +323,53 @@ namespace TimeKey.Presentation
             fillLight.intensity = 0.65f;
             fillObject.transform.rotation = Quaternion.Euler(36f, 145f, 0f);
 
-            _hexMesh = HexMeshFactory.Create(0.94f, 0.22f);
-            _tileMaterial = CreateMaterial(new Color(0.22f, 0.29f, 0.31f, 1f));
+            _hexMesh = HexMeshFactory.Create(0.94f, HexBlockHeight);
+            _groundMaterial = CreateUnlitMaterial(new Color(0.055f, 0.07f, 0.065f, 1f));
+            _grassTilePrefab = LoadTilePrefab("Art/Battle/Models/HexTile_Grass");
+            _dirtTilePrefab = LoadTilePrefab("Art/Battle/Models/HexTile_Dirt");
+            _centerAltarSprite = CreateOriginalSprite("Art/Battle/center_altar");
 
-            var coordinates = new[]
-            {
-                new HexCoord(0, 0), new HexCoord(1, 0), new HexCoord(0, 1),
-                new HexCoord(-1, 1), new HexCoord(-1, 0), new HexCoord(0, -1),
-                new HexCoord(1, -1), new HexCoord(2, -1), new HexCoord(-2, 1)
-            };
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.name = "BattlefieldGround";
+            ground.transform.SetParent(_generatedRoot.transform, false);
+            ground.transform.position = new Vector3(0f, -0.04f, 0f);
+            ground.transform.localScale = new Vector3(2.1f, 1f, 2.1f);
+            ground.GetComponent<Renderer>().sharedMaterial = _groundMaterial;
 
-            for (var index = 0; index < coordinates.Length; index++)
+            for (var q = -2; q <= 2; q++)
             {
-                CreateTile(coordinates[index], index == 1 ? 1 : 0);
+                var minimumR = Mathf.Max(-2, -q - 2);
+                var maximumR = Mathf.Min(2, -q + 2);
+                for (var r = minimumR; r <= maximumR; r++)
+                {
+                    var elevation = (q == 1 && r == 0) || (q == -1 && r == 1) ? 1 : 0;
+                    CreateTile(new HexCoord(q, r), elevation);
+                }
             }
 
-            var targetObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            targetObject.name = "Target-target-01";
-            targetObject.transform.SetParent(_generatedRoot.transform, false);
-            targetObject.transform.position = HexToWorld(new HexCoord(1, 0), 0.22f) + new Vector3(0f, 0.72f, 0f);
-            targetObject.transform.localScale = new Vector3(0.58f, 0.72f, 0.58f);
+            _targetObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            _targetObject.name = "Target-target-01";
+            _targetObject.transform.SetParent(_generatedRoot.transform, false);
+            _targetObject.transform.position = HexToWorld(new HexCoord(1, 0), 0f) +
+                new Vector3(0f, (2f * HexBlockHeight) + 0.10f, 0f);
+            _targetObject.transform.localScale = new Vector3(0.58f, 0.10f, 0.58f);
             _targetMaterial = CreateMaterial(new Color(0.86f, 0.24f, 0.24f, 1f));
-            _targetRenderer = targetObject.GetComponent<Renderer>();
+            _targetRenderer = _targetObject.GetComponent<Renderer>();
             _targetRenderer.sharedMaterial = _targetMaterial;
-            targetObject.AddComponent<WorldTargetView>().Initialize(this, TargetId);
+            _targetObject.AddComponent<WorldTargetView>().Initialize(TargetId);
+
+            var targetArt = new GameObject("OriginalArt-center_altar", typeof(SpriteRenderer), typeof(BoxCollider));
+            targetArt.transform.SetParent(_generatedRoot.transform, false);
+            targetArt.transform.position = _targetObject.transform.position + new Vector3(0f, 0.85f, 0f);
+            targetArt.transform.localScale = Vector3.one * 0.62f;
+            var targetSpriteRenderer = targetArt.GetComponent<SpriteRenderer>();
+            targetSpriteRenderer.sprite = _centerAltarSprite;
+            targetSpriteRenderer.color = Color.white;
+            targetSpriteRenderer.sortingOrder = 100;
+            targetSpriteRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            targetArt.GetComponent<BoxCollider>().size = new Vector3(2.25f, 2.25f, 0.16f);
+            targetArt.AddComponent<WorldTargetView>().Initialize(TargetId);
+            targetArt.AddComponent<CameraFacingBillboard>().Initialize(SceneCamera);
         }
 
         private void BuildInterface()
@@ -254,8 +398,8 @@ namespace TimeKey.Presentation
                 new Vector2(1f, 1f),
                 new Vector2(24f, -104f),
                 new Vector2(-24f, -24f),
-                new Color(0.06f, 0.08f, 0.09f, 0.95f));
-            CreateText(header.transform, "Title", "TIME KEY  /  COMBAT SLICE 01", 28, TextAnchor.MiddleLeft,
+                new Color(0.06f, 0.08f, 0.09f, 1f));
+            CreateText(header.transform, "Title", "TIME KEY  /  COMBAT BOARD", 28, TextAnchor.MiddleLeft,
                 new Vector2(22f, 8f), new Vector2(-22f, -38f));
             _statusText = CreateText(header.transform, "Status", string.Empty, 20, TextAnchor.MiddleLeft,
                 new Vector2(22f, 42f), new Vector2(-22f, -8f));
@@ -263,11 +407,11 @@ namespace TimeKey.Presentation
             var timelinePanel = CreatePanel(
                 SceneCanvas.transform,
                 "Timeline",
-                new Vector2(0.18f, 0.68f),
+                new Vector2(0.18f, 0.73f),
                 new Vector2(0.82f, 0.90f),
                 Vector2.zero,
                 Vector2.zero,
-                new Color(0.07f, 0.09f, 0.10f, 0.94f));
+                new Color(0.07f, 0.09f, 0.10f, 1f));
             var grid = timelinePanel.gameObject.AddComponent<GridLayoutGroup>();
             grid.padding = new RectOffset(20, 20, 22, 18);
             grid.cellSize = new Vector2(88f, 44f);
@@ -331,13 +475,26 @@ namespace TimeKey.Presentation
         {
             var tile = new GameObject(string.Format("Hex-{0}-{1}", coordinate.Q, coordinate.R));
             tile.transform.SetParent(_generatedRoot.transform, false);
-            tile.transform.position = HexToWorld(coordinate, elevation * 0.35f);
-            var filter = tile.AddComponent<MeshFilter>();
-            filter.sharedMesh = _hexMesh;
-            var renderer = tile.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = _tileMaterial;
-            var collider = tile.AddComponent<MeshCollider>();
-            collider.sharedMesh = _hexMesh;
+            tile.transform.position = HexToWorld(coordinate, 0f);
+            var renderers = new List<Renderer>((elevation + 1) * 4);
+            var tilePrefab = elevation > 0 ? _dirtTilePrefab : _grassTilePrefab;
+            var variantName = elevation > 0 ? "Dirt" : "Grass";
+
+            for (var layer = 0; layer <= elevation; layer++)
+            {
+                var block = new GameObject(string.Format("Block-{0}", layer));
+                block.transform.SetParent(tile.transform, false);
+                block.transform.localPosition = new Vector3(0f, layer * HexBlockHeight, 0f);
+                var collider = block.AddComponent<MeshCollider>();
+                collider.sharedMesh = _hexMesh;
+                var visual = Instantiate(tilePrefab, block.transform, false);
+                visual.name = "Visual-" + variantName;
+                renderers.AddRange(visual.GetComponentsInChildren<Renderer>(true));
+            }
+
+            var tileView = tile.AddComponent<BoardTileView>();
+            tileView.Initialize(coordinate, renderers.ToArray());
+            _tiles.Add(coordinate, tileView);
         }
 
         private void PlaceEnemyIntent()
@@ -390,6 +547,54 @@ namespace TimeKey.Presentation
             var material = new Material(shader) { color = color };
             material.enableInstancing = true;
             return material;
+        }
+
+        private static Material CreateUnlitMaterial(Color color)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Color");
+            }
+
+            if (shader == null)
+            {
+                throw new InvalidOperationException("No compatible unlit shader is available.");
+            }
+
+            var material = new Material(shader) { color = color };
+            material.enableInstancing = true;
+            return material;
+        }
+
+        private static Sprite CreateOriginalSprite(string resourcePath)
+        {
+            var texture = Resources.Load<Texture2D>(resourcePath);
+            if (texture == null)
+            {
+                throw new InvalidOperationException("Original project art is missing: " + resourcePath);
+            }
+
+            var sprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f),
+                100f,
+                0,
+                SpriteMeshType.FullRect);
+            sprite.name = texture.name + "-runtime-sprite";
+            return sprite;
+        }
+
+        private static GameObject LoadTilePrefab(string resourcePath)
+        {
+            var prefab = Resources.Load<GameObject>(resourcePath);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException("Hex tile model is missing: " + resourcePath);
+            }
+
+            return prefab;
         }
 
         private static RectTransform CreatePanel(
@@ -483,8 +688,9 @@ namespace TimeKey.Presentation
         private void OnDestroy()
         {
             DestroyOwnedObject(_targetMaterial);
-            DestroyOwnedObject(_tileMaterial);
+            DestroyOwnedObject(_groundMaterial);
             DestroyOwnedObject(_hexMesh);
+            DestroyOwnedObject(_centerAltarSprite);
         }
 
         private static void DestroyOwnedObject(UnityEngine.Object value)

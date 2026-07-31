@@ -12,7 +12,7 @@ $UnityEditor = 'C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe'
 $GodotConsole = 'D:\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe'
 $RepositoryRoot = (Get-Location).Path
 $UnityProjectAlias = 'D:\timekey-unity-731'
-$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\unity-slice-01'
+$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\unity-slice-02-board'
 $env:ALLUSERSPROFILE = $env:ProgramData
 $env:TIMEKEY_REPOSITORY_ROOT = $RepositoryRoot
 ```
