@@ -19,7 +19,7 @@ Slice 01 和 Wave 02A 的既有契约继续成立。Wave 02B1 新增：原 `ligh
 
 范围决策不变：接下来只扩展局内卡牌、敌人、建筑和胜负；局外流程保持 Godot 现状。实际代码审查发现一次完成七类效果会把 `clear`、普通 action 和领域棋盘状态耦合过早，因此下一单元收紧为 Wave 02B2A：七张真实 fixture/schema 全解析，但只把 `lighting` 和 `earthquake` 接入可玩闭环。`earthquake +2` 必须让每个目标柱真实增加两个 `0.32` block，并同步 collider、顶面 bounds、occupant anchor 和四向选择。
 
-Git 状态：2026-08-01 已成功把 `5c6492a` 与 `c5ec5bc` 推送至 `origin/unity_7.31`，并创建 Wave 02B2A 交接检查点 `7a2ed96`。本轮结束前应把交接检查点和本状态记录一起推送；MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
+Git 状态：2026-08-01 已把 Wave 02B1 的 `5c6492a/c5ec5bc`、Wave 02B2A 交接 `7a2ed96` 及状态记录 `5df9e08` 推送至 `origin/unity_7.31`；核对时本地与远端同步。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 
 下一位接手 AI 应直接进入仓库，完整读取并执行 `00-bootstrap/NEXT_STAGE_EFFECTS_PROMPT.md` 的“主 Prompt”。该 Prompt 已包含五份所有权互斥的 Agent 任务、三道依赖门禁、测试/截图/build/Git 完成定义；不得重跑已关闭的 Wave 00/01/02A/02B1。
 
