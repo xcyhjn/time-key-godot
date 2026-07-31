@@ -1,0 +1,17 @@
+{
+    "name": "TimeKey.Presentation",
+    "rootNamespace": "TimeKey.Presentation",
+    "references": [
+        "TimeKey.Domain",
+        "TimeKey.Infrastructure"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

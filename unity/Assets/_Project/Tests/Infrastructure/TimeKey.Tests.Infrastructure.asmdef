@@ -1,0 +1,22 @@
+{
+  "name": "TimeKey.Tests.Infrastructure",
+  "rootNamespace": "TimeKey.Tests.Infrastructure",
+  "references": [
+    "TimeKey.Domain",
+    "TimeKey.Infrastructure"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

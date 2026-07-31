@@ -1,0 +1,12 @@
+{
+	"name": "lighting",
+	"front_image": "lighting.png",
+	"效果" : "造成100点伤害",
+	"effects": [
+	{ "type": "damage", "value": 100 }
+	],
+	"effect_range": ["0,0", "1,0", "2,0"],
+	"shape": "1",
+	"时代" : "1",
+	"id" : "1"
+   }

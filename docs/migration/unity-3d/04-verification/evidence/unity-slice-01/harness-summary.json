@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "scene": "CombatVerticalSlice",
+  "seed": 731,
+  "targetHpAfter": 0,
+  "enemyIntentResolved": true,
+  "screenshots": [
+    {"width": 1920, "height": 1080, "luminanceRange": 0.889, "sampledOpaquePixels": 8040},
+    {"width": 1920, "height": 1080, "luminanceRange": 0.908, "sampledOpaquePixels": 8040},
+    {"width": 1280, "height": 720, "luminanceRange": 0.885, "sampledOpaquePixels": 3600}
+  ],
+  "buildResult": "Succeeded",
+  "buildBytes": 163779757
+}

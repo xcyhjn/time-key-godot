@@ -1,0 +1,23 @@
+{
+    "name": "TimeKey.Tests.PlayMode",
+    "rootNamespace": "TimeKey.Tests.PlayMode",
+    "references": [
+        "TimeKey.Domain",
+        "TimeKey.Infrastructure",
+        "TimeKey.Presentation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

@@ -32,6 +32,19 @@ Infrastructure 从 TextAsset/字符串解析卡牌 JSON，输出 Domain 的 `Car
 
 Presentation 创建固定 seed 731 的场景，使用 axial XZ 映射显示至少 7 个六边形地块、一个可选目标和一个敌人意图。UI 暴露选卡、放置、结算、目标 HP、阶段与 12×3 时间轴。对 Domain 的调用通过明确方法完成，不能在按钮事件中重复实现伤害规则。
 
+`VerticalSliceController` 的公共集成面冻结为：
+
+```text
+BuildSceneGraph()                         # 幂等，可由 Awake 与 Editor harness 调用
+SelectCard(string stableId) -> bool
+SelectTarget(string targetId) -> bool
+TryPlaceSelected(int column, int row) -> bool
+ResolveTimeline() -> ResolutionSnapshot
+CurrentTargetHp, EnemyIntentResolved, TimelineSlotCount
+```
+
+fixture 固定 `stableId=lighting`、`targetId=target-01`。Controller 通过 `CardJsonAdapter.Parse` 读取 TextAsset，不自建第二套 JSON DTO。`BuildSceneGraph()` 重复调用不能复制 Camera、Canvas、地块或事件监听。
+
 ## 场景与截图
 
 场景路径固定：`Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`。Editor harness 输出证据到 `docs/migration/unity-3d/04-verification/evidence/unity-slice-01/`，文件名至少包含视口尺寸。PlayMode 测试通过场景控制器的公共交互方法驱动，不依赖屏幕坐标。

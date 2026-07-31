@@ -1,6 +1,6 @@
 # Unity Slice 01 测试计划
 
-> 状态：已冻结，等待执行
+> 状态：已执行并通过
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
@@ -36,3 +36,14 @@
 - 六边形地面、目标、相机视角和 UI 均存在。
 - 12×3 时间轴不越界，按钮/状态文字不重叠，1280×720 仍可读。
 - 结算前/后至少一张截图能证明 HP 或目标状态变化。
+
+## 执行结果
+
+| 门禁 | 结果 | 结构化证据 |
+| --- | --- | --- |
+| 静态编译/领域反射测试 | 7 个程序集、7 个 asmdef、11 个领域用例通过 | `evidence/unity-slice-01/verification-summary.md` |
+| Unity EditMode | 19/19，通过 0 失败 | `evidence/unity-slice-01/editmode-results.xml` |
+| Unity PlayMode | 2/2，通过 0 失败 | `evidence/unity-slice-01/playmode-results.xml` |
+| Harness/build | scene 校验、三张 PNG、Windows build 均通过 | `evidence/unity-slice-01/harness-summary.json` |
+| Windows Player | 固定交互完成，`TIMEKEY_PLAYER_SMOKE_PASS`，退出码 0 | `evidence/unity-slice-01/verification-summary.md` |
+| 人工视觉审查 | 1920×1080 与 1280×720 无裁切、重叠或缺失控件 | `evidence/unity-slice-01/verification-summary.md` |

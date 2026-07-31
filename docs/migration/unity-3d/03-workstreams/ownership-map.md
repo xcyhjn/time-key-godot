@@ -1,6 +1,6 @@
 # 多智能体所有权图
 
-> 状态：Wave 01 所有权已冻结
+> 状态：Wave 01 所有权已冻结并完成交接
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
@@ -9,12 +9,12 @@
 
 | 角色 | 独占路径 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
-| 主智能体 / 集成 | `docs/migration/unity-3d/**`（代理独占报告除外）、`.gitignore`、`unity/Packages/**`、`unity/ProjectSettings/**`、`unity/Assets/_Project/Editor/**` | 无 | 执行中 |
-| Agent 01 / Domain | `unity/Assets/_Project/Runtime/Domain/**`、`unity/Assets/_Project/Tests/EditMode/**`、`docs/migration/unity-3d/03-workstreams/agents/reports/wave-01-agent-01-domain.md` | 冻结 schema | 待启动 |
-| Agent 02 / Data adapter | `unity/Assets/_Project/Runtime/Infrastructure/**`、`unity/Assets/_Project/Content/Cards/**`、`docs/migration/unity-3d/03-workstreams/agents/reports/wave-01-agent-02-data.md` | Domain API | 待启动，Agent 01 后 |
-| Agent 03 / Battle view | `unity/Assets/_Project/Runtime/Presentation/**`、`unity/Assets/_Project/Scenes/VerticalSlice/**`、`unity/Assets/_Project/Tests/PlayMode/**`、`docs/migration/unity-3d/03-workstreams/agents/reports/wave-01-agent-03-battle-view.md` | Domain + adapter | 待启动，Agent 02 后 |
+| 主智能体 / 集成 | 共享文档、工程配置、Editor harness；Agent 03 未启动后接管 `Runtime/Presentation/**`、`Scenes/VerticalSlice/**`、`Tests/PlayMode/**` | Domain + adapter | 已完成 |
+| Agent 01 / Domain | `unity/Assets/_Project/Runtime/Domain/**`、`unity/Assets/_Project/Tests/EditMode/**`、自己的报告 | 冻结 schema | 已完成并交回 |
+| Agent 02 / Data adapter | `unity/Assets/_Project/Runtime/Infrastructure/**`、`unity/Assets/_Project/Content/Cards/**`、`unity/Assets/_Project/Tests/Infrastructure/**`、自己的报告 | Domain API | 已完成并交回 |
+| Agent 03 / Battle view | Prompt 中定义的 Presentation/Scene/PlayMode 路径 | Domain + adapter | 未启动；所有权在无并行写入时显式交回主智能体 |
 
-主智能体保留集成槽，只在依赖已落盘时启动下游。三个代理 Prompt 已生成，但 Wave 01 首步只启动 Agent 01；这是有意的串行依赖，不是并行度不足。
+Agent 01 完成后启动 Agent 02。两项依赖落盘并经主智能体审查后，没有再启动 Agent 03；主智能体在确认该路径从未被代理写入后接管 Presentation、场景和 PlayMode 集成，避免新增一次接口交接。全程没有并发写同一路径。
 
 ## 禁止范围
 
@@ -25,4 +25,4 @@
 
 ## 路径互斥审查
 
-Domain、Infrastructure、Presentation 的运行时代码和各自测试/报告没有路径交集。主智能体不在代理执行期间修改其独占路径；集成前先等待代理完成。`Assets/_Project` 仅是共同祖先，不是可写所有权授权。
+Domain、Infrastructure、Presentation 的运行时代码和各自测试/报告没有路径交集。Agent 01 已完成后，Agent 02 使用独立的 `Tests/Infrastructure` 测试程序集，不改 Agent 01 的 `Tests/EditMode` 文件。主智能体不在代理执行期间修改其独占路径；集成前先等待代理完成。`Assets/_Project` 仅是共同祖先，不是可写所有权授权。

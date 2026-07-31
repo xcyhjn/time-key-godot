@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Wave 01 工程基座即将开始
+> 状态：Wave 01 / Slice 01 已完成
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -13,7 +13,7 @@
 
 Slice 01 目标是：真实 `lighting.json` -> 纯 C# 规则 -> 12×3 时间轴 -> 一次合法放置 -> 伤害结算 -> 3D 目标 10 HP 变 0 -> 固定敌人意图顺序 -> 双视口视觉证据。
 
-当前阶段：评估门禁已通过；下一步创建/锁定 Unity 工程并启动 Agent 01 的 Domain 独占任务。Unity 代码、测试与截图尚未生成，因此切片未完成。
+当前阶段：Agent 01 Domain 与 Agent 02 adapter 已完成并交回；主智能体完成 Presentation、场景、PlayMode 与 Editor harness 集成。真实 Unity Test Runner 的 EditMode 19/19、PlayMode 2/2 均通过；场景校验、三张渲染证据、Windows build 和构建产物交互冒烟均通过，Slice 01 Definition of Done 已关闭。
 
 ## 分支与工作区保护
 
@@ -23,4 +23,4 @@ Slice 01 目标是：真实 `lighting.json` -> 纯 C# 规则 -> 12×3 时间轴 
 
 ## 用户决策
 
-当前无用户决策阻塞。旧 Godot CFG 是否兼容、素材授权和最终平台在后续波次进入前需要决策，但不影响程序化白盒首切片。
+当前实现没有产品或环境决策阻塞。旧 Godot CFG 是否兼容、素材授权和最终平台在后续波次进入前再决策；这些不阻塞已完成的 Slice 01。

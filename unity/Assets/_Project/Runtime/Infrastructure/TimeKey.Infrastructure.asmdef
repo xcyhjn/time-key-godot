@@ -1,0 +1,16 @@
+{
+  "name": "TimeKey.Infrastructure",
+  "rootNamespace": "TimeKey.Infrastructure",
+  "references": [
+    "TimeKey.Domain"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

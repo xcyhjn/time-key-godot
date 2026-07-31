@@ -1,0 +1,21 @@
+{
+  "name": "TimeKey.Tests.EditMode",
+  "rootNamespace": "TimeKey.Tests.EditMode",
+  "references": [
+    "TimeKey.Domain"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

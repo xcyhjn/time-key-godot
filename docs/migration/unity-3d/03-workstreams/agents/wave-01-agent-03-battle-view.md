@@ -1,6 +1,6 @@
 # Wave 01 Agent 03：3D 战斗表现与交互
 
-> 状态：已审查，等待 Domain 与 adapter
+> 状态：已审查，未启动；所有权已交回主智能体
 > 负责人：Agent 03
 > 最后验证日期：2026-07-31
 > 证据来源：3D 产品边界、Godot 实跑截图、集成契约
@@ -34,8 +34,9 @@
 2. 以 flat-top axial XZ 公式生成至少 7 个真实六边形 mesh，Y 表示高度；正交斜视相机。
 3. uGUI Canvas 显示卡牌、12×3 时间轴、目标 HP、敌人意图和阶段。
 4. Presentation 只调用 Domain 规则，不重复计算伤害/顺序。
-5. PlayMode 测试用公共方法驱动完整路径并断言 10→0、意图顺序与 UI/3D 状态。
-6. 写独占报告。
+5. 按 `integration-contracts.md` 实现冻结的 `VerticalSliceController` 公共方法和可测试属性；`BuildSceneGraph()` 必须幂等，供运行时与主智能体 Editor harness 共用。
+6. PlayMode 测试用公共方法驱动完整路径并断言 10→0、意图顺序与 UI/3D 状态。
+7. 写独占报告。
 
 非目标：最终美术、动画打磨、局外地图、教程、音频、完整敌方 AI。若接口冲突或必须写非拥有路径，停止并报告。
 

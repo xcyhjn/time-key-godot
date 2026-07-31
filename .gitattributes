@@ -9,3 +9,8 @@ scene/in_scene/timeline/TimelineManager.gd text eol=crlf
 scene/in_scene/timeline/TimelineIntroAnimator.gd text eol=crlf
 scene/in_scene/timeline/commands/DamageCommand.gd text eol=crlf
 scene/in_scene/vfx/VFXManager.gd text eol=crlf
+
+# Unity YAML serializes empty scalar values as `key: `; do not flag those generated lines.
+unity/**/*.asset whitespace=-trailing-space
+unity/**/*.meta whitespace=-trailing-space
+unity/**/*.unity whitespace=-trailing-space
