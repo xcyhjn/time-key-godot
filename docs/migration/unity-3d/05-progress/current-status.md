@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Wave 02A / 局内 3D 棋盘已完成
+> 状态：Wave 02A 已完成；Wave 02B1 接管包已就绪
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -16,6 +16,10 @@ Slice 01 目标是：真实 `lighting.json` -> 纯 C# 规则 -> 12×3 时间轴 
 在 Slice 01 之上，Wave 02A 完成 19 格透视战斗棋盘、360° 轨道镜头、UI/世界输入互斥、四向目标选择、真实实体高度堆叠和 Blender FBX 地块。Unity EditMode 19/19、PlayMode 4/4、四向 1920×1080、1280×720、Windows build 与 Player 冒烟均通过。
 
 范围决策：接下来只扩展局内卡牌、敌人、建筑和胜负；局外流程保持 Godot 现状。
+
+Wave 02B1 已冻结为原版 `lighting` 卡牌交互接入：精确原卡面/牌背、底部手牌状态、世界范围预览、非变异时间轴合法性预览、镜头输入互斥和现有结算闭环。完整接手 Prompt 位于 `00-bootstrap/NEXT_STAGE_COMBAT_PROMPT.md`；四份所有权互斥 Agent Prompt 与审查位于 `03-workstreams/agents/`。
+
+下一动作：接手主智能体完整读取总 Prompt，复核 Git/测试基线后并行启动 Wave 02B Agent 01（素材）与 Agent 02（Domain），不得再次停在规划阶段。
 
 ## 分支与工作区保护
 

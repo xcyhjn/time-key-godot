@@ -1,6 +1,6 @@
 # 多智能体所有权图
 
-> 状态：Wave 02A 所有权已完成交接
+> 状态：Wave 02A 已交接；Wave 02B1 所有权待执行
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
@@ -14,6 +14,10 @@
 | Agent 02 / Data adapter | `unity/Assets/_Project/Runtime/Infrastructure/**`、`unity/Assets/_Project/Content/Cards/**`、`unity/Assets/_Project/Tests/Infrastructure/**`、自己的报告 | Domain API | 已完成并交回 |
 | Agent 03 / Battle view | Prompt 中定义的 Presentation/Scene/PlayMode 路径 | Domain + adapter | 未启动；所有权在无并行写入时显式交回主智能体 |
 | Wave 02 Agent 01 / Hex tile model | `ArtSource/HexTiles/**`、`Resources/Art/Battle/Models/**`、独占证据与报告 | 冻结几何契约 | 已完成并交回；主智能体只在 Presentation 中接入 FBX |
+| Wave 02B Agent 01 / Card art | `Resources/Art/Battle/Cards/**`、独占证据与报告 | 原素材哈希 | 待启动；可与 Agent 02 并行 |
+| Wave 02B Agent 02 / Card Domain | `Runtime/Domain/**`、`Tests/EditMode/**`、独占报告 | Wave 02B1 语义契约 | 待启动；可与 Agent 01 并行 |
+| Wave 02B Agent 03 / Card hand UI | `Runtime/Presentation/Cards/**`、`Prefabs/Battle/Cards/**`、`Tests/PlayMode/Cards/**`、独占证据与报告 | Agent 01 + Agent 02 | 待 Wave A 审查后启动 |
+| Wave 02B Agent 04 / Target preview | `Runtime/Presentation/Targeting/**`、`Tests/PlayMode/Targeting/**`、独占证据与报告 | Agent 02 | 待 Wave A 审查后启动 |
 
 Agent 01 完成后启动 Agent 02。两项依赖落盘并经主智能体审查后，没有再启动 Agent 03；主智能体在确认该路径从未被代理写入后接管 Presentation、场景和 PlayMode 集成，避免新增一次接口交接。全程没有并发写同一路径。
 
@@ -27,3 +31,11 @@ Agent 01 完成后启动 Agent 02。两项依赖落盘并经主智能体审查�
 ## 路径互斥审查
 
 Domain、Infrastructure、Presentation 的运行时代码和各自测试/报告没有路径交集。Agent 01 已完成后，Agent 02 使用独立的 `Tests/Infrastructure` 测试程序集，不改 Agent 01 的 `Tests/EditMode` 文件。主智能体不在代理执行期间修改其独占路径；集成前先等待代理完成。`Assets/_Project` 仅是共同祖先，不是可写所有权授权。
+
+## Wave 02B1 并发波次
+
+- Wave A：Agent 01 与 Agent 02 可并行；没有共同可写文件。
+- 主智能体等待两者完成，审查素材哈希、Domain API 和 EditMode 后明确收回所有权。
+- Wave B：Agent 03 与 Agent 04 可并行；`Cards/**` 与 `Targeting/**`、各自测试/证据/报告完全互斥。
+- 主智能体始终独占 `VerticalSliceController.cs`、`BoardTileView.cs`、场景、Editor harness、asmdef、ProjectSettings、共享文档、最终证据和 Git。
+- 任何时刻只允许一个 Unity Editor/batchmode 实例，防止工程锁和低内存互相污染。

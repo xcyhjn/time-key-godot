@@ -70,3 +70,13 @@ git diff --cached --name-only
 ```
 
 原始 Unity `.log` 只保留在本机并由 scoped ignore 排除；提交使用 NUnit XML、harness JSON、PNG 与 `verification-summary.md`，避免包含许可证握手和机器标识。
+
+## 下一阶段 AI 接管
+
+```powershell
+Set-Location 'D:\godot\时之钥\时之钥'
+Get-Content -Raw 'docs\migration\unity-3d\00-bootstrap\NEXT_STAGE_COMBAT_PROMPT.md' |
+    codex exec --cd 'D:\godot\时之钥\时之钥' --add-dir 'D:\timekey-unity-731' --sandbox workspace-write --ask-for-approval never -
+```
+
+`codex exec -` 明确从 stdin 读取完整 Prompt；不使用已弃用的 `--full-auto`。若本机 Codex CLI 不可执行，使用 Codex Desktop 新任务完整读取同一文件，不得改用摘要。

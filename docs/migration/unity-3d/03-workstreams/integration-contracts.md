@@ -45,6 +45,51 @@ CurrentTargetHp, EnemyIntentResolved, TimelineSlotCount
 
 fixture 固定 `stableId=lighting`、`targetId=target-01`。Controller 通过 `CardJsonAdapter.Parse` 读取 TextAsset，不自建第二套 JSON DTO。`BuildSceneGraph()` 重复调用不能复制 Camera、Canvas、地块或事件监听。
 
+## Wave 02B1 卡牌交互契约
+
+> 状态：待 Agent 实现；语义已冻结
+
+### Domain
+
+```text
+TimelineGrid.CanPlace(TimelineAction) -> bool
+CardPlaySession(card)
+SelectTarget(targetId, HexCoord) -> transition result
+PreviewTimeline(TimelineGrid, TimelineCell) -> valid/invalid result
+Commit(TimelineGrid) -> success/failure
+Cancel() -> cancelled snapshot
+```
+
+`CanPlace` 不得改变占用或 action 集合，并与 `TryPlace` 复用同一内部合法性判断。Preview、失败 Commit 和 Cancel 都不能改变 `OccupiedCellCount`。最终 Commit 使用 `TimelineAction.FromCard`，保留 `lighting`、damage 100、单格 shape 与稳定目标 ID。
+
+### Card presentation
+
+```text
+CardHandView.Build(CardViewModel)
+CardHandView.SetInteractionState(state)
+event CardSelected(stableId)
+event CardCancelRequested(stableId)
+event CardDragChanged(stableId, pointerPosition, phase)
+```
+
+卡牌视图只表达交互意图，不 raycast 世界、不解析 JSON、不判断时间轴合法性。原卡牌基准 `125×175`，完整卡面保持纵横比。Selected/Targeting/Scheduling 状态的右键取消优先于轨道镜头；composition root 在这些状态设置 `BoardCamera.InputEnabled=false`，退出后恢复。
+
+### Board and timeline preview
+
+```text
+BoardRangePreview.Register(HexCoord, BoardTileView)
+BoardRangePreview.Show(center, relativeOffsets)
+BoardRangePreview.Clear()
+TimelinePlacementPreview.Show(origin, shape, isValid)
+TimelinePlacementPreview.Clear()
+```
+
+`lighting` 范围固定为 `(0,0),(1,0),(2,0)`。Board preview 只投影坐标并设置表现；Timeline preview 的 `isValid` 必须来自 Domain `CanPlace`，不得复制边界/冲突规则。所有清理幂等，镜头变化不改变坐标集合。
+
+### 主智能体共享接线
+
+现有 `VerticalSliceController` 公共方法必须保持兼容。主智能体在 Agent 交回所有权后独占修改 Controller、`BoardTileView`、共享场景和 Editor harness，把 UI 事件接到现有选卡/目标/放置/结算链。Agent 不得直接改这些共享文件。
+
 ## 场景与截图
 
 场景路径固定：`Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`。Editor harness 输出证据到 `docs/migration/unity-3d/04-verification/evidence/unity-slice-01/`，文件名至少包含视口尺寸。PlayMode 测试通过场景控制器的公共交互方法驱动，不依赖屏幕坐标。

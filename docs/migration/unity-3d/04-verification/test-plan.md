@@ -53,3 +53,14 @@
 | Wave 02A Unity PlayMode | 4/4，四向选择、UI 门禁、堆叠和结算均通过 | `evidence/unity-slice-02-board/playmode-results.xml` |
 | Wave 02A Harness/build | 5 张 PNG、Windows build 与 Player 冒烟通过 | `evidence/unity-slice-02-board/verification-summary.md` |
 | 地块几何 | 两变体各 120 三角形、0 非流形边，双层无缝 | `evidence/hex-tile-agent/model-validation.json` |
+
+## Wave 02B1 计划门禁
+
+- EditMode：`CanPlace` 无副作用；合法、越界、冲突、无目标、重复 commit、cancel 后 commit。
+- PlayMode：idle/hover/select/cancel；未选牌不能选目标；未选目标不能预览/放置；UI 不泄漏世界 raycast。
+- PlayMode：Selected/Targeting/Scheduling 暂停 orbit，右键优先取消；退出后恢复 orbit。
+- PlayMode：有效/无效时间轴预览、确认占格、`lighting` 在敌人意图前结算、重复 Build 不复制监听。
+- 视觉：`1920×1080` idle/hover/selected/target/timeline/resolved，`1280×720` placed，`2560×1080` selected。
+- 四向：0/90/180/270 yaw 的相同 `HexCoord` 范围保持一致且不被卡牌 UI 遮住。
+- 像素检查：卡牌区域、时间轴预览区域分别非空且状态间有差异；整图非单色不能替代局部证据。
+- 回归：现有 EditMode 19/19、PlayMode 4/4、Windows build 与 Player smoke 不回退。

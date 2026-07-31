@@ -33,6 +33,13 @@
 - [x] Wave 02A：Blender 草地/裸土 FBX、可复现源文件、几何检查和 Unity 集成。
 - [x] Wave 02A：原 `center_altar.png` 世界 billboard，四向可见且可选。
 - [ ] Wave 02B：完整卡牌效果、敌方/建筑行动、胜负与奖励入口。
+- [ ] Wave 02B1：原 `lighting.png`/牌背接入，底部卡牌 idle/hover/selected/cancel 状态。
+- [ ] Wave 02B1：非变异时间轴 `CanPlace`、CardPlaySession 与 EditMode 失败路径。
+- [ ] Wave 02B1：3D `effect_range` 投影、单格时间轴 valid/invalid 预览与镜头输入互斥。
+- [ ] Wave 02B1：主场景接线、三视口/四向视觉证据、build/player smoke 与 Git 检查点。
+- [ ] Wave 02B2：七卡异构 schema 与 damage/elevation/clear/recover/built/poison 效果。
+- [ ] Wave 02B3：敌方/建筑行动、意图优先级/重判与状态表现。
+- [ ] Wave 02B4：抽弃牌、回合、时间币、胜负和局内奖励入口。
 - [ ] Wave 03：暂停；局外地图和流程保持 Godot 现状。
 - [ ] Wave 04：教程、中文字体、音频、VFX 和授权资产。
 - [ ] Wave 05：平台冻结、性能预算、存档升级和发布构建。
