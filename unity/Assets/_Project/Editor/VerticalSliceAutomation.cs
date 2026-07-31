@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -45,23 +46,73 @@ namespace TimeKey.Editor
             var evidenceDirectory = GetEvidenceDirectory();
             Directory.CreateDirectory(evidenceDirectory);
             var captures = new List<CaptureStats>();
+
+            controller.SetBoardView(32f);
+            captures.Add(Capture(controller, evidenceDirectory, "card-idle-1920x1080.png", 1920, 1080));
+
+            var hoverEvent = new PointerEventData(EventSystem.current);
+            controller.CardHand.OnPointerEnter(hoverEvent);
+            controller.CardHand.ApplyVisualStateImmediate();
+            captures.Add(Capture(controller, evidenceDirectory, "card-hover-1920x1080.png", 1920, 1080));
+            controller.CardHand.OnPointerExit(new PointerEventData(EventSystem.current));
+            controller.CardHand.ApplyVisualStateImmediate();
+
+            if (!controller.SelectCard(VerticalSliceController.LightingCardId))
+            {
+                throw new InvalidOperationException("The original LIGHTING card could not be selected.");
+            }
+
+            controller.CardHand.ApplyVisualStateImmediate();
+            captures.Add(Capture(controller, evidenceDirectory, "card-selected-1920x1080.png", 1920, 1080));
+            captures.Add(Capture(controller, evidenceDirectory, "card-selected-2560x1080.png", 2560, 1080));
+
+            if (!controller.SelectTarget(VerticalSliceController.TargetId))
+            {
+                throw new InvalidOperationException("The frozen target could not be selected.");
+            }
+
             foreach (var yaw in new[] { 0, 90, 180, 270 })
             {
                 controller.SetBoardView(yaw);
                 captures.Add(Capture(
                     controller,
                     evidenceDirectory,
-                    string.Format("board-yaw-{0:000}-1920x1080.png", yaw),
+                    string.Format("target-range-yaw-{0:000}-1920x1080.png", yaw),
                     1920,
                     1080));
             }
 
-            if (!controller.SelectCard(VerticalSliceController.LightingCardId) ||
-                !controller.SelectTarget(VerticalSliceController.TargetId) ||
-                !controller.TryPlaceSelected(0, 0))
+            controller.SetBoardView(32f);
+            if (controller.PreviewTimelineSelected(2, 1))
+            {
+                throw new InvalidOperationException("The occupied enemy-intent cell was reported as legal.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "timeline-invalid-1920x1080.png",
+                1920,
+                1080));
+
+            if (!controller.PreviewTimelineSelected(0, 0))
+            {
+                throw new InvalidOperationException("The frozen legal timeline cell was reported as invalid.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "timeline-valid-1920x1080.png",
+                1920,
+                1080));
+
+            if (!controller.TryPlaceSelected(0, 0))
             {
                 throw new InvalidOperationException("The frozen interaction path could not be arranged.");
             }
+
+            captures.Add(Capture(controller, evidenceDirectory, "placed-1280x720.png", 1280, 720));
 
             var snapshot = controller.ResolveTimeline();
             if (snapshot.TargetHpBefore != 10 || snapshot.TargetHpAfter != 0 || !snapshot.EnemyIntentResolved)
@@ -70,7 +121,7 @@ namespace TimeKey.Editor
             }
 
             controller.SetBoardView(32f);
-            captures.Add(Capture(controller, evidenceDirectory, "resolved-1280x720.png", 1280, 720));
+            captures.Add(Capture(controller, evidenceDirectory, "resolved-1920x1080.png", 1920, 1080));
 
             var buildDirectory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Builds", "Windows"));
             Directory.CreateDirectory(buildDirectory);
@@ -127,6 +178,21 @@ namespace TimeKey.Editor
             if (scaler == null || scaler.referenceResolution != new Vector2(1920f, 1080f))
             {
                 throw new InvalidOperationException("The CanvasScaler reference resolution is not frozen.");
+            }
+
+            if (controller.CardHand == null || controller.CardHand.Artwork == null)
+            {
+                throw new InvalidOperationException("The original card hand view is missing.");
+            }
+
+            if (controller.BoardRangePreview == null || controller.BoardRangePreview.RegisteredCount != 19)
+            {
+                throw new InvalidOperationException("The board range preview is not registered to all 19 tiles.");
+            }
+
+            if (controller.TimelinePreview == null || controller.TimelinePreview.RegisteredCount != 36)
+            {
+                throw new InvalidOperationException("The timeline preview is not registered to all 36 cells.");
             }
         }
 
@@ -220,7 +286,7 @@ namespace TimeKey.Editor
                 "unity-3d",
                 "04-verification",
                 "evidence",
-                "unity-slice-02-board");
+                "unity-slice-02b1");
         }
 
         private static void WriteSummary(
@@ -231,10 +297,12 @@ namespace TimeKey.Editor
             var builder = new StringBuilder();
             builder.AppendLine("{");
             builder.AppendLine("  \"status\": \"passed\",");
-            builder.AppendLine("  \"scene\": \"CombatBoardSlice\",");
+            builder.AppendLine("  \"scene\": \"CombatCardInteractionSlice\",");
             builder.AppendLine("  \"seed\": 731,");
             builder.AppendLine("  \"boardTiles\": 19,");
             builder.AppendLine("  \"cameraYawEvidence\": [0, 90, 180, 270],");
+            builder.AppendLine("  \"cardArt\": \"lighting\",");
+            builder.AppendLine("  \"cardInteraction\": \"hover-select-target-preview-commit\",");
             builder.AppendLine("  \"targetHpAfter\": 0,");
             builder.AppendLine("  \"enemyIntentResolved\": true,");
             builder.AppendLine("  \"screenshots\": [");

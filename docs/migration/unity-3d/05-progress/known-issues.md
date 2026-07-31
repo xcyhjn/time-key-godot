@@ -19,3 +19,5 @@
 | MIG-010 | 程序化材质只通过 `Shader.Find` 引用时，URP Lit 被 Player build 剥离 | 首次 Player 启动在 `Awake` 失败 | 将锁定包版本的 URP Lit 加入 Always Included Shaders；重建后 Player 冒烟通过 |
 | MIG-011 | 首次 harness 经 ASCII junction 推导仓库根时，把 4 个证据文件写到 `D:\docs\migration\unity-3d\04-verification\evidence\unity-slice-01` | 仓库外留下可识别的一次性文件 | 未做不确定范围删除；harness 改为要求/验证 `TIMEKEY_REPOSITORY_ROOT`，正式证据已在仓库内重建 |
 | MIG-012 | `git push` 警告当前 Git/GCM 的 TLS 证书校验被禁用 | HTTPS 远端连接缺少正常证书验证，存在供应链风险 | 本轮 push 成功但未擅自修改用户级配置；应由用户审查 Git/GCM 配置后恢复 TLS 校验 |
+| MIG-013 | 固定 19 格验证棋盘上，目标 `(1,0)` 的 `lighting` 第三个范围 offset 落到不存在的 `(3,0)` | 集成截图只显示两个真实范围格；若误生成第三格会制造幽灵地块 | `BoardRangePreview.MissingCoordinates` 明确报告 `(3,0)`，不创建对象；完整地图/多卡波次继续按真实棋盘边界验证 |
+| MIG-014 | 原卡面图片本身包含烘焙的棋盘格角部，且原素材授权仍未闭合 | Unity 不能通过导入设置恢复不存在的 alpha；公开发布仍有素材合规风险 | Wave 02B1 保持原文件字节与可观察外观，不擅自修图；Wave 04 统一处理授权和美术修订决策 |

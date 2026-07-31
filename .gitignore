@@ -59,3 +59,8 @@ docs/.obsidian/
 /docs/migration/unity-3d/04-verification/evidence/unity-slice-01/*.log
 /docs/migration/unity-3d/04-verification/evidence/unity-slice-01/template-file-list.txt
 /docs/migration/unity-3d/04-verification/evidence/unity-slice-02-board/*.log
+/docs/migration/unity-3d/04-verification/evidence/unity-slice-02b1/*.log
+/unity/editmode-final.log
+/unity/editmode-wait.log
+/unity/playmode-final.log
+/unity/player-startup.log

@@ -1,4 +1,4 @@
-# Unity Slice 01 / Wave 02A 测试计划
+# Unity Slice 01 / Wave 02A / Wave 02B1 测试计划
 
 > 状态：已执行并通过
 > 负责人：主智能体
@@ -53,6 +53,11 @@
 | Wave 02A Unity PlayMode | 4/4，四向选择、UI 门禁、堆叠和结算均通过 | `evidence/unity-slice-02-board/playmode-results.xml` |
 | Wave 02A Harness/build | 5 张 PNG、Windows build 与 Player 冒烟通过 | `evidence/unity-slice-02-board/verification-summary.md` |
 | 地块几何 | 两变体各 120 三角形、0 非流形边，双层无缝 | `evidence/hex-tile-agent/model-validation.json` |
+| Wave 02B1 Unity EditMode | 31/31，`CanPlace`、session 状态/失败/取消/重复 commit 与既有规则均通过 | `evidence/unity-slice-02b1/editmode-results.xml` |
+| Wave 02B1 Unity PlayMode | 15/15，真实右键取消链、输入互斥、范围/时间轴预览、提交/结算与回归均通过 | `evidence/unity-slice-02b1/playmode-results.xml` |
+| Wave 02B1 Harness/build | 12 张集成 PNG、场景验证与 Windows build `Succeeded` | `evidence/unity-slice-02b1/harness-summary.json` |
+| Wave 02B1 Windows Player | 退出码 0，日志含 `TIMEKEY_PLAYER_SMOKE_PASS` | `evidence/unity-slice-02b1/verification-summary.md` |
+| Wave 02B1 人工视觉审查 | 1920、1280、2560 与四向镜头无卡面变形/裁切/关键遮挡/预览漂移 | `evidence/unity-slice-02b1/verification-summary.md` |
 
 ## Wave 02B1 计划门禁
 
@@ -64,3 +69,5 @@
 - 四向：0/90/180/270 yaw 的相同 `HexCoord` 范围保持一致且不被卡牌 UI 遮住。
 - 像素检查：卡牌区域、时间轴预览区域分别非空且状态间有差异；整图非单色不能替代局部证据。
 - 回归：现有 EditMode 19/19、PlayMode 4/4、Windows build 与 Player smoke 不回退。
+
+以上门禁已全部执行并通过；详细结果见 `evidence/unity-slice-02b1/verification-summary.md`。

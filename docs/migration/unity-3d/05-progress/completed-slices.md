@@ -1,6 +1,6 @@
 # 已完成切片
 
-> 状态：Wave 00、Slice 01 与 Wave 02A 已完成
+> 状态：Wave 00、Slice 01、Wave 02A 与 Wave 02B1 已完成
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：Slice Definition of Done
@@ -37,3 +37,14 @@
 - Blender 草地/裸土模型各 120 三角形、0 非流形边，可复现源文件、FBX 和三张模型证据已落盘。
 - 原 `center_altar.png` 作为完整面向相机的世界 billboard，保留原项目视觉语言。
 - Unity EditMode 19/19、PlayMode 4/4、四向 1920×1080、1280×720、Windows build 与 Player 冒烟全部通过。
+
+## Wave 02B1：原版 lighting 卡牌交互
+
+完成日期：2026-07-31。
+
+- 原 `lighting.png` 与 `behide.png` 逐字节接入；卡面保持 `1135×1590` 原尺寸与底部 `125×175` 交互基准。
+- 手牌完成 idle、hover、selected/targeting/scheduling、右键/Escape 取消与输入隔离；选牌期间轨道镜头暂停，取消或提交后恢复。
+- `TimelineGrid.CanPlace` 与 `CardPlaySession` 提供无副作用的目标/时间轴预览，失败、取消与重复 commit 不改变占格。
+- `effect_range` 直接投影到 3D 棋盘实体；时间轴 valid/invalid 颜色仅消费 Domain 合法性结果，确认后才写入 `LIGHTING`。
+- 原有结算闭环保持 seed 731、10 HP -> 0、敌方意图后处理；局外 Godot 流程未修改。
+- Unity EditMode 31/31、PlayMode 15/15、12 张集成截图、Windows build 与 Player 冒烟全部通过。

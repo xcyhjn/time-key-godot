@@ -1,6 +1,6 @@
 # Unity 3D 迁移总待办
 
-> 状态：Wave 02A 局内 3D 棋盘已完成
+> 状态：Wave 02B1 原版卡牌交互已完成
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：迁移路线图、风险登记、首切片验收契约
@@ -33,10 +33,10 @@
 - [x] Wave 02A：Blender 草地/裸土 FBX、可复现源文件、几何检查和 Unity 集成。
 - [x] Wave 02A：原 `center_altar.png` 世界 billboard，四向可见且可选。
 - [ ] Wave 02B：完整卡牌效果、敌方/建筑行动、胜负与奖励入口。
-- [ ] Wave 02B1：原 `lighting.png`/牌背接入，底部卡牌 idle/hover/selected/cancel 状态。
-- [ ] Wave 02B1：非变异时间轴 `CanPlace`、CardPlaySession 与 EditMode 失败路径。
-- [ ] Wave 02B1：3D `effect_range` 投影、单格时间轴 valid/invalid 预览与镜头输入互斥。
-- [ ] Wave 02B1：主场景接线、三视口/四向视觉证据、build/player smoke 与 Git 检查点。
+- [x] Wave 02B1：原 `lighting.png`/牌背接入，底部卡牌 idle/hover/selected/cancel 状态。
+- [x] Wave 02B1：非变异时间轴 `CanPlace`、CardPlaySession 与 EditMode 失败路径。
+- [x] Wave 02B1：3D `effect_range` 投影、单格时间轴 valid/invalid 预览与镜头输入互斥。
+- [x] Wave 02B1：主场景接线、三视口/四向视觉证据、build/player smoke 与 Git 检查点。
 - [ ] Wave 02B2：七卡异构 schema 与 damage/elevation/clear/recover/built/poison 效果。
 - [ ] Wave 02B3：敌方/建筑行动、意图优先级/重判与状态表现。
 - [ ] Wave 02B4：抽弃牌、回合、时间币、胜负和局内奖励入口。

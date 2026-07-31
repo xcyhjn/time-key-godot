@@ -35,7 +35,28 @@ namespace TimeKey.Domain
 
         public int OccupiedCellCount => _cells.Count;
 
+        public bool CanPlace(TimelineAction action)
+        {
+            return IsPlacementValid(action);
+        }
+
         public bool TryPlace(TimelineAction action)
+        {
+            if (!IsPlacementValid(action))
+            {
+                return false;
+            }
+
+            for (var index = 0; index < action.Shape.Count; index++)
+            {
+                _cells.Add(action.Origin + action.Shape[index], action);
+            }
+
+            _placedActions.Add(action);
+            return true;
+        }
+
+        private bool IsPlacementValid(TimelineAction action)
         {
             if (action == null || _placedActions.Contains(action))
             {
@@ -51,12 +72,6 @@ namespace TimeKey.Domain
                 }
             }
 
-            for (var index = 0; index < action.Shape.Count; index++)
-            {
-                _cells.Add(action.Origin + action.Shape[index], action);
-            }
-
-            _placedActions.Add(action);
             return true;
         }
 

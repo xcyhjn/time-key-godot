@@ -1,8 +1,11 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Cards;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -78,8 +81,11 @@ namespace TimeKey.Tests.PlayMode
             var controller = GetController();
             Canvas.ForceUpdateCanvases();
 
-            Assert.That(controller.IsScreenPointOverInterface(new Vector2(80f, 80f)), Is.True);
-            Assert.That(controller.TrySelectWorldAtScreenPoint(new Vector2(80f, 80f)), Is.False);
+            var artwork = controller.CardHand.Artwork.rectTransform;
+            var artworkCenter = artwork.TransformPoint(artwork.rect.center);
+            var interfacePoint = RectTransformUtility.WorldToScreenPoint(controller.SceneCamera, artworkCenter);
+            Assert.That(controller.IsScreenPointOverInterface(interfacePoint), Is.True);
+            Assert.That(controller.TrySelectWorldAtScreenPoint(interfacePoint), Is.False);
 
             controller.SetBoardView(180f);
             Physics.SyncTransforms();
@@ -113,6 +119,97 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(snapshot.TargetHpAfter, Is.Zero);
             Assert.That(snapshot.ResolutionOrder.Select(item => item.CardId),
                 Is.EqualTo(new[] { "lighting", "enemy-intent" }));
+        }
+
+        [UnityTest]
+        public IEnumerator CardSelectionAndCancel_RestoreHandAndOrbitInput()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+
+            Assert.That(controller.CardHand, Is.Not.Null);
+            Assert.That(controller.CardHand.gameObject.activeSelf, Is.True);
+            Assert.That(controller.CardHand.InteractionState, Is.EqualTo(CardHandInteractionState.Idle));
+            Assert.That(controller.BoardCamera.InputEnabled, Is.True);
+            Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.False);
+
+            Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
+            Assert.That(controller.CardHand.InteractionState, Is.EqualTo(CardHandInteractionState.Selected));
+            Assert.That(controller.CardPlayState, Is.EqualTo(CardPlaySessionState.Idle));
+            Assert.That(controller.BoardCamera.InputEnabled, Is.False);
+
+            controller.CardHand.OnPointerClick(new PointerEventData(EventSystem.current)
+            {
+                button = PointerEventData.InputButton.Right
+            });
+            Assert.That(controller.CardPlayState, Is.Null);
+            Assert.That(controller.CardHand.InteractionState, Is.EqualTo(CardHandInteractionState.Idle));
+            Assert.That(controller.CardHand.gameObject.activeSelf, Is.True);
+            Assert.That(controller.BoardCamera.InputEnabled, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator TargetAndTimelinePreview_DoNotMutateUntilCommitAndSurviveOrbitChanges()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1), "Enemy intent is the only initial action.");
+            Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
+            Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
+            Assert.That(controller.CardPlayState, Is.EqualTo(CardPlaySessionState.TargetSelected));
+            Assert.That(controller.CardHand.InteractionState, Is.EqualTo(CardHandInteractionState.Targeting));
+            Assert.That(controller.BoardRangePreview.ActiveCoordinates,
+                Is.EqualTo(new[] { new HexCoord(1, 0), new HexCoord(2, 0) }));
+            Assert.That(controller.BoardRangePreview.MissingCoordinates,
+                Is.EqualTo(new[] { new HexCoord(3, 0) }));
+
+            foreach (var yaw in new[] { 0f, 90f, 180f, 270f })
+            {
+                controller.SetBoardView(yaw);
+                Assert.That(controller.BoardRangePreview.ActiveCoordinates,
+                    Is.EqualTo(new[] { new HexCoord(1, 0), new HexCoord(2, 0) }));
+            }
+
+            Assert.That(controller.PreviewTimelineSelected(2, 1), Is.False);
+            Assert.That(controller.TimelinePreview.IsValid, Is.False);
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+
+            Assert.That(controller.PreviewTimelineSelected(0, 0), Is.True);
+            Assert.That(controller.TimelinePreview.IsValid, Is.True);
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(controller.CardHand.InteractionState, Is.EqualTo(CardHandInteractionState.Scheduling));
+
+            Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
+            Assert.That(controller.BoardRangePreview.ActiveCoordinates, Is.Empty);
+            Assert.That(controller.TimelinePreview.ActiveCoordinates, Is.Empty);
+            Assert.That(controller.CardHand.gameObject.activeSelf, Is.False);
+            Assert.That(controller.BoardCamera.InputEnabled, Is.True);
+
+            var snapshot = controller.ResolveTimeline();
+            Assert.That(snapshot.TargetHpAfter, Is.Zero);
+            Assert.That(snapshot.EnemyIntentResolved, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator CardArtwork_BlocksWorldInputAndKeepsOriginalAspect()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            Canvas.ForceUpdateCanvases();
+
+            var artwork = controller.CardHand.Artwork;
+            Assert.That(artwork, Is.Not.Null);
+            Assert.That(artwork.preserveAspect, Is.True);
+            Assert.That(artwork.sprite.texture.width, Is.EqualTo(1135));
+            Assert.That(artwork.sprite.texture.height, Is.EqualTo(1590));
+
+            var worldCenter = artwork.rectTransform.TransformPoint(artwork.rectTransform.rect.center);
+            var screenCenter = RectTransformUtility.WorldToScreenPoint(controller.SceneCamera, worldCenter);
+            Assert.That(controller.IsScreenPointOverInterface(screenCenter), Is.True);
+            Assert.That(controller.TrySelectWorldAtScreenPoint(screenCenter), Is.False);
+            Assert.That(controller.SelectedTile, Is.Null);
         }
 
         private static IEnumerator LoadSlice()

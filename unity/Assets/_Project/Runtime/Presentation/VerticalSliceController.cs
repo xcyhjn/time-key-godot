@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using TimeKey.Domain;
 using TimeKey.Infrastructure;
+using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Targeting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -16,12 +18,15 @@ namespace TimeKey.Presentation
         public const int FixtureSeed = 731;
         public const float HexBlockHeight = 0.32f;
 
+        private static readonly HexCoord TargetCoordinate = new HexCoord(1, 0);
+
         [SerializeField] private TextAsset lightingFixture = null;
 
         private readonly List<Button> _timelineButtons = new List<Button>(36);
         private readonly Dictionary<HexCoord, BoardTileView> _tiles = new Dictionary<HexCoord, BoardTileView>();
         private GameObject _generatedRoot;
         private CardDefinition _lightingCard;
+        private CardPlaySession _cardPlaySession;
         private CombatSliceState _state;
         private TimelineGrid _timeline;
         private CardDefinition _selectedCard;
@@ -30,7 +35,6 @@ namespace TimeKey.Presentation
         private ResolutionSnapshot _lastSnapshot;
         private Text _statusText;
         private Text _targetText;
-        private Button _cardButton;
         private Button _resolveButton;
         private Renderer _targetRenderer;
         private GameObject _targetObject;
@@ -41,6 +45,10 @@ namespace TimeKey.Presentation
         private GameObject _grassTilePrefab;
         private GameObject _dirtTilePrefab;
         private BoardTileView _selectedTile;
+        private CardHandView _cardHandView;
+        private BoardRangePreview _boardRangePreview;
+        private TimelinePlacementPreview _timelinePlacementPreview;
+        private Sprite _lightingCardSprite;
 
         public int CurrentTargetHp => _state == null ? 0 : _state.TargetHp;
 
@@ -49,6 +57,8 @@ namespace TimeKey.Presentation
         public int TimelineSlotCount => _timelineButtons.Count;
 
         public int BoardTileCount => _tiles.Count;
+
+        public int TimelineOccupiedCellCount => _timeline == null ? 0 : _timeline.OccupiedCellCount;
 
         public HexCoord? SelectedTile => _selectedTile == null ? (HexCoord?)null : _selectedTile.Coordinate;
 
@@ -60,6 +70,15 @@ namespace TimeKey.Presentation
 
         public BoardOrbitCameraController BoardCamera { get; private set; }
 
+        public CardHandView CardHand => _cardHandView;
+
+        public BoardRangePreview BoardRangePreview => _boardRangePreview;
+
+        public TimelinePlacementPreview TimelinePreview => _timelinePlacementPreview;
+
+        public CardPlaySessionState? CardPlayState =>
+            _cardPlaySession == null ? (CardPlaySessionState?)null : _cardPlaySession.State;
+
         private void Awake()
         {
             BuildSceneGraph();
@@ -67,7 +86,10 @@ namespace TimeKey.Presentation
 
         private void Update()
         {
-            if (_generatedRoot == null || BoardCamera == null || BoardCamera.IsManipulating)
+            if (_generatedRoot == null ||
+                BoardCamera == null ||
+                BoardCamera.IsManipulating ||
+                (_cardHandView != null && _cardHandView.IsDragging))
             {
                 return;
             }
@@ -126,6 +148,8 @@ namespace TimeKey.Presentation
 
             _generatedRoot = new GameObject("GeneratedSlice");
             _generatedRoot.transform.SetParent(transform, false);
+            _boardRangePreview = _generatedRoot.AddComponent<BoardRangePreview>();
+            _timelinePlacementPreview = _generatedRoot.AddComponent<TimelinePlacementPreview>();
 
             BuildWorld();
             BuildInterface();
@@ -136,13 +160,21 @@ namespace TimeKey.Presentation
         public bool SelectCard(string stableId)
         {
             EnsureBuilt();
-            if (!string.Equals(stableId, _lightingCard.StableId, StringComparison.Ordinal))
+            if (!string.Equals(stableId, _lightingCard.StableId, StringComparison.Ordinal) ||
+                _playerCell.HasValue ||
+                _lastSnapshot != null)
             {
                 return false;
             }
 
             _selectedCard = _lightingCard;
-            SetButtonColor(_cardButton, new Color(0.18f, 0.72f, 0.78f, 1f));
+            _selectedTargetId = null;
+            _boardRangePreview.Clear();
+            _timelinePlacementPreview.Clear();
+            _cardPlaySession = new CardPlaySession(_lightingCard);
+            _cardHandView.gameObject.SetActive(true);
+            _cardHandView.SetInteractionState(CardHandInteractionState.Selected);
+            BoardCamera.InputEnabled = false;
             SetStatus("LIGHTING selected. Click the red target in the 3D battlefield.");
             return true;
         }
@@ -150,14 +182,51 @@ namespace TimeKey.Presentation
         public bool SelectTarget(string targetId)
         {
             EnsureBuilt();
-            if (_selectedCard == null || !string.Equals(targetId, TargetId, StringComparison.Ordinal))
+            if (_selectedCard == null ||
+                _cardPlaySession == null ||
+                !string.Equals(targetId, TargetId, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var transition = _cardPlaySession.SelectTarget(targetId, TargetCoordinate);
+            if (!transition.Succeeded)
             {
                 return false;
             }
 
             _selectedTargetId = targetId;
-            _targetText.text = "TARGET 01  |  HP 10 / 10  |  LOCKED";
+            _boardRangePreview.Show(TargetCoordinate, _selectedCard.Range);
+            _timelinePlacementPreview.Clear();
+            _cardHandView.SetInteractionState(CardHandInteractionState.Targeting);
+            _targetText.text = string.Format("TARGET 01  |  HP {0} / 10  |  LOCKED", CurrentTargetHp);
             SetStatus("Target locked. Place LIGHTING in an open timeline slot.");
+            return true;
+        }
+
+        public bool CancelSelectedCard()
+        {
+            EnsureBuilt();
+            if (_cardPlaySession == null)
+            {
+                return false;
+            }
+
+            var transition = _cardPlaySession.Cancel();
+            if (!transition.Succeeded)
+            {
+                return false;
+            }
+
+            _selectedCard = null;
+            _selectedTargetId = null;
+            _cardPlaySession = null;
+            _boardRangePreview.Clear();
+            _timelinePlacementPreview.Clear();
+            _cardHandView.SetInteractionState(CardHandInteractionState.Idle);
+            BoardCamera.InputEnabled = true;
+            _targetText.text = string.Format("TARGET 01  |  HP {0} / 10", CurrentTargetHp);
+            SetStatus("Card cancelled. Select LIGHTING to begin again.");
             return true;
         }
 
@@ -210,6 +279,11 @@ namespace TimeKey.Presentation
                 return SelectTarget(target.TargetId);
             }
 
+            if (_cardPlaySession != null)
+            {
+                return false;
+            }
+
             var tile = hit.collider.GetComponentInParent<BoardTileView>();
             return tile != null && SelectTile(tile.Coordinate);
         }
@@ -257,24 +331,70 @@ namespace TimeKey.Presentation
         public bool TryPlaceSelected(int column, int row)
         {
             EnsureBuilt();
-            if (_selectedCard == null || string.IsNullOrEmpty(_selectedTargetId) || _playerCell.HasValue)
+            if (_selectedCard == null ||
+                _cardPlaySession == null ||
+                string.IsNullOrEmpty(_selectedTargetId) ||
+                _playerCell.HasValue)
             {
                 return false;
             }
 
             var cell = new TimelineCell(column, row);
-            var action = TimelineAction.FromCard(_selectedCard, _selectedTargetId, cell);
-            if (!_timeline.TryPlace(action))
+            var preview = _cardPlaySession.PreviewTimeline(_timeline, cell);
+            _timelinePlacementPreview.Show(cell, _selectedCard.Shape, preview.IsPlacementValid);
+            _cardHandView.SetInteractionState(CardHandInteractionState.Scheduling);
+            if (!preview.IsPlacementValid)
             {
                 SetStatus("That timeline slot is occupied or outside the 12 x 3 grid.");
                 return false;
             }
 
+            var commit = _cardPlaySession.Commit(_timeline);
+            if (!commit.Succeeded)
+            {
+                SetStatus("LIGHTING could not be committed to the timeline.");
+                return false;
+            }
+
             _playerCell = cell;
+            _boardRangePreview.Clear();
+            _timelinePlacementPreview.Clear();
             SetTimelineCell(cell, "LIGHT", new Color(0.16f, 0.74f, 0.82f, 1f));
             _resolveButton.interactable = true;
+            _cardHandView.SetInteractionState(CardHandInteractionState.Disabled);
+            _cardHandView.gameObject.SetActive(false);
+            BoardCamera.InputEnabled = true;
             SetStatus("LIGHTING placed. Resolve to apply damage before the enemy intent.");
             return true;
+        }
+
+        public bool PreviewTimelineSelected(int column, int row)
+        {
+            EnsureBuilt();
+            if (_selectedCard == null ||
+                _cardPlaySession == null ||
+                string.IsNullOrEmpty(_selectedTargetId) ||
+                _playerCell.HasValue)
+            {
+                return false;
+            }
+
+            var cell = new TimelineCell(column, row);
+            var transition = _cardPlaySession.PreviewTimeline(_timeline, cell);
+            _timelinePlacementPreview.Show(cell, _selectedCard.Shape, transition.IsPlacementValid);
+            _cardHandView.SetInteractionState(CardHandInteractionState.Scheduling);
+            SetStatus(transition.IsPlacementValid
+                ? "Timeline position is legal. Click to confirm LIGHTING."
+                : "Timeline position conflicts or falls outside the 12 x 3 grid.");
+            return transition.IsPlacementValid;
+        }
+
+        public void ClearTimelinePreview()
+        {
+            if (_timelinePlacementPreview != null && !_playerCell.HasValue)
+            {
+                _timelinePlacementPreview.Clear();
+            }
         }
 
         public ResolutionSnapshot ResolveTimeline()
@@ -286,6 +406,8 @@ namespace TimeKey.Presentation
             }
 
             _lastSnapshot = _timeline.Resolve(_state);
+            _boardRangePreview.Clear();
+            _timelinePlacementPreview.Clear();
             _targetText.text = "TARGET 01  |  HP 0 / 10  |  DISABLED";
             _targetMaterial.color = new Color(0.24f, 0.68f, 0.46f, 1f);
             _resolveButton.interactable = false;
@@ -431,26 +553,25 @@ namespace TimeKey.Presentation
                         string.Format("{0:00}", column + 1),
                         new Color(0.16f, 0.19f, 0.20f, 1f));
                     button.onClick.AddListener(() => TryPlaceSelected(capturedColumn, capturedRow));
+                    AddTimelinePreviewEvents(button, capturedColumn, capturedRow);
+                    _timelinePlacementPreview.Register(
+                        new TimelineCell(column, row),
+                        button.targetGraphic);
                     _timelineButtons.Add(button);
                 }
             }
 
-            var cardPanel = CreatePanel(
-                SceneCanvas.transform,
-                "CardPanel",
-                Vector2.zero,
-                Vector2.zero,
-                new Vector2(24f, 24f),
-                new Vector2(364f, 224f),
-                new Color(0.08f, 0.10f, 0.11f, 0.96f));
-            CreateText(cardPanel.transform, "CardTitle", "LIGHTING", 30, TextAnchor.MiddleLeft,
-                new Vector2(20f, 112f), new Vector2(-20f, -18f));
-            CreateText(cardPanel.transform, "CardBody", "DAMAGE 100\nRANGE 3 HEXES\nSHAPE 1 CELL", 19, TextAnchor.UpperLeft,
-                new Vector2(20f, 48f), new Vector2(-20f, -76f));
-            _cardButton = CreateButton(cardPanel.transform, "SelectCard", "SELECT CARD", new Color(0.22f, 0.34f, 0.36f, 1f));
-            SetRect(_cardButton.GetComponent<RectTransform>(), Vector2.zero, Vector2.zero,
-                new Vector2(20f, 18f), new Vector2(320f, 64f));
-            _cardButton.onClick.AddListener(() => SelectCard(LightingCardId));
+            _lightingCardSprite = CreateOriginalSprite("Art/Battle/Cards/lighting");
+            var cardHandObject = new GameObject("CardHand", typeof(RectTransform));
+            cardHandObject.transform.SetParent(SceneCanvas.transform, false);
+            _cardHandView = cardHandObject.AddComponent<CardHandView>();
+            _cardHandView.Build(new CardViewModel(LightingCardId, _lightingCardSprite, false, true));
+            _cardHandView.CardSelected += stableId =>
+            {
+                SelectCard(stableId);
+            };
+            _cardHandView.CardCancelRequested += HandleCardCancelRequested;
+            _cardHandView.CardDragChanged += HandleCardDragChanged;
 
             var detailPanel = CreatePanel(
                 SceneCanvas.transform,
@@ -495,6 +616,51 @@ namespace TimeKey.Presentation
             var tileView = tile.AddComponent<BoardTileView>();
             tileView.Initialize(coordinate, renderers.ToArray());
             _tiles.Add(coordinate, tileView);
+            _boardRangePreview.Register(coordinate, tileView);
+        }
+
+        private void AddTimelinePreviewEvents(Button button, int column, int row)
+        {
+            var trigger = button.gameObject.AddComponent<EventTrigger>();
+            trigger.triggers = new List<EventTrigger.Entry>();
+
+            var enter = new EventTrigger.Entry
+            {
+                eventID = EventTriggerType.PointerEnter,
+                callback = new EventTrigger.TriggerEvent()
+            };
+            enter.callback.AddListener(_ => PreviewTimelineSelected(column, row));
+            trigger.triggers.Add(enter);
+
+            var exit = new EventTrigger.Entry
+            {
+                eventID = EventTriggerType.PointerExit,
+                callback = new EventTrigger.TriggerEvent()
+            };
+            exit.callback.AddListener(_ => ClearTimelinePreview());
+            trigger.triggers.Add(exit);
+        }
+
+        private void HandleCardCancelRequested(string stableId)
+        {
+            if (string.Equals(stableId, LightingCardId, StringComparison.Ordinal))
+            {
+                CancelSelectedCard();
+            }
+        }
+
+        private void HandleCardDragChanged(string stableId, Vector2 pointerPosition, CardDragPhase phase)
+        {
+            if (!string.Equals(stableId, LightingCardId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (phase == CardDragPhase.Started || phase == CardDragPhase.Moved)
+            {
+                BoardCamera.InputEnabled = false;
+                SetStatus("LIGHTING held. Choose a target and timeline position.");
+            }
         }
 
         private void PlaceEnemyIntent()
@@ -691,6 +857,7 @@ namespace TimeKey.Presentation
             DestroyOwnedObject(_groundMaterial);
             DestroyOwnedObject(_hexMesh);
             DestroyOwnedObject(_centerAltarSprite);
+            DestroyOwnedObject(_lightingCardSprite);
         }
 
         private static void DestroyOwnedObject(UnityEngine.Object value)

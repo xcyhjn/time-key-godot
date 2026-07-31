@@ -1,6 +1,6 @@
 # Wave 01 集成契约
 
-> 状态：已冻结
+> 状态：Wave 01 与 Wave 02B1 实际 API 已冻结
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
@@ -47,7 +47,7 @@ fixture 固定 `stableId=lighting`、`targetId=target-01`。Controller 通过 `C
 
 ## Wave 02B1 卡牌交互契约
 
-> 状态：待 Agent 实现；语义已冻结
+> 状态：已实现、主智能体审查并冻结
 
 ### Domain
 
@@ -77,7 +77,7 @@ event CardDragChanged(stableId, pointerPosition, phase)
 ### Board and timeline preview
 
 ```text
-BoardRangePreview.Register(HexCoord, BoardTileView)
+BoardRangePreview.Register(HexCoord, Component)
 BoardRangePreview.Show(center, relativeOffsets)
 BoardRangePreview.Clear()
 TimelinePlacementPreview.Show(origin, shape, isValid)
@@ -86,13 +86,15 @@ TimelinePlacementPreview.Clear()
 
 `lighting` 范围固定为 `(0,0),(1,0),(2,0)`。Board preview 只投影坐标并设置表现；Timeline preview 的 `isValid` 必须来自 Domain `CanPlace`，不得复制边界/冲突规则。所有清理幂等，镜头变化不改变坐标集合。
 
+实际实现另外暴露只读诊断集合 `BoardRangePreview.ActiveCoordinates`、`MissingCoordinates`，用于证明真实格与越界格不会混淆。`CardHandView.ApplyVisualStateImmediate()` 仅供 Editor harness 在无帧等待的截图阶段同步视觉状态，不参与玩法判断。
+
 ### 主智能体共享接线
 
 现有 `VerticalSliceController` 公共方法必须保持兼容。主智能体在 Agent 交回所有权后独占修改 Controller、`BoardTileView`、共享场景和 Editor harness，把 UI 事件接到现有选卡/目标/放置/结算链。Agent 不得直接改这些共享文件。
 
 ## 场景与截图
 
-场景路径固定：`Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`。Editor harness 输出证据到 `docs/migration/unity-3d/04-verification/evidence/unity-slice-01/`，文件名至少包含视口尺寸。PlayMode 测试通过场景控制器的公共交互方法驱动，不依赖屏幕坐标。
+场景路径固定：`Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`。Wave 02B1 Editor harness 输出证据到 `docs/migration/unity-3d/04-verification/evidence/unity-slice-02b1/`，文件名包含视口尺寸和交互状态。PlayMode 测试优先通过场景控制器的公共交互面驱动，并对真实右键 UI 事件链另做集成覆盖。
 
 ## 版本与提交
 

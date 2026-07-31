@@ -1,6 +1,6 @@
 # 多智能体所有权图
 
-> 状态：Wave 02A 已交接；Wave 02B1 所有权待执行
+> 状态：Wave 02B1 四个 Agent 均已完成并交回所有权
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
@@ -14,10 +14,10 @@
 | Agent 02 / Data adapter | `unity/Assets/_Project/Runtime/Infrastructure/**`、`unity/Assets/_Project/Content/Cards/**`、`unity/Assets/_Project/Tests/Infrastructure/**`、自己的报告 | Domain API | 已完成并交回 |
 | Agent 03 / Battle view | Prompt 中定义的 Presentation/Scene/PlayMode 路径 | Domain + adapter | 未启动；所有权在无并行写入时显式交回主智能体 |
 | Wave 02 Agent 01 / Hex tile model | `ArtSource/HexTiles/**`、`Resources/Art/Battle/Models/**`、独占证据与报告 | 冻结几何契约 | 已完成并交回；主智能体只在 Presentation 中接入 FBX |
-| Wave 02B Agent 01 / Card art | `Resources/Art/Battle/Cards/**`、独占证据与报告 | 原素材哈希 | 待启动；可与 Agent 02 并行 |
-| Wave 02B Agent 02 / Card Domain | `Runtime/Domain/**`、`Tests/EditMode/**`、独占报告 | Wave 02B1 语义契约 | 待启动；可与 Agent 01 并行 |
-| Wave 02B Agent 03 / Card hand UI | `Runtime/Presentation/Cards/**`、`Prefabs/Battle/Cards/**`、`Tests/PlayMode/Cards/**`、独占证据与报告 | Agent 01 + Agent 02 | 待 Wave A 审查后启动 |
-| Wave 02B Agent 04 / Target preview | `Runtime/Presentation/Targeting/**`、`Tests/PlayMode/Targeting/**`、独占证据与报告 | Agent 02 | 待 Wave A 审查后启动 |
+| Wave 02B Agent 01 / Card art | `Resources/Art/Battle/Cards/**`、独占证据与报告 | 原素材哈希 | Wave A 完成并交回；原卡面/牌背哈希通过 |
+| Wave 02B Agent 02 / Card Domain | `Runtime/Domain/**`、`Tests/EditMode/**`、独占报告 | Wave 02B1 语义契约 | Wave A 完成并交回；主智能体审查后冻结实际 API |
+| Wave 02B Agent 03 / Card hand UI | `Runtime/Presentation/Cards/**`、`Prefabs/Battle/Cards/**`、`Tests/PlayMode/Cards/**`、独占证据与报告 | Agent 01 + Agent 02 | Wave B 完成并交回；主智能体已接线共享 Controller |
+| Wave 02B Agent 04 / Target preview | `Runtime/Presentation/Targeting/**`、`Tests/PlayMode/Targeting/**`、独占证据与报告 | Agent 02 | Wave B 完成并交回；主智能体已接线共享棋盘/时间轴 |
 
 Agent 01 完成后启动 Agent 02。两项依赖落盘并经主智能体审查后，没有再启动 Agent 03；主智能体在确认该路径从未被代理写入后接管 Presentation、场景和 PlayMode 集成，避免新增一次接口交接。全程没有并发写同一路径。
 
@@ -39,3 +39,5 @@ Domain、Infrastructure、Presentation 的运行时代码和各自测试/报告�
 - Wave B：Agent 03 与 Agent 04 可并行；`Cards/**` 与 `Targeting/**`、各自测试/证据/报告完全互斥。
 - 主智能体始终独占 `VerticalSliceController.cs`、`BoardTileView.cs`、场景、Editor harness、asmdef、ProjectSettings、共享文档、最终证据和 Git。
 - 任何时刻只允许一个 Unity Editor/batchmode 实例，防止工程锁和低内存互相污染。
+
+实际执行严格遵循上述两波：Agent 01/02 并行完成后，主智能体审查原素材哈希、`TimelineGrid.CanPlace` 与 `CardPlaySession` 并收回所有权；随后 Agent 03/04 并行。四个 Agent 均只写各自 Prompt 的互斥路径，最后由主智能体独占共享 Controller、Harness、测试集成、迁移账本与 Git。

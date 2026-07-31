@@ -12,7 +12,7 @@ $UnityEditor = 'C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe'
 $GodotConsole = 'D:\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe'
 $RepositoryRoot = (Get-Location).Path
 $UnityProjectAlias = 'D:\timekey-unity-731'
-$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\unity-slice-02-board'
+$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\unity-slice-02b1'
 $env:ALLUSERSPROFILE = $env:ProgramData
 $env:TIMEKEY_REPOSITORY_ROOT = $RepositoryRoot
 ```
@@ -55,10 +55,12 @@ if ($UnityProcess.ExitCode -ne 0) { throw "Harness/build failed: $($UnityProcess
 构建产物运行时冒烟：
 
 ```powershell
-$Player = Join-Path $RepositoryRoot 'unity\Builds\Windows\TimeKeySlice.exe'
-$PlayerArguments = @('-batchmode', '-timekeySmokeQuit', '-logFile', (Join-Path $EvidenceDirectory 'player-startup.log'))
+$Player = Join-Path $UnityProjectAlias 'Builds\Windows\TimeKeySlice.exe'
+$PlayerLog = Join-Path $UnityProjectAlias 'player-startup.log'
+$PlayerArguments = @('-batchmode', '-timekeySmokeQuit', '-logFile', $PlayerLog)
 $PlayerProcess = Start-Process -FilePath $Player -ArgumentList $PlayerArguments -Wait -PassThru -WindowStyle Hidden
 if ($PlayerProcess.ExitCode -ne 0) { throw "Player smoke failed: $($PlayerProcess.ExitCode)" }
+if (-not (Select-String -LiteralPath $PlayerLog -Pattern 'TIMEKEY_PLAYER_SMOKE_PASS' -Quiet)) { throw 'Player smoke marker missing' }
 ```
 
 Git 卫生：
