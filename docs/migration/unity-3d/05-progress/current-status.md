@@ -17,7 +17,9 @@ Slice 01 和 Wave 02A 的既有契约继续成立。Wave 02B1 新增：原 `ligh
 
 范围决策不变：接下来只扩展局内卡牌、敌人、建筑和胜负；局外流程保持 Godot 现状。Wave 02B2 先做七张真实 fixture 的统一 schema 与每类效果的最小确定性 Domain 闭环，不提前接敌方/建筑行动或局外场景。
 
-下一动作：完整读取并执行 `00-bootstrap/NEXT_STAGE_EFFECTS_PROMPT.md`，先冻结七卡 schema/效果验收，再按该文档的互斥所有权启动下一波 Agent；不得重跑已关闭的 Wave 00/01/02A/02B1。
+远端状态：Wave 02B1 实现检查点为 `5c6492a`。连续三次 push 因本机无法连接 GitHub 443 失败；没有 rebase、amend 或其他历史改写。网络恢复后先执行 `git push origin unity_7.31`。
+
+随后完整读取并执行 `00-bootstrap/NEXT_STAGE_EFFECTS_PROMPT.md`，先冻结七卡 schema/效果验收，再按该文档的互斥所有权启动下一波 Agent；不得重跑已关闭的 Wave 00/01/02A/02B1。
 
 ```powershell
 Get-Content -Raw 'docs/migration/unity-3d/00-bootstrap/NEXT_STAGE_EFFECTS_PROMPT.md' |
