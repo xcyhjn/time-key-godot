@@ -1,0 +1,776 @@
+WorkerThreadPool: 24 threads, 7 max low-priority.
+Godot Engine v4.6.2.stable.official.71f334935 - https://godotengine.org
+TextServer: Added interface "Dummy"
+TextServer: Added interface "ICU / HarfBuzz / Graphite (Built-in)"
+Unrecognized output string "misc2" in mapping:
+030000008a2e0000dd10000000000000,Hand Held Legend GC Ultimate,a:b0,b:b2,back:b17,dpdown:b5,dpleft:b6,dpright:b7,dpup:b4,guide:b18,leftshoulder:b10,leftstick:b8,lefttrigger:a3,leftx:a0,lefty:a1,misc1:b19,misc2:b24,paddle1:b13,paddle2:b12,rightshoulder:b11,rightstick:b9,righttrigger:a4,rightx:a2,righty:a5,start:b16,x:b1,y:b3,platform:Windows,
+Unrecognized output string "misc2" in mapping:
+030000000d0f00000202000000000000,Horipad O Nintendo Switch 2 Controller,a:b1,b:b0,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:b6,leftx:a0,lefty:a1,misc1:b13,misc2:b14,rightshoulder:b5,rightstick:b11,righttrigger:b7,rightx:a2,righty:a3,start:b9,x:b3,y:b2,platform:Windows,
+Unrecognized output string "misc2" in mapping:
+030000000d0f00009601000000000000,Horipad Steam,a:b0,b:b1,back:b10,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b6,leftstick:b13,lefttrigger:b8,leftx:a0,lefty:a1,misc2:b2,paddle1:b5,paddle2:b15,paddle3:b18,paddle4:b19,rightshoulder:b7,rightstick:b14,righttrigger:b9,rightx:a3,righty:a4,start:b11,x:b3,y:b4,platform:Windows,
+Unrecognized output string "misc2" in mapping:
+030000007e0500006920000000000000,Nintendo Switch 2 Pro Controller,a:b0,b:b1,back:b14,dpdown:b8,dpleft:b10,dpright:b9,dpup:b11,guide:b16,leftshoulder:b12,leftstick:b15,lefttrigger:b13,leftx:a0,lefty:a1~,misc1:b17,misc2:b20,paddle1:b18,paddle2:b19,rightshoulder:b4,rightstick:b7,righttrigger:b5,rightx:a2,righty:a3~,start:b6,x:b2,y:b3,platform:Windows,
+Using "default" pen tablet driver...
+
+TextServer: Primary interface set to: "ICU / HarfBuzz / Graphite (Built-in)".
+Loading resource: res://default_bus_layout.tres
+CORE API HASH: 4039755037
+EDITOR API HASH: 223528947
+SceneTreeFTI: traversal method DEFAULT
+Loading resource: res://addons/dialogic/Resources/CharacterResourceLoader.gd
+Loading resource: res://addons/dialogic/Resources/TimelineResourceLoader.gd
+Loading resource: res://addons/dialogic/Resources/CharacterResourceSaver.gd
+Loading resource: res://addons/dialogic/Resources/TimelineResourceSaver.gd
+Loading resource: res://scene/global/global.tscn
+Loading resource: res://scene/global/global.gd
+Loading resource: res://scene/global/map_data.gd
+Loading resource: res://scene/global/global_clock.tscn
+Loading resource: res://scene/global/global_clock.gd
+Loading resource: res://image/texture/hexagon_frame.png
+Loading resource: res://.godot/imported/hexagon_frame.png-a81be627fc1792eb21dd2de31bdccb71.ctex
+Loading resource: res://shaders/enemy_intent_target_ripple.gdshader
+Loading resource: res://scene/in_scene/vfx/default_tile_vfx_registry.tres
+Loading resource: res://scene/in_scene/vfx/tile_vfx_registry.gd
+Loading resource: res://scene/in_scene/vfx/default_tile_vfx_profile.tres
+Loading resource: res://scene/in_scene/vfx/tile_vfx_profile.gd
+Loading resource: res://scene/in_scene/effect/tile_recover_vfx.tscn
+Loading resource: res://scene/in_scene/vfx/tile_sprite_vfx.gd
+Loading resource: res://image/effect/recover.png
+Loading resource: res://.godot/imported/recover.png-baa09c890407850b51073f5bb59760fb.ctex
+Loading resource: res://scene/in_scene/effect/tile_poison_vfx.tscn
+Loading resource: res://image/effect/poison.png
+Loading resource: res://.godot/imported/poison.png-bbd511f928132b853d39620755e60090.ctex
+Loading resource: res://scene/in_scene/vfx/default_hurt_vfx_profile.tres
+Loading resource: res://scene/in_scene/vfx/hurt_vfx_profile.gd
+Loading resource: res://scene/in_scene/timer_ui.gd
+Loading resource: res://image/clock/frame_000.png
+Loading resource: res://.godot/imported/frame_000.png-768a2f963845ea4b656b56aaeaf3a242.ctex
+Loading resource: res://shaders/global_clock.gdshader
+Loading resource: res://image/clock/frame_001.png
+Loading resource: res://.godot/imported/frame_001.png-c4755503372bbd522e6878ababc399e3.ctex
+Loading resource: res://image/clock/frame_002.png
+Loading resource: res://.godot/imported/frame_002.png-07753d5b89388cd940b5e77e5d2431a3.ctex
+Loading resource: res://image/clock/frame_003.png
+Loading resource: res://.godot/imported/frame_003.png-c934e064c84dd064fa402d4749eaa506.ctex
+Loading resource: res://image/clock/frame_004.png
+Loading resource: res://.godot/imported/frame_004.png-cac0607a8773ca7ad1b06711acc2748e.ctex
+Loading resource: res://image/clock/frame_005.png
+Loading resource: res://.godot/imported/frame_005.png-50de187df10e7bcd9213fdd26981ceba.ctex
+Loading resource: res://image/clock/frame_006.png
+Loading resource: res://.godot/imported/frame_006.png-c75988b79aa4f5372c353b582e50b8f2.ctex
+Loading resource: res://image/clock/frame_007.png
+Loading resource: res://.godot/imported/frame_007.png-9f8fdcb26bc2cff50e2a055b89155a35.ctex
+Loading resource: res://scene/in_scene/timer.gd
+Loading resource: res://addons/dialogic/Modules/Background/DefaultBackgroundScene/default_background.tscn
+Loading resource: res://addons/dialogic/Modules/Background/DefaultBackgroundScene/default_background.gd
+Loading resource: res://addons/dialogic/Modules/Character/default_portrait.tscn
+Loading resource: res://addons/dialogic/Modules/Character/default_portrait.gd
+Loading resource: res://scene/global/sound_manager.gd
+Loaded system CA certificates
+Loading resource: res://scene/game_start/game_start.tscn
+Loading resource: res://image/key.png
+Loading resource: res://.godot/imported/key.png-53326cd638b3014d6ffe58c86908cfc4.ctex
+Loading resource: res://scene/game_start/game_start.gd
+Loading resource: res://fonts/ark-pixel-12px-proportional-zh_cn.otf
+Loading resource: res://.godot/imported/ark-pixel-12px-proportional-zh_cn.otf-8693e5fdca1b4e3f6ec9852509cb3cb8.fontdata
+[GlobalTimecoin] 时间币全局数据中心已加载
+[GlobalTimecoin] 当前空位转货币比例: 1.00
+[GlobalTimecoin] 已连接 timecoin_updated 到 SignalBus
+[GlobalTimecoin] 已连接 timecoin_insufficient 到 SignalBus
+Loading resource: res://addons/dialogic/Modules/Audio/index.gd
+Loading resource: res://addons/dialogic/Modules/Background/index.gd
+Loading resource: res://addons/dialogic/Modules/Call/index.gd
+Loading resource: res://addons/dialogic/Modules/Character/index.gd
+Loading resource: res://addons/dialogic/Modules/Choice/index.gd
+Loading resource: res://addons/dialogic/Modules/Clear/index.gd
+Loading resource: res://addons/dialogic/Modules/Comment/index.gd
+Loading resource: res://addons/dialogic/Modules/Condition/index.gd
+Loading resource: res://addons/dialogic/Modules/Core/index.gd
+Loading resource: res://addons/dialogic/Modules/DefaultLayoutParts/index.gd
+Loading resource: res://addons/dialogic/Modules/End/index.gd
+Loading resource: res://addons/dialogic/Modules/Glossary/index.gd
+Loading resource: res://addons/dialogic/Modules/HighlightPortrait/index.gd
+Loading resource: res://addons/dialogic/Modules/History/index.gd
+Loading resource: res://addons/dialogic/Modules/Jump/index.gd
+Loading resource: res://addons/dialogic/Modules/LayeredPortrait/index.gd
+Loading resource: res://addons/dialogic/Modules/Save/index.gd
+Loading resource: res://addons/dialogic/Modules/Settings/index.gd
+Loading resource: res://addons/dialogic/Modules/Signal/index.gd
+Loading resource: res://addons/dialogic/Modules/Style/index.gd
+Loading resource: res://addons/dialogic/Modules/StyleEditor/index.gd
+Loading resource: res://addons/dialogic/Modules/Text/index.gd
+Loading resource: res://addons/dialogic/Modules/TextInput/index.gd
+Loading resource: res://addons/dialogic/Modules/Variable/index.gd
+Loading resource: res://addons/dialogic/Modules/Voice/index.gd
+Loading resource: res://addons/dialogic/Modules/Wait/index.gd
+Loading resource: res://addons/dialogic/Modules/WaitInput/index.gd
+Loading resource: res://addons/dialogic/Modules/Audio/event_audio.gd
+Loading resource: res://addons/dialogic/Modules/Background/event_background.gd
+Loading resource: res://addons/dialogic/Modules/Call/event_call.gd
+Loading resource: res://addons/dialogic/Modules/Clear/event_clear.gd
+Loading resource: res://addons/dialogic/Modules/Comment/event_comment.gd
+Loading resource: res://addons/dialogic/Modules/Condition/event_condition.gd
+Loading resource: res://addons/dialogic/Modules/End/event_end.gd
+Loading resource: res://addons/dialogic/Modules/History/event_history.gd
+Loading resource: res://addons/dialogic/Modules/Jump/event_return.gd
+Loading resource: res://addons/dialogic/Modules/Save/event_save.gd
+Loading resource: res://addons/dialogic/Modules/Settings/event_setting.gd
+Loading resource: res://addons/dialogic/Modules/Signal/event_signal.gd
+Loading resource: res://addons/dialogic/Modules/Style/event_style.gd
+Loading resource: res://addons/dialogic/Modules/TextInput/event_text_input.gd
+Loading resource: res://addons/dialogic/Modules/Variable/event_variable.gd
+Loading resource: res://addons/dialogic/Modules/Wait/event_wait.gd
+Loading resource: res://addons/dialogic/Modules/WaitInput/event_wait_input.gd
+[2026-07-31T04:17:53.986][BOOT] SceneLog ready
+[SoundManager] 音频系统初始化完成
+XR: Clearing primary interface
+XR: Removed interface "Native mobile"
+XR: Removed interface "OpenXR"
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)
+Leaked instance: GDScriptNativeClass:9223372049353802445 - Reference count: 23
+Leaked instance: GDScriptNativeClass:9223372052759577496 - Reference count: 1
+Leaked instance: GDScript:9223372064520406472 - Reference count: 1
+Leaked instance: GDScript:9223372066332345811 - Reference count: 1
+Leaked instance: GDScript:9223372066701444566 - Reference count: 1
+Leaked instance: GDScript:9223372066986657240 - Reference count: 1
+Leaked instance: GDScript:9223372067271869914 - Reference count: 1
+Leaked instance: GDScript:9223372067557082588 - Reference count: 1
+Leaked instance: GDScript:9223372067842295262 - Reference count: 1
+Leaked instance: GDScript:9223372068127507936 - Reference count: 1
+Leaked instance: GDScript:9223372068412720610 - Reference count: 1
+Leaked instance: GDScript:9223372068697933284 - Reference count: 1
+Leaked instance: GDScript:9223372068983145958 - Reference count: 1
+Leaked instance: GDScript:9223372069268358632 - Reference count: 1
+Leaked instance: GDScript:9223372069553571306 - Reference count: 1
+Leaked instance: GDScript:9223372069838783980 - Reference count: 1
+Leaked instance: GDScript:9223372070123996654 - Reference count: 1
+Leaked instance: GDScript:9223372070409209328 - Reference count: 1
+Leaked instance: GDScript:9223372070694422002 - Reference count: 1
+Leaked instance: GDScript:9223372070979634676 - Reference count: 1
+Leaked instance: GDScript:9223372071281624567 - Reference count: 1
+Leaked instance: GDScript:9223372071516505593 - Reference count: 36
+Leaked instance: GDScript:9223372075442374157 - Reference count: 2
+Leaked instance: GDScript:9223372082522359322 - Reference count: 2
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79289124390 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79305901638 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79322678862 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79339456080 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79356233302 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79893104220 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Timer:79909881442 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79926658664 - Node path:
+Leaked instance: GDScript:9223372116362004078 - Reference count: 1
+Leaked instance: PackedScene:9223372116680771188 - Reference count: 1
+Leaked instance: SceneState:9223372116697548410 - Reference count: 1
+Leaked instance: RegEx:9223372116798211719 - Reference count: 1
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79960213129 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79976990347 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:79993767565 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Timer:80010544783 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80027322003 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80044099220 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80060876437 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80597747350 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Timer:80614524568 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80631301791 - Node path:
+Leaked instance: GDScript:9223372117066647211 - Reference count: 1
+Leaked instance: PackedScene:9223372117385414327 - Reference count: 1
+Leaked instance: SceneState:9223372117402191544 - Reference count: 1
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80648079033 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80664856250 - Node path:
+Leaked instance: RegEx:9223372117536409275 - Reference count: 1
+Leaked instance: RegEx:9223372117553186492 - Reference count: 1
+Leaked instance: RegEx:9223372117569963709 - Reference count: 1
+Leaked instance: RegEx:9223372117586740926 - Reference count: 1
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80748742335 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80765519552 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: Node:80782296769 - Node path:
+ERROR: Cannot get path of node as it is not in a scene tree.
+   at: get_path (scene/main/node.cpp:2419)
+Leaked instance: AudioStreamPlayer:80799073986 - Node path:
+Leaked instance: AudioStreamPlayerInternal:80815851203
+Leaked instance: GDScriptFunctionState:9223372139665557376 - Reference count: 1
+Hint: Leaked instances typically happen when nodes are removed from the scene tree (with `remove_child()`) but not freed (with `free()` or `queue_free()`).
+ERROR: 26 resources still in use at exit.
+   at: clear (core/io/resource.cpp:805)
+Resource still in use: res://addons/dialogic/Core/Dialogic_Subsystem.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Character/dialogic_portrait.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Character/subsystem_containers.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Core/subsystem_expression.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Variable/subsystem_variables.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Jump/subsystem_jump.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Save/subsystem_save.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/History/subsystem_history.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Voice/subsystem_voice.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Settings/subsystem_settings.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Glossary/subsystem_glossary.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Core/subsystem_animation.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Text/subsystem_text.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Core/subsystem_input.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Character/subsystem_portraits.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Style/subsystem_styles.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Choice/subsystem_choices.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Audio/subsystem_audio.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Background/dialogic_background.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Background/subsystem_backgrounds.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/TextInput/subsystem_text_input.gd (GDScript)
+Resource still in use: res://addons/dialogic/Resources/event.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Background/DefaultBackgroundScene/default_background.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Background/DefaultBackgroundScene/default_background.tscn (PackedScene)
+Resource still in use: res://addons/dialogic/Modules/Character/default_portrait.gd (GDScript)
+Resource still in use: res://addons/dialogic/Modules/Character/default_portrait.tscn (PackedScene)
+Orphan StringName: auto_advance (static: 0, total: 4)
+Orphan StringName: has_setting (static: 0, total: 1)
+Orphan StringName: get_setting (static: 0, total: 1)
+Orphan StringName: save_game_state (static: 0, total: 2)
+Orphan StringName: text_effect_extradata (static: 0, total: 1)
+Orphan StringName: load_game_state (static: 0, total: 9)
+Orphan StringName: _on_choice_selected (static: 0, total: 1)
+Orphan StringName: full_event_history_content (static: 0, total: 3)
+Orphan StringName: stop_animation (static: 0, total: 1)
+Orphan StringName: animation_textbox_hide (static: 0, total: 2)
+Orphan StringName: event_description (static: 0, total: 3)
+Orphan StringName: _play_intro (static: 0, total: 1)
+Orphan StringName: update_text_version (static: 0, total: 1)
+Orphan StringName: can_be_translated (static: 0, total: 1)
+Orphan StringName: hotkey_behaviour (static: 0, total: 4)
+Orphan StringName: "addons/dialogic/Modules/Text/subsystem_text.gd" (static: 0, total: 1)
+Orphan StringName: handle_input (static: 0, total: 1)
+Orphan StringName: _update_character_transform (static: 0, total: 1)
+Orphan StringName: DialogicBackground (static: 0, total: 3)
+Orphan StringName: "addons/dialogic/Modules/Save/subsystem_save.gd" (static: 0, total: 1)
+Orphan StringName: color_character_names (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Background/subsystem_backgrounds.gd" (static: 0, total: 1)
+Orphan StringName: reset_all (static: 0, total: 1)
+Orphan StringName: simple_history_enabled (static: 0, total: 4)
+Orphan StringName: animation_textbox_show (static: 0, total: 2)
+Orphan StringName: event_color (static: 0, total: 3)
+Orphan StringName: prev_state (static: 0, total: 4)
+Orphan StringName: variable_changed (static: 0, total: 2)
+Orphan StringName: has_slot (static: 0, total: 1)
+Orphan StringName: _unhandled_input (static: 1, total: 2)
+Orphan StringName: animation_finished (static: 1, total: 2)
+Orphan StringName: _ready (static: 1, total: 12)
+Orphan StringName: DialogicSubsystem (static: 0, total: 3)
+Orphan StringName: script (static: 0, total: 2)
+Orphan StringName: "addons/dialogic/Modules/Variable/subsystem_variables.gd" (static: 0, total: 1)
+Orphan StringName: handle_node_gui_input (static: 0, total: 1)
+Orphan StringName: delete_slot (static: 0, total: 1)
+Orphan StringName: save_slot_thumbnail (static: 0, total: 1)
+Orphan StringName: viewport (static: 0, total: 2)
+Orphan StringName: visited_event (static: 0, total: 2)
+Orphan StringName: apply_character_and_portrait (static: 0, total: 1)
+Orphan StringName: _enter_visual_editor (static: 0, total: 1)
+Orphan StringName: dialogic_action_priority (static: 0, total: 2)
+Orphan StringName: effect_pause (static: 0, total: 1)
+Orphan StringName: has_active_layout_node (static: 0, total: 1)
+Orphan StringName: _change_portrait_z_index (static: 0, total: 1)
+Orphan StringName: set_variable (static: 0, total: 1)
+Orphan StringName: color_overrides (static: 0, total: 3)
+Orphan StringName: _load_custom_defaults (static: 0, total: 1)
+Orphan StringName: leave_character (static: 0, total: 1)
+Orphan StringName: change_character_mirror (static: 0, total: 1)
+Orphan StringName: has_last_event_been_visited (static: 0, total: 1)
+Orphan StringName: reset_slot (static: 0, total: 1)
+Orphan StringName: anchors_preset (static: 0, total: 3)
+Orphan StringName: _on_dialogic_event_handled (static: 0, total: 1)
+Orphan StringName: _change_portrait (static: 0, total: 1)
+Orphan StringName: open_requested (static: 0, total: 2)
+Orphan StringName: jumped_to_label (static: 0, total: 2)
+Orphan StringName: add_body_line_break (static: 0, total: 1)
+Orphan StringName: simple_history_changed (static: 0, total: 2)
+Orphan StringName: get_autoloads (static: 0, total: 1)
+Orphan StringName: current_audio_file (static: 0, total: 3)
+Orphan StringName: get_containers (static: 0, total: 1)
+Orphan StringName: meta_hover_started (static: 0, total: 2)
+Orphan StringName: change_speaker (static: 0, total: 1)
+Orphan StringName: _set (static: 0, total: 2)
+Orphan StringName: "addons/dialogic/Modules/Character/subsystem_portraits.gd" (static: 0, total: 1)
+Orphan StringName: is_any_channel_playing (static: 0, total: 1)
+Orphan StringName: set_file (static: 0, total: 1)
+Orphan StringName: reset_setting (static: 0, total: 1)
+Orphan StringName: get_end_branch_index (static: 0, total: 1)
+Orphan StringName: get_character_info (static: 0, total: 1)
+Orphan StringName: effect_signal (static: 0, total: 1)
+Orphan StringName: one_shot_audio_node (static: 0, total: 3)
+Orphan StringName: start_autoskip_timer (static: 0, total: 1)
+Orphan StringName: portrait (static: 0, total: 2)
+Orphan StringName: autofocus_first_choice (static: 0, total: 4)
+Orphan StringName: this_folder (static: 0, total: 2)
+Orphan StringName: show_textbox (static: 0, total: 1)
+Orphan StringName: store_to_shortcode_parameters (static: 0, total: 1)
+Orphan StringName: _make_sure_slot_dir_exists (static: 0, total: 1)
+Orphan StringName: event_sorting_index (static: 0, total: 3)
+Orphan StringName: animation_interrupted (static: 0, total: 2)
+Orphan StringName: invalid_question_reached (static: 0, total: 2)
+Orphan StringName: "addons/dialogic/Modules/Core/subsystem_animation.gd" (static: 0, total: 1)
+Orphan StringName: ui_update_needed (static: 0, total: 2)
+Orphan StringName: ValueType (static: 0, total: 1)
+Orphan StringName: background_changed (static: 0, total: 2)
+Orphan StringName: TextureRect (static: 0, total: 1)
+Orphan StringName: reset_container (static: 0, total: 1)
+Orphan StringName: _test_event_string (static: 0, total: 1)
+Orphan StringName: set_text_voice_synced (static: 0, total: 1)
+Orphan StringName: _get_event_key (static: 0, total: 1)
+Orphan StringName: load (static: 1, total: 2)
+Orphan StringName: voiceline_started (static: 0, total: 2)
+Orphan StringName: mouse_filter (static: 0, total: 1)
+Orphan StringName: dialogic_action (static: 0, total: 2)
+Orphan StringName: _SETTING_INPUT_ACTION_DEFAULT (static: 0, total: 1)
+Orphan StringName: _update_background (static: 0, total: 2)
+Orphan StringName: _update_portrait (static: 0, total: 2)
+Orphan StringName: save_visited_history (static: 0, total: 1)
+Orphan StringName: connect_meta_signals (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Core/subsystem_input.gd" (static: 0, total: 1)
+Orphan StringName: update_typing_sound_mood_from_character (static: 0, total: 1)
+Orphan StringName: to_text (static: 0, total: 1)
+Orphan StringName: take_thumbnail (static: 0, total: 1)
+Orphan StringName: select_choice (static: 0, total: 1)
+Orphan StringName: default_false_behaviour (static: 0, total: 4)
+Orphan StringName: str_to_vector (static: 0, total: 1)
+Orphan StringName: needs_indentation (static: 0, total: 3)
+Orphan StringName: _change_portrait_mirror (static: 0, total: 1)
+Orphan StringName: _letter_speed_absolute (static: 0, total: 4)
+Orphan StringName: saved (static: 0, total: 2)
+Orphan StringName: animation_textbox_new_text (static: 0, total: 2)
+Orphan StringName: add_glossary (static: 0, total: 1)
+Orphan StringName: Control (static: 0, total: 1)
+Orphan StringName: anchor_bottom (static: 0, total: 3)
+Orphan StringName: simple_history_save (static: 0, total: 4)
+Orphan StringName: text_finished (static: 0, total: 2)
+Orphan StringName: load_from_shortcode_parameters (static: 0, total: 1)
+Orphan StringName: set_volume (static: 0, total: 1)
+Orphan StringName: select_focused_choice (static: 0, total: 1)
+Orphan StringName: open_history (static: 0, total: 1)
+Orphan StringName: load_file (static: 0, total: 1)
+Orphan StringName: Location (static: 0, total: 1)
+Orphan StringName: voiceline_finished (static: 0, total: 2)
+Orphan StringName: get_encryption_password (static: 0, total: 1)
+Orphan StringName: get_container (static: 0, total: 1)
+Orphan StringName: update_text_speed (static: 0, total: 1)
+Orphan StringName: load_style (static: 0, total: 1)
+Orphan StringName: effect_autoadvance (static: 0, total: 1)
+Orphan StringName: _visited_last_event (static: 0, total: 4)
+Orphan StringName: reset (static: 0, total: 1)
+Orphan StringName: _execute (static: 0, total: 1)
+Orphan StringName: passed_label (static: 0, total: 2)
+Orphan StringName: store_simple_history_entry (static: 0, total: 1)
+Orphan StringName: _current_event_key (static: 0, total: 1)
+Orphan StringName: hide_text_input (static: 0, total: 1)
+Orphan StringName: post_install (static: 0, total: 5)
+Orphan StringName: emit_meta_signal (static: 0, total: 1)
+Orphan StringName: ColorRect (static: 0, total: 2)
+Orphan StringName: SAVE_SLOTS_DIR (static: 0, total: 1)
+Orphan StringName: _create_character_node (static: 0, total: 1)
+Orphan StringName: grow_vertical (static: 0, total: 3)
+Orphan StringName: hide_all_choices (static: 0, total: 1)
+Orphan StringName: _remove_portrait (static: 0, total: 1)
+Orphan StringName: _animate_node (static: 0, total: 1)
+Orphan StringName: z_sort_portrait_containers (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Audio/subsystem_audio.gd" (static: 0, total: 1)
+Orphan StringName: text_started (static: 0, total: 2)
+Orphan StringName: DialogicPortrait (static: 0, total: 3)
+Orphan StringName: move_container (static: 0, total: 1)
+Orphan StringName: _on_autoskip_toggled (static: 0, total: 1)
+Orphan StringName: set_slot_info (static: 0, total: 1)
+Orphan StringName: update_textbox (static: 0, total: 1)
+Orphan StringName: is_string_full_event (static: 0, total: 1)
+Orphan StringName: set_text_reveal_skippable (static: 0, total: 1)
+Orphan StringName: _should_do_portrait_update (static: 0, total: 1)
+Orphan StringName: event_category (static: 0, total: 3)
+Orphan StringName: effect_speed (static: 0, total: 1)
+Orphan StringName: get_remaining_time (static: 0, total: 1)
+Orphan StringName: change_character_z_index (static: 0, total: 1)
+Orphan StringName: full_event_history_enabled (static: 0, total: 4)
+Orphan StringName: add_container (static: 0, total: 1)
+Orphan StringName: _get_syntax_highlighting (static: 0, total: 1)
+Orphan StringName: _update_user_speed (static: 0, total: 1)
+Orphan StringName: Sprite2D (static: 0, total: 1)
+Orphan StringName: execute_condition (static: 0, total: 1)
+Orphan StringName: editor_list (static: 0, total: 2)
+Orphan StringName: parse_stack (static: 0, total: 3)
+Orphan StringName: _on_dialogic_timeline_ended (static: 0, total: 1)
+Orphan StringName: folders (static: 0, total: 1)
+Orphan StringName: _on_voice_finished (static: 0, total: 1)
+Orphan StringName: is_jump_stack_empty (static: 0, total: 1)
+Orphan StringName: show_next_indicators (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Jump/subsystem_jump.gd" (static: 0, total: 1)
+Orphan StringName: created_by_button (static: 0, total: 3)
+Orphan StringName: voiceline_stopped (static: 0, total: 2)
+Orphan StringName: get_current_speaker (static: 0, total: 1)
+Orphan StringName: is_textbox_visible (static: 0, total: 1)
+Orphan StringName: transform_regex (static: 0, total: 4)
+Orphan StringName: get_saved_visited_history (static: 0, total: 1)
+Orphan StringName: modifier_break (static: 0, total: 1)
+Orphan StringName: finished (static: 0, total: 2)
+Orphan StringName: is_character_joined (static: 0, total: 1)
+Orphan StringName: glossaries (static: 0, total: 3)
+Orphan StringName: ParserModes (static: 0, total: 1)
+Orphan StringName: apply_texture (static: 0, total: 1)
+Orphan StringName: variable_was_set (static: 0, total: 2)
+Orphan StringName: modifier_condition (static: 0, total: 1)
+Orphan StringName: finish (static: 0, total: 1)
+Orphan StringName: stop_all_channels (static: 0, total: 1)
+Orphan StringName: FalseBehaviour (static: 0, total: 1)
+Orphan StringName: collect_text_modifiers (static: 0, total: 1)
+Orphan StringName: DialogicEvent (static: 0, total: 5)
+Orphan StringName: _update_saved_connection (static: 0, total: 1)
+Orphan StringName: _input (static: 1, total: 2)
+Orphan StringName: character (static: 0, total: 2)
+Orphan StringName: stop_audio (static: 0, total: 1)
+Orphan StringName: change_character_extradata (static: 0, total: 1)
+Orphan StringName: skip_text_reveal (static: 0, total: 1)
+Orphan StringName: _get_property_original_translation (static: 0, total: 1)
+Orphan StringName: parse_text_effects (static: 0, total: 1)
+Orphan StringName: get_event_editor_info (static: 0, total: 1)
+Orphan StringName: full_event_history_changed (static: 0, total: 2)
+Orphan StringName: value_to_string (static: 0, total: 1)
+Orphan StringName: invalid_choice_behaviour (static: 0, total: 4)
+Orphan StringName: _get_end_branch_control (static: 0, total: 1)
+Orphan StringName: hide_next_indicators (static: 0, total: 1)
+Orphan StringName: _clear_state (static: 0, total: 1)
+Orphan StringName: get_global_info (static: 0, total: 1)
+Orphan StringName: get_current_style (static: 0, total: 1)
+Orphan StringName: add_header_button (static: 0, total: 1)
+Orphan StringName: d_range (static: 0, total: 1)
+Orphan StringName: get_latest_slot (static: 0, total: 1)
+Orphan StringName: show_current_question (static: 0, total: 1)
+Orphan StringName: event_node_as_text (static: 0, total: 3)
+Orphan StringName: get_container_container (static: 0, total: 1)
+Orphan StringName: audio_started (static: 0, total: 2)
+Orphan StringName: merge_folder (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Character/subsystem_containers.gd" (static: 0, total: 1)
+Orphan StringName: meta_clicked (static: 0, total: 2)
+Orphan StringName: has_background (static: 0, total: 1)
+Orphan StringName: default_portrait_scene (static: 0, total: 3)
+Orphan StringName: _check_seen (static: 0, total: 1)
+Orphan StringName: Image (static: 0, total: 1)
+Orphan StringName: Resource (static: 1, total: 3)
+Orphan StringName: character_colors (static: 0, total: 3)
+Orphan StringName: update_name_label (static: 0, total: 1)
+Orphan StringName: is_running (static: 0, total: 1)
+Orphan StringName: choice_selected (static: 0, total: 2)
+Orphan StringName: is_question (static: 0, total: 1)
+Orphan StringName: change_style (static: 0, total: 1)
+Orphan StringName: help_page_path (static: 0, total: 3)
+Orphan StringName: reveal_by_input (static: 0, total: 4)
+Orphan StringName: effect_noskip (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Voice/subsystem_voice.gd" (static: 0, total: 1)
+Orphan StringName: from_text (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Core/subsystem_expression.gd" (static: 0, total: 1)
+Orphan StringName: _to_string (static: 0, total: 1)
+Orphan StringName: play_voice (static: 0, total: 1)
+Orphan StringName: get_current_choice_indexes (static: 0, total: 1)
+Orphan StringName: effect_input (static: 0, total: 1)
+Orphan StringName: is_channel_playing (static: 0, total: 1)
+Orphan StringName: translate_container (static: 0, total: 1)
+Orphan StringName: AUTO_SAVE_MODE_SETTINGS (static: 0, total: 1)
+Orphan StringName: speaker_updated (static: 0, total: 2)
+Orphan StringName: _pure_letter_speed (static: 0, total: 4)
+Orphan StringName: HotkeyBehaviour (static: 0, total: 1)
+Orphan StringName: _unhighlight (static: 0, total: 1)
+Orphan StringName: centered (static: 0, total: 1)
+Orphan StringName: _should_do_background_update (static: 0, total: 1)
+Orphan StringName: block_input (static: 0, total: 1)
+Orphan StringName: has (static: 0, total: 1)
+Orphan StringName: _voice_synced_text (static: 0, total: 4)
+Orphan StringName: mark_event_as_visited (static: 0, total: 1)
+Orphan StringName: character_left (static: 0, total: 2)
+Orphan StringName: get_character_name_parsed (static: 0, total: 1)
+Orphan StringName: d_regex (static: 0, total: 1)
+Orphan StringName: image (static: 0, total: 4)
+Orphan StringName: text_modifiers (static: 0, total: 3)
+Orphan StringName: get_slot_path (static: 0, total: 1)
+Orphan StringName: get_valid_portrait (static: 0, total: 1)
+Orphan StringName: _SETTING_INPUT_ACTION (static: 0, total: 1)
+Orphan StringName: _is_branch_starter (static: 0, total: 1)
+Orphan StringName: audio_node (static: 0, total: 3)
+Orphan StringName: add_empty_slot (static: 0, total: 1)
+Orphan StringName: reveal_delay (static: 0, total: 4)
+Orphan StringName: create_layout (static: 0, total: 1)
+Orphan StringName: d_len (static: 0, total: 1)
+Orphan StringName: visited_event_save_key (static: 0, total: 4)
+Orphan StringName: input_confirmed (static: 0, total: 2)
+Orphan StringName: voice_player (static: 0, total: 3)
+Orphan StringName: Portrait (static: 0, total: 1)
+Orphan StringName: visited_event_history_content (static: 0, total: 3)
+Orphan StringName: collect_character_names (static: 0, total: 1)
+Orphan StringName: editor_node (static: 0, total: 3)
+Orphan StringName: _reload_settings (static: 0, total: 1)
+Orphan StringName: save_position_container (static: 0, total: 1)
+Orphan StringName: color_node (static: 0, total: 2)
+Orphan StringName: interpolate_volume_linearly (static: 0, total: 1)
+Orphan StringName: is_animating (static: 0, total: 1)
+Orphan StringName: load_position_container (static: 0, total: 1)
+Orphan StringName: set_global_info (static: 0, total: 1)
+Orphan StringName: set_latest_slot (static: 0, total: 1)
+Orphan StringName: question_shown (static: 0, total: 2)
+Orphan StringName: VariableFolder (static: 0, total: 1)
+Orphan StringName: Node2D (static: 0, total: 1)
+Orphan StringName: execute_effects (static: 0, total: 1)
+Orphan StringName: _get_code_completion (static: 0, total: 1)
+Orphan StringName: Master (static: 0, total: 1)
+Orphan StringName: find_glossary (static: 0, total: 1)
+Orphan StringName: reset_visited_history (static: 0, total: 1)
+Orphan StringName: update_background (static: 0, total: 1)
+Orphan StringName: get_entry (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Settings/subsystem_settings.gd" (static: 0, total: 1)
+Orphan StringName: _get_covered_rect (static: 0, total: 1)
+Orphan StringName: remove_character (static: 0, total: 1)
+Orphan StringName: _highlight (static: 0, total: 1)
+Orphan StringName: _convert_state_info (static: 0, total: 1)
+Orphan StringName: resize_container (static: 0, total: 1)
+Orphan StringName: AUTO_SAVE_SETTINGS (static: 0, total: 1)
+Orphan StringName: character_portrait_changed (static: 0, total: 2)
+Orphan StringName: collect_text_effects (static: 0, total: 1)
+Orphan StringName: skip_question (static: 0, total: 1)
+Orphan StringName: modifier_select_split_regex (static: 0, total: 3)
+Orphan StringName: execute (static: 0, total: 1)
+Orphan StringName: get_dependencies (static: 0, total: 1)
+Orphan StringName: ui_update_warning (static: 0, total: 2)
+Orphan StringName: get_property_translated (static: 0, total: 1)
+Orphan StringName: event_finished (static: 0, total: 2)
+Orphan StringName: modifier_autopauses (static: 0, total: 1)
+Orphan StringName: remove_translation_id (static: 0, total: 1)
+Orphan StringName: rotate_container (static: 0, total: 1)
+Orphan StringName: disable_editor_button (static: 0, total: 3)
+Orphan StringName: default_background_scene (static: 0, total: 3)
+Orphan StringName: _process (static: 2, total: 3)
+Orphan StringName: input_block_timer (static: 0, total: 3)
+Orphan StringName: get_slot_thumbnail (static: 0, total: 1)
+Orphan StringName: stop_timers (static: 0, total: 1)
+Orphan StringName: _custom_fade_out (static: 0, total: 1)
+Orphan StringName: get_shortcode_parameters (static: 0, total: 1)
+Orphan StringName: condition_modifier_regex (static: 0, total: 3)
+Orphan StringName: parse_glossary (static: 0, total: 1)
+Orphan StringName: is_channel_playing_file (static: 0, total: 1)
+Orphan StringName: input_was_mouse_input (static: 0, total: 4)
+Orphan StringName: leave_all_characters (static: 0, total: 1)
+Orphan StringName: AutoSaveMode (static: 0, total: 1)
+Orphan StringName: autosave_time (static: 0, total: 4)
+Orphan StringName: has_event_been_visited (static: 0, total: 1)
+Orphan StringName: close_history (static: 0, total: 1)
+Orphan StringName: get_simple_history (static: 0, total: 1)
+Orphan StringName: jump_to_label (static: 0, total: 1)
+Orphan StringName: get_last_label_identifier (static: 0, total: 1)
+Orphan StringName: _is_animating (static: 0, total: 4)
+Orphan StringName: _set_mirror (static: 0, total: 1)
+Orphan StringName: get_last_label_name (static: 0, total: 1)
+Orphan StringName: copy_container_setup (static: 0, total: 1)
+Orphan StringName: autosave_enabled (static: 0, total: 4)
+Orphan StringName: get_default_slot (static: 0, total: 1)
+Orphan StringName: _update_portrait_transform (static: 0, total: 1)
+Orphan StringName: expand_by_default (static: 0, total: 3)
+Orphan StringName: _get_translatable_properties (static: 0, total: 1)
+Orphan StringName: hide_textbox (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Style/subsystem_styles.gd" (static: 0, total: 1)
+Orphan StringName: store_full_event (static: 0, total: 1)
+Orphan StringName: _autopauses (static: 0, total: 3)
+Orphan StringName: add_header_label (static: 0, total: 1)
+Orphan StringName: get_choice_button (static: 0, total: 1)
+Orphan StringName: event_started (static: 0, total: 2)
+Orphan StringName: character_moved (static: 0, total: 2)
+Orphan StringName: about_to_show_text (static: 0, total: 2)
+Orphan StringName: _speed_multiplier (static: 0, total: 4)
+Orphan StringName: parsed_text_effect_info (static: 0, total: 3)
+Orphan StringName: save_visited_history_on_save (static: 0, total: 4)
+Orphan StringName: update_typing_sound_mood (static: 0, total: 1)
+Orphan StringName: is_voiced (static: 0, total: 1)
+Orphan StringName: _store_as_string (static: 0, total: 1)
+Orphan StringName: modifier_random_selection (static: 0, total: 1)
+Orphan StringName: get_variable (static: 0, total: 1)
+Orphan StringName: get_layout_node (static: 0, total: 1)
+Orphan StringName: modifier_select_regex (static: 0, total: 3)
+Orphan StringName: _load_from_string (static: 0, total: 1)
+Orphan StringName: . (static: 1, total: 4)
+Orphan StringName: _auto_skip_timer_left (static: 0, total: 4)
+Orphan StringName: is_input_blocked (static: 0, total: 1)
+Orphan StringName: DialogicCharacter (static: 0, total: 1)
+Orphan StringName: save_visited_history_on_autosave (static: 0, total: 4)
+Orphan StringName: simple_history_content (static: 0, total: 3)
+Orphan StringName: Node (static: 6, total: 7)
+Orphan StringName: dialogic (static: 0, total: 24)
+Orphan StringName: show_text_input (static: 0, total: 1)
+Orphan StringName: _connections (static: 0, total: 3)
+Orphan StringName: _on_start_or_end_autosave (static: 0, total: 1)
+Orphan StringName: get_character_portrait (static: 0, total: 1)
+Orphan StringName: parse_text (static: 0, total: 1)
+Orphan StringName: _setting_changed (static: 0, total: 1)
+Orphan StringName: _get_join_default_length (static: 0, total: 1)
+Orphan StringName: _on_autosave_timer_timeout (static: 0, total: 1)
+Orphan StringName: InvalidChoiceBehaviour (static: 0, total: 1)
+Orphan StringName: _choice_blocker (static: 0, total: 3)
+Orphan StringName: get_first_node_in_layout (static: 0, total: 1)
+Orphan StringName: switched_timeline (static: 0, total: 2)
+Orphan StringName: anchor_right (static: 0, total: 3)
+Orphan StringName: connect_to_change (static: 0, total: 1)
+Orphan StringName: add_body_edit (static: 0, total: 1)
+Orphan StringName: is_text_reveal_skippable (static: 0, total: 1)
+Orphan StringName: style_changed (static: 0, total: 2)
+Orphan StringName: meta_hover_ended (static: 0, total: 2)
+Orphan StringName: _on_dialogic_action (static: 0, total: 1)
+Orphan StringName: input_shown (static: 0, total: 2)
+Orphan StringName: "addons/dialogic/Modules/Glossary/subsystem_glossary.gd" (static: 0, total: 1)
+Orphan StringName: grow_horizontal (static: 0, total: 3)
+Orphan StringName: effect_lspeed (static: 0, total: 1)
+Orphan StringName: _change_portrait_extradata (static: 0, total: 1)
+Orphan StringName: DefaultPortrait (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/TextInput/subsystem_text_input.gd" (static: 0, total: 1)
+Orphan StringName: empty_lines_above (static: 0, total: 3)
+Orphan StringName: is_text_voice_synced (static: 0, total: 1)
+Orphan StringName: can_contain_events (static: 0, total: 3)
+Orphan StringName: add_header_edit (static: 0, total: 1)
+Orphan StringName: current_audio_channels (static: 0, total: 3)
+Orphan StringName: full_event_history_save (static: 0, total: 4)
+Orphan StringName: "addons/dialogic/Modules/Character/default_portrait.gd" (static: 0, total: 1)
+Orphan StringName: auto_skip (static: 0, total: 4)
+Orphan StringName: autosave_timer (static: 0, total: 3)
+Orphan StringName: autoskip_timer_finished (static: 0, total: 2)
+Orphan StringName: update_dialog_text (static: 0, total: 1)
+Orphan StringName: close_requested (static: 0, total: 2)
+Orphan StringName: save (static: 0, total: 1)
+Orphan StringName: effect_mood (static: 0, total: 1)
+Orphan StringName: event_name (static: 0, total: 3)
+Orphan StringName: TextTypes (static: 0, total: 1)
+Orphan StringName: stop_all_one_shot_sounds (static: 0, total: 1)
+Orphan StringName: text_already_read (static: 0, total: 4)
+Orphan StringName: collapse_on_create (static: 0, total: 3)
+Orphan StringName: reload_current_info_into_new_style (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/History/subsystem_history.gd" (static: 0, total: 1)
+Orphan StringName: clear_game_state (static: 0, total: 16)
+Orphan StringName: SETTING_DEFAULT_COLOR (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Choice/subsystem_choices.gd" (static: 0, total: 1)
+Orphan StringName: set_bus (static: 0, total: 1)
+Orphan StringName: save_file (static: 0, total: 1)
+Orphan StringName: text_effect_portrait (static: 0, total: 1)
+Orphan StringName: text_effects (static: 0, total: 3)
+Orphan StringName: load_parse_stack (static: 0, total: 1)
+Orphan StringName: _translation_id (static: 0, total: 3)
+Orphan StringName: execute_string (static: 0, total: 1)
+Orphan StringName: end_branch_event (static: 0, total: 3)
+Orphan StringName: load_visited_history (static: 0, total: 1)
+Orphan StringName: focus_choice (static: 0, total: 1)
+Orphan StringName: _move_character (static: 0, total: 1)
+Orphan StringName: change_character_portrait (static: 0, total: 1)
+Orphan StringName: resume (static: 0, total: 6)
+Orphan StringName: visited_event_history_enabled (static: 0, total: 4)
+Orphan StringName: join_character (static: 0, total: 1)
+Orphan StringName: get_slot_names (static: 0, total: 1)
+Orphan StringName: @group_0_Main (static: 0, total: 1)
+Orphan StringName: vector_to_str (static: 0, total: 1)
+Orphan StringName: text_effects_regex (static: 0, total: 3)
+Orphan StringName: unvisited_event (static: 0, total: 2)
+Orphan StringName: settings (static: 0, total: 3)
+Orphan StringName: get_slot_info (static: 0, total: 1)
+Orphan StringName: _on_transition_finished (static: 0, total: 1)
+Orphan StringName: DefaultBackground (static: 0, total: 1)
+Orphan StringName: _custom_fade_in (static: 0, total: 1)
+Orphan StringName: character_joined (static: 0, total: 2)
+Orphan StringName: LoadFlags (static: 0, total: 1)
+Orphan StringName: sort_by_length (static: 0, total: 1)
+Orphan StringName: _set_extra_data (static: 0, total: 1)
+Orphan StringName: _on_dialog_text_finished (static: 0, total: 1)
+Orphan StringName: _get_icon (static: 0, total: 1)
+Orphan StringName: variables (static: 0, total: 1)
+Orphan StringName: viewport_container (static: 0, total: 2)
+Orphan StringName: get_character_node (static: 0, total: 1)
+Orphan StringName: autosave_mode (static: 0, total: 4)
+Orphan StringName: layout_mode (static: 0, total: 3)
+Orphan StringName: completed (static: 2, total: 3)
+Orphan StringName: move_character (static: 0, total: 1)
+Orphan StringName: ThumbnailMode (static: 0, total: 1)
+Orphan StringName: wants_to_group (static: 0, total: 3)
+Orphan StringName: AUTO_SAVE_TIME_SETTINGS (static: 0, total: 1)
+Orphan StringName: dialogic_color_name (static: 0, total: 3)
+Orphan StringName: enabled (static: 0, total: 4)
+Orphan StringName: push_to_jump_stack (static: 0, total: 1)
+Orphan StringName: _on_save (static: 0, total: 1)
+Orphan StringName: pause (static: 0, total: 6)
+Orphan StringName: add_character (static: 0, total: 1)
+Orphan StringName: update_audio (static: 0, total: 1)
+Orphan StringName: resume_from_last_jump (static: 0, total: 1)
+Orphan StringName: _get (static: 0, total: 2)
+Orphan StringName: translate (static: 0, total: 1)
+Orphan StringName: _on_passed_label (static: 0, total: 1)
+Orphan StringName: textbox_visibility_changed (static: 0, total: 2)
+Orphan StringName: parse_shortcode_parameters (static: 0, total: 1)
+Orphan StringName: build_event_editor (static: 0, total: 1)
+Orphan StringName: parse_variables (static: 0, total: 1)
+Orphan StringName: is_input_pressed (static: 0, total: 1)
+Orphan StringName: _on_audio_finished (static: 0, total: 1)
+Orphan StringName: last_question_info (static: 0, total: 3)
+Orphan StringName: get_current_question_info (static: 0, total: 1)
+Orphan StringName: event_node_ready (static: 0, total: 3)
+Orphan StringName: perform_autosave (static: 0, total: 1)
+Orphan StringName: position_changed (static: 0, total: 2)
+Orphan StringName: get_property_translation_key (static: 0, total: 1)
+Orphan StringName: returned_from_jump (static: 0, total: 2)
+Orphan StringName: _get_start_code_completion (static: 0, total: 1)
+Orphan StringName: get_shortcode (static: 0, total: 1)
+Orphan StringName: "addons/dialogic/Modules/Background/DefaultBackgroundScene/default_background.gd" (static: 0, total: 1)
+Orphan StringName: image_node (static: 0, total: 2)
+Orphan StringName: preload_style (static: 0, total: 1)
+Orphan StringName: add_background_node (static: 0, total: 1)
+Orphan StringName: animate_character (static: 0, total: 1)
+Orphan StringName: color_regex (static: 0, total: 3)
+Orphan StringName: is_valid_event (static: 0, total: 1)
+Orphan StringName: add_translation_id (static: 0, total: 1)
+Orphan StringName: latest_thumbnail (static: 0, total: 4)
+Orphan StringName: set_default_color (static: 0, total: 1)
+Orphan StringName: get_joined_characters (static: 0, total: 1)
+Orphan StringName: reset_all_containers (static: 0, total: 1)
+Orphan StringName: use_input_action (static: 0, total: 4)
+Orphan StringName: _get_leave_default_length (static: 0, total: 1)
+Orphan StringName: block_delay (static: 0, total: 4)
+Orphan StringName: start_animating (static: 0, total: 1)
+Orphan StringName: default_transition (static: 0, total: 3)
+Orphan StringName: manual_advance (static: 0, total: 4)
+Orphan StringName: action_was_consumed (static: 0, total: 4)
+StringName: 507 unclaimed string names at exit.
