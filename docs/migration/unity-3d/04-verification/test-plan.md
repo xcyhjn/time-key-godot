@@ -1,8 +1,8 @@
-# Unity Slice 01 / Wave 02A / Wave 02B1 测试计划
+# Unity Slice 01 / Wave 02A / Wave 02B 测试计划
 
-> 状态：已执行并通过
+> 状态：Wave 02B1 已通过；Wave 02B2A 门禁已冻结待执行
 > 负责人：主智能体
-> 最后验证日期：2026-07-31
+> 最后验证日期：2026-08-01
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
 
 ## EditMode
@@ -71,3 +71,28 @@
 - 回归：现有 EditMode 19/19、PlayMode 4/4、Windows build 与 Player smoke 不回退。
 
 以上门禁已全部执行并通过；详细结果见 `evidence/unity-slice-02b1/verification-summary.md`。
+
+## Wave 02B2A 计划门禁
+
+### Infrastructure / EditMode
+
+- 七张真实 JSON 的 stable/numeric ID、front_image、typed effect、range、普通 shape/clear mask 精确解析；源文件哈希一致。
+- 未知 effect、错误 numeric/string value、Built 缺 creation、非法/空 clear mask 显式失败。
+- `earthquake` 以中心加六邻格执行 `+2`；边缘只影响存在格，缺失格不生成。
+- logical layer 1->3；上限 5->removed；ResolutionSnapshot 记录 before/after/removed；固定 seed 731 可重复。
+- 两格 shape 的 CanPlace/Preview/Commit 保持单一合法性来源；旧 `lighting` Damage 和 02B1 无副作用测试全回归。
+
+### Component PlayMode
+
+- 两卡 hand host 显示原 `lighting/earthquake`，单选互斥、取消/drag/input gate、重复 Build 幂等。
+- `HexTileColumn` 的 1/3 层分别有 1/3 个独立 mesh、renderer、collider；相邻 block 世界 Y 差严格为 `0.32`。
+- Apply 后 TopBounds、occupant anchor、选中 collider 和全部层高亮同步；重复 Apply 不复制对象。
+
+### Integration / Visual / Build
+
+- 完成 earthquake 选卡、中心目标、7 格范围、两格 valid/invalid preview、Commit、Resolve、7 柱各新增两层的公共控制器路径。
+- invalid 预览除颜色外还有边框/标记冗余，能与红色敌方意图区分，不依赖顶部英文状态文字。
+- 0/90/180/270 yaw 的范围坐标、顶层选择和 collider 命中一致；1280x720 与 2560x1080 两卡 UI 无裁切/遮挡。
+- 截图覆盖 selected、四向 range、timeline valid/invalid、before/after 和两种附加视口；分别检查卡牌/时间轴/升高棋盘区域像素差异，并人工检查真实层结构。
+- 既有 EditMode 31/31、PlayMode 15/15 及 lighting 完整闭环不回退。
+- Windows build 成功；Player 退出码 0 且含 `TIMEKEY_PLAYER_SMOKE_PASS`。

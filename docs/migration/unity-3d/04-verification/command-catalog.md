@@ -2,7 +2,7 @@
 
 > 状态：命令已实际验证
 > 负责人：主智能体
-> 最后验证日期：2026-07-31
+> 最后验证日期：2026-08-01
 > 证据来源：环境预检、本机 Godot/Unity 安装
 
 以下命令从仓库根目录运行。Unity 使用现有 ASCII junction `D:\timekey-unity-731` 指向仓库 `unity/`；`ALLUSERSPROFILE` 只在当前 PowerShell 进程设置，修复 Codex 启动环境中 Unity Package Manager 缺失系统路径的问题。
@@ -75,10 +75,4 @@ git diff --cached --name-only
 
 ## 下一阶段 AI 接管
 
-```powershell
-Set-Location 'D:\godot\时之钥\时之钥'
-Get-Content -Raw 'docs\migration\unity-3d\00-bootstrap\NEXT_STAGE_COMBAT_PROMPT.md' |
-    codex exec --cd 'D:\godot\时之钥\时之钥' --add-dir 'D:\timekey-unity-731' --sandbox workspace-write --ask-for-approval never -
-```
-
-`codex exec -` 明确从 stdin 读取完整 Prompt；不使用已弃用的 `--full-auto`。若本机 Codex CLI 不可执行，使用 Codex Desktop 新任务完整读取同一文件，不得改用摘要。
+在 Codex Desktop 新对话中直接要求接手 AI 进入 `D:\godot\时之钥\时之钥`，确认 `unity_7.31`，完整读取并执行 `docs/migration/unity-3d/00-bootstrap/NEXT_STAGE_EFFECTS_PROMPT.md` 的“主 Prompt”。不要用摘要替代原文，也不要重复已经关闭的 Wave 00/01/02A/02B1。

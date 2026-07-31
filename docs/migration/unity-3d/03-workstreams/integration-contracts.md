@@ -1,8 +1,8 @@
-# Wave 01 集成契约
+# Unity 局内战斗共享集成契约
 
-> 状态：Wave 01 与 Wave 02B1 实际 API 已冻结
+> 状态：Wave 01/02A/02B1 已冻结；Wave 02B2A 契约已审查待实现
 > 负责人：主智能体
-> 最后验证日期：2026-07-31
+> 最后验证日期：2026-08-01
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
 
 ## Domain API
@@ -99,3 +99,55 @@ TimelinePlacementPreview.Clear()
 ## 版本与提交
 
 任何契约变更先由主智能体更新本文件和 ADR，再调整实现。代理不创建独立分支或提交；主智能体精确暂存并形成单一目的检查点。
+
+## Wave 02B2A 七卡 Schema 与 Earthquake 契约
+
+> 状态：Prompt 审查通过；实现前 Gate 0 冻结
+
+### Typed card effect
+
+```text
+CardEffectKind = Damage | Elevation | Recover | Built | Poison | Clear
+CardEffect = Kind + NumericAmount? + CreationId? + ClearMask?
+CardDefinition = StableId + NumericId + FrontImage + Effects + EffectRange + Shape
+```
+
+- Numeric effect 使用非负整数；Built 的 `CreationId` 必填，`NumericAmount` 是创建数量；Clear 的 `ClearMask` 必须为非空、归一化的只读时间轴坐标集合。
+- `FrontImage` 保留源 JSON 文件名映射并拒绝目录穿越；Presentation 通过该字段加载资源，不能从 stable ID 推导 `tower_card` 或 `poison_card`。
+- Clear 必须独占一张卡的 effects；不与普通 Resolve effect 混合。
+- 顶层 `shape` 只属于普通 TimelineAction；Clear 从 `effects[].value` 读取 mask，`shape=0` 不能成为普通单格占用。
+- 现有 Damage constructor、`lighting` stable ID、`CardDefinition.Effects/Range/Shape` 只读面保持兼容。
+- Adapter 对 number/string 异构 `value` 使用结构化 typed DTO 视图；禁止 regex、substring、fixture 文本替换。新增 JSON 包只能由主智能体记录 ADR 后串行处理。
+
+### 普通 TimelineAction 与领域棋盘
+
+```text
+TimelineAction += TargetCoord + immutable Effects + EffectRange
+CombatBoardState[HexCoord] -> BoardTileState(LogicalLayerCount)
+ResolutionSnapshot += EffectResults(coord, beforeLayers, afterLayers, removed)
+```
+
+- `CardPlaySession` 为普通卡保留地图目标流程，并把已保存的 `TargetCoord` 传入 action；Preview、Cancel、失败 Commit 继续无副作用。
+- Resolve 时按稳定坐标重新查询当前 tile；缺失 tile/range 越界为 no-op，不创建幽灵格，不保存 Unity GameObject。
+- Godot logical height 为一基；Unity `elevation=logicalLayerCount-1`，实体 block 数等于 logical layer count。
+- `earthquake` 对当前存在的中心加六邻格各执行 `+2`。Unity `elevation 0 -> 2` 对应 1 层变 3 层，顶部增量严格为 `0.64`。
+- 源高度有效范围为 1..6；结果 `>6` 或 `<=0` 的 Domain 结果是 tile removed。Wave 02B2A 的演示 fixture 使用安全初始高度，表现销毁不是本切片门禁。
+
+### Presentation
+
+```text
+CardHandHost.Build(IReadOnlyList<CardViewModel>)
+CardHandHost -> CardSelected/CardCancelRequested/CardDragChanged(stableId,...)
+HexTileColumn.ApplyLogicalLayerCount(count)
+HexTileColumn -> LayerCount/Blocks/TopBounds/OccupantAnchor/Changed
+```
+
+- `CardHandView` 继续只负责单卡。Host/coordinator 管理两张真实卡、稳定顺序和单选互斥，不解析 CardDefinition。
+- `HexTileColumn` 每层创建独立 FBX visual、renderer 和 collider，local Y 为 `index*0.32`；重复应用幂等。
+- `TopBounds`、occupant anchor、选中 collider 和范围高亮从真实 block collection/bounds 更新，不使用固定顶部偏移。
+- 主智能体独占 Controller/BoardTileView/scene 接线，把 `lighting` 和 `earthquake` 分别路由到既有 damage 与新增 elevation Domain；UI 不复制规则。
+- Timeline invalid 不能只使用与敌人意图接近的红色；必须同时有边框、图标或形状标记，并接受 PlayMode/截图检查。
+
+### Future clear boundary
+
+`wind/tornado` 留到 Wave 02B2C，届时必须使用独立 `TimelineClearSession` 或等价窄 API：合法性只看 mask 边界，重叠仍合法，Commit 不创建 TimelineAction，命中任一格即移除完整 action，空清合法。02B2A 不实现该运行流程，但 schema 必须无损保留 clear mask。

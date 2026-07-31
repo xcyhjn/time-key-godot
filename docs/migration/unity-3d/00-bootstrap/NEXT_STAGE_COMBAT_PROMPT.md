@@ -1,21 +1,13 @@
 # 《时之钥》Unity 局内战斗迁移下一阶段总 Prompt
 
-> 状态：可执行交接入口
+> 状态：Wave 02B1 已执行完成；当前入口已切换到 `NEXT_STAGE_EFFECTS_PROMPT.md`
 > 负责人：接手主智能体
-> 最后验证日期：2026-07-31
+> 最后验证日期：2026-08-01
 > 证据来源：Wave 00 评估、Slice 01、Wave 02A、Godot 实跑截图、Unity 测试与构建证据
 
 ## 启动方式
 
-接手 AI 必须完整读取本文，不得只读摘要。以下 PowerShell 命令把本文作为完整 stdin Prompt 交给 Codex 非交互执行；`workspace-write` 允许仓库内修改，`never` 防止普通实现细节停在审批阶段。命令使用 Codex 当前官方 `exec` 语法，不使用已弃用的 `--full-auto`。
-
-```powershell
-Set-Location 'D:\godot\时之钥\时之钥'
-Get-Content -Raw 'docs\migration\unity-3d\00-bootstrap\NEXT_STAGE_COMBAT_PROMPT.md' |
-    codex exec --cd 'D:\godot\时之钥\时之钥' --add-dir 'D:\timekey-unity-731' --sandbox workspace-write --ask-for-approval never -
-```
-
-若使用 Codex Desktop，可先运行 `Start-Process 'codex://threads/new'` 打开新任务，但该深链接不负责注入本文；仍需在新任务中执行上面的命令或完整提交本文。
+本文作为 Wave 02B1 的历史执行规范保留，不再作为当前接手入口。新的对话应直接完整读取并执行同目录 `NEXT_STAGE_EFFECTS_PROMPT.md` 的“主 Prompt”。
 
 ---
 

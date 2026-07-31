@@ -1,8 +1,8 @@
 # 多智能体所有权图
 
-> 状态：Wave 02B1 四个 Agent 均已完成并交回所有权
+> 状态：Wave 02B1 已交回；Wave 02B2A Prompt 已审查待部署
 > 负责人：主智能体
-> 最后验证日期：2026-07-31
+> 最后验证日期：2026-08-01
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
 
 ## 独占写入范围
@@ -41,3 +41,16 @@ Domain、Infrastructure、Presentation 的运行时代码和各自测试/报告�
 - 任何时刻只允许一个 Unity Editor/batchmode 实例，防止工程锁和低内存互相污染。
 
 实际执行严格遵循上述两波：Agent 01/02 并行完成后，主智能体审查原素材哈希、`TimelineGrid.CanPlace` 与 `CardPlaySession` 并收回所有权；随后 Agent 03/04 并行。四个 Agent 均只写各自 Prompt 的互斥路径，最后由主智能体独占共享 Controller、Harness、测试集成、迁移账本与 Git。
+
+## Wave 02B2A 预定所有权
+
+| 角色 | 独占路径摘要 | 启动条件 | 当前状态 |
+| --- | --- | --- | --- |
+| 02B2A Agent 01 / Schema | `CardDefinition.cs`、`Domain/Cards/**`、Infrastructure、Content/Cards、Infrastructure tests、独占报告 | 02B1 已冻结 | Wave A 待启动 |
+| 02B2A Agent 02 / Card art | Resources/Cards、独占素材证据/报告 | 原素材存在 | Wave A 待启动 |
+| 02B2A Agent 03 / Earthquake Domain | 明确列出的 Timeline/Combat Domain 文件、`Domain/Terrain/**`、EditMode Terrain/必要回归、独占报告 | Agent 01 API 冻结 | Wave B 待启动 |
+| 02B2A Agent 04 / Two-card hand | Presentation/Cards、Cards PlayMode、独占视觉证据/报告 | Agent 01/02/03 交回 | Wave C 待启动 |
+| 02B2A Agent 05 / Elevation view | Presentation/Terrain、Terrain PlayMode、独占视觉证据/报告 | Agent 03 result API 冻结 | Wave C 待启动 |
+| 主智能体 / Integration | Controller、BoardTileView、Targeting、scene、Editor、asmdef/Packages、共享文档、最终证据和 Git | 每波 Agent 交回 | 全程保留 |
+
+执行顺序固定为 `(Agent 01 || Agent 02) -> Gate A -> Agent 03 -> Gate B -> (Agent 04 || Agent 05) -> 主集成`。路径集合审查见 `agents/prompt-review-wave-02b2a.md`。并发只表示独占文件可同时编写；Unity/Godot/Blender 图形或 batchmode 仍不得并行启动。
