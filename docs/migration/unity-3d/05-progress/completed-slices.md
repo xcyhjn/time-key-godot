@@ -1,8 +1,8 @@
 # 已完成切片
 
-> 状态：Wave 00、Slice 01、Wave 02A 与 Wave 02B1 已完成
+> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1 与 Wave 02B2A 已完成
 > 负责人：主智能体
-> 最后验证日期：2026-07-31
+> 最后验证日期：2026-08-01
 > 证据来源：Slice Definition of Done
 
 ## Wave 00：迁移评估基线
@@ -48,3 +48,13 @@
 - `effect_range` 直接投影到 3D 棋盘实体；时间轴 valid/invalid 颜色仅消费 Domain 合法性结果，确认后才写入 `LIGHTING`。
 - 原有结算闭环保持 seed 731、10 HP -> 0、敌方意图后处理；局外 Godot 流程未修改。
 - Unity EditMode 31/31、PlayMode 15/15、12 张集成截图、Windows build 与 Player 冒烟全部通过。
+
+## Wave 02B2A：七卡 Schema 与 earthquake 垂直切片
+
+完成日期：2026-08-01。
+
+- 七张真实 JSON 无损进入 typed effect schema，保留 stable/numeric ID、`front_image`、range、普通 shape 与 clear mask；错误 token 类型显式失败。
+- 七张 `1135×1590` 原卡面与 Godot 源哈希一致；两卡手牌实际用 `FrontImage` 加载 lighting 与 earthquake，并保持单选互斥、取消和拖拽事件。
+- `earthquake` 使用保存的地图坐标和两格时间轴 shape，结算中心加六邻格；边缘缺失坐标不创建幽灵 tile。
+- 七个有效柱各新增两个独立 FBX mesh/renderer/collider block，层距严格 `0.32`；顶面与 occupant anchor 同步上移 `0.64`，四向仍能选择抬高后的同一格。
+- Unity EditMode `67/67`、PlayMode `25/25`、11 张集成截图、Windows build 和 Player smoke 全部通过。

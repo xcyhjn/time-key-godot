@@ -155,7 +155,7 @@ namespace TimeKey.Domain
 
         private TimelineAction CreateAction(TimelineCell origin)
         {
-            return TimelineAction.FromCard(Card, TargetId, origin);
+            return TimelineAction.FromCard(Card, TargetId, TargetCoord, origin);
         }
 
         private CardPlayFailure GetClosedFailure()

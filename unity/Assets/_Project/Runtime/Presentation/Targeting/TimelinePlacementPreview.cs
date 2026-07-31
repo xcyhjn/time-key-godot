@@ -10,6 +10,8 @@ namespace TimeKey.Presentation.Targeting
     {
         private readonly Dictionary<TimelineCell, Graphic> _cells =
             new Dictionary<TimelineCell, Graphic>();
+        private readonly Dictionary<TimelineCell, Outline> _outlines =
+            new Dictionary<TimelineCell, Outline>();
         private readonly Dictionary<TimelineCell, Color> _savedColors =
             new Dictionary<TimelineCell, Color>();
         private readonly List<TimelineCell> _activeCoordinates = new List<TimelineCell>();
@@ -36,6 +38,16 @@ namespace TimeKey.Presentation.Targeting
 
             Clear();
             _cells[coordinate] = cellView;
+            var outline = cellView.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = cellView.gameObject.AddComponent<Outline>();
+            }
+
+            outline.enabled = false;
+            outline.effectColor = new Color(1f, 0.86f, 0.24f, 1f);
+            outline.effectDistance = new Vector2(3f, 3f);
+            _outlines[coordinate] = outline;
         }
 
         public void Show(TimelineCell origin, IEnumerable<TimelineCell> shape, bool isValid)
@@ -62,6 +74,10 @@ namespace TimeKey.Presentation.Targeting
                 {
                     _savedColors[coordinate] = graphic.color;
                     graphic.color = color;
+                    if (!isValid && _outlines.TryGetValue(coordinate, out var outline))
+                    {
+                        outline.enabled = true;
+                    }
                     _activeCoordinates.Add(coordinate);
                 }
                 else
@@ -85,6 +101,14 @@ namespace TimeKey.Presentation.Targeting
                 if (_cells.TryGetValue(saved.Key, out var graphic) && graphic != null)
                 {
                     graphic.color = saved.Value;
+                }
+            }
+
+            foreach (var outline in _outlines.Values)
+            {
+                if (outline != null)
+                {
+                    outline.enabled = false;
                 }
             }
 

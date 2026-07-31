@@ -102,3 +102,4 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   lightingFixture: {fileID: 4900000, guid: 7d31a002000000000000000000000002, type: 3}
+  earthquakeFixture: {fileID: 4900000, guid: 2d2b8e9416c649e69305a87ac05edb1c, type: 3}

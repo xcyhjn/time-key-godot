@@ -2,7 +2,7 @@
 
 > 状态：持续更新
 > 负责人：主智能体
-> 最后验证日期：2026-07-31
+> 最后验证日期：2026-08-01
 > 证据来源：Godot 运行日志、源码侦察、授权盘点
 
 | ID | 问题 | 影响 | 当前处理 |
@@ -21,3 +21,4 @@
 | MIG-012 | `git push` 警告当前 Git/GCM 的 TLS 证书校验被禁用 | HTTPS 远端连接缺少正常证书验证，存在供应链风险 | 本轮 push 成功但未擅自修改用户级配置；应由用户审查 Git/GCM 配置后恢复 TLS 校验 |
 | MIG-013 | 固定 19 格验证棋盘上，目标 `(1,0)` 的 `lighting` 第三个范围 offset 落到不存在的 `(3,0)` | 集成截图只显示两个真实范围格；若误生成第三格会制造幽灵地块 | `BoardRangePreview.MissingCoordinates` 明确报告 `(3,0)`，不创建对象；完整地图/多卡波次继续按真实棋盘边界验证 |
 | MIG-014 | 原卡面图片本身包含烘焙的棋盘格角部，且原素材授权仍未闭合 | Unity 不能通过导入设置恢复不存在的 alpha；公开发布仍有素材合规风险 | Wave 02B1 保持原文件字节与可观察外观，不擅自修图；Wave 04 统一处理授权和美术修订决策 |
+| MIG-015 | Unity `JsonUtility` 会静默强制转换异构 `value`，不能可靠区分 number/string/array | 七卡 schema 可能接受错误类型或丢失 clear mask | 已用 Unity 官方 `com.unity.nuget.newtonsoft-json 3.2.2` 做结构化 token 类型校验，决定记录在 ADR-0003；不使用 regex 或 fixture 改写 |

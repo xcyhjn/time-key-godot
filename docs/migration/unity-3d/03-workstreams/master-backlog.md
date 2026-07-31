@@ -1,6 +1,6 @@
 # Unity 3D 迁移总待办
 
-> 状态：Wave 02B1 已完成；Wave 02B2A 已规划待执行
+> 状态：Wave 02B2A 已完成；下一切片为 Wave 02B2B
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：迁移路线图、风险登记、首切片验收契约
@@ -37,9 +37,9 @@
 - [x] Wave 02B1：非变异时间轴 `CanPlace`、CardPlaySession 与 EditMode 失败路径。
 - [x] Wave 02B1：3D `effect_range` 投影、单格时间轴 valid/invalid 预览与镜头输入互斥。
 - [x] Wave 02B1：主场景接线、三视口/四向视觉证据、build/player smoke 与 Git 检查点。
-- [ ] Wave 02B2A：七卡异构 schema、七张原卡面与真实 fixture 解析。
-- [ ] Wave 02B2A：两卡手牌、`earthquake +2` 半径 1 范围、两格时间轴 shape 与真实 `0.32` 两层增量闭环。
-- [ ] Wave 02B2A：升高后 mesh/renderer/collider/top bounds/occupant anchor 同步，四向仍可选择。
+- [x] Wave 02B2A：七卡异构 schema、七张原卡面与真实 fixture 解析。
+- [x] Wave 02B2A：两卡手牌、`earthquake +2` 半径 1 范围、两格时间轴 shape 与真实 `0.32` 两层增量闭环。
+- [x] Wave 02B2A：升高后 mesh/renderer/collider/top bounds/occupant anchor 同步，四向仍可选择。
 - [ ] Wave 02B2B：recover/poison/built 领域效果与最小局内表现；塔行动仍不接入。
 - [ ] Wave 02B2C：wind/tornado 即时 clear 会话、完整 action 移除和专用时间轴预览。
 - [ ] Wave 02B3：敌方/建筑行动、意图优先级/重判、塔自损与 poison 回合开始状态。

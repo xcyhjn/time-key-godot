@@ -4,10 +4,12 @@ using NUnit.Framework;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Terrain;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace TimeKey.Tests.PlayMode
 {
@@ -146,6 +148,119 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(controller.CardHand.InteractionState, Is.EqualTo(CardHandInteractionState.Idle));
             Assert.That(controller.CardHand.gameObject.activeSelf, Is.True);
             Assert.That(controller.BoardCamera.InputEnabled, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator TwoCardHand_UsesFrontImagesAndSwitchesSelection()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            var host = controller.CardHandHost;
+
+            Assert.That(host, Is.Not.Null);
+            Assert.That(host.CardCount, Is.EqualTo(2));
+            Assert.That(host.Cards.Select(card => card.StableId),
+                Is.EqualTo(new[] { VerticalSliceController.LightingCardId, VerticalSliceController.EarthquakeCardId }));
+            foreach (var card in host.Cards)
+            {
+                Assert.That(card.Artwork.sprite.texture.width, Is.EqualTo(1135));
+                Assert.That(card.Artwork.sprite.texture.height, Is.EqualTo(1590));
+                Assert.That(card.Artwork.preserveAspect, Is.True);
+            }
+
+            host.GetCard(VerticalSliceController.LightingCardId).OnPointerClick(new PointerEventData(EventSystem.current)
+            {
+                button = PointerEventData.InputButton.Left
+            });
+            host.GetCard(VerticalSliceController.EarthquakeCardId).OnPointerClick(new PointerEventData(EventSystem.current)
+            {
+                button = PointerEventData.InputButton.Left
+            });
+
+            Assert.That(controller.SelectedCardId, Is.EqualTo(VerticalSliceController.EarthquakeCardId));
+            Assert.That(host.SelectedStableId, Is.EqualTo(VerticalSliceController.EarthquakeCardId));
+            Assert.That(host.GetCard(VerticalSliceController.LightingCardId).InteractionState,
+                Is.EqualTo(CardHandInteractionState.Idle));
+            Assert.That(host.GetCard(VerticalSliceController.EarthquakeCardId).InteractionState,
+                Is.EqualTo(CardHandInteractionState.Selected));
+        }
+
+        [UnityTest]
+        public IEnumerator Earthquake_RaisesSevenRealColumnsAndKeepsCardinalSelection()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            var center = new HexCoord(0, 0);
+            var range = new[]
+            {
+                new HexCoord(0, 0), new HexCoord(1, 0), new HexCoord(1, -1),
+                new HexCoord(0, -1), new HexCoord(-1, 0), new HexCoord(-1, 1),
+                new HexCoord(0, 1)
+            };
+            var beforeLayers = range.ToDictionary(coordinate => coordinate,
+                coordinate => controller.GetTileColumn(coordinate).LayerCount);
+            var centerTopBefore = controller.GetTileColumn(center).TopBounds.max.y;
+            var targetYBefore = controller.TargetWorldPosition.y;
+
+            Assert.That(controller.SelectCard(VerticalSliceController.EarthquakeCardId), Is.True);
+            Assert.That(controller.SelectEarthquakeTarget(center), Is.True);
+            Assert.That(controller.BoardRangePreview.ActiveCoordinates, Is.EquivalentTo(range));
+            Assert.That(controller.BoardRangePreview.MissingCoordinates, Is.Empty);
+
+            Assert.That(controller.PreviewTimelineSelected(11, 0), Is.False);
+            var invalidOutline = GameObject.Find("Slot-11-0").GetComponent<Outline>();
+            Assert.That(invalidOutline, Is.Not.Null);
+            Assert.That(invalidOutline.enabled, Is.True);
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+
+            Assert.That(controller.PreviewTimelineSelected(0, 0), Is.True);
+            Assert.That(controller.TimelinePreview.ActiveCoordinates,
+                Is.EqualTo(new[] { new TimelineCell(0, 0), new TimelineCell(1, 0) }));
+            Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(3));
+
+            var snapshot = controller.ResolveTimeline();
+
+            Assert.That(snapshot.EffectResults.Count, Is.EqualTo(7));
+            foreach (var coordinate in range)
+            {
+                var column = controller.GetTileColumn(coordinate);
+                Assert.That(column.LayerCount, Is.EqualTo(beforeLayers[coordinate] + 2));
+                Assert.That(column.Blocks.Count, Is.EqualTo(column.LayerCount));
+                Assert.That(column.Colliders.Count, Is.EqualTo(column.LayerCount));
+                for (var layer = 0; layer < column.Blocks.Count; layer++)
+                {
+                    var block = column.Blocks[layer];
+                    Assert.That(block.GetComponentInChildren<MeshFilter>(true), Is.Not.Null);
+                    Assert.That(block.GetComponentInChildren<Renderer>(true), Is.Not.Null);
+                    Assert.That(block.GetComponentInChildren<Collider>(true), Is.Not.Null);
+                    Assert.That(block.transform.localPosition.y,
+                        Is.EqualTo(layer * VerticalSliceController.HexBlockHeight).Within(0.001f));
+                }
+            }
+
+            Assert.That(controller.GetTileColumn(center).TopBounds.max.y - centerTopBefore,
+                Is.EqualTo(0.64f).Within(0.01f));
+            Assert.That(controller.TargetWorldPosition.y - targetYBefore,
+                Is.EqualTo(0.64f).Within(0.01f));
+
+            yield return null;
+            foreach (var yaw in new[] { 0f, 90f, 180f, 270f })
+            {
+                controller.SetBoardView(yaw);
+                Physics.SyncTransforms();
+                var bounds = controller.GetTileColumn(center).TopBounds;
+                var selectionPoint = new Vector3(bounds.center.x, bounds.max.y - 0.02f, bounds.center.z);
+                var screenPoint = controller.SceneCamera.WorldToScreenPoint(selectionPoint);
+                Assert.That(controller.IsScreenPointOverInterface(screenPoint), Is.False);
+                Assert.That(controller.TrySelectWorldAtScreenPoint(screenPoint), Is.True, "yaw=" + yaw);
+                Assert.That(controller.SelectedTile.HasValue, Is.True);
+                var selected = controller.SelectedTile.Value;
+                Assert.That(selected.Q, Is.EqualTo(center.Q),
+                    string.Format("yaw={0}, selected={1},{2}", yaw, selected.Q, selected.R));
+                Assert.That(selected.R, Is.EqualTo(center.R),
+                    string.Format("yaw={0}, selected={1},{2}", yaw, selected.Q, selected.R));
+            }
         }
 
         [UnityTest]

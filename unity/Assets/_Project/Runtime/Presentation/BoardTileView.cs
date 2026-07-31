@@ -10,18 +10,30 @@ namespace TimeKey.Presentation
 
         private MaterialPropertyBlock _propertyBlock;
         private Renderer[] _renderers;
+        private bool _isSelected;
 
         public HexCoord Coordinate { get; private set; }
 
         public void Initialize(HexCoord coordinate, Renderer[] tileRenderers)
         {
             Coordinate = coordinate;
-            _renderers = tileRenderers;
             _propertyBlock = new MaterialPropertyBlock();
-            SetSelected(false);
+            RefreshRenderers(tileRenderers);
+        }
+
+        public void RefreshRenderers(Renderer[] tileRenderers)
+        {
+            _renderers = tileRenderers ?? System.Array.Empty<Renderer>();
+            ApplySelection();
         }
 
         public void SetSelected(bool selected)
+        {
+            _isSelected = selected;
+            ApplySelection();
+        }
+
+        private void ApplySelection()
         {
             if (_renderers == null || _propertyBlock == null)
             {
@@ -31,7 +43,12 @@ namespace TimeKey.Presentation
             for (var index = 0; index < _renderers.Length; index++)
             {
                 _propertyBlock.Clear();
-                if (selected)
+                if (_renderers[index] == null)
+                {
+                    continue;
+                }
+
+                if (_isSelected)
                 {
                     var color = new Color(0.24f, 0.78f, 0.82f, 1f);
                     _propertyBlock.SetColor(BaseColorProperty, color);

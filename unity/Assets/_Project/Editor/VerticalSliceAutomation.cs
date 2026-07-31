@@ -3,12 +3,12 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using TimeKey.Domain;
 using TimeKey.Presentation;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -48,27 +48,30 @@ namespace TimeKey.Editor
             var captures = new List<CaptureStats>();
 
             controller.SetBoardView(32f);
-            captures.Add(Capture(controller, evidenceDirectory, "card-idle-1920x1080.png", 1920, 1080));
+            controller.CardHandHost.ApplyVisualStateImmediate();
+            captures.Add(Capture(controller, evidenceDirectory, "two-card-hand-1280x720.png", 1280, 720));
+            captures.Add(Capture(controller, evidenceDirectory, "two-card-hand-2560x1080.png", 2560, 1080));
 
-            var hoverEvent = new PointerEventData(EventSystem.current);
-            controller.CardHand.OnPointerEnter(hoverEvent);
-            controller.CardHand.ApplyVisualStateImmediate();
-            captures.Add(Capture(controller, evidenceDirectory, "card-hover-1920x1080.png", 1920, 1080));
-            controller.CardHand.OnPointerExit(new PointerEventData(EventSystem.current));
-            controller.CardHand.ApplyVisualStateImmediate();
-
-            if (!controller.SelectCard(VerticalSliceController.LightingCardId))
+            var center = new HexCoord(0, 0);
+            var centerTopBefore = controller.GetTileColumn(center).TopBounds.max.y;
+            var targetYBefore = controller.TargetWorldPosition.y;
+            if (!controller.SelectCard(VerticalSliceController.EarthquakeCardId))
             {
-                throw new InvalidOperationException("The original LIGHTING card could not be selected.");
+                throw new InvalidOperationException("The original EARTHQUAKE card could not be selected.");
             }
 
-            controller.CardHand.ApplyVisualStateImmediate();
-            captures.Add(Capture(controller, evidenceDirectory, "card-selected-1920x1080.png", 1920, 1080));
-            captures.Add(Capture(controller, evidenceDirectory, "card-selected-2560x1080.png", 2560, 1080));
+            controller.CardHandHost.ApplyVisualStateImmediate();
+            captures.Add(Capture(controller, evidenceDirectory, "earthquake-selected-1920x1080.png", 1920, 1080));
 
-            if (!controller.SelectTarget(VerticalSliceController.TargetId))
+            if (!controller.SelectEarthquakeTarget(center))
             {
-                throw new InvalidOperationException("The frozen target could not be selected.");
+                throw new InvalidOperationException("The earthquake center hex could not be selected.");
+            }
+
+            if (controller.BoardRangePreview.ActiveCoordinates.Count != 7 ||
+                controller.BoardRangePreview.MissingCoordinates.Count != 0)
+            {
+                throw new InvalidOperationException("Earthquake did not project to seven existing hexes.");
             }
 
             foreach (var yaw in new[] { 0, 90, 180, 270 })
@@ -77,21 +80,21 @@ namespace TimeKey.Editor
                 captures.Add(Capture(
                     controller,
                     evidenceDirectory,
-                    string.Format("target-range-yaw-{0:000}-1920x1080.png", yaw),
+                    string.Format("earthquake-range-yaw-{0:000}-1920x1080.png", yaw),
                     1920,
                     1080));
             }
 
             controller.SetBoardView(32f);
-            if (controller.PreviewTimelineSelected(2, 1))
+            if (controller.PreviewTimelineSelected(11, 0))
             {
-                throw new InvalidOperationException("The occupied enemy-intent cell was reported as legal.");
+                throw new InvalidOperationException("The right-edge two-cell shape was reported as legal.");
             }
 
             captures.Add(Capture(
                 controller,
                 evidenceDirectory,
-                "timeline-invalid-1920x1080.png",
+                "earthquake-timeline-invalid-1920x1080.png",
                 1920,
                 1080));
 
@@ -103,7 +106,7 @@ namespace TimeKey.Editor
             captures.Add(Capture(
                 controller,
                 evidenceDirectory,
-                "timeline-valid-1920x1080.png",
+                "earthquake-timeline-valid-1920x1080.png",
                 1920,
                 1080));
 
@@ -112,16 +115,35 @@ namespace TimeKey.Editor
                 throw new InvalidOperationException("The frozen interaction path could not be arranged.");
             }
 
-            captures.Add(Capture(controller, evidenceDirectory, "placed-1280x720.png", 1280, 720));
+            captures.Add(Capture(controller, evidenceDirectory, "earthquake-before-1920x1080.png", 1920, 1080));
 
             var snapshot = controller.ResolveTimeline();
-            if (snapshot.TargetHpBefore != 10 || snapshot.TargetHpAfter != 0 || !snapshot.EnemyIntentResolved)
+            if (snapshot.EffectResults.Count != 7 ||
+                snapshot.TargetHpAfter != 10 ||
+                !snapshot.EnemyIntentResolved ||
+                Math.Abs(controller.GetTileColumn(center).TopBounds.max.y - centerTopBefore - 0.64f) > 0.01f ||
+                Math.Abs(controller.TargetWorldPosition.y - targetYBefore - 0.64f) > 0.01f)
             {
-                throw new InvalidOperationException("The frozen resolution snapshot does not match the contract.");
+                throw new InvalidOperationException("The earthquake resolution does not match the +2 layer contract.");
             }
 
             controller.SetBoardView(32f);
-            captures.Add(Capture(controller, evidenceDirectory, "resolved-1920x1080.png", 1920, 1080));
+            captures.Add(Capture(controller, evidenceDirectory, "earthquake-after-1920x1080.png", 1920, 1080));
+
+            foreach (var yaw in new[] { 0, 90, 180, 270 })
+            {
+                controller.SetBoardView(yaw);
+                Physics.SyncTransforms();
+                var bounds = controller.GetTileColumn(center).TopBounds;
+                var screenPoint = controller.SceneCamera.WorldToScreenPoint(
+                    new Vector3(bounds.center.x, bounds.max.y - 0.02f, bounds.center.z));
+                if (!controller.TrySelectWorldAtScreenPoint(screenPoint) ||
+                    !controller.SelectedTile.HasValue ||
+                    controller.SelectedTile.Value != center)
+                {
+                    throw new InvalidOperationException("Raised center hex selection failed at yaw " + yaw);
+                }
+            }
 
             var buildDirectory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Builds", "Windows"));
             Directory.CreateDirectory(buildDirectory);
@@ -138,7 +160,7 @@ namespace TimeKey.Editor
             }
 
             WriteSummary(evidenceDirectory, captures, report);
-            Debug.Log("TIMEKEY_COMBAT_BOARD_HARNESS_PASS");
+            Debug.Log("TIMEKEY_EFFECTS_HARNESS_PASS");
         }
 
         private static void ValidateScene(VerticalSliceController controller)
@@ -180,9 +202,13 @@ namespace TimeKey.Editor
                 throw new InvalidOperationException("The CanvasScaler reference resolution is not frozen.");
             }
 
-            if (controller.CardHand == null || controller.CardHand.Artwork == null)
+            if (controller.CardHandHost == null ||
+                controller.CardHandHost.CardCount != 2 ||
+                controller.CardHand == null ||
+                controller.CardHand.Artwork == null ||
+                controller.CardHandHost.GetCard(VerticalSliceController.EarthquakeCardId).Artwork == null)
             {
-                throw new InvalidOperationException("The original card hand view is missing.");
+                throw new InvalidOperationException("The two-card hand or original card artwork is missing.");
             }
 
             if (controller.BoardRangePreview == null || controller.BoardRangePreview.RegisteredCount != 19)
@@ -286,7 +312,7 @@ namespace TimeKey.Editor
                 "unity-3d",
                 "04-verification",
                 "evidence",
-                "unity-slice-02b1");
+                "unity-slice-02b2a");
         }
 
         private static void WriteSummary(
@@ -297,13 +323,17 @@ namespace TimeKey.Editor
             var builder = new StringBuilder();
             builder.AppendLine("{");
             builder.AppendLine("  \"status\": \"passed\",");
-            builder.AppendLine("  \"scene\": \"CombatCardInteractionSlice\",");
+            builder.AppendLine("  \"scene\": \"EarthquakeElevationSlice\",");
             builder.AppendLine("  \"seed\": 731,");
             builder.AppendLine("  \"boardTiles\": 19,");
             builder.AppendLine("  \"cameraYawEvidence\": [0, 90, 180, 270],");
-            builder.AppendLine("  \"cardArt\": \"lighting\",");
-            builder.AppendLine("  \"cardInteraction\": \"hover-select-target-preview-commit\",");
-            builder.AppendLine("  \"targetHpAfter\": 0,");
+            builder.AppendLine("  \"cardArt\": [\"lighting\", \"earthquake\"],");
+            builder.AppendLine("  \"cardInteraction\": \"select-hex-range-two-cell-preview-commit\",");
+            builder.AppendLine("  \"earthquakeRangeResults\": 7,");
+            builder.AppendLine("  \"layerDelta\": 2,");
+            builder.AppendLine("  \"layerSpacing\": 0.32,");
+            builder.AppendLine("  \"topDelta\": 0.64,");
+            builder.AppendLine("  \"targetHpAfter\": 10,");
             builder.AppendLine("  \"enemyIntentResolved\": true,");
             builder.AppendLine("  \"screenshots\": [");
             for (var index = 0; index < captures.Count; index++)

@@ -87,6 +87,7 @@ namespace TimeKey.Domain
             var resolutionOrder = new List<TimelineSnapshotAction>(orderedActions.Count);
             var targetHpBefore = state.TargetHp;
             var enemyIntentResolved = false;
+            var effectResults = new List<TileEffectResult>();
 
             for (var index = 0; index < orderedActions.Count; index++)
             {
@@ -98,7 +99,7 @@ namespace TimeKey.Domain
                 if (action.ActorKind == TimelineActorKind.Player)
                 {
                     timeline.Add(record);
-                    state.ApplyDamage(action.TargetId, action.Damage);
+                    ApplyPlayerEffects(state, action, effectResults);
                 }
                 else
                 {
@@ -115,7 +116,41 @@ namespace TimeKey.Domain
                 state.TargetHp,
                 enemyIntentResolved,
                 state.Seed,
-                resolutionOrder);
+                resolutionOrder,
+                effectResults);
+        }
+
+        private static void ApplyPlayerEffects(
+            CombatSliceState state,
+            TimelineAction action,
+            ICollection<TileEffectResult> effectResults)
+        {
+            for (var effectIndex = 0; effectIndex < action.Effects.Count; effectIndex++)
+            {
+                var effect = action.Effects[effectIndex];
+                if (effect.Kind == CardEffectKind.Damage)
+                {
+                    state.ApplyDamage(action.TargetId, effect.Value);
+                    continue;
+                }
+
+                if (effect.Kind != CardEffectKind.Elevation || !action.TargetCoord.HasValue)
+                {
+                    continue;
+                }
+
+                for (var rangeIndex = 0; rangeIndex < action.EffectRange.Count; rangeIndex++)
+                {
+                    var offset = action.EffectRange[rangeIndex];
+                    var coordinate = new HexCoord(
+                        action.TargetCoord.Value.Q + offset.Q,
+                        action.TargetCoord.Value.R + offset.R);
+                    if (state.Board.TryApplyElevation(coordinate, effect.Value, out var result))
+                    {
+                        effectResults.Add(result);
+                    }
+                }
+            }
         }
 
         private bool Contains(TimelineCell cell)

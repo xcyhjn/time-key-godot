@@ -5,7 +5,7 @@
 > 集成分支：`unity_7.31`
 > 用途：把下方“主 Prompt”完整交给接手 AI。接手 AI 必须先评估，再拆分任务和生成多智能体 Prompt，最后才开始实现。
 
-> 当前迁移已通过评估并完成 Wave 02B1。继续局内卡牌效果阶段时，应完整读取并执行同目录的 `NEXT_STAGE_EFFECTS_PROMPT.md`；本文与 `NEXT_STAGE_COMBAT_PROMPT.md` 保留为总规范和已完成阶段依据，不应重复执行已经关闭的 Wave 00/01/02A/02B1。
+> 当前迁移已通过评估并完成 Wave 02B2A。继续局内卡牌效果阶段时，应完整读取并执行同目录的 `NEXT_STAGE_EFFECTS_B_PROMPT.md`；本文、`NEXT_STAGE_COMBAT_PROMPT.md` 与 `NEXT_STAGE_EFFECTS_PROMPT.md` 保留为总规范和已完成阶段依据，不应重复执行已经关闭的 Wave 00/01/02A/02B1/02B2A。
 
 ## 使用方式
 

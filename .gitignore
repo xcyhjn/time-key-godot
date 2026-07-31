@@ -64,3 +64,4 @@ docs/.obsidian/
 /unity/editmode-wait.log
 /unity/playmode-final.log
 /unity/player-startup.log
+/unity/player-startup-*.log

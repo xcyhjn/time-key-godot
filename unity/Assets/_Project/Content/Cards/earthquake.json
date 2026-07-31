@@ -1,0 +1,12 @@
+{
+	"name": "earthquake",
+	"front_image": "earthquake.png",
+	"效果" : "抬升范围地块1",
+	"effects": [
+	{ "type": "elevation", "value": 2 }
+  ],
+"effect_range": ["0,0", "1,0", "1,-1", "0,-1", "-1,0", "-1,1", "0,1"],
+	"shape": "11",
+	"时代" : "2",
+	"id" : "2"
+   }

@@ -1,6 +1,6 @@
-# Unity Slice 01 / Wave 02A / Wave 02B 测试计划
+# Unity Slice 01 / Wave 02A / Wave 02B2A 测试计划
 
-> 状态：Wave 02B1 已通过；Wave 02B2A 门禁已冻结待执行
+> 状态：Wave 02B2A 全部门禁已通过
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
@@ -96,3 +96,5 @@
 - 截图覆盖 selected、四向 range、timeline valid/invalid、before/after 和两种附加视口；分别检查卡牌/时间轴/升高棋盘区域像素差异，并人工检查真实层结构。
 - 既有 EditMode 31/31、PlayMode 15/15 及 lighting 完整闭环不回退。
 - Windows build 成功；Player 退出码 0 且含 `TIMEKEY_PLAYER_SMOKE_PASS`。
+
+以上门禁已执行并通过：EditMode `67/67`、PlayMode `25/25`、Cards 子集 `9/9`、Terrain 子集 `3/3`；Editor harness 输出 11 张集成 PNG，Windows x64 development build 为 `Succeeded`，Player 退出码 0 且包含 smoke marker。结构化结果与人工视觉结论见 `evidence/unity-slice-02b2a/verification-summary.md`。

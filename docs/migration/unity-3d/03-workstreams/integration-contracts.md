@@ -1,6 +1,6 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：Wave 01/02A/02B1 已冻结；Wave 02B2A 契约已审查待实现
+> 状态：Wave 01/02A/02B1 已冻结；Wave 02B2A 已实现并验证
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
@@ -102,7 +102,7 @@ TimelinePlacementPreview.Clear()
 
 ## Wave 02B2A 七卡 Schema 与 Earthquake 契约
 
-> 状态：Prompt 审查通过；实现前 Gate 0 冻结
+> 状态：已实现、主智能体集成并冻结
 
 ### Typed card effect
 
@@ -151,3 +151,12 @@ HexTileColumn -> LayerCount/Blocks/TopBounds/OccupantAnchor/Changed
 ### Future clear boundary
 
 `wind/tornado` 留到 Wave 02B2C，届时必须使用独立 `TimelineClearSession` 或等价窄 API：合法性只看 mask 边界，重叠仍合法，Commit 不创建 TimelineAction，命中任一格即移除完整 action，空清合法。02B2A 不实现该运行流程，但 schema 必须无损保留 clear mask。
+
+### Wave 02B2A 实际冻结结果
+
+- 七张 fixture 均由同一 `CardJsonAdapter` 解析为 typed effects；`FrontImage` 直接驱动资源加载，`tower_card` 与 `poison_card` 不再依赖 stable ID 推导。
+- `CardHandHost` 复用单卡 `CardHandView`，提供稳定的两卡顺序、单选互斥、取消和 drag 转发。
+- `earthquake` 的 action 保存稳定 `TargetCoord`、effects、range 与两格 shape；Resolve 对当前存在的中心加六邻格逐格返回 `EffectResults`。
+- `HexTileColumn` 每个逻辑层创建独立 FBX visual、renderer 与 collider，层间 local Y 严格为 `0.32`；`TopBounds` 和 `OccupantAnchor` 从真实顶层 bounds 重算。
+- 集成控制器只消费 Domain 结果更新表现；一层变三层时七个有效柱各新增两块，顶面与占位锚点均上移 `0.64`，缺失坐标不创建幽灵格。
+- 冻结证据为 EditMode `67/67`、PlayMode `25/25`、Windows build `Succeeded`、Player marker `TIMEKEY_PLAYER_SMOKE_PASS`，详见 `04-verification/evidence/unity-slice-02b2a/verification-summary.md`。

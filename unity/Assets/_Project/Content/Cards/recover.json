@@ -1,0 +1,12 @@
+{
+	"name": "recover",
+	"front_image": "recover.png",
+	"效果" : "范围地块恢复100",
+	"effects": [
+	{ "type": "recover", "value": 100}
+  ],
+"effect_range": ["0,0", "1,0", "-1,1"],
+	"shape": "111",
+	"时代" : "1",
+	"id" : "5"
+   }

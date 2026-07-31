@@ -3,6 +3,29 @@ using System.Collections.ObjectModel;
 
 namespace TimeKey.Domain
 {
+    public sealed class TileEffectResult
+    {
+        public TileEffectResult(
+            HexCoord coordinate,
+            int beforeLayers,
+            int afterLayers,
+            bool removed)
+        {
+            Coordinate = coordinate;
+            BeforeLayers = beforeLayers;
+            AfterLayers = afterLayers;
+            Removed = removed;
+        }
+
+        public HexCoord Coordinate { get; }
+
+        public int BeforeLayers { get; }
+
+        public int AfterLayers { get; }
+
+        public bool Removed { get; }
+    }
+
     public sealed class TimelineSnapshotAction
     {
         public TimelineSnapshotAction(TimelineCell origin, string kind, string cardId)
@@ -28,7 +51,8 @@ namespace TimeKey.Domain
             int targetHpAfter,
             bool enemyIntentResolved,
             int seed,
-            IReadOnlyList<TimelineSnapshotAction> resolutionOrder)
+            IReadOnlyList<TimelineSnapshotAction> resolutionOrder,
+            IReadOnlyList<TileEffectResult> effectResults = null)
         {
             Turn = turn;
             Phase = "resolved";
@@ -38,6 +62,7 @@ namespace TimeKey.Domain
             EnemyIntentResolved = enemyIntentResolved;
             Seed = seed;
             ResolutionOrder = Copy(resolutionOrder);
+            EffectResults = Copy(effectResults ?? new TileEffectResult[0]);
         }
 
         public int Turn { get; }
@@ -56,6 +81,8 @@ namespace TimeKey.Domain
 
         public IReadOnlyList<TimelineSnapshotAction> ResolutionOrder { get; }
 
+        public IReadOnlyList<TileEffectResult> EffectResults { get; }
+
         private static ReadOnlyCollection<TimelineSnapshotAction> Copy(
             IReadOnlyList<TimelineSnapshotAction> source)
         {
@@ -66,6 +93,18 @@ namespace TimeKey.Domain
             }
 
             return new ReadOnlyCollection<TimelineSnapshotAction>(result);
+        }
+
+        private static ReadOnlyCollection<TileEffectResult> Copy(
+            IReadOnlyList<TileEffectResult> source)
+        {
+            var result = new List<TileEffectResult>(source.Count);
+            for (var index = 0; index < source.Count; index++)
+            {
+                result.Add(source[index]);
+            }
+
+            return new ReadOnlyCollection<TileEffectResult>(result);
         }
     }
 }
