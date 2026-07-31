@@ -18,3 +18,4 @@
 | MIG-009 | Codex 进程缺少 `ALLUSERSPROFILE` 时 Unity Package Manager 报 `path argument undefined` | 默认批处理命令无法解析包 | 每次命令使用任务局部 `$env:ALLUSERSPROFILE=$env:ProgramData`；命令目录已固化 |
 | MIG-010 | 程序化材质只通过 `Shader.Find` 引用时，URP Lit 被 Player build 剥离 | 首次 Player 启动在 `Awake` 失败 | 将锁定包版本的 URP Lit 加入 Always Included Shaders；重建后 Player 冒烟通过 |
 | MIG-011 | 首次 harness 经 ASCII junction 推导仓库根时，把 4 个证据文件写到 `D:\docs\migration\unity-3d\04-verification\evidence\unity-slice-01` | 仓库外留下可识别的一次性文件 | 未做不确定范围删除；harness 改为要求/验证 `TIMEKEY_REPOSITORY_ROOT`，正式证据已在仓库内重建 |
+| MIG-012 | `git push` 警告当前 Git/GCM 的 TLS 证书校验被禁用 | HTTPS 远端连接缺少正常证书验证，存在供应链风险 | 本轮 push 成功但未擅自修改用户级配置；应由用户审查 Git/GCM 配置后恢复 TLS 校验 |
