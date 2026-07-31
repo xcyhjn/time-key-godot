@@ -1,14 +1,17 @@
 # 《时之钥》Unity Wave 02B2B 接手 Prompt
 
-> 状态：等待 Wave 02B2A Git 检查点完成后执行
+> 状态：02B2B 聚焦参考；不得绕过 `NEXT_STAGE_DECOUPLING_PROMPT.md`，解耦后优先执行 `NEXT_STAGE_REMAINING_CARDS_PROMPT.md`
 > 负责人：下一阶段主智能体
 > 最后编写日期：2026-08-01
 > 当前分支：`unity_7.31`
+> 前置任务：`docs/migration/unity-3d/00-bootstrap/NEXT_STAGE_DECOUPLING_PROMPT.md`
 > 前置证据：`docs/migration/unity-3d/04-verification/evidence/unity-slice-02b2a/verification-summary.md`
 
 # 主 Prompt
 
-你是《时之钥》Godot 到 Unity 迁移的下一阶段主智能体、Unity 局内战斗玩法负责人和最终集成负责人。进入 `D:\godot\时之钥\时之钥`，确认当前分支为 `unity_7.31`，完整读取本文和最新迁移账本，然后立即执行 Wave 02B2B。
+本文是 Wave 02B2A 按原阶段要求准备的 02B2B 聚焦参考。当前工作区已存在更晚冻结的严格队列：先完成 `NEXT_STAGE_DECOUPLING_PROMPT.md`，再以 `NEXT_STAGE_REMAINING_CARDS_PROMPT.md` 为权威执行剩余卡牌。前置解耦未完成时，不得按本文修改代码、启动 Agent、运行 Unity 或创建提交。
+
+前置门禁通过后，你是《时之钥》Godot 到 Unity 迁移的下一阶段主智能体、Unity 局内战斗玩法负责人和最终集成负责人。进入 `D:\godot\时之钥\时之钥`，确认当前分支为 `unity_7.31`，完整读取本文、`NEXT_STAGE_REMAINING_CARDS_PROMPT.md` 和最新迁移账本；若接口、所有权或范围有冲突，以后者和解耦后的真实工程为准。
 
 本阶段只实现 `recover`、`poison`、`tower/built` 三张卡的领域结果和最小可观察表现。除本文定义的硬阻塞外，不要停在复述、计划或普通实现问题上；持续推进测试、实际渲染证据、账本、Git 检查点和 `origin/unity_7.31` 推送。
 
