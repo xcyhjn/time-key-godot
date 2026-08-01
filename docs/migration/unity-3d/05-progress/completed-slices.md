@@ -1,6 +1,6 @@
 # 已完成切片
 
-> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1 与 Wave 02B2A 已完成
+> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1 已完成
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：Slice Definition of Done
@@ -58,3 +58,13 @@
 - `earthquake` 使用保存的地图坐标和两格时间轴 shape，结算中心加六邻格；边缘缺失坐标不创建幽灵 tile。
 - 七个有效柱各新增两个独立 FBX mesh/renderer/collider block，层距严格 `0.32`；顶面与 occupant anchor 同步上移 `0.64`，四向仍能选择抬高后的同一格。
 - Unity EditMode `67/67`、PlayMode `25/25`、11 张集成截图、Windows build 和 Player smoke 全部通过。
+
+## 解耦 R1：可编辑 Scene 与 Prefab
+
+完成日期：2026-08-01。
+
+- 稳定 Camera、灯光、地面、BoardRoot、TargetAnchor、EventSystem、Canvas/HUD、36 格 Timeline、CardHandHost 与 Preview 已序列化到 Scene。
+- TimelineCell、CardView、两种 HexBlock、HexColumn 和 TargetView 六个 Prefab 已保存并由 Inspector 引用。
+- `BuildSceneGraph()` 仅保留验证/初始化兼容面；Controller 不再运行时创建稳定节点。
+- 对称事件绑定覆盖重复初始化和 disable/enable；动态棋盘、目标与 intent 不重复。
+- Unity EditMode `70/70`、PlayMode `26/26`、11 张刷新截图、Windows build 和 Player smoke 全部通过。

@@ -11,10 +11,10 @@ namespace TimeKey.Presentation.Terrain
         private readonly List<GameObject> _blocks = new List<GameObject>();
         private readonly List<Renderer> _renderers = new List<Renderer>();
         private readonly List<Collider> _colliders = new List<Collider>();
-        private GameObject _grassPrefab;
-        private GameObject _dirtPrefab;
-        private float _layerSpacing = DefaultLayerSpacing;
-        private Transform _occupantAnchor;
+        [SerializeField] private GameObject _grassPrefab;
+        [SerializeField] private GameObject _dirtPrefab;
+        [SerializeField] private float _layerSpacing = DefaultLayerSpacing;
+        [SerializeField] private Transform _occupantAnchor;
         private bool _usesDirt;
 
         public event Action<HexTileColumn> Changed;

@@ -160,7 +160,7 @@ namespace TimeKey.Editor
             }
 
             WriteSummary(evidenceDirectory, captures, report);
-            Debug.Log("TIMEKEY_EFFECTS_HARNESS_PASS");
+            Debug.Log("TIMEKEY_DECOUPLING_R1_HARNESS_PASS");
         }
 
         private static void ValidateScene(VerticalSliceController controller)
@@ -312,7 +312,7 @@ namespace TimeKey.Editor
                 "unity-3d",
                 "04-verification",
                 "evidence",
-                "unity-slice-02b2a");
+                "unity-decoupling-r1");
         }
 
         private static void WriteSummary(
@@ -323,7 +323,9 @@ namespace TimeKey.Editor
             var builder = new StringBuilder();
             builder.AppendLine("{");
             builder.AppendLine("  \"status\": \"passed\",");
-            builder.AppendLine("  \"scene\": \"EarthquakeElevationSlice\",");
+            builder.AppendLine("  \"scene\": \"SerializedEditableEarthquakeSlice\",");
+            builder.AppendLine("  \"stableHierarchy\": \"serialized-before-play\",");
+            builder.AppendLine("  \"savedPrefabs\": 6,");
             builder.AppendLine("  \"seed\": 731,");
             builder.AppendLine("  \"boardTiles\": 19,");
             builder.AppendLine("  \"cameraYawEvidence\": [0, 90, 180, 270],");

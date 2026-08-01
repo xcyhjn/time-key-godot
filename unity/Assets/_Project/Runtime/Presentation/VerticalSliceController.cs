@@ -23,10 +23,37 @@ namespace TimeKey.Presentation
 
         private static readonly HexCoord TargetCoordinate = new HexCoord(1, 0);
 
+        [Header("Content")]
         [SerializeField] private TextAsset lightingFixture = null;
         [SerializeField] private TextAsset earthquakeFixture = null;
 
-        private readonly List<Button> _timelineButtons = new List<Button>(36);
+        [Header("Stable Scene References")]
+        [SerializeField] private Camera sceneCamera = null;
+        [SerializeField] private BoardOrbitCameraController boardCamera = null;
+        [SerializeField] private Light keyLight = null;
+        [SerializeField] private Light fillLight = null;
+        [SerializeField] private Renderer battlefieldGround = null;
+        [SerializeField] private Transform boardRoot = null;
+        [SerializeField] private Transform dynamicRoot = null;
+        [SerializeField] private Transform targetAnchor = null;
+        [SerializeField] private EventSystem sceneEventSystem = null;
+        [SerializeField] private Canvas sceneCanvas = null;
+        [SerializeField] private RectTransform hudRoot = null;
+        [SerializeField] private RectTransform timelineRoot = null;
+        [SerializeField] private Text statusText = null;
+        [SerializeField] private Text targetText = null;
+        [SerializeField] private Button resolveButton = null;
+        [SerializeField] private CardHandHost cardHandHost = null;
+        [SerializeField] private BoardRangePreview boardRangePreview = null;
+        [SerializeField] private TimelinePlacementPreview timelinePlacementPreview = null;
+        [SerializeField] private List<TimelineCellView> timelineCells = new List<TimelineCellView>(36);
+
+        [Header("Dynamic Prefabs")]
+        [SerializeField] private GameObject hexColumnPrefab = null;
+        [SerializeField] private GameObject grassBlockPrefab = null;
+        [SerializeField] private GameObject dirtBlockPrefab = null;
+        [SerializeField] private GameObject targetViewPrefab = null;
+
         private readonly Dictionary<HexCoord, BoardTileView> _tiles = new Dictionary<HexCoord, BoardTileView>();
         private readonly Dictionary<HexCoord, HexTileColumn> _columns = new Dictionary<HexCoord, HexTileColumn>();
         private readonly Dictionary<string, CardDefinition> _cards =
@@ -49,10 +76,6 @@ namespace TimeKey.Presentation
         private Renderer _targetRenderer;
         private GameObject _targetObject;
         private Material _targetMaterial;
-        private Material _groundMaterial;
-        private Sprite _centerAltarSprite;
-        private GameObject _grassTilePrefab;
-        private GameObject _dirtTilePrefab;
         private BoardTileView _selectedTile;
         private CardHandView _cardHandView;
         private CardHandHost _cardHandHost;
@@ -60,12 +83,14 @@ namespace TimeKey.Presentation
         private TimelinePlacementPreview _timelinePlacementPreview;
         private Sprite _lightingCardSprite;
         private Sprite _earthquakeCardSprite;
+        private bool _initialized;
+        private bool _viewsBound;
 
         public int CurrentTargetHp => _state == null ? 0 : _state.TargetHp;
 
         public bool EnemyIntentResolved => _lastSnapshot != null && _lastSnapshot.EnemyIntentResolved;
 
-        public int TimelineSlotCount => _timelineButtons.Count;
+        public int TimelineSlotCount => timelineCells.Count;
 
         public int BoardTileCount => _tiles.Count;
 
@@ -75,11 +100,11 @@ namespace TimeKey.Presentation
 
         public Vector3 TargetWorldPosition => _targetObject == null ? Vector3.zero : _targetObject.transform.position;
 
-        public Camera SceneCamera { get; private set; }
+        public Camera SceneCamera => sceneCamera;
 
-        public Canvas SceneCanvas { get; private set; }
+        public Canvas SceneCanvas => sceneCanvas;
 
-        public BoardOrbitCameraController BoardCamera { get; private set; }
+        public BoardOrbitCameraController BoardCamera => boardCamera;
 
         public CardHandView CardHand => _cardHandView;
 
@@ -105,11 +130,24 @@ namespace TimeKey.Presentation
             BuildSceneGraph();
         }
 
+        private void OnEnable()
+        {
+            if (_initialized)
+            {
+                BindViews();
+            }
+        }
+
+        private void OnDisable()
+        {
+            UnbindViews();
+        }
+
         private void Update()
         {
             if (_generatedRoot == null ||
-                BoardCamera == null ||
-                BoardCamera.IsManipulating ||
+                boardCamera == null ||
+                boardCamera.IsManipulating ||
                 IsAnyCardDragging())
             {
                 return;
@@ -153,15 +191,12 @@ namespace TimeKey.Presentation
 
         public void BuildSceneGraph()
         {
-            if (_generatedRoot != null)
+            if (_initialized)
             {
                 return;
             }
 
-            if (lightingFixture == null || earthquakeFixture == null)
-            {
-                throw new InvalidOperationException("The lighting and earthquake card fixtures must be assigned.");
-            }
+            ValidateSerializedReferences();
 
             _lightingCard = CardJsonAdapter.Parse(lightingFixture.text);
             _earthquakeCard = CardJsonAdapter.Parse(earthquakeFixture.text);
@@ -170,15 +205,20 @@ namespace TimeKey.Presentation
             _state = new CombatSliceState(TargetId, 10, FixtureSeed, new CombatBoardState());
             _timeline = new TimelineGrid();
 
-            _generatedRoot = new GameObject("GeneratedSlice");
-            _generatedRoot.transform.SetParent(transform, false);
-            _boardRangePreview = _generatedRoot.AddComponent<BoardRangePreview>();
-            _timelinePlacementPreview = _generatedRoot.AddComponent<TimelinePlacementPreview>();
+            _generatedRoot = dynamicRoot.gameObject;
+            _boardRangePreview = boardRangePreview;
+            _timelinePlacementPreview = timelinePlacementPreview;
+            _cardHandHost = cardHandHost;
+            _statusText = statusText;
+            _targetText = targetText;
+            _resolveButton = resolveButton;
 
             BuildWorld();
             BuildInterface();
             PlaceEnemyIntent();
             SetStatus("Select LIGHTING or EARTHQUAKE to schedule an action.");
+            _initialized = true;
+            BindViews();
         }
 
         public bool SelectCard(string stableId)
@@ -554,49 +594,14 @@ namespace TimeKey.Presentation
                 tileView.RefreshRenderers(ToArray(column.Renderers));
                 _boardRangePreview.Register(result.Coordinate, tileView);
             }
+
+            targetAnchor.position = _columns[TargetCoordinate].OccupantAnchor.position;
         }
 
         private void BuildWorld()
         {
-            var cameraObject = new GameObject("SliceCamera");
-            cameraObject.transform.SetParent(_generatedRoot.transform, false);
-            SceneCamera = cameraObject.AddComponent<Camera>();
-            SceneCamera.orthographic = false;
-            SceneCamera.fieldOfView = 38f;
-            SceneCamera.clearFlags = CameraClearFlags.SolidColor;
-            SceneCamera.backgroundColor = new Color(0.035f, 0.047f, 0.055f, 1f);
-            SceneCamera.nearClipPlane = 0.1f;
-            SceneCamera.farClipPlane = 100f;
-            BoardCamera = cameraObject.AddComponent<BoardOrbitCameraController>();
-            BoardCamera.Initialize(SceneCamera, new Vector3(0f, 0.45f, 0f), 32f, 48f, 15.5f);
-
-            var lightObject = new GameObject("KeyLight");
-            lightObject.transform.SetParent(_generatedRoot.transform, false);
-            var keyLight = lightObject.AddComponent<Light>();
-            keyLight.type = LightType.Directional;
-            keyLight.color = new Color(1f, 0.92f, 0.78f, 1f);
-            keyLight.intensity = 1.4f;
-            lightObject.transform.rotation = Quaternion.Euler(48f, -28f, 0f);
-
-            var fillObject = new GameObject("FillLight");
-            fillObject.transform.SetParent(_generatedRoot.transform, false);
-            var fillLight = fillObject.AddComponent<Light>();
-            fillLight.type = LightType.Directional;
-            fillLight.color = new Color(0.35f, 0.66f, 0.92f, 1f);
-            fillLight.intensity = 0.65f;
-            fillObject.transform.rotation = Quaternion.Euler(36f, 145f, 0f);
-
-            _groundMaterial = CreateUnlitMaterial(new Color(0.055f, 0.07f, 0.065f, 1f));
-            _grassTilePrefab = LoadTilePrefab("Art/Battle/Models/HexTile_Grass");
-            _dirtTilePrefab = LoadTilePrefab("Art/Battle/Models/HexTile_Dirt");
-            _centerAltarSprite = CreateOriginalSprite("Art/Battle/center_altar");
-
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "BattlefieldGround";
-            ground.transform.SetParent(_generatedRoot.transform, false);
-            ground.transform.position = new Vector3(0f, -0.04f, 0f);
-            ground.transform.localScale = new Vector3(2.1f, 1f, 2.1f);
-            ground.GetComponent<Renderer>().sharedMaterial = _groundMaterial;
+            sceneCanvas.worldCamera = sceneCamera;
+            boardCamera.Initialize(sceneCamera, new Vector3(0f, 0.45f, 0f), 32f, 48f, 15.5f);
 
             for (var q = -2; q <= 2; q++)
             {
@@ -609,170 +614,72 @@ namespace TimeKey.Presentation
                 }
             }
 
-            _targetObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            targetAnchor.position = _columns[TargetCoordinate].OccupantAnchor.position;
+            _targetObject = Instantiate(targetViewPrefab, targetAnchor, false);
             _targetObject.name = "Target-target-01";
-            _targetObject.transform.SetParent(_columns[TargetCoordinate].OccupantAnchor, false);
             _targetObject.transform.localPosition = new Vector3(0f, 0.10f, 0f);
-            _targetObject.transform.localScale = new Vector3(0.58f, 0.10f, 0.58f);
-            _targetMaterial = CreateMaterial(new Color(0.86f, 0.24f, 0.24f, 1f));
-            _targetRenderer = _targetObject.GetComponent<Renderer>();
-            _targetRenderer.sharedMaterial = _targetMaterial;
-            _targetObject.AddComponent<WorldTargetView>().Initialize(TargetId);
+            _targetRenderer = _targetObject.GetComponentInChildren<Renderer>(true);
+            if (_targetRenderer == null)
+            {
+                throw new InvalidOperationException("The target view Prefab must contain a Renderer.");
+            }
 
-            var targetArt = new GameObject("OriginalArt-center_altar", typeof(SpriteRenderer), typeof(BoxCollider));
-            targetArt.transform.SetParent(_columns[TargetCoordinate].OccupantAnchor, false);
-            targetArt.transform.localPosition = new Vector3(0f, 0.95f, 0f);
-            targetArt.transform.localScale = Vector3.one * 0.62f;
-            var targetSpriteRenderer = targetArt.GetComponent<SpriteRenderer>();
-            targetSpriteRenderer.sprite = _centerAltarSprite;
-            targetSpriteRenderer.color = Color.white;
-            targetSpriteRenderer.sortingOrder = 100;
-            targetSpriteRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            targetArt.GetComponent<BoxCollider>().size = new Vector3(2.25f, 2.25f, 0.16f);
-            targetArt.AddComponent<WorldTargetView>().Initialize(TargetId);
-            targetArt.AddComponent<CameraFacingBillboard>().Initialize(SceneCamera);
+            _targetMaterial = new Material(_targetRenderer.sharedMaterial);
+            _targetRenderer.sharedMaterial = _targetMaterial;
+            foreach (var target in _targetObject.GetComponentsInChildren<WorldTargetView>(true))
+            {
+                target.Initialize(TargetId);
+            }
+
+            foreach (var billboard in _targetObject.GetComponentsInChildren<CameraFacingBillboard>(true))
+            {
+                billboard.Initialize(sceneCamera);
+            }
         }
 
         private void BuildInterface()
         {
-            var eventSystem = new GameObject("EventSystem");
-            eventSystem.transform.SetParent(_generatedRoot.transform, false);
-            eventSystem.AddComponent<EventSystem>();
-            eventSystem.AddComponent<StandaloneInputModule>();
-
-            var canvasObject = new GameObject("SliceCanvas");
-            canvasObject.transform.SetParent(_generatedRoot.transform, false);
-            SceneCanvas = canvasObject.AddComponent<Canvas>();
-            SceneCanvas.renderMode = RenderMode.ScreenSpaceCamera;
-            SceneCanvas.worldCamera = SceneCamera;
-            SceneCanvas.planeDistance = 1f;
-            canvasObject.AddComponent<GraphicRaycaster>();
-            var scaler = canvasObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var header = CreatePanel(
-                SceneCanvas.transform,
-                "Header",
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(24f, -104f),
-                new Vector2(-24f, -24f),
-                new Color(0.06f, 0.08f, 0.09f, 1f));
-            CreateText(header.transform, "Title", "TIME KEY  /  COMBAT BOARD", 28, TextAnchor.MiddleLeft,
-                new Vector2(22f, 8f), new Vector2(-22f, -38f));
-            _statusText = CreateText(header.transform, "Status", string.Empty, 20, TextAnchor.MiddleLeft,
-                new Vector2(22f, 42f), new Vector2(-22f, -8f));
-
-            var timelinePanel = CreatePanel(
-                SceneCanvas.transform,
-                "Timeline",
-                new Vector2(0.18f, 0.73f),
-                new Vector2(0.82f, 0.90f),
-                Vector2.zero,
-                Vector2.zero,
-                new Color(0.07f, 0.09f, 0.10f, 1f));
-            var grid = timelinePanel.gameObject.AddComponent<GridLayoutGroup>();
-            grid.padding = new RectOffset(20, 20, 22, 18);
-            grid.cellSize = new Vector2(88f, 44f);
-            grid.spacing = new Vector2(4f, 5f);
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = TimelineGrid.DefaultWidth;
-
-            for (var row = 0; row < TimelineGrid.DefaultHeight; row++)
+            for (var index = 0; index < timelineCells.Count; index++)
             {
-                for (var column = 0; column < TimelineGrid.DefaultWidth; column++)
-                {
-                    var capturedColumn = column;
-                    var capturedRow = row;
-                    var button = CreateButton(
-                        timelinePanel.transform,
-                        string.Format("Slot-{0}-{1}", column, row),
-                        string.Format("{0:00}", column + 1),
-                        new Color(0.16f, 0.19f, 0.20f, 1f));
-                    button.onClick.AddListener(() => TryPlaceSelected(capturedColumn, capturedRow));
-                    AddTimelinePreviewEvents(button, capturedColumn, capturedRow);
-                    _timelinePlacementPreview.Register(
-                        new TimelineCell(column, row),
-                        button.targetGraphic);
-                    _timelineButtons.Add(button);
-                }
+                var cell = timelineCells[index];
+                _timelinePlacementPreview.Register(cell.Coordinate, cell.Graphic);
             }
 
             _lightingCardSprite = LoadCardSprite(_lightingCard);
             _earthquakeCardSprite = LoadCardSprite(_earthquakeCard);
             _cardSprites.Add(_lightingCard.StableId, _lightingCardSprite);
             _cardSprites.Add(_earthquakeCard.StableId, _earthquakeCardSprite);
-            var cardHandObject = new GameObject("CardHandHost", typeof(RectTransform));
-            cardHandObject.transform.SetParent(SceneCanvas.transform, false);
-            _cardHandHost = cardHandObject.AddComponent<CardHandHost>();
             RefreshHand(null, CardHandInteractionState.Idle);
             _cardHandView = _cardHandHost.GetCard(LightingCardId);
-            _cardHandHost.CardSelected += stableId =>
-            {
-                SelectCard(stableId);
-            };
-            _cardHandHost.CardCancelRequested += HandleCardCancelRequested;
-            _cardHandHost.CardDragChanged += HandleCardDragChanged;
-
-            var detailPanel = CreatePanel(
-                SceneCanvas.transform,
-                "DetailPanel",
-                new Vector2(1f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(-414f, 24f),
-                new Vector2(-24f, 224f),
-                new Color(0.08f, 0.10f, 0.11f, 0.96f));
-            _targetText = CreateText(detailPanel.transform, "TargetStatus", "TARGET 01  |  HP 10 / 10", 20,
-                TextAnchor.MiddleLeft, new Vector2(20f, 112f), new Vector2(-20f, -18f));
-            CreateText(detailPanel.transform, "Intent", "ENEMY INTENT  /  SLOT 03-B", 18,
-                TextAnchor.MiddleLeft, new Vector2(20f, 72f), new Vector2(-20f, -60f));
-            _resolveButton = CreateButton(detailPanel.transform, "Resolve", "RESOLVE TIMELINE", new Color(0.70f, 0.25f, 0.20f, 1f));
-            SetRect(_resolveButton.GetComponent<RectTransform>(), Vector2.zero, Vector2.zero,
-                new Vector2(20f, 18f), new Vector2(370f, 64f));
             _resolveButton.interactable = false;
-            _resolveButton.onClick.AddListener(() => ResolveTimeline());
         }
 
         private void CreateTile(HexCoord coordinate, int elevation)
         {
-            var tile = new GameObject(string.Format("Hex-{0}-{1}", coordinate.Q, coordinate.R));
-            tile.transform.SetParent(_generatedRoot.transform, false);
+            var tile = Instantiate(hexColumnPrefab, boardRoot, false);
+            tile.name = string.Format("Hex-{0}-{1}", coordinate.Q, coordinate.R);
             tile.transform.position = HexToWorld(coordinate, 0f);
             var logicalLayerCount = elevation + 1;
-            var column = tile.AddComponent<HexTileColumn>();
-            column.Initialize(_grassTilePrefab, _dirtTilePrefab, HexBlockHeight);
+            var column = tile.GetComponent<HexTileColumn>();
+            if (column == null)
+            {
+                throw new InvalidOperationException("The hex-column Prefab must contain HexTileColumn.");
+            }
+
+            column.Initialize(grassBlockPrefab, dirtBlockPrefab, HexBlockHeight);
             column.ApplyLogicalLayerCount(logicalLayerCount);
 
-            var tileView = tile.AddComponent<BoardTileView>();
+            var tileView = column.GetComponent<BoardTileView>();
+            if (tileView == null)
+            {
+                throw new InvalidOperationException("The hex-column Prefab must contain BoardTileView.");
+            }
+
             tileView.Initialize(coordinate, ToArray(column.Renderers));
             _tiles.Add(coordinate, tileView);
             _columns.Add(coordinate, column);
             _state.Board.AddTile(coordinate, logicalLayerCount);
             _boardRangePreview.Register(coordinate, tileView);
-        }
-
-        private void AddTimelinePreviewEvents(Button button, int column, int row)
-        {
-            var trigger = button.gameObject.AddComponent<EventTrigger>();
-            trigger.triggers = new List<EventTrigger.Entry>();
-
-            var enter = new EventTrigger.Entry
-            {
-                eventID = EventTriggerType.PointerEnter,
-                callback = new EventTrigger.TriggerEvent()
-            };
-            enter.callback.AddListener(_ => PreviewTimelineSelected(column, row));
-            trigger.triggers.Add(enter);
-
-            var exit = new EventTrigger.Entry
-            {
-                eventID = EventTriggerType.PointerExit,
-                callback = new EventTrigger.TriggerEvent()
-            };
-            exit.callback.AddListener(_ => ClearTimelinePreview());
-            trigger.triggers.Add(exit);
         }
 
         private void HandleCardCancelRequested(string stableId)
@@ -819,10 +726,16 @@ namespace TimeKey.Presentation
 
         private void SetTimelineCell(TimelineCell cell, string label, Color color)
         {
-            var index = (cell.Y * TimelineGrid.DefaultWidth) + cell.X;
-            var button = _timelineButtons[index];
-            button.GetComponentInChildren<Text>().text = label;
-            SetButtonColor(button, color);
+            for (var index = 0; index < timelineCells.Count; index++)
+            {
+                if (timelineCells[index].Coordinate.Equals(cell))
+                {
+                    timelineCells[index].SetContent(label, color);
+                    return;
+                }
+            }
+
+            throw new InvalidOperationException("No serialized timeline cell exists for " + cell + ".");
         }
 
         private static Vector3 HexToWorld(HexCoord coordinate, float elevation)
@@ -831,61 +744,6 @@ namespace TimeKey.Presentation
             var x = 1.5f * radius * coordinate.Q;
             var z = Mathf.Sqrt(3f) * radius * (coordinate.R + (coordinate.Q / 2f));
             return new Vector3(x, elevation, z);
-        }
-
-        private static Material CreateMaterial(Color color)
-        {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null)
-            {
-                shader = Shader.Find("Standard");
-            }
-
-            if (shader == null)
-            {
-                throw new InvalidOperationException("No compatible lit shader is available.");
-            }
-
-            var material = new Material(shader) { color = color };
-            material.enableInstancing = true;
-            return material;
-        }
-
-        private static Material CreateUnlitMaterial(Color color)
-        {
-            var shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-            {
-                shader = Shader.Find("Unlit/Color");
-            }
-
-            if (shader == null)
-            {
-                throw new InvalidOperationException("No compatible unlit shader is available.");
-            }
-
-            var material = new Material(shader) { color = color };
-            material.enableInstancing = true;
-            return material;
-        }
-
-        private static Sprite CreateOriginalSprite(string resourcePath)
-        {
-            var texture = Resources.Load<Texture2D>(resourcePath);
-            if (texture == null)
-            {
-                throw new InvalidOperationException("Original project art is missing: " + resourcePath);
-            }
-
-            var sprite = Sprite.Create(
-                texture,
-                new Rect(0f, 0f, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f),
-                100f,
-                0,
-                SpriteMeshType.FullRect);
-            sprite.name = texture.name + "-runtime-sprite";
-            return sprite;
         }
 
         private static Sprite LoadCardSprite(CardDefinition card)
@@ -972,90 +830,139 @@ namespace TimeKey.Presentation
             return result;
         }
 
-        private static GameObject LoadTilePrefab(string resourcePath)
+        private void BindViews()
         {
-            var prefab = Resources.Load<GameObject>(resourcePath);
-            if (prefab == null)
+            if (_viewsBound)
             {
-                throw new InvalidOperationException("Hex tile model is missing: " + resourcePath);
+                return;
             }
 
-            return prefab;
+            _cardHandHost.CardSelected += HandleCardSelected;
+            _cardHandHost.CardCancelRequested += HandleCardCancelRequested;
+            _cardHandHost.CardDragChanged += HandleCardDragChanged;
+            _resolveButton.onClick.AddListener(HandleResolveClicked);
+            for (var index = 0; index < timelineCells.Count; index++)
+            {
+                timelineCells[index].Clicked += HandleTimelineClicked;
+                timelineCells[index].PointerEntered += HandleTimelinePointerEntered;
+                timelineCells[index].PointerExited += HandleTimelinePointerExited;
+            }
+
+            _viewsBound = true;
         }
 
-        private static RectTransform CreatePanel(
-            Transform parent,
-            string name,
-            Vector2 anchorMin,
-            Vector2 anchorMax,
-            Vector2 offsetMin,
-            Vector2 offsetMax,
-            Color color)
+        private void UnbindViews()
         {
-            var panel = new GameObject(name, typeof(RectTransform), typeof(Image));
-            panel.transform.SetParent(parent, false);
-            var rect = panel.GetComponent<RectTransform>();
-            SetRect(rect, anchorMin, anchorMax, offsetMin, offsetMax);
-            panel.GetComponent<Image>().color = color;
-            return rect;
+            if (!_viewsBound)
+            {
+                return;
+            }
+
+            _cardHandHost.CardSelected -= HandleCardSelected;
+            _cardHandHost.CardCancelRequested -= HandleCardCancelRequested;
+            _cardHandHost.CardDragChanged -= HandleCardDragChanged;
+            _resolveButton.onClick.RemoveListener(HandleResolveClicked);
+            for (var index = 0; index < timelineCells.Count; index++)
+            {
+                timelineCells[index].Clicked -= HandleTimelineClicked;
+                timelineCells[index].PointerEntered -= HandleTimelinePointerEntered;
+                timelineCells[index].PointerExited -= HandleTimelinePointerExited;
+            }
+
+            _viewsBound = false;
         }
 
-        private static Text CreateText(
-            Transform parent,
-            string name,
-            string value,
-            int fontSize,
-            TextAnchor alignment,
-            Vector2 offsetMin,
-            Vector2 offsetMax)
+        private void HandleCardSelected(string stableId)
         {
-            var textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
-            textObject.transform.SetParent(parent, false);
-            var text = textObject.GetComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.alignment = alignment;
-            text.color = new Color(0.92f, 0.94f, 0.90f, 1f);
-            text.text = value;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
-            SetRect(text.rectTransform, Vector2.zero, Vector2.one, offsetMin, offsetMax);
-            return text;
+            SelectCard(stableId);
         }
 
-        private static Button CreateButton(Transform parent, string name, string label, Color color)
+        private void HandleTimelineClicked(TimelineCell coordinate)
         {
-            var buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
-            buttonObject.transform.SetParent(parent, false);
-            var button = buttonObject.GetComponent<Button>();
-            button.targetGraphic = buttonObject.GetComponent<Image>();
-            SetButtonColor(button, color);
-            CreateText(buttonObject.transform, "Label", label, 16, TextAnchor.MiddleCenter, Vector2.zero, Vector2.zero);
-            return button;
+            TryPlaceSelected(coordinate.X, coordinate.Y);
         }
 
-        private static void SetButtonColor(Button button, Color color)
+        private void HandleTimelinePointerEntered(TimelineCell coordinate)
         {
-            button.targetGraphic.color = color;
-            var colors = button.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(0.90f, 0.96f, 1f, 1f);
-            colors.pressedColor = new Color(0.72f, 0.82f, 0.86f, 1f);
-            colors.disabledColor = new Color(0.42f, 0.44f, 0.45f, 0.75f);
-            button.colors = colors;
+            PreviewTimelineSelected(coordinate.X, coordinate.Y);
         }
 
-        private static void SetRect(
-            RectTransform rect,
-            Vector2 anchorMin,
-            Vector2 anchorMax,
-            Vector2 offsetMin,
-            Vector2 offsetMax)
+        private void HandleTimelinePointerExited()
         {
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.offsetMin = offsetMin;
-            rect.offsetMax = offsetMax;
+            ClearTimelinePreview();
+        }
+
+        private void HandleResolveClicked()
+        {
+            ResolveTimeline();
+        }
+
+        private void ValidateSerializedReferences()
+        {
+            RequireReference(lightingFixture, nameof(lightingFixture));
+            RequireReference(earthquakeFixture, nameof(earthquakeFixture));
+            RequireReference(sceneCamera, nameof(sceneCamera));
+            RequireReference(boardCamera, nameof(boardCamera));
+            RequireReference(keyLight, nameof(keyLight));
+            RequireReference(fillLight, nameof(fillLight));
+            RequireReference(battlefieldGround, nameof(battlefieldGround));
+            RequireReference(boardRoot, nameof(boardRoot));
+            RequireReference(dynamicRoot, nameof(dynamicRoot));
+            RequireReference(targetAnchor, nameof(targetAnchor));
+            RequireReference(sceneEventSystem, nameof(sceneEventSystem));
+            RequireReference(sceneCanvas, nameof(sceneCanvas));
+            RequireReference(hudRoot, nameof(hudRoot));
+            RequireReference(timelineRoot, nameof(timelineRoot));
+            RequireReference(statusText, nameof(statusText));
+            RequireReference(targetText, nameof(targetText));
+            RequireReference(resolveButton, nameof(resolveButton));
+            RequireReference(cardHandHost, nameof(cardHandHost));
+            RequireReference(boardRangePreview, nameof(boardRangePreview));
+            RequireReference(timelinePlacementPreview, nameof(timelinePlacementPreview));
+            RequireReference(hexColumnPrefab, nameof(hexColumnPrefab));
+            RequireReference(grassBlockPrefab, nameof(grassBlockPrefab));
+            RequireReference(dirtBlockPrefab, nameof(dirtBlockPrefab));
+            RequireReference(targetViewPrefab, nameof(targetViewPrefab));
+
+            if (timelineCells == null || timelineCells.Count != TimelineGrid.DefaultWidth * TimelineGrid.DefaultHeight)
+            {
+                throw new InvalidOperationException("timelineCells must contain exactly 36 serialized cells.");
+            }
+
+            var coordinates = new HashSet<TimelineCell>();
+            for (var index = 0; index < timelineCells.Count; index++)
+            {
+                RequireReference(timelineCells[index], nameof(timelineCells) + "[" + index + "]");
+                if (timelineCells[index].Graphic == null || !coordinates.Add(timelineCells[index].Coordinate))
+                {
+                    throw new InvalidOperationException("timelineCells contains an incomplete or duplicate coordinate.");
+                }
+            }
+        }
+
+        private void OnValidate()
+        {
+            if (!gameObject.scene.IsValid())
+            {
+                return;
+            }
+
+            try
+            {
+                ValidateSerializedReferences();
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.LogError(name + ": " + exception.Message, this);
+            }
+        }
+
+        private static void RequireReference(UnityEngine.Object value, string fieldName)
+        {
+            if (value == null)
+            {
+                throw new InvalidOperationException("Missing serialized reference: " + fieldName + ".");
+            }
         }
 
         private void SetStatus(string value)
@@ -1065,7 +972,7 @@ namespace TimeKey.Presentation
 
         private void EnsureBuilt()
         {
-            if (_generatedRoot == null)
+            if (!_initialized)
             {
                 BuildSceneGraph();
             }
@@ -1073,9 +980,8 @@ namespace TimeKey.Presentation
 
         private void OnDestroy()
         {
+            UnbindViews();
             DestroyOwnedObject(_targetMaterial);
-            DestroyOwnedObject(_groundMaterial);
-            DestroyOwnedObject(_centerAltarSprite);
             DestroyOwnedObject(_lightingCardSprite);
             DestroyOwnedObject(_earthquakeCardSprite);
         }

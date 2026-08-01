@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace TimeKey.Presentation
 {
-    internal sealed class WorldTargetView : MonoBehaviour
+    public sealed class WorldTargetView : MonoBehaviour
     {
         public string TargetId { get; private set; }
 

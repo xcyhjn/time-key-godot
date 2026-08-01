@@ -15,10 +15,12 @@ namespace TimeKey.Presentation.Cards
         private const float MinimumSpacing = 102f;
         private const float MaximumSpacing = 116f;
 
+        [SerializeField] private RectTransform cardContainer = null;
+        [SerializeField] private CardHandView cardViewPrefab = null;
+
         private readonly List<CardHandView> _cards = new List<CardHandView>();
         private readonly Dictionary<string, CardHandView> _cardsById =
             new Dictionary<string, CardHandView>(StringComparer.Ordinal);
-        private RectTransform _cardContainer;
         private string _selectedStableId;
 
         public event Action<string> CardSelected;
@@ -66,7 +68,7 @@ namespace TimeKey.Presentation.Cards
                 view.Build(isSelected == model.IsSelected
                     ? model
                     : new CardViewModel(model.StableId, model.Artwork, isSelected, model.IsInteractable));
-                view.transform.SetParent(_cardContainer, false);
+                view.transform.SetParent(cardContainer, false);
                 view.transform.SetSiblingIndex(index);
             }
 
@@ -162,7 +164,7 @@ namespace TimeKey.Presentation.Cards
 
         private void EnsureContainer()
         {
-            if (_cardContainer != null)
+            if (cardContainer != null)
             {
                 return;
             }
@@ -176,18 +178,27 @@ namespace TimeKey.Presentation.Cards
 
             var containerObject = new GameObject("Cards", typeof(RectTransform));
             containerObject.transform.SetParent(transform, false);
-            _cardContainer = containerObject.GetComponent<RectTransform>();
-            _cardContainer.anchorMin = Vector2.zero;
-            _cardContainer.anchorMax = Vector2.one;
-            _cardContainer.offsetMin = Vector2.zero;
-            _cardContainer.offsetMax = Vector2.zero;
+            cardContainer = containerObject.GetComponent<RectTransform>();
+            cardContainer.anchorMin = Vector2.zero;
+            cardContainer.anchorMax = Vector2.one;
+            cardContainer.offsetMin = Vector2.zero;
+            cardContainer.offsetMax = Vector2.zero;
         }
 
         private CardHandView CreateCardView(string stableId)
         {
-            var cardObject = new GameObject("Card-" + stableId, typeof(RectTransform));
-            cardObject.transform.SetParent(_cardContainer, false);
-            var view = cardObject.AddComponent<CardHandView>();
+            CardHandView view;
+            if (cardViewPrefab != null)
+            {
+                view = Instantiate(cardViewPrefab, cardContainer, false);
+                view.name = "Card-" + stableId;
+            }
+            else
+            {
+                var cardObject = new GameObject("Card-" + stableId, typeof(RectTransform));
+                cardObject.transform.SetParent(cardContainer, false);
+                view = cardObject.AddComponent<CardHandView>();
+            }
             view.CardSelected += HandleCardSelected;
             view.CardCancelRequested += HandleCardCancelRequested;
             view.CardDragChanged += HandleCardDragChanged;
@@ -229,12 +240,12 @@ namespace TimeKey.Presentation.Cards
 
         private void LayoutCards()
         {
-            if (_cardContainer == null)
+            if (cardContainer == null)
             {
                 return;
             }
 
-            var width = _cardContainer.rect.width;
+            var width = cardContainer.rect.width;
             if (width <= 0f)
             {
                 width = Screen.width;

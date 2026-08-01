@@ -72,12 +72,12 @@ namespace TimeKey.Presentation.Cards
         private const float DragScale = 1.55f;
         private const float AnimationResponse = 18f;
 
-        private RectTransform _slot;
-        private RectTransform _cardVisual;
-        private Image _shadow;
-        private Image _artwork;
-        private Outline _selectionOutline;
-        private CanvasGroup _canvasGroup;
+        [SerializeField] private RectTransform _slot;
+        [SerializeField] private RectTransform _cardVisual;
+        [SerializeField] private Image _shadow;
+        [SerializeField] private Image _artwork;
+        [SerializeField] private Outline _selectionOutline;
+        [SerializeField] private CanvasGroup _canvasGroup;
         private CardViewModel _viewModel;
         private bool _isHovered;
         private bool _isDragging;

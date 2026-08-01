@@ -52,6 +52,32 @@ namespace TimeKey.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator SerializedScene_DisableEnableAndRepeatedBuildDoNotDuplicateRuntimeContent()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            var root = controller.gameObject;
+            var stableChildCount = root.transform.childCount;
+
+            controller.enabled = false;
+            yield return null;
+            controller.enabled = true;
+            yield return null;
+            controller.enabled = false;
+            yield return null;
+            controller.enabled = true;
+            yield return null;
+            controller.BuildSceneGraph();
+
+            Assert.That(root.transform.childCount, Is.EqualTo(stableChildCount));
+            Assert.That(controller.BoardTileCount, Is.EqualTo(19));
+            Assert.That(controller.TimelineSlotCount, Is.EqualTo(36));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(Object.FindObjectsByType<BoardTileView>(FindObjectsSortMode.None).Length, Is.EqualTo(19));
+            Assert.That(Object.FindObjectsByType<WorldTargetView>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
+        }
+
+        [UnityTest]
         public IEnumerator OrbitCamera_ClampsBoundsAndKeepsTargetSelectableAtCardinalAngles()
         {
             yield return LoadSlice();

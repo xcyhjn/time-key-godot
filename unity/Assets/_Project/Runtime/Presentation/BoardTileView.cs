@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TimeKey.Presentation
 {
-    internal sealed class BoardTileView : MonoBehaviour
+    public sealed class BoardTileView : MonoBehaviour
     {
         private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorProperty = Shader.PropertyToID("_Color");

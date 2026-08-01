@@ -1,13 +1,13 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Wave 02B2A 已完成并推送；下一阶段为局内可维护性与解耦
+> 状态：解耦 R1 Scene/Prefab 已通过；准备进入 R2 Application
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
 
 ## 结论
 
-迁移结论保持 `CONDITIONAL GO`，总体难度 4/5。Wave 02B2A 已完成七卡 typed schema、七张原卡面接入，以及 `lighting` + `earthquake` 两卡垂直切片；局外 Godot 内容没有改动。
+迁移结论保持 `CONDITIONAL GO`，总体难度 4/5。解耦阶段 R1 已把稳定战斗层级保存为可编辑 Scene，并落地六个实际 Prefab；局外 Godot 内容没有改动。
 
 ## 当前切片
 
@@ -17,7 +17,9 @@ Slice 01、Wave 02A 和 Wave 02B1 的既有契约继续成立。七张真实 fix
 
 终验结果：Unity EditMode `67/67`、PlayMode `25/25`；Cards 子集 `9/9`、Terrain 子集 `3/3`；Harness 生成 11 张集成截图并成功构建 Windows Player；实际 Player 退出码 0 且日志含 `TIMEKEY_PLAYER_SMOKE_PASS`。人工检查覆盖 1920×1080、1280×720、2560×1080 与四向镜头，没有发现卡面/时间轴裁切、关键 UI 遮挡、范围漂移、浮空 occupant、拉伸 mesh 或残留高亮。
 
-当前画面仍是技术垂直切片，不是最终战斗 UI。用户已另行冻结严格队列：先执行 `NEXT_STAGE_DECOUPLING_PROMPT.md`，把稳定 Camera/Canvas/HUD/Timeline/CardHand/Board 结构保存为可维护 Scene/Prefab 并收口扩展接口；再执行 `NEXT_STAGE_REMAINING_CARDS_PROMPT.md` 实现 recover/poison/built 和 clear。Tower 自损、poison tick/传播与敌人完整行动继续留在后续波次。
+R1 后，Camera/rig、双灯、地面、BoardRoot、TargetAnchor、EventSystem、Canvas/HUD、36 格 Timeline、CardHandHost 和 Preview 均在 Play 前存在；TimelineCell、CardView、草/土 HexBlock、HexColumn 与 TargetView 为保存的 Prefab。Controller 不再创建稳定节点，重复初始化与两轮 disable/enable 不复制棋盘、目标、监听或敌方 intent。
+
+R1 终验为 EditMode `70/70`、PlayMode `26/26`、11 张刷新截图、Windows build 和 Player smoke 全通过。下一门禁为 R2：新增纯 C# Application/Diagnostics，用兼容 facade 转接 Controller；R2 未完成前不得启动 R3 Presentation/Infrastructure 写入智能体。
 
 Git 状态：Wave 02B2A 功能检查点 `cdb09ab` 已于 2026-08-01 推送至 `origin/unity_7.31`，本状态账本随后的文档检查点也已推送。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 

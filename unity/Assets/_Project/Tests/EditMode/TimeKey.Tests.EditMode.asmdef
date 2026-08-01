@@ -2,7 +2,8 @@
   "name": "TimeKey.Tests.EditMode",
   "rootNamespace": "TimeKey.Tests.EditMode",
   "references": [
-    "TimeKey.Domain"
+    "TimeKey.Domain",
+    "TimeKey.Presentation"
   ],
   "includePlatforms": [
     "Editor"
