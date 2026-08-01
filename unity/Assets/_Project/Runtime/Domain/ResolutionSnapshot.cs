@@ -28,12 +28,19 @@ namespace TimeKey.Domain
 
     public sealed class TimelineSnapshotAction
     {
-        public TimelineSnapshotAction(TimelineCell origin, string kind, string cardId)
+        public TimelineSnapshotAction(
+            TimelineActionIdentity actionId,
+            TimelineCell origin,
+            string kind,
+            string cardId)
         {
+            ActionId = actionId;
             Origin = origin;
             Kind = kind;
             CardId = cardId;
         }
+
+        public TimelineActionIdentity ActionId { get; }
 
         public TimelineCell Origin { get; }
 

@@ -14,6 +14,7 @@ namespace TimeKey.Domain
     {
         internal TimelineClearActionSnapshot(TimelineAction action)
         {
+            ActionId = action.ActionId;
             Origin = action.Origin;
             ActorKind = action.ActorKind;
             CardId = action.CardId;
@@ -29,6 +30,8 @@ namespace TimeKey.Domain
             Shape = new ReadOnlyCollection<TimelineCell>(shape);
             OccupiedCells = new ReadOnlyCollection<TimelineCell>(occupiedCells);
         }
+
+        public TimelineActionIdentity ActionId { get; }
 
         public TimelineCell Origin { get; }
 

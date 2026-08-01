@@ -11,6 +11,8 @@
 
 普通新卡不应修改 `VerticalSliceController`。需要新效果时按 `add-effect.md` 扩展；Clear 不得伪装成普通 `TimelineAction`。
 
+普通卡进入 `CardPlaySession` 时必须由 Application 分配一个 `TimelineActionIdentity`；同一次选择的 preview 即使移动 origin，commit、resolve 与后续 View snapshot 仍保留同一 ID。不要用 stable card ID、卡名、格子坐标或 `GameObject` 作为 action identity；两次使用同一张卡必须得到不同 ordinal。
+
 Clear 卡必须只有一个 typed `CardEffectKind.Clear`，mask 只来自 `effects[].value`，普通 `shape` 必须为空且不能作为 fallback。Application 通过 `CombatInteractionMode.TimelineClear` 进入独立 session；新增同语义 Clear 卡只需内容、注册和测试，不应在 Controller 添加 stable-ID 分支。
 
 ## 测试与 Inspector

@@ -51,3 +51,5 @@
 | 交互框与映射 | 卡牌详情、玩家 action、敌人意图及地图/Timeline 联动 | 现有 card/timeline cell 基础表现，无统一映射 | 未实现 | 三视口实际截图 + PlayMode 双向高亮/清理 |
 
 本节是 02B3 的 Gate 0 冻结状态，不覆盖上表已经关闭的前置功能。实现状态只允许在相应 Gate 的代码、自动化与实际渲染证据全部通过后更新。
+
+Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、ActionId 去重、preview/commit/resolve/clear 传播和不可变 presentation snapshot 已通过 full EditMode `183/183` 与 full PlayMode `38/38`。因现有战斗入口尚未把 Tower/Poison/intent processor 接到 Runner，回合阶段、敌方命令和状态行为的矩阵判定仍保持“待验证/未实现”；卡牌/敌人/Timeline/地图的可见双向映射也必须等待 Gate B 实际渲染证据。

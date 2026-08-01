@@ -33,6 +33,7 @@ namespace TimeKey.Tests.EditMode
                 }));
             Assert.That(preview.HitActions, Has.Count.EqualTo(1));
             Assert.That(preview.Cells[0].HitAction, Is.SameAs(preview.Cells[1].HitAction));
+            Assert.That(preview.HitActions[0].ActionId, Is.EqualTo(action.ActionId));
             Assert.That(preview.HitActions[0].CardId, Is.EqualTo("wide-player"));
             Assert.That(preview.HitActions[0].Shape, Has.Count.EqualTo(2));
             Assert.That(grid.OccupiedCellCount, Is.EqualTo(2));
@@ -96,6 +97,7 @@ namespace TimeKey.Tests.EditMode
 
             Assert.That(result.Succeeded, Is.True);
             Assert.That(result.RemovedActions, Has.Count.EqualTo(1));
+            Assert.That(result.RemovedActions[0].ActionId, Is.EqualTo(action.ActionId));
             Assert.That(result.RemovedCellCount, Is.EqualTo(3));
             Assert.That(result.RemovedActions[0].Shape, Has.Count.EqualTo(3));
             Assert.That(

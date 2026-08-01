@@ -91,12 +91,18 @@ namespace TimeKey.Composition
         private static TimelineAction CreateEnemyIntent()
         {
             return new TimelineAction(
+                TimelineActionIdentity.FromSequence(1, 0),
                 TimelineActorKind.Enemy,
+                0,
+                VerticalSliceController.TargetId,
+                new HexCoord(0, 0),
                 "enemy-intent",
                 VerticalSliceController.TargetId,
                 new TimelineCell(2, 1),
                 new[] { new TimelineCell(0, 0) },
-                0);
+                new HexCoord(0, 0),
+                Array.Empty<CardEffect>(),
+                Array.Empty<HexCoord>());
         }
 
         private IReadOnlyDictionary<string, Sprite> LoadArtwork(

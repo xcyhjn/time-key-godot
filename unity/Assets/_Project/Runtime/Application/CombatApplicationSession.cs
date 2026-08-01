@@ -10,6 +10,7 @@ namespace TimeKey.Application
         private readonly CombatSliceState _state;
         private readonly TimelineGrid _timeline;
         private readonly ICombatTraceSink _traceSink;
+        private readonly long _actionIdentitySequence;
 
         private CombatSessionPhase _phase;
         private CardDefinition _selectedCard;
@@ -23,18 +24,26 @@ namespace TimeKey.Application
         private ResolutionSnapshot _lastResolution;
         private TimelineClearPreview _clearPreview;
         private TimelineClearResult _lastClearResult;
+        private int _nextActionOrdinal;
 
         public CombatApplicationSession(
             ICardCatalog catalog,
             CombatSliceState state,
             TimelineGrid timeline,
             IReadOnlyList<TimelineAction> initialActions = null,
-            ICombatTraceSink traceSink = null)
+            ICombatTraceSink traceSink = null,
+            long actionIdentitySequence = 1)
         {
             _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             _state = state ?? throw new ArgumentNullException(nameof(state));
             _timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
             _traceSink = traceSink;
+            if (actionIdentitySequence <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(actionIdentitySequence));
+            }
+
+            _actionIdentitySequence = actionIdentitySequence;
             if (_catalog.Cards == null)
             {
                 throw new ArgumentException("The card catalog must expose a card list.", nameof(catalog));
@@ -49,6 +58,9 @@ namespace TimeKey.Application
         public CombatSessionView Current => new CombatSessionView(
             _phase,
             _selectedCard,
+            _cardPlaySession == null
+                ? (TimelineActionIdentity?)null
+                : _cardPlaySession.ActionId,
             _requiredTargetKind,
             _target,
             _timelineOrigin,
@@ -96,7 +108,9 @@ namespace TimeKey.Application
             }
 
             _selectedCard = card;
-            _cardPlaySession = isClearCard ? null : new CardPlaySession(card);
+            _cardPlaySession = isClearCard
+                ? null
+                : new CardPlaySession(card, NextActionIdentity());
             _timelineClearSession = isClearCard ? new TimelineClearSession(card) : null;
             _interactionMode = isClearCard
                 ? CombatInteractionMode.TimelineClear
@@ -665,6 +679,31 @@ namespace TimeKey.Application
         }
 
         private string CurrentStableId => _selectedCard == null ? null : _selectedCard.StableId;
+
+        private TimelineActionIdentity NextActionIdentity()
+        {
+            while (true)
+            {
+                var candidate = TimelineActionIdentity.FromSequence(
+                    _actionIdentitySequence,
+                    checked(_nextActionOrdinal++));
+                var scheduledActions = _timeline.ScheduledActions;
+                var isAvailable = true;
+                for (var index = 0; index < scheduledActions.Count; index++)
+                {
+                    if (scheduledActions[index].ActionId == candidate)
+                    {
+                        isAvailable = false;
+                        break;
+                    }
+                }
+
+                if (isAvailable)
+                {
+                    return candidate;
+                }
+            }
+        }
 
         private bool IsKnownTarget(CombatTarget target)
         {

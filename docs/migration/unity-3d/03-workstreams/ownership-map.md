@@ -89,7 +89,7 @@ Gate D 的文档与 harness 两个只读审计智能体均已完成返回；它�
 | 波次 | 角色 | 独占路径摘要 | 启动条件 | 当前状态 |
 | --- | --- | --- | --- | --- |
 | Gate 0 | 三个只读审计 | 各自 `agents/reports/turn-lifecycle-*.md` | 当前工作区与主 Prompt 冻结 | 已完成返回；无代码写入 |
-| Gate A | Agent A / 生命周期 Runner | 新增 lifecycle/identity/snapshot 文件、新增对应 EditMode tests、独占报告 | Prompt review PASS | 可启动；不得修改既有共享文件 |
+| Gate A | Agent A / 生命周期 Runner | 新增 lifecycle/identity/snapshot 文件、新增对应 EditMode tests、独占报告 | Prompt review PASS | 已完成并交回；纯 C# `20/20`，集成全量 `183/183` |
 | Gate B | Agent B1 / Enemy intent Domain | 新增 intent Domain/Application 文件与独占 tests/report | Gate A snapshot API 冻结 | 待启动 |
 | Gate B | Agent B2 / Intent Presentation | `Presentation/Intent/**`、对应 Prefab/PlayMode tests/report | B1 返回 | 待启动 |
 | Gate C | Agent C1 / Building + Poison processors | 新增 processors 与独占 EditMode tests/report | Gate A runner API 冻结 | 待启动 |
@@ -99,3 +99,5 @@ Gate D 的文档与 harness 两个只读审计智能体均已完成返回；它�
 详细文件白名单以 `agents/prompts/turn-lifecycle-agent-*.md` 为准。五份写入 Prompt 通过交集审查：A、B1、B2、C1、C2 不共享可写文件；Agent 不得暂存、提交、推送、切分支、运行 Unity 或覆盖其他工作者改动。任何新增共享依赖先写独占报告并交回主智能体处理。
 
 执行顺序固定为 `Gate A -> (Gate B1 || Gate C1) -> (Gate B2 || Gate C2) -> 主集成`。Unity Editor、PlayMode、harness、build 与 Player smoke 始终由主智能体串行执行，避免工程锁与证据污染。
+
+Gate A 实际执行保持互斥：Agent A 只新增 Prompt 白名单内文件，主智能体只修改既有 Timeline/CardPlay/Application 共享文件。Agent 交回后主智能体独占运行 Unity 定向与全量测试并回收全部 Gate A 路径；当前没有 Gate A 写入智能体。

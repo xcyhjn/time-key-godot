@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace TimeKey.Domain
 {
@@ -10,8 +11,8 @@ namespace TimeKey.Domain
 
         private readonly Dictionary<TimelineCell, TimelineAction> _cells =
             new Dictionary<TimelineCell, TimelineAction>();
-        private readonly HashSet<TimelineAction> _placedActions =
-            new HashSet<TimelineAction>();
+        private readonly Dictionary<TimelineActionIdentity, TimelineAction> _placedActions =
+            new Dictionary<TimelineActionIdentity, TimelineAction>();
         private readonly Dictionary<CardEffectKind, ICardEffectHandler> _effectHandlers =
             new Dictionary<CardEffectKind, ICardEffectHandler>();
 
@@ -41,6 +42,9 @@ namespace TimeKey.Domain
 
         public int OccupiedCellCount => _cells.Count;
 
+        public IReadOnlyList<TimelineAction> ScheduledActions =>
+            new ReadOnlyCollection<TimelineAction>(GetActionsInResolutionOrder());
+
         public bool CanPlace(TimelineAction action)
         {
             EnsureEffectsSupported(action);
@@ -60,7 +64,7 @@ namespace TimeKey.Domain
                 _cells.Add(action.Origin + action.Shape[index], action);
             }
 
-            _placedActions.Add(action);
+            _placedActions.Add(action.ActionId, action);
             return true;
         }
 
@@ -93,14 +97,14 @@ namespace TimeKey.Domain
                 {
                     var cell = action.Origin + action.Shape[shapeIndex];
                     if (_cells.TryGetValue(cell, out var occupyingAction) &&
-                        ReferenceEquals(occupyingAction, action))
+                        occupyingAction.ActionId == action.ActionId)
                     {
                         _cells.Remove(cell);
                         removedCellCount++;
                     }
                 }
 
-                _placedActions.Remove(action);
+                _placedActions.Remove(action.ActionId);
             }
 
             return new TimelineClearResult(true, preview, removedActions, removedCellCount);
@@ -108,7 +112,7 @@ namespace TimeKey.Domain
 
         private bool IsPlacementValid(TimelineAction action)
         {
-            if (action == null || _placedActions.Contains(action))
+            if (action == null || _placedActions.ContainsKey(action.ActionId))
             {
                 return false;
             }
@@ -143,7 +147,11 @@ namespace TimeKey.Domain
             {
                 var action = orderedActions[index];
                 var kind = action.ActorKind == TimelineActorKind.Player ? "player" : "enemy";
-                var record = new TimelineSnapshotAction(action.Origin, kind, action.CardId);
+                var record = new TimelineSnapshotAction(
+                    action.ActionId,
+                    action.Origin,
+                    kind,
+                    action.CardId);
                 resolutionOrder.Add(record);
 
                 if (action.ActorKind == TimelineActorKind.Player)
@@ -239,8 +247,9 @@ namespace TimeKey.Domain
         {
             var cells = new List<TimelineClearCellPreview>(clearEffect.ClearMask.Count);
             hitActions = new List<TimelineAction>();
-            var hitActionSet = new HashSet<TimelineAction>();
-            var snapshots = new Dictionary<TimelineAction, TimelineClearActionSnapshot>();
+            var hitActionSet = new HashSet<TimelineActionIdentity>();
+            var snapshots =
+                new Dictionary<TimelineActionIdentity, TimelineClearActionSnapshot>();
             var isInBounds = true;
 
             for (var index = 0; index < clearEffect.ClearMask.Count; index++)
@@ -265,13 +274,13 @@ namespace TimeKey.Domain
                     continue;
                 }
 
-                if (!snapshots.TryGetValue(action, out var snapshot))
+                if (!snapshots.TryGetValue(action.ActionId, out var snapshot))
                 {
                     snapshot = new TimelineClearActionSnapshot(action);
-                    snapshots.Add(action, snapshot);
+                    snapshots.Add(action.ActionId, snapshot);
                 }
 
-                if (hitActionSet.Add(action))
+                if (hitActionSet.Add(action.ActionId))
                 {
                     hitActions.Add(action);
                 }
@@ -285,7 +294,7 @@ namespace TimeKey.Domain
             var hitActionSnapshots = new List<TimelineClearActionSnapshot>(hitActions.Count);
             for (var index = 0; index < hitActions.Count; index++)
             {
-                hitActionSnapshots.Add(snapshots[hitActions[index]]);
+                hitActionSnapshots.Add(snapshots[hitActions[index].ActionId]);
             }
 
             return new TimelineClearPreview(origin, isInBounds, cells, hitActionSnapshots);
@@ -309,14 +318,15 @@ namespace TimeKey.Domain
         private List<TimelineAction> GetActionsInResolutionOrder()
         {
             var result = new List<TimelineAction>(_placedActions.Count);
-            var processed = new HashSet<TimelineAction>();
+            var processed = new HashSet<TimelineActionIdentity>();
 
             for (var x = 0; x < Width; x++)
             {
                 for (var y = 0; y < Height; y++)
                 {
                     TimelineAction action;
-                    if (_cells.TryGetValue(new TimelineCell(x, y), out action) && processed.Add(action))
+                    if (_cells.TryGetValue(new TimelineCell(x, y), out action) &&
+                        processed.Add(action.ActionId))
                     {
                         result.Add(action);
                     }
@@ -324,6 +334,30 @@ namespace TimeKey.Domain
             }
 
             return result;
+        }
+
+        public TimelineActionPlan CreateResolutionPlan()
+        {
+            var actions = GetActionsInResolutionOrder();
+            var entries = new List<TimelineActionPlanEntry>(actions.Count);
+            for (var actionIndex = 0; actionIndex < actions.Count; actionIndex++)
+            {
+                var action = actions[actionIndex];
+                var occupiedCells = new List<TimelineCell>(action.Shape.Count);
+                for (var shapeIndex = 0; shapeIndex < action.Shape.Count; shapeIndex++)
+                {
+                    occupiedCells.Add(action.Origin + action.Shape[shapeIndex]);
+                }
+
+                entries.Add(new TimelineActionPlanEntry(
+                    action.ActionId,
+                    action.ActorKind,
+                    action.CardId,
+                    action.Origin,
+                    occupiedCells));
+            }
+
+            return new TimelineActionPlan(entries, Width, Height);
         }
 
         private void Clear()

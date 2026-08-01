@@ -51,6 +51,36 @@ namespace TimeKey.Tests.EditMode
         }
 
         [Test]
+        public void TryPlace_RejectsDuplicateActionIdentityBeforeOccupyingCells()
+        {
+            var actionId = TimelineActionIdentity.FromSequence(8, 0);
+            var card = new CardDefinition(
+                "lighting",
+                1,
+                new[] { new CardEffect(CardEffectKind.Damage, 100) },
+                new[] { new HexCoord(0, 0) },
+                new[] { new TimelineCell(0, 0) });
+            var first = TimelineAction.FromCard(
+                actionId,
+                card,
+                "target",
+                new HexCoord(0, 0),
+                new TimelineCell(0, 0));
+            var duplicate = TimelineAction.FromCard(
+                actionId,
+                card,
+                "target",
+                new HexCoord(0, 0),
+                new TimelineCell(2, 0));
+            var grid = new TimelineGrid();
+
+            Assert.That(grid.TryPlace(first), Is.True);
+            Assert.That(grid.TryPlace(duplicate), Is.False);
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+            Assert.That(grid.ScheduledActions.Single().ActionId, Is.EqualTo(actionId));
+        }
+
+        [Test]
         public void Resolve_OrdersActionsByColumnThenRow()
         {
             var grid = new TimelineGrid();
@@ -58,6 +88,12 @@ namespace TimeKey.Tests.EditMode
             Assert.That(grid.TryPlace(CreateAction("column-two", 2, 0)), Is.True);
             Assert.That(grid.TryPlace(CreateAction("row-two", 1, 2)), Is.True);
             Assert.That(grid.TryPlace(CreateAction("row-zero", 1, 0)), Is.True);
+
+            var plan = grid.CreateResolutionPlan();
+            Assert.That(plan.TryGetResolutionOrder(out var planned, out _, out _), Is.True);
+            Assert.That(
+                planned.Select(item => item.DisplayStableId),
+                Is.EqualTo(new[] { "row-zero", "row-two", "column-two" }));
 
             var snapshot = grid.Resolve(state);
 
@@ -84,6 +120,7 @@ namespace TimeKey.Tests.EditMode
 
             Assert.That(snapshot.TargetHpAfter, Is.EqualTo(7));
             Assert.That(snapshot.ResolutionOrder.Count, Is.EqualTo(1));
+            Assert.That(snapshot.ResolutionOrder[0].ActionId, Is.EqualTo(action.ActionId));
             Assert.That(grid.OccupiedCellCount, Is.Zero);
         }
 

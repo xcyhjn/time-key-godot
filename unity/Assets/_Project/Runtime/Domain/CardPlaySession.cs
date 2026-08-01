@@ -46,14 +46,28 @@ namespace TimeKey.Domain
     public sealed class CardPlaySession
     {
         private bool _isPlacementValid;
+        private TimelineAction _pendingAction;
 
         public CardPlaySession(CardDefinition card)
+            : this(card, TimelineAction.CreateTransientIdentity())
+        {
+        }
+
+        public CardPlaySession(CardDefinition card, TimelineActionIdentity actionId)
         {
             Card = card ?? throw new ArgumentNullException(nameof(card));
+            if (!actionId.IsValid)
+            {
+                throw new ArgumentException("A valid action identity is required.", nameof(actionId));
+            }
+
+            ActionId = actionId;
             State = CardPlaySessionState.Idle;
         }
 
         public CardDefinition Card { get; }
+
+        public TimelineActionIdentity ActionId { get; }
 
         public CardPlaySessionState State { get; private set; }
 
@@ -79,6 +93,7 @@ namespace TimeKey.Domain
             TargetId = targetId;
             TargetCoord = targetCoord;
             TimelineOrigin = null;
+            _pendingAction = null;
             _isPlacementValid = false;
             State = CardPlaySessionState.TargetSelected;
             return Success(false);
@@ -103,7 +118,8 @@ namespace TimeKey.Domain
             }
 
             TimelineOrigin = origin;
-            _isPlacementValid = grid.CanPlace(CreateAction(origin));
+            _pendingAction = CreateAction(origin);
+            _isPlacementValid = grid.CanPlace(_pendingAction);
             State = CardPlaySessionState.TimelinePreview;
             return _isPlacementValid
                 ? Success(true)
@@ -128,7 +144,9 @@ namespace TimeKey.Domain
                 return Failure(CardPlayFailure.PreviewRequired);
             }
 
-            if (!_isPlacementValid || !grid.TryPlace(CreateAction(TimelineOrigin.Value)))
+            if (!_isPlacementValid ||
+                _pendingAction == null ||
+                !grid.TryPlace(_pendingAction))
             {
                 _isPlacementValid = false;
                 return Failure(CardPlayFailure.InvalidTimelinePlacement);
@@ -149,13 +167,14 @@ namespace TimeKey.Domain
             TargetId = null;
             TargetCoord = null;
             TimelineOrigin = null;
+            _pendingAction = null;
             _isPlacementValid = false;
             return Success(false);
         }
 
         private TimelineAction CreateAction(TimelineCell origin)
         {
-            return TimelineAction.FromCard(Card, TargetId, TargetCoord, origin);
+            return TimelineAction.FromCard(ActionId, Card, TargetId, TargetCoord, origin);
         }
 
         private CardPlayFailure GetClosedFailure()

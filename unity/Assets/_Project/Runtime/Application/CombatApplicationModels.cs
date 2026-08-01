@@ -45,6 +45,7 @@ namespace TimeKey.Application
         internal CombatSessionView(
             CombatSessionPhase phase,
             CardDefinition selectedCard,
+            TimelineActionIdentity? pendingActionId,
             CombatTargetKind? requiredTargetKind,
             CombatTarget? target,
             TimelineCell? timelineOrigin,
@@ -56,6 +57,7 @@ namespace TimeKey.Application
         {
             Phase = phase;
             SelectedCard = selectedCard;
+            PendingActionId = pendingActionId;
             RequiredTargetKind = requiredTargetKind;
             Target = target;
             TimelineOrigin = timelineOrigin;
@@ -71,6 +73,8 @@ namespace TimeKey.Application
         public CardDefinition SelectedCard { get; }
 
         public string SelectedStableId => SelectedCard == null ? null : SelectedCard.StableId;
+
+        public TimelineActionIdentity? PendingActionId { get; }
 
         public CombatTargetKind? RequiredTargetKind { get; }
 

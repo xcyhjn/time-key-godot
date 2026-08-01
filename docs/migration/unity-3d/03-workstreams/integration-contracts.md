@@ -260,3 +260,13 @@ EndTurn:
 - 交互优先级冻结为：`resolving/disabled > card targeting > scheduling/drag/clear > idle hover > none`。取消、清除、失败和对象移除均以 `ActionId` 原子清理卡牌、敌人、Timeline、地图之间的双向映射。
 
 Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/reports/turn-lifecycle-*.md`；所有权互斥 Prompt 已由主智能体审查通过，结论见 `agents/prompt-review-turn-lifecycle.md`。
+
+### Gate A 实际冻结结果
+
+- `TurnLifecycleRunner` 是纯 Domain 的单入口编排器；InitialStart 只跑共享尾段，EndTurn 严格跑完整冻结顺序。输入锁只由 `phase != PlayerReady` 派生。
+- processor typed failure 会停在当前 phase、锁存 fault 并拒绝重放已完成 action；计划预检失败仍停在 PlayerReady。本 Gate 不实现任意异常后的全状态 transaction。
+- `TimelineActionIdentity.FromSequence(sequence, ordinal)` 是正式值身份；Application session 的普通卡 preview、commit、resolve 与 clear snapshot 保留同一 ID，旧 fixture 构造仅使用兼容 transient ID。
+- `TimelineGrid` 的重复检查、x 后 y 去重、clear 和 resolution snapshot 全部改用 ActionId；`CreateResolutionPlan()` 是 Runner 的只读输入，不改变 grid。
+- 不可变 presentation snapshot 已冻结完整字段和 typed validity/reason/resolve state；Gate B 只能增加 catalog 投影与 View，不能改变身份或玩法规则。
+
+验证为定向 EditMode `85/85`、全量 EditMode `183/183`、全量 PlayMode `38/38`，详见 `../04-verification/evidence/turn-lifecycle-gate-a/verification-summary.md`。Gate A 未修改 Scene/Prefab/Presentation，前置汉化视觉、build 与 Player smoke 证据按未受影响边界继承。

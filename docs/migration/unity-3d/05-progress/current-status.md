@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Remaining Cards Gate D 与当前 Unity 战斗切片简体中文汉化已完成；下一阶段为 Wave 02B3 回合生命周期
+> 状态：Wave 02B3 Gate A 已完成；Gate B 卡牌/时间轴表现与敌方意图进行中
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -29,9 +29,11 @@ Gate D 终验为全量 EditMode `152/152`、PlayMode `38/38`，0 失败、0 跳�
 
 当前 Unity 战斗切片玩家可见文本已统一为简体中文，并使用 Silver 像素字体；stable ID、数据字段和开发者日志保持不变。刷新后的 EditMode 为 `161/161`、PlayMode 为 `38/38`，汉化 Harness 生成 8 张实际截图并成功构建 Windows Player（`210916374` bytes），Player smoke 退出码 0。三视口及雷击/台风关键状态已人工确认无缺字、裁切、重叠或宽屏错位，证据位于 `../04-verification/evidence/simplified-chinese-localization/`。
 
+Wave 02B3 Gate A 已新增纯 Domain `TurnLifecycleRunner`、稳定 `TimelineActionIdentity`、x 后 y `TimelineActionPlan` 与不可变 presentation snapshot。普通卡牌从 preview 到 commit、resolution 与 clear snapshot 使用同一 ID；Timeline 的重复检查、跨格去重和整组清除不再依赖对象引用。实际验证为定向 EditMode `85/85`、full EditMode `183/183`、full PlayMode `38/38`。Gate A 没有修改 Scene/Prefab/Presentation，前置汉化视觉、build 和 Player smoke 继续按未受影响边界继承；Gate B 将刷新 UI/Scene 与三视口证据。
+
 Git 检查点与远端同步结果以 `push-status.md` 为唯一账本；本文件只记录已通过的功能和验收状态。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 
-`00-bootstrap/NEXT_STAGE_REMAINING_CARDS_PROMPT.md` 的 Gate 0/A/B/C/D 已执行完毕。下一阶段必须完整读取 `NEXT_STAGE_TURN_LIFECYCLE_PROMPT.md` 后再开始，不得重跑已关闭的 Wave 00/01/02A/02B1/02B2A、解耦或 Remaining Cards 阶段。
+`00-bootstrap/NEXT_STAGE_TURN_LIFECYCLE_PROMPT.md` 是当前唯一阶段规范；Gate 0 与 Gate A 已关闭，下一步按已审查的 B1/B2 Prompt 实施玩家 action 表现与真实敌人意图，不重跑已关闭的前置阶段。
 
 ## 分支与工作区保护
 

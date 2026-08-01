@@ -104,6 +104,24 @@ namespace TimeKey.Tests.EditMode
         }
 
         [Test]
+        public void PreviewAndCommit_PreserveExplicitActionIdentity()
+        {
+            var actionId = TimelineActionIdentity.FromSequence(4, 2);
+            var grid = new TimelineGrid();
+            var session = new CardPlaySession(CreateLighting(), actionId);
+            Assert.That(session.SelectTarget("target-01", new HexCoord(0, 0)).Succeeded, Is.True);
+
+            Assert.That(session.PreviewTimeline(grid, new TimelineCell(1, 0)).Succeeded, Is.True);
+            Assert.That(session.PreviewTimeline(grid, new TimelineCell(2, 0)).Succeeded, Is.True);
+            Assert.That(session.Commit(grid).Succeeded, Is.True);
+
+            Assert.That(session.ActionId, Is.EqualTo(actionId));
+            Assert.That(grid.ScheduledActions, Has.Count.EqualTo(1));
+            Assert.That(grid.ScheduledActions[0].ActionId, Is.EqualTo(actionId));
+            Assert.That(grid.ScheduledActions[0].Origin, Is.EqualTo(new TimelineCell(2, 0)));
+        }
+
+        [Test]
         public void Commit_WhenTimelineChangesAfterPreviewFailsWithoutAdditionalMutation()
         {
             var grid = new TimelineGrid();

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Threading;
 
 namespace TimeKey.Domain
 {
@@ -12,6 +14,8 @@ namespace TimeKey.Domain
 
     public sealed class TimelineAction
     {
+        private static long _transientIdentityOrdinal;
+
         private readonly ReadOnlyCollection<TimelineCell> _shape;
         private readonly ReadOnlyCollection<CardEffect> _effects;
         private readonly ReadOnlyCollection<HexCoord> _effectRange;
@@ -24,7 +28,11 @@ namespace TimeKey.Domain
             IReadOnlyList<TimelineCell> shape,
             int damage)
             : this(
+                CreateTransientIdentity(),
                 actorKind,
+                0,
+                null,
+                null,
                 cardId,
                 targetId,
                 origin,
@@ -44,7 +52,51 @@ namespace TimeKey.Domain
             HexCoord? targetCoord,
             IReadOnlyList<CardEffect> effects,
             IReadOnlyList<HexCoord> effectRange)
+            : this(
+                CreateTransientIdentity(),
+                actorKind,
+                0,
+                null,
+                null,
+                cardId,
+                targetId,
+                origin,
+                shape,
+                targetCoord,
+                effects,
+                effectRange)
         {
+        }
+
+        public TimelineAction(
+            TimelineActionIdentity actionId,
+            TimelineActorKind actorKind,
+            int priority,
+            string sourceId,
+            HexCoord? sourceCoord,
+            string cardId,
+            string targetId,
+            TimelineCell origin,
+            IReadOnlyList<TimelineCell> shape,
+            HexCoord? targetCoord,
+            IReadOnlyList<CardEffect> effects,
+            IReadOnlyList<HexCoord> effectRange)
+        {
+            if (!actionId.IsValid)
+            {
+                throw new ArgumentException("A valid action identity is required.", nameof(actionId));
+            }
+
+            if (priority < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(priority));
+            }
+
+            if (sourceId != null && string.IsNullOrWhiteSpace(sourceId))
+            {
+                throw new ArgumentException("A source ID cannot be whitespace.", nameof(sourceId));
+            }
+
             if (string.IsNullOrWhiteSpace(cardId))
             {
                 throw new ArgumentException("A card or intent ID is required.", nameof(cardId));
@@ -82,7 +134,11 @@ namespace TimeKey.Domain
                 copiedShape.Add(shape[index]);
             }
 
+            ActionId = actionId;
             ActorKind = actorKind;
+            Priority = priority;
+            SourceId = sourceId;
+            SourceCoord = sourceCoord;
             CardId = cardId;
             TargetId = targetId;
             Origin = origin;
@@ -92,7 +148,15 @@ namespace TimeKey.Domain
             _effectRange = Copy(effectRange);
         }
 
+        public TimelineActionIdentity ActionId { get; }
+
         public TimelineActorKind ActorKind { get; }
+
+        public int Priority { get; }
+
+        public string SourceId { get; }
+
+        public HexCoord? SourceCoord { get; }
 
         public string CardId { get; }
 
@@ -134,6 +198,25 @@ namespace TimeKey.Domain
         }
 
         public static TimelineAction FromCard(
+            TimelineActionIdentity actionId,
+            CardDefinition card,
+            string targetId,
+            TimelineCell origin)
+        {
+            return FromCard(actionId, card, targetId, null, origin);
+        }
+
+        public static TimelineAction FromCard(
+            CardDefinition card,
+            string targetId,
+            HexCoord? targetCoord,
+            TimelineCell origin)
+        {
+            return FromCard(CreateTransientIdentity(), card, targetId, targetCoord, origin);
+        }
+
+        public static TimelineAction FromCard(
+            TimelineActionIdentity actionId,
             CardDefinition card,
             string targetId,
             HexCoord? targetCoord,
@@ -155,7 +238,11 @@ namespace TimeKey.Domain
             }
 
             return new TimelineAction(
+                actionId,
                 TimelineActorKind.Player,
+                0,
+                null,
+                null,
                 card.StableId,
                 targetId,
                 origin,
@@ -163,6 +250,15 @@ namespace TimeKey.Domain
                 targetCoord,
                 card.Effects,
                 card.Range);
+        }
+
+        internal static TimelineActionIdentity CreateTransientIdentity()
+        {
+            var ordinal = Interlocked.Increment(ref _transientIdentityOrdinal) - 1;
+            return new TimelineActionIdentity(string.Format(
+                CultureInfo.InvariantCulture,
+                "transient/action:{0}",
+                ordinal));
         }
 
         private static ReadOnlyCollection<T> Copy<T>(IReadOnlyList<T> source)

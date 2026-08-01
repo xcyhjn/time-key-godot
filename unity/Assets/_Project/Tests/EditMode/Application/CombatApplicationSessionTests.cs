@@ -16,10 +16,13 @@ namespace TimeKey.Tests.EditMode.Application
             var session = CreateSession(out var grid, out _);
 
             var selected = session.SelectCard("lighting");
+            var pendingActionId = session.Current.PendingActionId;
             var targeted = session.SelectTarget(CombatTarget.ForEntity("target-01", new HexCoord(0, 0)));
             var previewed = session.PreviewTimeline(new TimelineCell(0, 0));
 
             Assert.That(selected.Succeeded, Is.True);
+            Assert.That(pendingActionId.HasValue, Is.True);
+            Assert.That(pendingActionId.Value.Value, Is.EqualTo("cycle:1/action:0"));
             Assert.That(selected.RequiredTargetKind, Is.EqualTo(CombatTargetKind.Entity));
             Assert.That(targeted.Succeeded, Is.True);
             Assert.That(previewed.Succeeded, Is.True);
@@ -30,6 +33,9 @@ namespace TimeKey.Tests.EditMode.Application
 
             Assert.That(committed.Succeeded, Is.True);
             Assert.That(grid.OccupiedCellCount, Is.EqualTo(2));
+            Assert.That(
+                grid.ScheduledActions.Single(item => item.ActorKind == TimelineActorKind.Player).ActionId,
+                Is.EqualTo(pendingActionId.Value));
 
             var resolved = session.ResolveTimeline();
 
@@ -41,6 +47,10 @@ namespace TimeKey.Tests.EditMode.Application
             Assert.That(
                 resolved.Resolution.ResolutionOrder.Count(item => item.CardId == "enemy-intent"),
                 Is.EqualTo(1));
+            Assert.That(
+                resolved.Resolution.ResolutionOrder
+                    .Single(item => item.CardId == "lighting").ActionId,
+                Is.EqualTo(pendingActionId.Value));
             Assert.That(session.Current.Phase, Is.EqualTo(CombatSessionPhase.Resolved));
             Assert.That(session.Current.SelectedCard, Is.Null);
             Assert.That(grid.OccupiedCellCount, Is.Zero);
