@@ -1,10 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using TimeKey.Application;
 using TimeKey.Domain;
-using TimeKey.Infrastructure;
+using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
@@ -23,10 +22,6 @@ namespace TimeKey.Presentation
         public const float HexBlockHeight = 0.32f;
 
         private static readonly HexCoord TargetCoordinate = new HexCoord(1, 0);
-
-        [Header("Content")]
-        [SerializeField] private TextAsset lightingFixture = null;
-        [SerializeField] private TextAsset earthquakeFixture = null;
 
         [Header("Stable Scene References")]
         [SerializeField] private Camera sceneCamera = null;
@@ -47,7 +42,7 @@ namespace TimeKey.Presentation
         [SerializeField] private CardHandHost cardHandHost = null;
         [SerializeField] private BoardRangePreview boardRangePreview = null;
         [SerializeField] private TimelinePlacementPreview timelinePlacementPreview = null;
-        [SerializeField] private List<TimelineCellView> timelineCells = new List<TimelineCellView>(36);
+        [SerializeField] private CombatPresentationBinding presentationBinding = null;
 
         [Header("Dynamic Prefabs")]
         [SerializeField] private GameObject hexColumnPrefab = null;
@@ -57,11 +52,7 @@ namespace TimeKey.Presentation
 
         private readonly Dictionary<HexCoord, BoardTileView> _tiles = new Dictionary<HexCoord, BoardTileView>();
         private readonly Dictionary<HexCoord, HexTileColumn> _columns = new Dictionary<HexCoord, HexTileColumn>();
-        private readonly Dictionary<string, Sprite> _cardSprites =
-            new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private GameObject _generatedRoot;
-        private CardDefinition _lightingCard;
-        private CardDefinition _earthquakeCard;
         private CombatApplicationSession _applicationSession;
         private CombatSliceState _state;
         private TimelineGrid _timeline;
@@ -77,8 +68,6 @@ namespace TimeKey.Presentation
         private CardHandHost _cardHandHost;
         private BoardRangePreview _boardRangePreview;
         private TimelinePlacementPreview _timelinePlacementPreview;
-        private Sprite _lightingCardSprite;
-        private Sprite _earthquakeCardSprite;
         private bool _initialized;
         private bool _viewsBound;
 
@@ -86,7 +75,9 @@ namespace TimeKey.Presentation
 
         public bool EnemyIntentResolved => _lastSnapshot != null && _lastSnapshot.EnemyIntentResolved;
 
-        public int TimelineSlotCount => timelineCells.Count;
+        public int TimelineSlotCount => presentationBinding == null
+            ? 0
+            : presentationBinding.TimelineCellCount;
 
         public int BoardTileCount => _tiles.Count;
 
@@ -123,7 +114,11 @@ namespace TimeKey.Presentation
 
         private void Awake()
         {
-            BuildSceneGraph();
+            if (!_initialized)
+            {
+                throw new InvalidOperationException(
+                    "VerticalSliceController must be initialized by the serialized composition root.");
+            }
         }
 
         private void OnEnable()
@@ -185,7 +180,34 @@ namespace TimeKey.Presentation
             }
         }
 
+        public void Initialize(
+            CombatApplicationSession applicationSession,
+            CombatSliceState state,
+            TimelineGrid timeline,
+            IReadOnlyList<TimelineAction> initialActions)
+        {
+            if (_initialized)
+            {
+                return;
+            }
+
+            _applicationSession = applicationSession ??
+                throw new ArgumentNullException(nameof(applicationSession));
+            _state = state ?? throw new ArgumentNullException(nameof(state));
+            _timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
+            BuildSceneGraph(initialActions ?? throw new ArgumentNullException(nameof(initialActions)));
+        }
+
         public void BuildSceneGraph()
+        {
+            if (!_initialized)
+            {
+                throw new InvalidOperationException(
+                    "VerticalSliceController has not been initialized by composition.");
+            }
+        }
+
+        private void BuildSceneGraph(IReadOnlyList<TimelineAction> initialActions)
         {
             if (_initialized)
             {
@@ -193,12 +215,6 @@ namespace TimeKey.Presentation
             }
 
             ValidateSerializedReferences();
-
-            _lightingCard = CardJsonAdapter.Parse(lightingFixture.text);
-            _earthquakeCard = CardJsonAdapter.Parse(earthquakeFixture.text);
-            _state = new CombatSliceState(TargetId, 10, FixtureSeed, new CombatBoardState());
-            _timeline = new TimelineGrid();
-
             _generatedRoot = dynamicRoot.gameObject;
             _boardRangePreview = boardRangePreview;
             _timelinePlacementPreview = timelinePlacementPreview;
@@ -208,17 +224,14 @@ namespace TimeKey.Presentation
             _resolveButton = resolveButton;
 
             BuildWorld();
-            var enemyIntent = CreateEnemyIntent();
-            _applicationSession = new CombatApplicationSession(
-                new ControllerCardCatalog(new[] { _lightingCard, _earthquakeCard }),
-                _state,
-                _timeline,
-                new[] { enemyIntent });
             BuildInterface();
-            RenderEnemyIntent(enemyIntent);
-            SetStatus("Select LIGHTING or EARTHQUAKE to schedule an action.");
+            for (var index = 0; index < initialActions.Count; index++)
+            {
+                RenderTimelineAction(initialActions[index]);
+            }
             _initialized = true;
             BindViews();
+            RefreshPresentation();
         }
 
         public bool SelectCard(string stableId)
@@ -230,15 +243,9 @@ namespace TimeKey.Presentation
                 return false;
             }
 
-            var card = _applicationSession.Current.SelectedCard;
-            _boardRangePreview.Clear();
-            _timelinePlacementPreview.Clear();
             SetHandCardsActive(true);
-            RefreshHand(card.StableId, CardHandInteractionState.Selected);
             BoardCamera.InputEnabled = false;
-            SetStatus(result.RequiredTargetKind == CombatTargetKind.Entity
-                ? card.StableId.ToUpperInvariant() + " selected. Click the red target."
-                : card.StableId.ToUpperInvariant() + " selected. Click a center hex.");
+            RefreshPresentation();
             return true;
         }
 
@@ -260,11 +267,7 @@ namespace TimeKey.Presentation
                 return false;
             }
 
-            _boardRangePreview.Show(TargetCoordinate, current.SelectedCard.Range);
-            _timelinePlacementPreview.Clear();
-            _cardHandHost.SetInteractionState(CardHandInteractionState.Targeting);
-            _targetText.text = string.Format("TARGET 01  |  HP {0} / 10  |  LOCKED", CurrentTargetHp);
-            SetStatus("Target locked. Place LIGHTING in an open timeline slot.");
+            RefreshPresentation();
             return true;
         }
 
@@ -282,12 +285,8 @@ namespace TimeKey.Presentation
                 return false;
             }
 
-            _boardRangePreview.Clear();
-            _timelinePlacementPreview.Clear();
-            RefreshHand(null, CardHandInteractionState.Idle);
             BoardCamera.InputEnabled = true;
-            _targetText.text = string.Format("TARGET 01  |  HP {0} / 10", CurrentTargetHp);
-            SetStatus("Card cancelled. Select LIGHTING or EARTHQUAKE.");
+            RefreshPresentation();
             return true;
         }
 
@@ -332,10 +331,7 @@ namespace TimeKey.Presentation
                 return false;
             }
 
-            _boardRangePreview.Show(coordinate, current.SelectedCard.Range);
-            _timelinePlacementPreview.Clear();
-            _cardHandHost.SetInteractionState(CardHandInteractionState.Targeting);
-            SetStatus("EARTHQUAKE center locked. Place its two-cell shape on the timeline.");
+            RefreshPresentation();
             return true;
         }
 
@@ -467,11 +463,9 @@ namespace TimeKey.Presentation
             var cell = new TimelineCell(column, row);
             var card = current.SelectedCard;
             var preview = _applicationSession.PreviewTimeline(cell);
-            _timelinePlacementPreview.Show(cell, card.Shape, preview.IsPlacementValid);
-            _cardHandHost.SetInteractionState(CardHandInteractionState.Scheduling);
+            RefreshPresentation();
             if (!preview.Succeeded || !preview.IsPlacementValid)
             {
-                SetStatus("That timeline slot is occupied or outside the 12 x 3 grid.");
                 return false;
             }
 
@@ -482,23 +476,14 @@ namespace TimeKey.Presentation
                 return false;
             }
 
-            _boardRangePreview.Clear();
-            _timelinePlacementPreview.Clear();
-            var label = string.Equals(card.StableId, LightingCardId, StringComparison.Ordinal)
-                ? "LIGHT"
-                : "QUAKE";
-            var color = string.Equals(card.StableId, LightingCardId, StringComparison.Ordinal)
-                ? new Color(0.16f, 0.74f, 0.82f, 1f)
-                : new Color(0.84f, 0.58f, 0.18f, 1f);
-            for (var index = 0; index < card.Shape.Count; index++)
-            {
-                SetTimelineCell(cell + card.Shape[index], label, color);
-            }
-            _resolveButton.interactable = true;
-            _cardHandHost.SetInteractionState(CardHandInteractionState.Disabled);
+            var label = GetTimelineLabel(card);
+            var color = card.Effects.Count > 0 && card.Effects[0].Kind == CardEffectKind.Elevation
+                ? new Color(0.84f, 0.58f, 0.18f, 1f)
+                : new Color(0.16f, 0.74f, 0.82f, 1f);
+            presentationBinding.RenderTimelineAction(cell, card.Shape, label, color);
             SetHandCardsActive(false);
             BoardCamera.InputEnabled = true;
-            SetStatus(card.StableId.ToUpperInvariant() + " placed. Resolve the timeline.");
+            RefreshPresentation();
             return true;
         }
 
@@ -515,24 +500,17 @@ namespace TimeKey.Presentation
 
             var cell = new TimelineCell(column, row);
             var transition = _applicationSession.PreviewTimeline(cell);
-            _timelinePlacementPreview.Show(
-                cell,
-                current.SelectedCard.Shape,
-                transition.IsPlacementValid);
-            _cardHandHost.SetInteractionState(CardHandInteractionState.Scheduling);
-            SetStatus(transition.IsPlacementValid
-                ? "Timeline position is legal. Click to confirm " + current.SelectedCard.StableId.ToUpperInvariant() + "."
-                : "Timeline position conflicts or falls outside the 12 x 3 grid.");
+            RefreshPresentation();
             return transition.Succeeded && transition.IsPlacementValid;
         }
 
         public void ClearTimelinePreview()
         {
-            if (_timelinePlacementPreview != null &&
+            if (presentationBinding != null &&
                 (_applicationSession == null ||
                  _applicationSession.Current.Phase != CombatSessionPhase.Committed))
             {
-                _timelinePlacementPreview.Clear();
+                presentationBinding.ClearTimelinePreview();
             }
         }
 
@@ -551,25 +529,15 @@ namespace TimeKey.Presentation
                     "The committed player action could not be resolved: " + result.FailureReason);
             }
 
-            var resolvedCardId = result.StableId;
             _lastSnapshot = result.Resolution;
-            _boardRangePreview.Clear();
-            _timelinePlacementPreview.Clear();
             ApplyTileEffects(_lastSnapshot);
-            _targetText.text = string.Format(
-                "TARGET 01  |  HP {0} / 10{1}",
-                CurrentTargetHp,
-                CurrentTargetHp == 0 ? "  |  DISABLED" : string.Empty);
             if (CurrentTargetHp == 0)
             {
                 _targetMaterial.color = new Color(0.24f, 0.68f, 0.46f, 1f);
             }
 
-            _resolveButton.interactable = false;
             BoardCamera.InputEnabled = true;
-            SetStatus(string.Equals(resolvedCardId, LightingCardId, StringComparison.Ordinal)
-                ? "RESOLVED  |  LIGHTING: 10 -> 0 HP  |  ENEMY INTENT: PROCESSED"
-                : "RESOLVED  |  EARTHQUAKE: RANGE +2 LAYERS  |  ENEMY INTENT: PROCESSED");
+            RefreshPresentation();
             return _lastSnapshot;
         }
 
@@ -639,19 +607,7 @@ namespace TimeKey.Presentation
 
         private void BuildInterface()
         {
-            for (var index = 0; index < timelineCells.Count; index++)
-            {
-                var cell = timelineCells[index];
-                _timelinePlacementPreview.Register(cell.Coordinate, cell.Graphic);
-            }
-
-            _lightingCardSprite = LoadCardSprite(_lightingCard);
-            _earthquakeCardSprite = LoadCardSprite(_earthquakeCard);
-            _cardSprites.Add(_lightingCard.StableId, _lightingCardSprite);
-            _cardSprites.Add(_earthquakeCard.StableId, _earthquakeCardSprite);
-            RefreshHand(null, CardHandInteractionState.Idle);
             _cardHandView = _cardHandHost.GetCard(LightingCardId);
-            _resolveButton.interactable = false;
         }
 
         private void CreateTile(HexCoord coordinate, int elevation)
@@ -708,35 +664,13 @@ namespace TimeKey.Presentation
             }
         }
 
-        private static TimelineAction CreateEnemyIntent()
+        private void RenderTimelineAction(TimelineAction intent)
         {
-            var origin = new TimelineCell(2, 1);
-            return new TimelineAction(
-                TimelineActorKind.Enemy,
-                "enemy-intent",
-                TargetId,
-                origin,
-                new[] { new TimelineCell(0, 0) },
-                0);
-        }
-
-        private void RenderEnemyIntent(TimelineAction intent)
-        {
-            SetTimelineCell(intent.Origin, "INTENT", new Color(0.78f, 0.27f, 0.25f, 1f));
-        }
-
-        private void SetTimelineCell(TimelineCell cell, string label, Color color)
-        {
-            for (var index = 0; index < timelineCells.Count; index++)
-            {
-                if (timelineCells[index].Coordinate.Equals(cell))
-                {
-                    timelineCells[index].SetContent(label, color);
-                    return;
-                }
-            }
-
-            throw new InvalidOperationException("No serialized timeline cell exists for " + cell + ".");
+            presentationBinding.RenderTimelineAction(
+                intent.Origin,
+                intent.Shape,
+                "INTENT",
+                new Color(0.78f, 0.27f, 0.25f, 1f));
         }
 
         private static Vector3 HexToWorld(HexCoord coordinate, float elevation)
@@ -747,51 +681,10 @@ namespace TimeKey.Presentation
             return new Vector3(x, elevation, z);
         }
 
-        private static Sprite LoadCardSprite(CardDefinition card)
+        private static string GetTimelineLabel(CardDefinition card)
         {
-            var resourceName = Path.GetFileNameWithoutExtension(card.FrontImage);
-            var resourcePath = "Art/Battle/Cards/" + resourceName;
-            var texture = Resources.Load<Texture2D>(resourcePath);
-            if (texture == null)
-            {
-                var importedSprite = Resources.Load<Sprite>(resourcePath);
-                texture = importedSprite == null ? null : importedSprite.texture;
-            }
-
-            if (texture == null)
-            {
-                throw new InvalidOperationException("Card artwork is missing: " + card.FrontImage);
-            }
-
-            var sprite = Sprite.Create(
-                texture,
-                new Rect(0f, 0f, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f),
-                100f,
-                0,
-                SpriteMeshType.FullRect);
-            sprite.name = resourceName + "-runtime-sprite";
-            return sprite;
-        }
-
-        private void RefreshHand(string selectedStableId, CardHandInteractionState state)
-        {
-            _cardHandHost.Build(new[]
-            {
-                new CardViewModel(
-                    _lightingCard.StableId,
-                    _cardSprites[_lightingCard.StableId],
-                    string.Equals(selectedStableId, _lightingCard.StableId, StringComparison.Ordinal),
-                    true),
-                new CardViewModel(
-                    _earthquakeCard.StableId,
-                    _cardSprites[_earthquakeCard.StableId],
-                    string.Equals(selectedStableId, _earthquakeCard.StableId, StringComparison.Ordinal),
-                    true)
-            });
-            _cardHandHost.SetInteractionState(state);
-            _cardHandHost.ApplyVisualStateImmediate();
-            _cardHandView = _cardHandHost.GetCard(LightingCardId);
+            var label = card.StableId.ToUpperInvariant();
+            return label.Length <= 5 ? label : label.Substring(0, 5);
         }
 
         private void SetHandCardsActive(bool active)
@@ -838,16 +731,14 @@ namespace TimeKey.Presentation
                 return;
             }
 
-            _cardHandHost.CardSelected += HandleCardSelected;
-            _cardHandHost.CardCancelRequested += HandleCardCancelRequested;
-            _cardHandHost.CardDragChanged += HandleCardDragChanged;
-            _resolveButton.onClick.AddListener(HandleResolveClicked);
-            for (var index = 0; index < timelineCells.Count; index++)
-            {
-                timelineCells[index].Clicked += HandleTimelineClicked;
-                timelineCells[index].PointerEntered += HandleTimelinePointerEntered;
-                timelineCells[index].PointerExited += HandleTimelinePointerExited;
-            }
+            presentationBinding.Bind();
+            presentationBinding.CardSelected += HandleCardSelected;
+            presentationBinding.CardCancelled += HandleCardCancelRequested;
+            presentationBinding.CardDragChanged += HandleCardDragChanged;
+            presentationBinding.TimelineSelected += HandleTimelineClicked;
+            presentationBinding.TimelinePreviewRequested += HandleTimelinePointerEntered;
+            presentationBinding.TimelinePreviewCleared += HandleTimelinePointerExited;
+            presentationBinding.ResolveRequested += HandleResolveClicked;
 
             _viewsBound = true;
         }
@@ -859,16 +750,14 @@ namespace TimeKey.Presentation
                 return;
             }
 
-            _cardHandHost.CardSelected -= HandleCardSelected;
-            _cardHandHost.CardCancelRequested -= HandleCardCancelRequested;
-            _cardHandHost.CardDragChanged -= HandleCardDragChanged;
-            _resolveButton.onClick.RemoveListener(HandleResolveClicked);
-            for (var index = 0; index < timelineCells.Count; index++)
-            {
-                timelineCells[index].Clicked -= HandleTimelineClicked;
-                timelineCells[index].PointerEntered -= HandleTimelinePointerEntered;
-                timelineCells[index].PointerExited -= HandleTimelinePointerExited;
-            }
+            presentationBinding.CardSelected -= HandleCardSelected;
+            presentationBinding.CardCancelled -= HandleCardCancelRequested;
+            presentationBinding.CardDragChanged -= HandleCardDragChanged;
+            presentationBinding.TimelineSelected -= HandleTimelineClicked;
+            presentationBinding.TimelinePreviewRequested -= HandleTimelinePointerEntered;
+            presentationBinding.TimelinePreviewCleared -= HandleTimelinePointerExited;
+            presentationBinding.ResolveRequested -= HandleResolveClicked;
+            presentationBinding.Unbind();
 
             _viewsBound = false;
         }
@@ -900,8 +789,6 @@ namespace TimeKey.Presentation
 
         private void ValidateSerializedReferences()
         {
-            RequireReference(lightingFixture, nameof(lightingFixture));
-            RequireReference(earthquakeFixture, nameof(earthquakeFixture));
             RequireReference(sceneCamera, nameof(sceneCamera));
             RequireReference(boardCamera, nameof(boardCamera));
             RequireReference(keyLight, nameof(keyLight));
@@ -920,24 +807,17 @@ namespace TimeKey.Presentation
             RequireReference(cardHandHost, nameof(cardHandHost));
             RequireReference(boardRangePreview, nameof(boardRangePreview));
             RequireReference(timelinePlacementPreview, nameof(timelinePlacementPreview));
+            RequireReference(presentationBinding, nameof(presentationBinding));
             RequireReference(hexColumnPrefab, nameof(hexColumnPrefab));
             RequireReference(grassBlockPrefab, nameof(grassBlockPrefab));
             RequireReference(dirtBlockPrefab, nameof(dirtBlockPrefab));
             RequireReference(targetViewPrefab, nameof(targetViewPrefab));
 
-            if (timelineCells == null || timelineCells.Count != TimelineGrid.DefaultWidth * TimelineGrid.DefaultHeight)
+            if (presentationBinding.TimelineCellCount !=
+                TimelineGrid.DefaultWidth * TimelineGrid.DefaultHeight)
             {
-                throw new InvalidOperationException("timelineCells must contain exactly 36 serialized cells.");
-            }
-
-            var coordinates = new HashSet<TimelineCell>();
-            for (var index = 0; index < timelineCells.Count; index++)
-            {
-                RequireReference(timelineCells[index], nameof(timelineCells) + "[" + index + "]");
-                if (timelineCells[index].Graphic == null || !coordinates.Add(timelineCells[index].Coordinate))
-                {
-                    throw new InvalidOperationException("timelineCells contains an incomplete or duplicate coordinate.");
-                }
+                throw new InvalidOperationException(
+                    "The serialized TimelinePresenter must contain exactly 36 cells.");
             }
         }
 
@@ -971,11 +851,17 @@ namespace TimeKey.Presentation
             _statusText.text = value;
         }
 
+        private void RefreshPresentation()
+        {
+            presentationBinding.Refresh(_applicationSession.Current);
+        }
+
         private void EnsureBuilt()
         {
             if (!_initialized)
             {
-                BuildSceneGraph();
+                throw new InvalidOperationException(
+                    "VerticalSliceController has not been initialized by composition.");
             }
         }
 
@@ -1005,10 +891,7 @@ namespace TimeKey.Presentation
         private void OnDestroy()
         {
             UnbindViews();
-            _applicationSession?.Dispose();
             DestroyOwnedObject(_targetMaterial);
-            DestroyOwnedObject(_lightingCardSprite);
-            DestroyOwnedObject(_earthquakeCardSprite);
         }
 
         private static void DestroyOwnedObject(UnityEngine.Object value)
@@ -1041,33 +924,5 @@ namespace TimeKey.Presentation
             return false;
         }
 
-        private sealed class ControllerCardCatalog : ICardCatalog
-        {
-            private readonly Dictionary<string, CardDefinition> _cardsById =
-                new Dictionary<string, CardDefinition>(StringComparer.Ordinal);
-
-            public ControllerCardCatalog(IReadOnlyList<CardDefinition> cards)
-            {
-                Cards = cards ?? throw new ArgumentNullException(nameof(cards));
-                for (var index = 0; index < cards.Count; index++)
-                {
-                    var card = cards[index] ??
-                        throw new ArgumentException("Catalog cards cannot contain null.", nameof(cards));
-                    if (!_cardsById.TryAdd(card.StableId, card))
-                    {
-                        throw new ArgumentException(
-                            "Duplicate card stable ID: " + card.StableId + ".",
-                            nameof(cards));
-                    }
-                }
-            }
-
-            public IReadOnlyList<CardDefinition> Cards { get; }
-
-            public bool TryGet(string stableId, out CardDefinition card)
-            {
-                return _cardsById.TryGetValue(stableId, out card);
-            }
-        }
     }
 }

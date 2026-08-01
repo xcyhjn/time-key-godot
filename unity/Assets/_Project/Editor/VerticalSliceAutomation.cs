@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using UnityEditor;
@@ -40,8 +41,15 @@ namespace TimeKey.Editor
                 throw new InvalidOperationException("VerticalSliceController is missing.");
             }
 
+            var composition = root.GetComponent<CombatCompositionRoot>();
+            if (composition == null)
+            {
+                throw new InvalidOperationException("CombatCompositionRoot is missing.");
+            }
+
+            composition.Initialize();
             controller.BuildSceneGraph();
-            ValidateScene(controller);
+            ValidateScene(controller, composition);
 
             var evidenceDirectory = GetEvidenceDirectory();
             Directory.CreateDirectory(evidenceDirectory);
@@ -49,8 +57,26 @@ namespace TimeKey.Editor
 
             controller.SetBoardView(32f);
             controller.CardHandHost.ApplyVisualStateImmediate();
-            captures.Add(Capture(controller, evidenceDirectory, "two-card-hand-1280x720.png", 1280, 720));
-            captures.Add(Capture(controller, evidenceDirectory, "two-card-hand-2560x1080.png", 2560, 1080));
+            captures.Add(Capture(controller, evidenceDirectory, "seven-card-hand-1280x720.png", 1280, 720));
+            captures.Add(Capture(controller, evidenceDirectory, "seven-card-hand-1920x1080.png", 1920, 1080));
+            captures.Add(Capture(controller, evidenceDirectory, "seven-card-hand-2560x1080.png", 2560, 1080));
+
+            if (!controller.SelectCard(VerticalSliceController.LightingCardId))
+            {
+                throw new InvalidOperationException("The original LIGHTING card could not be selected.");
+            }
+
+            captures.Add(Capture(controller, evidenceDirectory, "lighting-selected-1920x1080.png", 1920, 1080));
+            if (!controller.SelectTarget(VerticalSliceController.TargetId))
+            {
+                throw new InvalidOperationException("The lighting target could not be selected.");
+            }
+
+            captures.Add(Capture(controller, evidenceDirectory, "lighting-targeted-1920x1080.png", 1920, 1080));
+            if (!controller.CancelSelectedCard())
+            {
+                throw new InvalidOperationException("The lighting selection could not be cancelled.");
+            }
 
             var center = new HexCoord(0, 0);
             var centerTopBefore = controller.GetTileColumn(center).TopBounds.max.y;
@@ -160,10 +186,12 @@ namespace TimeKey.Editor
             }
 
             WriteSummary(evidenceDirectory, captures, report);
-            Debug.Log("TIMEKEY_DECOUPLING_R2_HARNESS_PASS");
+            Debug.Log("TIMEKEY_DECOUPLING_R3_HARNESS_PASS");
         }
 
-        private static void ValidateScene(VerticalSliceController controller)
+        private static void ValidateScene(
+            VerticalSliceController controller,
+            CombatCompositionRoot composition)
         {
             if (controller.SceneCamera == null || controller.SceneCamera.orthographic)
             {
@@ -203,12 +231,20 @@ namespace TimeKey.Editor
             }
 
             if (controller.CardHandHost == null ||
-                controller.CardHandHost.CardCount != 2 ||
+                controller.CardHandHost.CardCount != 7 ||
                 controller.CardHand == null ||
-                controller.CardHand.Artwork == null ||
-                controller.CardHandHost.GetCard(VerticalSliceController.EarthquakeCardId).Artwork == null)
+                composition.CardCount != 7)
             {
-                throw new InvalidOperationException("The two-card hand or original card artwork is missing.");
+                throw new InvalidOperationException("The seven-card hand or composition catalog is incomplete.");
+            }
+
+            foreach (var card in controller.CardHandHost.Cards)
+            {
+                if (card.Artwork == null || card.Artwork.sprite == null)
+                {
+                    throw new InvalidOperationException(
+                        "Original card artwork is missing for " + card.StableId + ".");
+                }
             }
 
             if (controller.BoardRangePreview == null || controller.BoardRangePreview.RegisteredCount != 19)
@@ -312,7 +348,7 @@ namespace TimeKey.Editor
                 "unity-3d",
                 "04-verification",
                 "evidence",
-                "unity-decoupling-r2");
+                "unity-decoupling-r3");
         }
 
         private static void WriteSummary(
@@ -323,14 +359,16 @@ namespace TimeKey.Editor
             var builder = new StringBuilder();
             builder.AppendLine("{");
             builder.AppendLine("  \"status\": \"passed\",");
-            builder.AppendLine("  \"scene\": \"SerializedEditableEarthquakeSlice\",");
+            builder.AppendLine("  \"scene\": \"DecoupledSevenCardVerticalSlice\",");
             builder.AppendLine("  \"stableHierarchy\": \"serialized-before-play\",");
             builder.AppendLine("  \"applicationBoundary\": \"CombatApplicationSession\",");
+            builder.AppendLine("  \"compositionRoot\": \"CombatCompositionRoot\",");
+            builder.AppendLine("  \"catalogCards\": 7,");
             builder.AppendLine("  \"savedPrefabs\": 6,");
             builder.AppendLine("  \"seed\": 731,");
             builder.AppendLine("  \"boardTiles\": 19,");
             builder.AppendLine("  \"cameraYawEvidence\": [0, 90, 180, 270],");
-            builder.AppendLine("  \"cardArt\": [\"lighting\", \"earthquake\"],");
+            builder.AppendLine("  \"cardArt\": [\"earthquake\", \"lighting\", \"poison\", \"recover\", \"tornado\", \"tower\", \"wind\"],");
             builder.AppendLine("  \"cardInteraction\": \"select-hex-range-two-cell-preview-commit\",");
             builder.AppendLine("  \"earthquakeRangeResults\": 7,");
             builder.AppendLine("  \"layerDelta\": 2,");

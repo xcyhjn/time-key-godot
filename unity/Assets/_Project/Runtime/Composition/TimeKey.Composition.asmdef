@@ -1,0 +1,20 @@
+{
+  "name": "TimeKey.Composition",
+  "rootNamespace": "TimeKey.Composition",
+  "references": [
+    "TimeKey.Domain",
+    "TimeKey.Application",
+    "TimeKey.Infrastructure",
+    "TimeKey.Diagnostics",
+    "TimeKey.Presentation"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

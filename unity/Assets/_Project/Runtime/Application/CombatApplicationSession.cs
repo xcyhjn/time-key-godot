@@ -349,6 +349,7 @@ namespace TimeKey.Application
             var stableId = CurrentStableId;
             var target = _target;
             var origin = _timelineOrigin;
+            var resolvedCard = _selectedCard;
             try
             {
                 _lastResolution = _timeline.Resolve(_state);
@@ -372,6 +373,7 @@ namespace TimeKey.Application
             _timelineOrigin = null;
             _isPlacementValid = false;
             _phase = CombatSessionPhase.Resolved;
+            RecordResolutionEffects(resolvedCard, stableId, target, origin, _lastResolution);
             return Success(
                 "resolve-timeline",
                 before,
@@ -379,6 +381,51 @@ namespace TimeKey.Application
                 target,
                 origin,
                 _lastResolution);
+        }
+
+        private void RecordResolutionEffects(
+            CardDefinition card,
+            string stableId,
+            CombatTarget? target,
+            TimelineCell? origin,
+            ResolutionSnapshot resolution)
+        {
+            for (var effectIndex = 0; effectIndex < card.Effects.Count; effectIndex++)
+            {
+                var effect = card.Effects[effectIndex];
+                if (effect.Kind == CardEffectKind.Damage)
+                {
+                    TryRecord(new CombatTraceEntry(
+                        "resolve-effect",
+                        CombatSessionPhase.Resolved.ToString(),
+                        CombatSessionPhase.Resolved.ToString(),
+                        stableId,
+                        target.HasValue ? target.Value.EntityId : null,
+                        target.HasValue ? target.Value.Coordinate : (HexCoord?)null,
+                        origin,
+                        effectKind: effect.Kind,
+                        beforeValue: resolution.TargetHpBefore,
+                        afterValue: resolution.TargetHpAfter));
+                }
+                else if (effect.Kind == CardEffectKind.Elevation)
+                {
+                    for (var resultIndex = 0; resultIndex < resolution.EffectResults.Count; resultIndex++)
+                    {
+                        var tile = resolution.EffectResults[resultIndex];
+                        TryRecord(new CombatTraceEntry(
+                            "resolve-effect",
+                            CombatSessionPhase.Resolved.ToString(),
+                            CombatSessionPhase.Resolved.ToString(),
+                            stableId,
+                            targetId: null,
+                            targetCoordinate: tile.Coordinate,
+                            timelineOrigin: origin,
+                            effectKind: effect.Kind,
+                            beforeValue: tile.BeforeLayers,
+                            afterValue: tile.AfterLayers));
+                    }
+                }
+            }
         }
 
         public void Dispose()

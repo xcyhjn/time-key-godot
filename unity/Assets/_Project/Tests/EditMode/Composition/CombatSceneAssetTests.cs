@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
+using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Terrain;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -43,7 +46,7 @@ namespace TimeKey.Tests.EditMode.Composition
                 "sceneCamera", "boardCamera", "keyLight", "fillLight", "battlefieldGround",
                 "boardRoot", "dynamicRoot", "targetAnchor", "sceneEventSystem", "sceneCanvas",
                 "hudRoot", "timelineRoot", "statusText", "targetText", "resolveButton",
-                "cardHandHost", "boardRangePreview", "timelinePlacementPreview", "hexColumnPrefab",
+                "cardHandHost", "boardRangePreview", "timelinePlacementPreview", "presentationBinding", "hexColumnPrefab",
                 "grassBlockPrefab", "dirtBlockPrefab", "targetViewPrefab"
             };
             for (var index = 0; index < requiredReferences.Length; index++)
@@ -53,7 +56,35 @@ namespace TimeKey.Tests.EditMode.Composition
                 Assert.That(property.objectReferenceValue, Is.Not.Null, requiredReferences[index]);
             }
 
-            var cells = serialized.FindProperty("timelineCells");
+            var composition = root.GetComponent<CombatCompositionRoot>();
+            var binding = root.GetComponent<CombatPresentationBinding>();
+            var traceSink = root.GetComponent<UnityCombatTraceSink>();
+            Assert.That(composition, Is.Not.Null);
+            Assert.That(binding, Is.Not.Null);
+            Assert.That(traceSink, Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<CardHandPresenter>(true), Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<BoardRangePresenter>(true), Is.Not.Null);
+            var timelinePresenter = root.GetComponentInChildren<TimelinePresenter>(true);
+            Assert.That(timelinePresenter, Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<CombatHudPresenter>(true), Is.Not.Null);
+
+            var compositionSerialized = new SerializedObject(composition);
+            AssertReference(compositionSerialized, "controller");
+            AssertReference(compositionSerialized, "presentationBinding");
+            AssertReference(compositionSerialized, "traceSink");
+            var fixtures = compositionSerialized.FindProperty("cardFixtures");
+            Assert.That(fixtures.arraySize, Is.EqualTo(7));
+            var fixtureNames = new HashSet<string>();
+            for (var index = 0; index < fixtures.arraySize; index++)
+            {
+                var fixture = fixtures.GetArrayElementAtIndex(index).objectReferenceValue as TextAsset;
+                Assert.That(fixture, Is.Not.Null, "cardFixtures[" + index + "]");
+                Assert.That(fixtureNames.Add(fixture.name), Is.True, fixture.name);
+            }
+
+            var timelineSerialized = new SerializedObject(timelinePresenter);
+            AssertReference(timelineSerialized, "timelinePreview");
+            var cells = timelineSerialized.FindProperty("timelineCells");
             Assert.That(cells.arraySize, Is.EqualTo(36));
             var coordinates = new HashSet<TimelineCell>();
             for (var index = 0; index < cells.arraySize; index++)
@@ -84,6 +115,19 @@ namespace TimeKey.Tests.EditMode.Composition
             Assert.That(source, Does.Not.Contain("GameObject.CreatePrimitive"));
             Assert.That(source, Does.Not.Contain(".AddComponent<"));
             Assert.That(source, Does.Not.Contain("GameObject.Find"));
+            Assert.That(source, Does.Not.Contain("CardJsonAdapter"));
+            Assert.That(source, Does.Not.Contain("Resources.Load"));
+            Assert.That(source, Does.Not.Contain("Path.GetFileNameWithoutExtension"));
+            Assert.That(source, Does.Not.Contain("ControllerCardCatalog"));
+            Assert.That(source, Does.Not.Contain("lightingFixture"));
+            Assert.That(source, Does.Not.Contain("earthquakeFixture"));
+        }
+
+        private static void AssertReference(SerializedObject serialized, string fieldName)
+        {
+            var property = serialized.FindProperty(fieldName);
+            Assert.That(property, Is.Not.Null, fieldName);
+            Assert.That(property.objectReferenceValue, Is.Not.Null, fieldName);
         }
 
         private static GameObject FindRoot(Scene scene, string name)

@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
 using UnityEditor;
@@ -84,6 +87,9 @@ namespace TimeKey.Editor
                 throw new InvalidOperationException("VerticalSliceController is missing from VerticalSliceRoot.");
             }
 
+            var compositionRoot = GetOrAddComponent<CombatCompositionRoot>(root);
+            var traceSink = GetOrAddComponent<UnityCombatTraceSink>(root);
+
             for (var index = root.transform.childCount - 1; index >= 0; index--)
             {
                 UnityEngine.Object.DestroyImmediate(root.transform.GetChild(index).gameObject);
@@ -128,6 +134,8 @@ namespace TimeKey.Editor
             var boardRangeObject = new GameObject("BoardRangePreview", typeof(BoardRangePreview));
             boardRangeObject.transform.SetParent(boardRoot, false);
             var boardRangePreview = boardRangeObject.GetComponent<BoardRangePreview>();
+            var boardRangePresenter = boardRangeObject.AddComponent<BoardRangePresenter>();
+            ConfigureReference(boardRangePresenter, "rangePreview", boardRangePreview);
 
             var eventSystemObject = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             eventSystemObject.transform.SetParent(root.transform, false);
@@ -179,6 +187,7 @@ namespace TimeKey.Editor
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = TimelineGrid.DefaultWidth;
             var timelinePreview = timelineRoot.gameObject.AddComponent<TimelinePlacementPreview>();
+            var timelinePresenter = timelineRoot.gameObject.AddComponent<TimelinePresenter>();
             var timelineCells = new List<TimelineCellView>(36);
             for (var row = 0; row < TimelineGrid.DefaultHeight; row++)
             {
@@ -195,10 +204,18 @@ namespace TimeKey.Editor
             }
 
             var cardHandRect = CreateRect("CardHandHost", hudRoot);
+            SetRect(
+                cardHandRect,
+                new Vector2(0f, 0f),
+                new Vector2(0.67f, 0f),
+                new Vector2(24f, 0f),
+                new Vector2(-24f, 280f));
             var cardHandHost = cardHandRect.gameObject.AddComponent<CardHandHost>();
             var cardContainer = CreateRect("Cards", cardHandRect);
             Stretch(cardContainer);
             ConfigureCardHandHost(cardHandHost, cardContainer, cardViewPrefab.GetComponent<CardHandView>());
+            var cardHandPresenter = cardHandRect.gameObject.AddComponent<CardHandPresenter>();
+            ConfigureReference(cardHandPresenter, "cardHand", cardHandHost);
 
             var detailPanel = CreatePanel(
                 hudRoot,
@@ -221,6 +238,17 @@ namespace TimeKey.Editor
                 new Vector2(20f, 18f), new Vector2(370f, 64f));
             resolveButton.interactable = false;
 
+            var hudPresenter = detailPanel.gameObject.AddComponent<CombatHudPresenter>();
+            ConfigureHudPresenter(hudPresenter, statusText, targetText, resolveButton);
+            ConfigureTimelinePresenter(timelinePresenter, timelinePreview, timelineCells);
+            var presentationBinding = GetOrAddComponent<CombatPresentationBinding>(root);
+            ConfigurePresentationBinding(
+                presentationBinding,
+                cardHandPresenter,
+                boardRangePresenter,
+                timelinePresenter,
+                hudPresenter);
+
             ConfigureController(
                 controller,
                 sceneCamera,
@@ -240,11 +268,12 @@ namespace TimeKey.Editor
                 cardHandHost,
                 boardRangePreview,
                 timelinePreview,
-                timelineCells,
+                presentationBinding,
                 hexColumn,
                 grassBlock,
                 dirtBlock,
                 targetView);
+            ConfigureCompositionRoot(compositionRoot, controller, traceSink);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -464,7 +493,7 @@ namespace TimeKey.Editor
             CardHandHost cardHandHost,
             BoardRangePreview boardRangePreview,
             TimelinePlacementPreview timelinePreview,
-            IReadOnlyList<TimelineCellView> timelineCells,
+            CombatPresentationBinding presentationBinding,
             GameObject hexColumnPrefab,
             GameObject grassBlockPrefab,
             GameObject dirtBlockPrefab,
@@ -489,11 +518,69 @@ namespace TimeKey.Editor
             SetReference(serialized, "cardHandHost", cardHandHost);
             SetReference(serialized, "boardRangePreview", boardRangePreview);
             SetReference(serialized, "timelinePlacementPreview", timelinePreview);
+            SetReference(serialized, "presentationBinding", presentationBinding);
             SetReference(serialized, "hexColumnPrefab", hexColumnPrefab);
             SetReference(serialized, "grassBlockPrefab", grassBlockPrefab);
             SetReference(serialized, "dirtBlockPrefab", dirtBlockPrefab);
             SetReference(serialized, "targetViewPrefab", targetViewPrefab);
 
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(controller);
+        }
+
+        private static void ConfigureCompositionRoot(
+            CombatCompositionRoot compositionRoot,
+            VerticalSliceController controller,
+            UnityCombatTraceSink traceSink)
+        {
+            var serialized = new SerializedObject(compositionRoot);
+            SetReference(serialized, "controller", controller);
+            SetReference(
+                serialized,
+                "presentationBinding",
+                controller.GetComponent<CombatPresentationBinding>());
+            SetReference(serialized, "traceSink", traceSink);
+            var fixtures = serialized.FindProperty("cardFixtures");
+            var fixturePaths = AssetDatabase.FindAssets(
+                    "t:TextAsset",
+                    new[] { "Assets/_Project/Content/Cards" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(path => path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToArray();
+            fixtures.arraySize = fixturePaths.Length;
+            for (var index = 0; index < fixturePaths.Length; index++)
+            {
+                fixtures.GetArrayElementAtIndex(index).objectReferenceValue =
+                    AssetDatabase.LoadAssetAtPath<TextAsset>(fixturePaths[index]);
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(compositionRoot);
+        }
+
+        private static void ConfigurePresentationBinding(
+            CombatPresentationBinding binding,
+            CardHandPresenter cardHandPresenter,
+            BoardRangePresenter boardRangePresenter,
+            TimelinePresenter timelinePresenter,
+            CombatHudPresenter hudPresenter)
+        {
+            var serialized = new SerializedObject(binding);
+            SetReference(serialized, "cardHandPresenter", cardHandPresenter);
+            SetReference(serialized, "boardRangePresenter", boardRangePresenter);
+            SetReference(serialized, "timelinePresenter", timelinePresenter);
+            SetReference(serialized, "hudPresenter", hudPresenter);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureTimelinePresenter(
+            TimelinePresenter presenter,
+            TimelinePlacementPreview preview,
+            IReadOnlyList<TimelineCellView> timelineCells)
+        {
+            var serialized = new SerializedObject(presenter);
+            SetReference(serialized, "timelinePreview", preview);
             var cells = serialized.FindProperty("timelineCells");
             cells.arraySize = timelineCells.Count;
             for (var index = 0; index < timelineCells.Count; index++)
@@ -502,7 +589,34 @@ namespace TimeKey.Editor
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
-            EditorUtility.SetDirty(controller);
+        }
+
+        private static void ConfigureHudPresenter(
+            CombatHudPresenter presenter,
+            Text statusText,
+            Text targetText,
+            Button resolveButton)
+        {
+            var serialized = new SerializedObject(presenter);
+            SetReference(serialized, "statusText", statusText);
+            SetReference(serialized, "targetText", targetText);
+            SetReference(serialized, "resolveButton", resolveButton);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureReference(
+            UnityEngine.Object target,
+            string fieldName,
+            UnityEngine.Object value)
+        {
+            var serialized = new SerializedObject(target);
+            SetReference(serialized, fieldName, value);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static T GetOrAddComponent<T>(GameObject target) where T : Component
+        {
+            return target.GetComponent<T>() ?? target.AddComponent<T>();
         }
 
         private static void SetReference(SerializedObject serialized, string name, UnityEngine.Object value)

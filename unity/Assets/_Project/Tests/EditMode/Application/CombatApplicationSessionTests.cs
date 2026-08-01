@@ -51,7 +51,7 @@ namespace TimeKey.Tests.EditMode.Application
         {
             var board = CreateSevenTileBoard();
             var state = new CombatSliceState("target-01", 10, 731, board);
-            var session = CreateSession(state, out _, out _);
+            var session = CreateSession(state, out _, out var sink);
 
             Assert.That(session.SelectCard("earthquake").Succeeded, Is.True);
             Assert.That(
@@ -67,6 +67,12 @@ namespace TimeKey.Tests.EditMode.Application
             Assert.That(result.Resolution.EffectResults.All(item => item.BeforeLayers == 1), Is.True);
             Assert.That(result.Resolution.EffectResults.All(item => item.AfterLayers == 3), Is.True);
             Assert.That(result.Resolution.EffectResults.All(item => !item.Removed), Is.True);
+            var effectTraces = sink.Entries.Where(item => item.Command == "resolve-effect").ToArray();
+            Assert.That(effectTraces.Length, Is.EqualTo(7));
+            Assert.That(effectTraces.Select(item => item.TargetCoordinate),
+                Is.EquivalentTo(result.Resolution.EffectResults.Select(item => (HexCoord?)item.Coordinate)));
+            Assert.That(effectTraces.All(item => item.EffectKind == CardEffectKind.Elevation), Is.True);
+            Assert.That(effectTraces.All(item => item.BeforeValue == 1 && item.AfterValue == 3), Is.True);
         }
 
         [Test]
@@ -255,9 +261,14 @@ namespace TimeKey.Tests.EditMode.Application
                 "select-target",
                 "preview-timeline",
                 "commit-timeline",
+                "resolve-effect",
                 "resolve-timeline"
             }));
             Assert.That(collectingSink.Entries.Last().PhaseAfter, Is.EqualTo("Resolved"));
+            var effectTrace = collectingSink.Entries.Single(item => item.Command == "resolve-effect");
+            Assert.That(effectTrace.EffectKind, Is.EqualTo(CardEffectKind.Damage));
+            Assert.That(effectTrace.BeforeValue, Is.EqualTo(10));
+            Assert.That(effectTrace.AfterValue, Is.EqualTo(0));
         }
 
         [Test]

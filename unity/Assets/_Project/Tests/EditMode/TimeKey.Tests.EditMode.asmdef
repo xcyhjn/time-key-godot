@@ -5,7 +5,8 @@
     "TimeKey.Domain",
     "TimeKey.Application",
     "TimeKey.Diagnostics",
-    "TimeKey.Presentation"
+    "TimeKey.Presentation",
+    "TimeKey.Composition"
   ],
   "includePlatforms": [
     "Editor"

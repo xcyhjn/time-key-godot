@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.0684734">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="92" result="Passed" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.068473" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1118" name="TimeKey.Tests.Infrastructure.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.Infrastructure.dll" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.062228" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="47468" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1119" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.061650" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1120" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.061230" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1121" name="Infrastructure" fullname="TimeKey.Tests.Infrastructure" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.060747" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1123" name="Cards" fullname="TimeKey.Tests.Infrastructure.Cards" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.056121" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1113" name="CardContentCatalogTests" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.055338" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1117" name="Constructor_AdditionalOrdinaryCard_NeedsNoRoutingChange" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests.Constructor_AdditionalOrdinaryCard_NeedsNoRoutingChange" methodname="Constructor_AdditionalOrdinaryCard_NeedsNoRoutingChange" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" seed="1955514911" result="Passed" start-time="2026-08-01 06:55:00Z" end-time="2026-08-01 06:55:01Z" duration="0.040237" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1115" name="Constructor_DuplicateStableId_FailsExplicitly" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests.Constructor_DuplicateStableId_FailsExplicitly" methodname="Constructor_DuplicateStableId_FailsExplicitly" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" seed="505399022" result="Passed" start-time="2026-08-01 06:55:01Z" end-time="2026-08-01 06:55:01Z" duration="0.002436" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1116" name="FromJson_InvalidDocument_PropagatesTypedSchemaFailure" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests.FromJson_InvalidDocument_PropagatesTypedSchemaFailure" methodname="FromJson_InvalidDocument_PropagatesTypedSchemaFailure" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" seed="1278844655" result="Passed" start-time="2026-08-01 06:55:01Z" end-time="2026-08-01 06:55:01Z" duration="0.000357" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1114" name="FromJson_LoadsAllSevenRealCardsAndFrontImages" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests.FromJson_LoadsAllSevenRealCardsAndFrontImages" methodname="FromJson_LoadsAllSevenRealCardsAndFrontImages" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" seed="799351244" result="Passed" start-time="2026-08-01 06:55:01Z" end-time="2026-08-01 06:55:01Z" duration="0.003099" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1122" name="Effects" fullname="TimeKey.Tests.Infrastructure.Effects" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 06:55:01Z" end-time="2026-08-01 06:55:01Z" duration="0.003783" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1110" name="CardEffectRegistrationCatalogTests" fullname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests" classname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 06:55:01Z" end-time="2026-08-01 06:55:01Z" duration="0.003199" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1112" name="Constructor_DuplicateKind_FailsExplicitly" fullname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests.Constructor_DuplicateKind_FailsExplicitly" methodname="Constructor_DuplicateKind_FailsExplicitly" classname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests" runstate="Runnable" seed="1346129461" result="Passed" start-time="2026-08-01 06:55:01Z" end-time="2026-08-01 06:55:01Z" duration="0.001460" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1111" name="VerticalSlice_RegistersDamageAndElevationByKind" fullname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests.VerticalSlice_RegistersDamageAndElevationByKind" methodname="VerticalSlice_RegistersDamageAndElevationByKind" classname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests" runstate="Runnable" seed="547044850" result="Passed" start-time="2026-08-01 06:55:01Z" end-time="2026-08-01 06:55:01Z" duration="0.000915" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

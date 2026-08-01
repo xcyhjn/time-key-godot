@@ -177,20 +177,24 @@ namespace TimeKey.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TwoCardHand_UsesFrontImagesAndSwitchesSelection()
+        public IEnumerator SevenCardHand_UsesFrontImagesAndRegisteredEffectsControlInteraction()
         {
             yield return LoadSlice();
             var controller = GetController();
             var host = controller.CardHandHost;
 
             Assert.That(host, Is.Not.Null);
-            Assert.That(host.CardCount, Is.EqualTo(2));
+            Assert.That(host.CardCount, Is.EqualTo(7));
             Assert.That(host.Cards.Select(card => card.StableId),
-                Is.EqualTo(new[] { VerticalSliceController.LightingCardId, VerticalSliceController.EarthquakeCardId }));
+                Is.EqualTo(new[]
+                {
+                    "earthquake", "lighting", "poison", "recover", "tornado", "tower", "wind"
+                }));
             foreach (var card in host.Cards)
             {
-                Assert.That(card.Artwork.sprite.texture.width, Is.EqualTo(1135));
-                Assert.That(card.Artwork.sprite.texture.height, Is.EqualTo(1590));
+                Assert.That(card.Artwork.sprite, Is.Not.Null, card.StableId);
+                Assert.That(card.Artwork.sprite.texture.width, Is.GreaterThan(0), card.StableId);
+                Assert.That(card.Artwork.sprite.texture.height, Is.GreaterThan(0), card.StableId);
                 Assert.That(card.Artwork.preserveAspect, Is.True);
             }
 
@@ -199,6 +203,10 @@ namespace TimeKey.Tests.PlayMode
                 button = PointerEventData.InputButton.Left
             });
             host.GetCard(VerticalSliceController.EarthquakeCardId).OnPointerClick(new PointerEventData(EventSystem.current)
+            {
+                button = PointerEventData.InputButton.Left
+            });
+            host.GetCard("poison").OnPointerClick(new PointerEventData(EventSystem.current)
             {
                 button = PointerEventData.InputButton.Left
             });

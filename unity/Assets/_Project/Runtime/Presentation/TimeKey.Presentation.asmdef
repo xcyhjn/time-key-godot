@@ -3,8 +3,7 @@
     "rootNamespace": "TimeKey.Presentation",
     "references": [
         "TimeKey.Domain",
-        "TimeKey.Application",
-        "TimeKey.Infrastructure"
+        "TimeKey.Application"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

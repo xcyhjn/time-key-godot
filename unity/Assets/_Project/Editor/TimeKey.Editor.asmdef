@@ -4,7 +4,8 @@
     "references": [
         "TimeKey.Domain",
         "TimeKey.Infrastructure",
-        "TimeKey.Presentation"
+        "TimeKey.Presentation",
+        "TimeKey.Composition"
     ],
     "includePlatforms": [
         "Editor"

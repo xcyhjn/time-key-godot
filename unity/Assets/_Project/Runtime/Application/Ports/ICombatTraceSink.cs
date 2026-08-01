@@ -18,7 +18,10 @@ namespace TimeKey.Application
             string targetId = null,
             HexCoord? targetCoordinate = null,
             TimelineCell? timelineOrigin = null,
-            string failureReason = null)
+            string failureReason = null,
+            CardEffectKind? effectKind = null,
+            int? beforeValue = null,
+            int? afterValue = null)
         {
             Command = Require(command, nameof(command));
             PhaseBefore = Require(phaseBefore, nameof(phaseBefore));
@@ -28,6 +31,9 @@ namespace TimeKey.Application
             TargetCoordinate = targetCoordinate;
             TimelineOrigin = timelineOrigin;
             FailureReason = failureReason;
+            EffectKind = effectKind;
+            BeforeValue = beforeValue;
+            AfterValue = afterValue;
         }
 
         public string Command { get; }
@@ -45,6 +51,12 @@ namespace TimeKey.Application
         public TimelineCell? TimelineOrigin { get; }
 
         public string FailureReason { get; }
+
+        public CardEffectKind? EffectKind { get; }
+
+        public int? BeforeValue { get; }
+
+        public int? AfterValue { get; }
 
         private static string Require(string value, string parameterName)
         {

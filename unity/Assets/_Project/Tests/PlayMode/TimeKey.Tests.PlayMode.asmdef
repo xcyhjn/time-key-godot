@@ -6,7 +6,8 @@
         "TimeKey.Application",
         "TimeKey.Diagnostics",
         "TimeKey.Infrastructure",
-        "TimeKey.Presentation"
+        "TimeKey.Presentation",
+        "TimeKey.Composition"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
