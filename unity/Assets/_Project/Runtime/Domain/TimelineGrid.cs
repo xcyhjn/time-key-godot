@@ -131,55 +131,47 @@ namespace TimeKey.Domain
 
         public ResolutionSnapshot Resolve(CombatSliceState state)
         {
-            if (state == null)
+            var batch = BeginResolution(state);
+            while (!batch.IsComplete)
             {
-                throw new ArgumentNullException(nameof(state));
+                batch.ResolveNext();
             }
 
-            var orderedActions = GetActionsInResolutionOrder();
-            var timeline = new List<TimelineSnapshotAction>();
-            var resolutionOrder = new List<TimelineSnapshotAction>(orderedActions.Count);
-            var targetHpBefore = state.TargetHp;
-            var enemyIntentResolved = false;
-            var effectResults = new CardEffectResultBuffer();
-
-            for (var index = 0; index < orderedActions.Count; index++)
-            {
-                var action = orderedActions[index];
-                var kind = action.ActorKind == TimelineActorKind.Player ? "player" : "enemy";
-                var record = new TimelineSnapshotAction(
-                    action.ActionId,
-                    action.Origin,
-                    kind,
-                    action.CardId);
-                resolutionOrder.Add(record);
-
-                if (action.ActorKind == TimelineActorKind.Player)
-                {
-                    timeline.Add(record);
-                    ApplyPlayerEffects(state, action, effectResults);
-                }
-                else
-                {
-                    enemyIntentResolved = true;
-                }
-            }
-
-            Clear();
-
-            return new ResolutionSnapshot(
-                state.Turn,
-                timeline,
-                targetHpBefore,
-                state.TargetHp,
-                enemyIntentResolved,
-                state.Seed,
-                resolutionOrder,
-                effectResults.TileResults,
-                effectResults.OccupantResults);
+            var result = batch.Complete();
+            ClearScheduledActions();
+            return result;
         }
 
-        private void ApplyPlayerEffects(
+        public TimelineResolutionBatch BeginResolution(CombatSliceState state)
+        {
+            return new TimelineResolutionBatch(
+                this,
+                state ?? throw new ArgumentNullException(nameof(state)),
+                GetActionsInResolutionOrder());
+        }
+
+        public bool RemoveAction(TimelineActionIdentity actionId)
+        {
+            if (!_placedActions.TryGetValue(actionId, out var action))
+            {
+                return false;
+            }
+
+            for (var index = 0; index < action.Shape.Count; index++)
+            {
+                _cells.Remove(action.Origin + action.Shape[index]);
+            }
+
+            _placedActions.Remove(actionId);
+            return true;
+        }
+
+        public void ClearScheduledActions()
+        {
+            Clear();
+        }
+
+        internal void ApplyPlayerEffects(
             CombatSliceState state,
             TimelineAction action,
             CardEffectResultBuffer effectResults)
@@ -364,6 +356,100 @@ namespace TimeKey.Domain
         {
             _cells.Clear();
             _placedActions.Clear();
+        }
+    }
+
+    public sealed class TimelineResolutionBatch
+    {
+        private readonly TimelineGrid _grid;
+        private readonly CombatSliceState _state;
+        private readonly IReadOnlyList<TimelineAction> _actions;
+        private readonly List<TimelineSnapshotAction> _playerTimeline =
+            new List<TimelineSnapshotAction>();
+        private readonly List<TimelineSnapshotAction> _resolutionOrder =
+            new List<TimelineSnapshotAction>();
+        private readonly CardEffectResultBuffer _effectResults = new CardEffectResultBuffer();
+        private readonly int _targetHpBefore;
+        private int _nextIndex;
+        private bool _enemyIntentResolved;
+        private ResolutionSnapshot _snapshot;
+
+        internal TimelineResolutionBatch(
+            TimelineGrid grid,
+            CombatSliceState state,
+            IReadOnlyList<TimelineAction> actions)
+        {
+            _grid = grid;
+            _state = state;
+            _actions = actions;
+            _targetHpBefore = state.TargetHp;
+        }
+
+        public bool IsComplete => _nextIndex == _actions.Count;
+
+        public int ResolvedActionCount => _nextIndex;
+
+        public void ResolveNext(bool enemyIntentResolved = true)
+        {
+            if (IsComplete)
+            {
+                throw new InvalidOperationException("Every timeline action is already resolved.");
+            }
+
+            Resolve(_actions[_nextIndex].ActionId, enemyIntentResolved);
+        }
+
+        public void Resolve(
+            TimelineActionIdentity actionId,
+            bool enemyIntentResolved = true)
+        {
+            if (IsComplete || _actions[_nextIndex].ActionId != actionId)
+            {
+                throw new InvalidOperationException(
+                    "Timeline actions must resolve exactly once in the frozen grid order.");
+            }
+
+            var action = _actions[_nextIndex++];
+            var record = new TimelineSnapshotAction(
+                action.ActionId,
+                action.Origin,
+                action.ActorKind == TimelineActorKind.Player ? "player" : "enemy",
+                action.CardId);
+            _resolutionOrder.Add(record);
+            if (action.ActorKind == TimelineActorKind.Player)
+            {
+                _playerTimeline.Add(record);
+                _grid.ApplyPlayerEffects(_state, action, _effectResults);
+            }
+            else if (enemyIntentResolved)
+            {
+                _enemyIntentResolved = true;
+            }
+        }
+
+        public ResolutionSnapshot Complete()
+        {
+            if (!IsComplete)
+            {
+                throw new InvalidOperationException(
+                    "The resolution snapshot cannot complete before every action resolves.");
+            }
+
+            if (_snapshot == null)
+            {
+                _snapshot = new ResolutionSnapshot(
+                    _state.Turn,
+                    _playerTimeline,
+                    _targetHpBefore,
+                    _state.TargetHp,
+                    _enemyIntentResolved,
+                    _state.Seed,
+                    _resolutionOrder,
+                    _effectResults.TileResults,
+                    _effectResults.OccupantResults);
+            }
+
+            return _snapshot;
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TimeKey.Domain
 {
-    public sealed class CombatSliceState
+    public sealed class CombatSliceState : ILifecycleOccupantStore
     {
         private static readonly HexCoord LegacyTargetCoordinate = new HexCoord(1, 0);
 
@@ -90,6 +90,71 @@ namespace TimeKey.Domain
         public CombatBoardState Board { get; }
 
         public int OccupantCount => _occupantsById.Count;
+
+        public IReadOnlyList<CombatOccupantSnapshot> CaptureOccupants()
+        {
+            var occupants = new List<CombatOccupantSnapshot>(_occupantsById.Count);
+            foreach (var state in _occupantsById.Values)
+            {
+                occupants.Add(state.Snapshot());
+            }
+
+            occupants.Sort(CompareOccupants);
+            return occupants.AsReadOnly();
+        }
+
+        public bool TryApply(
+            IReadOnlyList<LifecycleOccupantMutation> mutations,
+            out string failureReason)
+        {
+            if (mutations == null)
+            {
+                throw new ArgumentNullException(nameof(mutations));
+            }
+
+            var runtimeIds = new HashSet<string>(StringComparer.Ordinal);
+            for (var index = 0; index < mutations.Count; index++)
+            {
+                var mutation = mutations[index];
+                if (mutation == null || !runtimeIds.Add(mutation.RuntimeId) ||
+                    !TryGetMutableOccupant(
+                        mutation == null ? null : mutation.RuntimeId,
+                        mutation == null ? default : mutation.Coordinate,
+                        out var occupant) ||
+                    occupant.Hp != mutation.ExpectedHp ||
+                    occupant.PoisonStacks != mutation.ExpectedPoisonStacks ||
+                    (occupant.SupportsHealth && mutation.AfterHp > occupant.MaxHp) ||
+                    (!occupant.SupportsHealth && mutation.AfterHp != 0) ||
+                    (!occupant.SupportsStatus && mutation.AfterPoisonStacks != 0))
+                {
+                    failureReason = "Lifecycle occupant mutation preconditions changed.";
+                    return false;
+                }
+            }
+
+            for (var index = 0; index < mutations.Count; index++)
+            {
+                var mutation = mutations[index];
+                var occupant = _occupantsById[mutation.RuntimeId];
+                if (mutation.Remove)
+                {
+                    _occupantsById.Remove(occupant.RuntimeId);
+                    _occupantsByCoordinate.Remove(occupant.Coordinate);
+                    continue;
+                }
+
+                if ((occupant.SupportsHealth && !occupant.TrySetHealth(mutation.AfterHp)) ||
+                    (occupant.SupportsStatus &&
+                     !occupant.TrySetPoisonStacks(mutation.AfterPoisonStacks)))
+                {
+                    throw new InvalidOperationException(
+                        "A validated lifecycle occupant mutation could not be applied.");
+                }
+            }
+
+            failureReason = null;
+            return true;
+        }
 
         public bool TryGetOccupant(
             string runtimeId,
@@ -209,6 +274,22 @@ namespace TimeKey.Domain
             return !string.IsNullOrWhiteSpace(runtimeId) &&
                    _occupantsByCoordinate.TryGetValue(coordinate, out occupant) &&
                    string.Equals(occupant.RuntimeId, runtimeId, StringComparison.Ordinal);
+        }
+
+        private static int CompareOccupants(
+            CombatOccupantSnapshot left,
+            CombatOccupantSnapshot right)
+        {
+            var qComparison = left.Coordinate.Q.CompareTo(right.Coordinate.Q);
+            if (qComparison != 0)
+            {
+                return qComparison;
+            }
+
+            var rComparison = left.Coordinate.R.CompareTo(right.Coordinate.R);
+            return rComparison != 0
+                ? rComparison
+                : StringComparer.Ordinal.Compare(left.RuntimeId, right.RuntimeId);
         }
 
         private static IReadOnlyList<CombatOccupantState> CreateLegacyOccupants(

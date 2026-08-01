@@ -26,6 +26,18 @@ namespace TimeKey.Presentation.Cards
     public sealed class CardViewModel
     {
         public CardViewModel(string stableId, Sprite artwork, bool isSelected, bool isInteractable)
+            : this(stableId, artwork, isSelected, isInteractable, stableId, string.Empty, string.Empty)
+        {
+        }
+
+        public CardViewModel(
+            string stableId,
+            Sprite artwork,
+            bool isSelected,
+            bool isInteractable,
+            string displayName,
+            string effectDescription,
+            string placementDescription)
         {
             if (string.IsNullOrWhiteSpace(stableId))
             {
@@ -38,6 +50,9 @@ namespace TimeKey.Presentation.Cards
                 : throw new ArgumentNullException(nameof(artwork));
             IsSelected = isSelected;
             IsInteractable = isInteractable;
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? stableId : displayName;
+            EffectDescription = effectDescription ?? string.Empty;
+            PlacementDescription = placementDescription ?? string.Empty;
         }
 
         public string StableId { get; }
@@ -47,6 +62,12 @@ namespace TimeKey.Presentation.Cards
         public bool IsSelected { get; }
 
         public bool IsInteractable { get; }
+
+        public string DisplayName { get; }
+
+        public string EffectDescription { get; }
+
+        public string PlacementDescription { get; }
     }
 
     [RequireComponent(typeof(RectTransform))]
@@ -65,11 +86,6 @@ namespace TimeKey.Presentation.Cards
 
         private const float HandHeight = 280f;
         private const float BottomMargin = 8f;
-        private const float HoverLift = 30f;
-        private const float SelectedLift = 80f;
-        private const float HoverScale = 1.10f;
-        private const float SelectedScale = 1.50f;
-        private const float DragScale = 1.55f;
         private const float AnimationResponse = 18f;
 
         [SerializeField] private RectTransform _slot;
@@ -78,6 +94,11 @@ namespace TimeKey.Presentation.Cards
         [SerializeField] private Image _artwork;
         [SerializeField] private Outline _selectionOutline;
         [SerializeField] private CanvasGroup _canvasGroup;
+        [SerializeField] private float hoverLift = 24f;
+        [SerializeField] private float selectedLift = 48f;
+        [SerializeField] private float hoverScale = 1.08f;
+        [SerializeField] private float selectedScale = 1.20f;
+        [SerializeField] private float dragScale = 1.26f;
         private CardViewModel _viewModel;
         private bool _isHovered;
         private bool _isDragging;
@@ -88,12 +109,15 @@ namespace TimeKey.Presentation.Cards
         private Vector3 _dragOriginalScale;
         private Quaternion _dragOriginalRotation;
         private Vector2 _lastDragScreenPosition;
+        private bool _isMappedHighlighted;
 
         public event Action<string> CardSelected;
 
         public event Action<string> CardCancelRequested;
 
         public event Action<string, Vector2, CardDragPhase> CardDragChanged;
+
+        public event Action<CardViewModel, bool> CardHovered;
 
         public string StableId => _viewModel == null ? null : _viewModel.StableId;
 
@@ -106,6 +130,8 @@ namespace TimeKey.Presentation.Cards
         public RectTransform CardVisual => _cardVisual;
 
         public Image Artwork => _artwork;
+
+        public CardViewModel ViewModel => _viewModel;
 
         public void Build(CardViewModel viewModel)
         {
@@ -125,6 +151,7 @@ namespace TimeKey.Presentation.Cards
             _canvasGroup.blocksRaycasts = true;
             _canvasGroup.interactable = viewModel.IsInteractable;
             _isHovered = false;
+            _isMappedHighlighted = false;
             SetInteractionState(viewModel.IsSelected
                 ? CardHandInteractionState.Selected
                 : CardHandInteractionState.Idle);
@@ -153,7 +180,16 @@ namespace TimeKey.Presentation.Cards
 
             if (_selectionOutline != null)
             {
-                _selectionOutline.enabled = IsSelectionActive(state);
+                _selectionOutline.enabled = IsSelectionActive(state) || _isMappedHighlighted;
+            }
+        }
+
+        public void SetMappedHighlight(bool highlighted)
+        {
+            _isMappedHighlighted = highlighted;
+            if (_selectionOutline != null)
+            {
+                _selectionOutline.enabled = IsSelectionActive(InteractionState) || highlighted;
             }
         }
 
@@ -184,8 +220,8 @@ namespace TimeKey.Presentation.Cards
             }
 
             var selected = IsSelectionActive(InteractionState);
-            var targetLift = selected ? SelectedLift : _isHovered ? HoverLift : 0f;
-            var targetScale = selected ? SelectedScale : _isHovered ? HoverScale : 1f;
+            var targetLift = selected ? selectedLift : _isHovered ? hoverLift : 0f;
+            var targetScale = selected ? selectedScale : _isHovered ? hoverScale : 1f;
             _cardVisual.anchoredPosition = new Vector2(0f, targetLift);
             _cardVisual.localScale = Vector3.one * targetScale;
             _cardVisual.localRotation = Quaternion.identity;
@@ -194,6 +230,11 @@ namespace TimeKey.Presentation.Cards
         public void OnPointerEnter(PointerEventData eventData)
         {
             eventData.Use();
+            if (_viewModel != null)
+            {
+                CardHovered?.Invoke(_viewModel, true);
+            }
+
             if (CanInteract() && InteractionState == CardHandInteractionState.Idle)
             {
                 _isHovered = true;
@@ -204,6 +245,10 @@ namespace TimeKey.Presentation.Cards
         {
             eventData.Use();
             _isHovered = false;
+            if (_viewModel != null)
+            {
+                CardHovered?.Invoke(_viewModel, false);
+            }
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -310,8 +355,8 @@ namespace TimeKey.Presentation.Cards
             }
 
             var selected = IsSelectionActive(InteractionState);
-            var targetLift = selected ? SelectedLift : _isHovered ? HoverLift : 0f;
-            var targetScale = selected ? SelectedScale : _isHovered ? HoverScale : 1f;
+            var targetLift = selected ? selectedLift : _isHovered ? hoverLift : 0f;
+            var targetScale = selected ? selectedScale : _isHovered ? hoverScale : 1f;
             var blend = 1f - Mathf.Exp(-AnimationResponse * Mathf.Max(Time.unscaledDeltaTime, 0.0001f));
 
             _cardVisual.anchoredPosition = Vector2.Lerp(
@@ -449,7 +494,7 @@ namespace TimeKey.Presentation.Cards
                 _cardVisual.anchoredPosition = localPoint;
             }
 
-            _cardVisual.localScale = Vector3.one * DragScale;
+            _cardVisual.localScale = Vector3.one * dragScale;
         }
 
         private static RectTransform CreateRect(string name, Transform parent)

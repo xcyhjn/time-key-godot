@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TimeKey.Domain;
+using TimeKey.Domain.Intents;
 
 namespace TimeKey.Application
 {
@@ -10,7 +11,9 @@ namespace TimeKey.Application
         private readonly CombatSliceState _state;
         private readonly TimelineGrid _timeline;
         private readonly ICombatTraceSink _traceSink;
-        private readonly long _actionIdentitySequence;
+        private readonly IActionDisplayCatalog _actionDisplayCatalog;
+        private long _actionIdentitySequence;
+        private readonly CombatTurnLifecycleCoordinator _turnLifecycle;
 
         private CombatSessionPhase _phase;
         private CardDefinition _selectedCard;
@@ -32,12 +35,15 @@ namespace TimeKey.Application
             TimelineGrid timeline,
             IReadOnlyList<TimelineAction> initialActions = null,
             ICombatTraceSink traceSink = null,
-            long actionIdentitySequence = 1)
+            long actionIdentitySequence = 1,
+            IActionDisplayCatalog actionDisplayCatalog = null,
+            IEnemyIntentSourceCatalog enemyIntentSourceCatalog = null)
         {
             _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             _state = state ?? throw new ArgumentNullException(nameof(state));
             _timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
             _traceSink = traceSink;
+            _actionDisplayCatalog = actionDisplayCatalog ?? StableIdActionDisplayCatalog.Instance;
             if (actionIdentitySequence <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(actionIdentitySequence));
@@ -51,9 +57,38 @@ namespace TimeKey.Application
 
             PlaceInitialActions(initialActions);
             _phase = CombatSessionPhase.Idle;
+            if (enemyIntentSourceCatalog != null)
+            {
+                _turnLifecycle = new CombatTurnLifecycleCoordinator(
+                    _state,
+                    _timeline,
+                    enemyIntentSourceCatalog);
+                var initialStart = _turnLifecycle.RunInitialStart();
+                if (!initialStart.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        "The initial turn lifecycle failed: " + initialStart.FailureReason);
+                }
+
+                _actionIdentitySequence = _turnLifecycle.CurrentActionSequence;
+                _nextActionOrdinal = _turnLifecycle.NextActionOrdinal;
+            }
         }
 
         public IReadOnlyList<CardDefinition> Cards => _catalog.Cards;
+
+        public TurnLifecycleResult LastLifecycleResult =>
+            _turnLifecycle == null ? null : _turnLifecycle.LastLifecycleResult;
+
+        public IReadOnlyList<LifecycleOccupantChangeResult> LastLifecycleChanges =>
+            _turnLifecycle == null
+                ? Array.Empty<LifecycleOccupantChangeResult>()
+                : _turnLifecycle.LifecycleChanges;
+
+        public IReadOnlyList<EnemyIntentResolveResult> LastEnemyIntentResults =>
+            _turnLifecycle == null
+                ? Array.Empty<EnemyIntentResolveResult>()
+                : _turnLifecycle.IntentResolveResults;
 
         public CombatSessionView Current => new CombatSessionView(
             _phase,
@@ -61,6 +96,7 @@ namespace TimeKey.Application
             _cardPlaySession == null
                 ? (TimelineActionIdentity?)null
                 : _cardPlaySession.ActionId,
+            BuildTimelineActionSnapshots(),
             _requiredTargetKind,
             _target,
             _timelineOrigin,
@@ -68,7 +104,8 @@ namespace TimeKey.Application
             _lastResolution,
             _interactionMode,
             _clearPreview,
-            _lastClearResult);
+            _lastClearResult,
+            LastLifecycleChanges);
 
         public CombatCommandResult SelectCard(string stableId)
         {
@@ -521,7 +558,29 @@ namespace TimeKey.Application
             var resolvedCard = _selectedCard;
             try
             {
-                _lastResolution = _timeline.Resolve(_state);
+                if (_turnLifecycle == null)
+                {
+                    _lastResolution = _timeline.Resolve(_state);
+                }
+                else
+                {
+                    var lifecycle = _turnLifecycle.RunEndTurn();
+                    if (!lifecycle.Succeeded)
+                    {
+                        return Failure(
+                            "resolve-timeline",
+                            before,
+                            CombatCommandFailure.LifecycleFailed,
+                            stableId,
+                            target,
+                            origin,
+                            lifecycle.FailureReason);
+                    }
+
+                    _lastResolution = _turnLifecycle.LastResolution;
+                    _actionIdentitySequence = _turnLifecycle.CurrentActionSequence;
+                    _nextActionOrdinal = _turnLifecycle.NextActionOrdinal;
+                }
             }
             catch (UnsupportedCardEffectException exception)
             {
@@ -543,7 +602,9 @@ namespace TimeKey.Application
             _target = null;
             _timelineOrigin = null;
             _isPlacementValid = false;
-            _phase = CombatSessionPhase.Resolved;
+            _phase = _turnLifecycle == null
+                ? CombatSessionPhase.Resolved
+                : CombatSessionPhase.Idle;
             RecordResolutionEffects(resolvedCard, stableId, target, origin, _lastResolution);
             return Success(
                 "resolve-timeline",
@@ -703,6 +764,61 @@ namespace TimeKey.Application
                     return candidate;
                 }
             }
+        }
+
+        private IReadOnlyList<TimelineActionPresentationSnapshot> BuildTimelineActionSnapshots()
+        {
+            var scheduledActions = _timeline.ScheduledActions;
+            var snapshots = new List<TimelineActionPresentationSnapshot>(scheduledActions.Count);
+            for (var actionIndex = 0; actionIndex < scheduledActions.Count; actionIndex++)
+            {
+                var action = scheduledActions[actionIndex];
+                if (_turnLifecycle != null &&
+                    action.ActorKind == TimelineActorKind.Enemy &&
+                    _turnLifecycle.TryGetScheduledIntentSnapshot(
+                        action.ActionId,
+                        out var intentSnapshot))
+                {
+                    snapshots.Add(intentSnapshot);
+                    continue;
+                }
+
+                var occupiedCells = new List<TimelineCell>(action.Shape.Count);
+                for (var shapeIndex = 0; shapeIndex < action.Shape.Count; shapeIndex++)
+                {
+                    occupiedCells.Add(action.Origin + action.Shape[shapeIndex]);
+                }
+
+                var isUnsupported = action.ActorKind == TimelineActorKind.Enemy &&
+                    action.Effects.Count == 0;
+                var effectStableId = action.Effects.Count == 0
+                    ? action.CardId
+                    : action.Effects[0].Kind.ToString();
+                snapshots.Add(new TimelineActionPresentationSnapshot(
+                    action.ActionId,
+                    action.ActorKind,
+                    action.Priority,
+                    action.SourceId,
+                    action.SourceCoord,
+                    action.TargetId,
+                    action.TargetCoord,
+                    action.ActorKind == TimelineActorKind.Player ? action.CardId : null,
+                    effectStableId,
+                    _actionDisplayCatalog.GetDisplay(action),
+                    action.Origin,
+                    action.Shape,
+                    occupiedCells,
+                    action.EffectRange,
+                    isUnsupported
+                        ? TimelineActionValidity.Unsupported
+                        : TimelineActionValidity.Valid,
+                    isUnsupported
+                        ? TimelineActionInvalidReason.UnsupportedSourceCommand
+                        : TimelineActionInvalidReason.None,
+                    TimelineActionResolveState.Scheduled));
+            }
+
+            return snapshots;
         }
 
         private bool IsKnownTarget(CombatTarget target)

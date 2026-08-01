@@ -17,6 +17,7 @@ namespace TimeKey.Presentation.Presenters
         public event Action<string> CardSelected;
         public event Action<string> CardCancelled;
         public event Action<string, Vector2, CardDragPhase> CardDragChanged;
+        public event Action<CardViewModel, bool> CardHovered;
 
         public bool IsBound => _isBound;
 
@@ -49,6 +50,7 @@ namespace TimeKey.Presentation.Presenters
             cardHand.CardSelected += HandleCardSelected;
             cardHand.CardCancelRequested += HandleCardCancelled;
             cardHand.CardDragChanged += HandleCardDragChanged;
+            cardHand.CardHovered += HandleCardHovered;
             _isBound = true;
         }
 
@@ -62,6 +64,7 @@ namespace TimeKey.Presentation.Presenters
             cardHand.CardSelected -= HandleCardSelected;
             cardHand.CardCancelRequested -= HandleCardCancelled;
             cardHand.CardDragChanged -= HandleCardDragChanged;
+            cardHand.CardHovered -= HandleCardHovered;
             _isBound = false;
         }
 
@@ -88,7 +91,10 @@ namespace TimeKey.Presentation.Presenters
                     card.StableId,
                     card.Artwork,
                     string.Equals(card.StableId, selectedStableId, StringComparison.Ordinal),
-                    card.IsInteractable));
+                    card.IsInteractable,
+                    card.DisplayName,
+                    card.EffectDescription,
+                    card.PlacementDescription));
             }
 
             cardHand.Build(models);
@@ -151,6 +157,29 @@ namespace TimeKey.Presentation.Presenters
             CardDragPhase phase)
         {
             CardDragChanged?.Invoke(stableId, pointerPosition, phase);
+        }
+
+        public void HighlightActionCard(string stableId, bool highlighted)
+        {
+            cardHand.HighlightCard(stableId, highlighted);
+        }
+
+        public CardViewModel GetCard(string stableId)
+        {
+            for (var index = 0; index < _cards.Count; index++)
+            {
+                if (string.Equals(_cards[index].StableId, stableId, StringComparison.Ordinal))
+                {
+                    return _cards[index];
+                }
+            }
+
+            return null;
+        }
+
+        private void HandleCardHovered(CardViewModel card, bool entered)
+        {
+            CardHovered?.Invoke(card, entered);
         }
     }
 }

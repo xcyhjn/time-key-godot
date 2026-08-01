@@ -6,6 +6,7 @@ using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Terrain;
+using TimeKey.Presentation.Tooltips;
 using UnityEngine;
 
 namespace TimeKey.Presentation.Bindings
@@ -18,8 +19,10 @@ namespace TimeKey.Presentation.Bindings
         [SerializeField] private TimelinePresenter timelinePresenter = null;
         [SerializeField] private CombatHudPresenter hudPresenter = null;
         [SerializeField] private CombatOccupantPresenter occupantPresenter = null;
+        [SerializeField] private CombatInteractionOverlayPresenter interactionOverlayPresenter = null;
 
         private bool _isBound;
+        private CombatSessionView _currentState;
 
         public event Action<string> CardSelected;
         public event Action<string> CardCancelled;
@@ -56,10 +59,13 @@ namespace TimeKey.Presentation.Bindings
             cardHandPresenter.CardSelected += HandleCardSelected;
             cardHandPresenter.CardCancelled += HandleCardCancelled;
             cardHandPresenter.CardDragChanged += HandleCardDragChanged;
+            cardHandPresenter.CardHovered += HandleCardHovered;
             timelinePresenter.TimelineSelected += HandleTimelineSelected;
             timelinePresenter.TimelinePreviewRequested += HandleTimelinePreviewRequested;
             timelinePresenter.TimelinePreviewCleared += HandleTimelinePreviewCleared;
+            timelinePresenter.ActionHovered += HandleActionHovered;
             hudPresenter.ResolveRequested += HandleResolveRequested;
+            occupantPresenter.OccupantRemoved += HandleOccupantRemoved;
             _isBound = true;
         }
 
@@ -73,10 +79,13 @@ namespace TimeKey.Presentation.Bindings
             cardHandPresenter.CardSelected -= HandleCardSelected;
             cardHandPresenter.CardCancelled -= HandleCardCancelled;
             cardHandPresenter.CardDragChanged -= HandleCardDragChanged;
+            cardHandPresenter.CardHovered -= HandleCardHovered;
             timelinePresenter.TimelineSelected -= HandleTimelineSelected;
             timelinePresenter.TimelinePreviewRequested -= HandleTimelinePreviewRequested;
             timelinePresenter.TimelinePreviewCleared -= HandleTimelinePreviewCleared;
+            timelinePresenter.ActionHovered -= HandleActionHovered;
             hudPresenter.ResolveRequested -= HandleResolveRequested;
+            occupantPresenter.OccupantRemoved -= HandleOccupantRemoved;
 
             cardHandPresenter.Unbind();
             timelinePresenter.Unbind();
@@ -92,10 +101,12 @@ namespace TimeKey.Presentation.Bindings
             }
 
             ValidateDependencies();
+            _currentState = state;
             cardHandPresenter.Refresh(state);
             boardRangePresenter.Refresh(state);
             timelinePresenter.Refresh(state);
             hudPresenter.Refresh(state);
+            RestorePersistentDetail();
         }
 
         public void RenderTimelineAction(
@@ -140,13 +151,21 @@ namespace TimeKey.Presentation.Bindings
             occupantPresenter.Apply(results);
         }
 
+        public void ApplyLifecycleChanges(
+            IReadOnlyList<LifecycleOccupantChangeResult> results)
+        {
+            ValidateDependencies();
+            occupantPresenter.ApplyLifecycleChanges(results);
+        }
+
         private void OnEnable()
         {
             if (cardHandPresenter != null &&
                 boardRangePresenter != null &&
                 timelinePresenter != null &&
                 hudPresenter != null &&
-                occupantPresenter != null)
+                occupantPresenter != null &&
+                interactionOverlayPresenter != null)
             {
                 Bind();
             }
@@ -183,6 +202,11 @@ namespace TimeKey.Presentation.Bindings
             {
                 throw MissingReference(nameof(occupantPresenter));
             }
+
+            if (interactionOverlayPresenter == null)
+            {
+                throw MissingReference(nameof(interactionOverlayPresenter));
+            }
         }
 
         private InvalidOperationException MissingReference(string fieldName)
@@ -209,6 +233,85 @@ namespace TimeKey.Presentation.Bindings
             CardDragChanged?.Invoke(stableId, pointerPosition, phase);
         }
 
+        private void HandleCardHovered(CardViewModel card, bool entered)
+        {
+            if (entered)
+            {
+                interactionOverlayPresenter.ShowCard(card);
+                var action = FindPlayerAction(card.StableId);
+                if (action != null)
+                {
+                    timelinePresenter.HighlightAction(action.ActionId, true);
+                    boardRangePresenter.HighlightAction(action, true);
+                }
+
+                return;
+            }
+
+            timelinePresenter.HighlightCardActions(card.StableId, false);
+            boardRangePresenter.HighlightAction(null, false);
+            RestorePersistentDetail();
+        }
+
+        private void HandleActionHovered(
+            TimelineActionPresentationSnapshot action,
+            bool entered)
+        {
+            if (entered)
+            {
+                interactionOverlayPresenter.ShowAction(action);
+                if (action.CardStableId != null)
+                {
+                    cardHandPresenter.HighlightActionCard(action.CardStableId, true);
+                }
+
+                boardRangePresenter.HighlightAction(action, true);
+                return;
+            }
+
+            if (action.CardStableId != null)
+            {
+                cardHandPresenter.HighlightActionCard(action.CardStableId, false);
+            }
+
+            boardRangePresenter.HighlightAction(null, false);
+            RestorePersistentDetail();
+        }
+
+        private TimelineActionPresentationSnapshot FindPlayerAction(string stableId)
+        {
+            if (_currentState == null)
+            {
+                return null;
+            }
+
+            for (var index = 0; index < _currentState.TimelineActions.Count; index++)
+            {
+                var action = _currentState.TimelineActions[index];
+                if (string.Equals(action.CardStableId, stableId, StringComparison.Ordinal))
+                {
+                    return action;
+                }
+            }
+
+            return null;
+        }
+
+        private void RestorePersistentDetail()
+        {
+            if (_currentState != null && _currentState.SelectedStableId != null)
+            {
+                var card = cardHandPresenter.GetCard(_currentState.SelectedStableId);
+                if (card != null)
+                {
+                    interactionOverlayPresenter.ShowCard(card);
+                    return;
+                }
+            }
+
+            interactionOverlayPresenter.Clear();
+        }
+
         private void HandleTimelineSelected(TimelineCell coordinate)
         {
             TimelineSelected?.Invoke(coordinate);
@@ -227,6 +330,13 @@ namespace TimeKey.Presentation.Bindings
         private void HandleResolveRequested()
         {
             ResolveRequested?.Invoke();
+        }
+
+        private void HandleOccupantRemoved(string runtimeId)
+        {
+            timelinePresenter.RemoveActionsBySource(runtimeId);
+            boardRangePresenter.HighlightAction(null, false);
+            interactionOverlayPresenter.Clear();
         }
     }
 }

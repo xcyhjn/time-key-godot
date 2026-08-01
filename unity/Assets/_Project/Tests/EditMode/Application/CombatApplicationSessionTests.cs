@@ -15,6 +15,14 @@ namespace TimeKey.Tests.EditMode.Application
         {
             var session = CreateSession(out var grid, out _);
 
+            Assert.That(session.Current.TimelineActions, Has.Count.EqualTo(1));
+            Assert.That(
+                session.Current.TimelineActions[0].Validity,
+                Is.EqualTo(TimelineActionValidity.Unsupported));
+            Assert.That(
+                session.Current.TimelineActions[0].InvalidReason,
+                Is.EqualTo(TimelineActionInvalidReason.UnsupportedSourceCommand));
+
             var selected = session.SelectCard("lighting");
             var pendingActionId = session.Current.PendingActionId;
             var targeted = session.SelectTarget(CombatTarget.ForEntity("target-01", new HexCoord(0, 0)));
@@ -36,6 +44,11 @@ namespace TimeKey.Tests.EditMode.Application
             Assert.That(
                 grid.ScheduledActions.Single(item => item.ActorKind == TimelineActorKind.Player).ActionId,
                 Is.EqualTo(pendingActionId.Value));
+            Assert.That(session.Current.TimelineActions, Has.Count.EqualTo(2));
+            Assert.That(
+                session.Current.TimelineActions
+                    .Single(item => item.ActorKind == TimelineActorKind.Player).ActionId,
+                Is.EqualTo(pendingActionId.Value));
 
             var resolved = session.ResolveTimeline();
 
@@ -53,6 +66,7 @@ namespace TimeKey.Tests.EditMode.Application
                 Is.EqualTo(pendingActionId.Value));
             Assert.That(session.Current.Phase, Is.EqualTo(CombatSessionPhase.Resolved));
             Assert.That(session.Current.SelectedCard, Is.Null);
+            Assert.That(session.Current.TimelineActions, Is.Empty);
             Assert.That(grid.OccupiedCellCount, Is.Zero);
         }
 

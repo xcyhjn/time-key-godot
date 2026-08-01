@@ -11,12 +11,12 @@ namespace TimeKey.Presentation.Cards
     public sealed class CardHandHost : MonoBehaviour
     {
         private const float HandHeight = 280f;
-        private const float SlotWidth = 145f;
-        private const float MinimumSpacing = 102f;
-        private const float MaximumSpacing = 116f;
-
         [SerializeField] private RectTransform cardContainer = null;
         [SerializeField] private CardHandView cardViewPrefab = null;
+        [SerializeField] private float slotWidth = 125f;
+        [SerializeField] private float minimumSpacing = 92f;
+        [SerializeField] private float maximumSpacing = 126f;
+        [SerializeField] private float selectedReservedExtent = 40f;
 
         private readonly List<CardHandView> _cards = new List<CardHandView>();
         private readonly Dictionary<string, CardHandView> _cardsById =
@@ -28,6 +28,8 @@ namespace TimeKey.Presentation.Cards
         public event Action<string> CardCancelRequested;
 
         public event Action<string, Vector2, CardDragPhase> CardDragChanged;
+
+        public event Action<CardViewModel, bool> CardHovered;
 
         public IReadOnlyList<CardHandView> Cards => _cards;
 
@@ -141,6 +143,14 @@ namespace TimeKey.Presentation.Cards
             }
         }
 
+        public void HighlightCard(string stableId, bool highlighted)
+        {
+            if (stableId != null && _cardsById.TryGetValue(stableId, out var card))
+            {
+                card.SetMappedHighlight(highlighted);
+            }
+        }
+
         private static int FindSelectedIndex(IReadOnlyList<CardViewModel> viewModels)
         {
             var selectedIndex = -1;
@@ -202,6 +212,7 @@ namespace TimeKey.Presentation.Cards
             view.CardSelected += HandleCardSelected;
             view.CardCancelRequested += HandleCardCancelRequested;
             view.CardDragChanged += HandleCardDragChanged;
+            view.CardHovered += HandleCardHovered;
             return view;
         }
 
@@ -215,6 +226,7 @@ namespace TimeKey.Presentation.Cards
             }
 
             _selectedStableId = stableId;
+            LayoutCards();
             if (_cardsById.TryGetValue(stableId, out var selected))
             {
                 selected.transform.SetAsLastSibling();
@@ -228,6 +240,7 @@ namespace TimeKey.Presentation.Cards
             if (string.Equals(_selectedStableId, stableId, StringComparison.Ordinal))
             {
                 _selectedStableId = null;
+                LayoutCards();
             }
 
             CardCancelRequested?.Invoke(stableId);
@@ -236,6 +249,11 @@ namespace TimeKey.Presentation.Cards
         private void HandleCardDragChanged(string stableId, Vector2 pointerPosition, CardDragPhase phase)
         {
             CardDragChanged?.Invoke(stableId, pointerPosition, phase);
+        }
+
+        private void HandleCardHovered(CardViewModel card, bool entered)
+        {
+            CardHovered?.Invoke(card, entered);
         }
 
         private void LayoutCards()
@@ -251,20 +269,31 @@ namespace TimeKey.Presentation.Cards
                 width = Screen.width;
             }
 
-            var spacing = Mathf.Clamp(
-                width / Mathf.Max(1f, _cards.Count + 0.6f),
-                MinimumSpacing,
-                MaximumSpacing);
+            var reserve = _selectedStableId == null ? 0f : selectedReservedExtent * 2f;
+            var spacing = _cards.Count <= 1
+                ? 0f
+                : Mathf.Clamp(
+                    (width - slotWidth - reserve) / (_cards.Count - 1f),
+                    minimumSpacing,
+                    maximumSpacing);
             var center = (_cards.Count - 1) * 0.5f;
+            var selectedIndex = _selectedStableId == null
+                ? -1
+                : _cards.FindIndex(card => card.StableId == _selectedStableId);
             for (var index = 0; index < _cards.Count; index++)
             {
                 var cardRect = (RectTransform)_cards[index].transform;
                 cardRect.anchorMin = new Vector2(0.5f, 0f);
                 cardRect.anchorMax = new Vector2(0.5f, 0f);
                 cardRect.pivot = new Vector2(0.5f, 0f);
-                cardRect.sizeDelta = new Vector2(SlotWidth, HandHeight);
+                cardRect.sizeDelta = new Vector2(slotWidth, HandHeight);
+                var reservedOffset = selectedIndex < 0 || index == selectedIndex
+                    ? 0f
+                    : index < selectedIndex
+                        ? -selectedReservedExtent
+                        : selectedReservedExtent;
                 cardRect.anchoredPosition = new Vector2(
-                    (index - center) * spacing,
+                    ((index - center) * spacing) + reservedOffset,
                     Mathf.Abs(index - center) * 3f);
             }
         }

@@ -307,3 +307,8 @@ MonoBehaviour:
   _artwork: {fileID: 2446766590016834947}
   _selectionOutline: {fileID: 482485440055949130}
   _canvasGroup: {fileID: 1353496898609157389}
+  hoverLift: 24
+  selectedLift: 48
+  hoverScale: 1.08
+  selectedScale: 1.2
+  dragScale: 1.26

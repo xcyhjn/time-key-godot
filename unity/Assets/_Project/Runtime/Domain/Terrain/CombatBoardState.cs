@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace TimeKey.Domain
 {
@@ -22,6 +23,16 @@ namespace TimeKey.Domain
             new Dictionary<HexCoord, BoardTileState>();
 
         public int TileCount => _tiles.Count;
+
+        public IReadOnlyList<HexCoord> Coordinates
+        {
+            get
+            {
+                var coordinates = new List<HexCoord>(_tiles.Keys);
+                coordinates.Sort(CompareCoordinates);
+                return new ReadOnlyCollection<HexCoord>(coordinates);
+            }
+        }
 
         public void AddTile(HexCoord coordinate, int logicalLayerCount)
         {
@@ -66,6 +77,12 @@ namespace TimeKey.Domain
             {
                 throw new ArgumentOutOfRangeException(nameof(logicalLayerCount));
             }
+        }
+
+        private static int CompareCoordinates(HexCoord left, HexCoord right)
+        {
+            var qComparison = left.Q.CompareTo(right.Q);
+            return qComparison != 0 ? qComparison : left.R.CompareTo(right.R);
         }
     }
 }

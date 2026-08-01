@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Domain;
+using TimeKey.Domain.Intents;
 using TimeKey.Infrastructure.Cards;
 using TimeKey.Infrastructure.Effects;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Localization;
 using UnityEngine;
 
 namespace TimeKey.Composition
@@ -51,20 +53,25 @@ namespace TimeKey.Composition
             presentationBinding.ConfigureCards(
                 CreateCardModels(catalog.Cards, sprites, registrations));
 
+            var board = CreateBoard();
             var state = new CombatSliceState(
                 VerticalSliceController.TargetId,
                 10,
                 VerticalSliceController.FixtureSeed,
-                new CombatBoardState());
+                board);
             var timeline = new TimelineGrid();
-            var enemyIntent = CreateEnemyIntent();
             _session = new CombatApplicationSession(
                 catalog,
                 state,
                 timeline,
-                new[] { enemyIntent },
-                traceSink);
-            controller.Initialize(_session, state, timeline, new[] { enemyIntent });
+                traceSink: traceSink,
+                actionDisplayCatalog: CombatChineseActionDisplayCatalog.Instance,
+                enemyIntentSourceCatalog: VerticalSliceEnemyIntentSourceCatalog.Instance);
+            controller.Initialize(
+                _session,
+                state,
+                timeline,
+                Array.Empty<TimelineAction>());
             CardCount = catalog.Cards.Count;
             _initialized = true;
         }
@@ -82,27 +89,93 @@ namespace TimeKey.Composition
                     card.StableId,
                     sprites[card.StableId],
                     false,
-                    registrations.Supports(card)));
+                    registrations.Supports(card),
+                    CombatChineseText.GetCardName(card.StableId),
+                    CombatChineseText.GetCardEffectDescription(card),
+                    CombatChineseText.GetCardPlacementDescription(card)));
             }
 
             return result;
         }
 
-        private static TimelineAction CreateEnemyIntent()
+        private static CombatBoardState CreateBoard()
         {
-            return new TimelineAction(
-                TimelineActionIdentity.FromSequence(1, 0),
-                TimelineActorKind.Enemy,
-                0,
-                VerticalSliceController.TargetId,
-                new HexCoord(0, 0),
-                "enemy-intent",
-                VerticalSliceController.TargetId,
-                new TimelineCell(2, 1),
-                new[] { new TimelineCell(0, 0) },
-                new HexCoord(0, 0),
-                Array.Empty<CardEffect>(),
-                Array.Empty<HexCoord>());
+            var board = new CombatBoardState();
+            for (var q = -2; q <= 2; q++)
+            {
+                var minimumR = Math.Max(-2, -q - 2);
+                var maximumR = Math.Min(2, -q + 2);
+                for (var r = minimumR; r <= maximumR; r++)
+                {
+                    var elevated = (q == 1 && r == 0) || (q == -1 && r == 1);
+                    board.AddTile(new HexCoord(q, r), elevated ? 2 : 1);
+                }
+            }
+
+            return board;
+        }
+
+        private sealed class VerticalSliceEnemyIntentSourceCatalog :
+            IEnemyIntentSourceCatalog
+        {
+            public static VerticalSliceEnemyIntentSourceCatalog Instance { get; } =
+                new VerticalSliceEnemyIntentSourceCatalog();
+
+            private VerticalSliceEnemyIntentSourceCatalog()
+            {
+            }
+
+            public IReadOnlyList<EnemyIntentSourceSnapshot> CaptureSources(
+                CombatSliceState state)
+            {
+                if (state == null)
+                {
+                    throw new ArgumentNullException(nameof(state));
+                }
+
+                var sources = new List<EnemyIntentSourceSnapshot>();
+                var occupants = state.CaptureOccupants();
+                for (var index = 0; index < occupants.Count; index++)
+                {
+                    var occupant = occupants[index];
+                    if (occupant.Attitude != CombatAttitude.Enemy)
+                    {
+                        continue;
+                    }
+
+                    sources.Add(new EnemyIntentSourceSnapshot(
+                        occupant.RuntimeId,
+                        occupant.Coordinate,
+                        occupant.Kind,
+                        occupant.IsAlive,
+                        occupant.IsAlive,
+                        "enemy-intent",
+                        0,
+                        new EnemyIntentTargetSnapshot(
+                            occupant.RuntimeId,
+                            occupant.Coordinate,
+                            requiresOccupant: true,
+                            occupantRuntimeId: occupant.RuntimeId,
+                            requiredAttitude: CombatAttitude.Enemy),
+                        new[]
+                        {
+                            new TimelineCell(1, 0),
+                            new TimelineCell(2, 0)
+                        },
+                        new EnemyIntentEffectSnapshot(
+                            "enemy-intent-effect",
+                            sourceCommand: null,
+                            rangeOffsets: new[] { new HexCoord(0, 0) }),
+                        new EnemyIntentDisplayData(
+                            "敌方意图",
+                            "源命令暂不支持，本轮不产生效果",
+                            "enemy-intent",
+                            "来源：" + CombatChineseText.GetEntityName(occupant.RuntimeId),
+                            "目标：自身")));
+                }
+
+                return sources;
+            }
         }
 
         private IReadOnlyDictionary<string, Sprite> LoadArtwork(

@@ -7,10 +7,15 @@ namespace TimeKey.Presentation.Occupants
     public sealed class CombatOccupantView : MonoBehaviour
     {
         [SerializeField] private Transform statusAnchor = null;
+        [SerializeField] private TextMesh healthLabel = null;
 
         public string RuntimeId { get; private set; }
 
         public Transform StatusAnchor => statusAnchor;
+
+        public int Hp { get; private set; }
+
+        public bool HasHealth { get; private set; }
 
         public void Initialize(string runtimeId)
         {
@@ -25,6 +30,21 @@ namespace TimeKey.Presentation.Occupants
             }
 
             RuntimeId = runtimeId.Trim();
+        }
+
+        public void SetHealth(int hp)
+        {
+            if (hp < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(hp));
+            }
+
+            HasHealth = true;
+            Hp = hp;
+            if (healthLabel != null)
+            {
+                healthLabel.text = hp.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
         }
     }
 }

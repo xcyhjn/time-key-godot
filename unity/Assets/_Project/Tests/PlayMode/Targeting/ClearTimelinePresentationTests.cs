@@ -6,6 +6,7 @@ using NUnit.Framework;
 using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Actions;
 using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
@@ -54,7 +55,8 @@ namespace TimeKey.Tests.PlayMode.Targeting
             var session = new CombatApplicationSession(
                 new TestCatalog(new[] { wind }),
                 CreateState(),
-                grid);
+                grid,
+                actionDisplayCatalog: CombatChineseActionDisplayCatalog.Instance);
             Assert.That(session.SelectCard("wind").Succeeded, Is.True);
             Assert.That(session.PreviewClear(new TimelineCell(0, 0)).Succeeded, Is.True);
 
@@ -170,9 +172,46 @@ namespace TimeKey.Tests.PlayMode.Targeting
             CombatPresentationBindingTests.SetField(presenter, "timelinePreview", placement);
             CombatPresentationBindingTests.SetField(presenter, "clearTimelinePreview", clear);
             CombatPresentationBindingTests.SetField(presenter, "timelineCells", cells);
+            var actionLayerObject = new GameObject("ActionLayer", typeof(RectTransform));
+            actionLayerObject.transform.SetParent(_root.transform, false);
+            var actionFrame = CreateActionFrame(_root.transform);
+            CombatPresentationBindingTests.SetField(
+                presenter,
+                "actionLayer",
+                actionLayerObject.GetComponent<RectTransform>());
+            CombatPresentationBindingTests.SetField(
+                presenter,
+                "actionFramePrefab",
+                actionFrame);
             _root.SetActive(true);
             presenter.Bind();
             return new PresentationRig(presenter, clear, cellsByCoordinate);
+        }
+
+        private static TimelineActionFrame CreateActionFrame(Transform parent)
+        {
+            var root = new GameObject(
+                "TimelineActionFrameTemplate",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(CanvasGroup),
+                typeof(Outline),
+                typeof(TimelineActionFrame));
+            root.transform.SetParent(parent, false);
+            var frame = root.GetComponent<TimelineActionFrame>();
+            var stripe = new GameObject("Stripe", typeof(RectTransform), typeof(Image));
+            stripe.transform.SetParent(root.transform, false);
+            var label = new GameObject("Label", typeof(RectTransform), typeof(Text));
+            label.transform.SetParent(root.transform, false);
+            var badge = new GameObject("Badge", typeof(RectTransform), typeof(Text));
+            badge.transform.SetParent(root.transform, false);
+            CombatPresentationBindingTests.SetField(frame, "background", root.GetComponent<Image>());
+            CombatPresentationBindingTests.SetField(frame, "stripe", stripe.GetComponent<Image>());
+            CombatPresentationBindingTests.SetField(frame, "outline", root.GetComponent<Outline>());
+            CombatPresentationBindingTests.SetField(frame, "label", label.GetComponent<Text>());
+            CombatPresentationBindingTests.SetField(frame, "badge", badge.GetComponent<Text>());
+            CombatPresentationBindingTests.SetField(frame, "canvasGroup", root.GetComponent<CanvasGroup>());
+            return frame;
         }
 
         private static CardDefinition CreateClearCard(

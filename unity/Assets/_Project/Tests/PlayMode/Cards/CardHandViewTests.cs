@@ -68,8 +68,8 @@ namespace TimeKey.Tests.PlayMode.Cards
             Assert.That(hover.used, Is.True);
             yield return new WaitForSecondsRealtime(0.25f);
             Assert.That(_view.IsHovered, Is.True);
-            Assert.That(_view.CardVisual.anchoredPosition.y, Is.GreaterThan(27f));
-            Assert.That(_view.CardVisual.localScale.x, Is.GreaterThan(1.08f));
+            Assert.That(_view.CardVisual.anchoredPosition.y, Is.GreaterThan(20f));
+            Assert.That(_view.CardVisual.localScale.x, Is.GreaterThan(1.06f));
 
             var select = Pointer(PointerEventData.InputButton.Left);
             _view.OnPointerClick(select);
@@ -79,8 +79,8 @@ namespace TimeKey.Tests.PlayMode.Cards
             Assert.That(selectedCount, Is.EqualTo(1));
             Assert.That(_view.InteractionState, Is.EqualTo(CardHandInteractionState.Selected));
             yield return new WaitForSecondsRealtime(0.25f);
-            Assert.That(_view.CardVisual.anchoredPosition.y, Is.GreaterThan(74f));
-            Assert.That(_view.CardVisual.localScale.x, Is.GreaterThan(1.44f));
+            Assert.That(_view.CardVisual.anchoredPosition.y, Is.GreaterThan(44f));
+            Assert.That(_view.CardVisual.localScale.x, Is.GreaterThan(1.17f));
 
             var cancel = Pointer(PointerEventData.InputButton.Right);
             _view.OnPointerClick(cancel);

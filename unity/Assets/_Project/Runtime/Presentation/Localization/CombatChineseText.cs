@@ -40,6 +40,30 @@ namespace TimeKey.Presentation.Localization
             return GetOccupantName(creationId, runtimeId) + " | 生命 " + hp;
         }
 
+        public static string LifecycleOccupantStatus(LifecycleOccupantChangeResult change)
+        {
+            if (change == null)
+            {
+                throw new System.ArgumentNullException(nameof(change));
+            }
+
+            var name = change.Reason == LifecycleMutationReason.TowerDecay
+                ? "高塔"
+                : GetEntityName(change.RuntimeId);
+            if (change.Removed)
+            {
+                return name + " | 已移除";
+            }
+
+            if (change.AfterPoisonStacks > 0)
+            {
+                return name + " | 生命 " + change.AfterHp + " | 中毒 " +
+                    change.AfterPoisonStacks + " 层";
+            }
+
+            return name + " | 生命 " + change.AfterHp;
+        }
+
         public static string TargetHealth(int hp) => "目标 | 生命 " + hp;
 
         public static string EntityLocked(string entityId) => GetEntityName(entityId) + " | 已锁定";
@@ -68,6 +92,49 @@ namespace TimeKey.Presentation.Localization
             return stableId == "enemy-intent" ? EnemyIntentTimelineLabel : GetCardName(stableId);
         }
 
+        public static string GetCardEffectDescription(CardDefinition card)
+        {
+            if (card == null || card.Effects.Count == 0)
+            {
+                return "无效果";
+            }
+
+            var effect = card.Effects[0];
+            switch (effect.Kind)
+            {
+                case CardEffectKind.Damage: return "造成 " + effect.Value + " 点伤害";
+                case CardEffectKind.Elevation: return "范围内地块高度 +" + effect.Value;
+                case CardEffectKind.Recover: return "恢复 " + effect.Value + " 点生命";
+                case CardEffectKind.Built: return "建造高塔，初始生命 100";
+                case CardEffectKind.Poison: return "施加 " + effect.Value + " 层中毒";
+                case CardEffectKind.Clear: return "清除命中的完整时间轴行动";
+                default: return effect.Kind.ToString();
+            }
+        }
+
+        public static string GetCardPlacementDescription(CardDefinition card)
+        {
+            if (card == null)
+            {
+                return string.Empty;
+            }
+
+            var timelineCells = card.Shape.Count > 0
+                ? card.Shape.Count
+                : card.Effects.Count > 0
+                    ? card.Effects[0].ClearMask.Count
+                    : 0;
+            var target = card.Effects.Count > 0 && card.Effects[0].Kind == CardEffectKind.Clear
+                ? "时间轴"
+                : card.Effects.Count > 0 &&
+                    (card.Effects[0].Kind == CardEffectKind.Elevation ||
+                     card.Effects[0].Kind == CardEffectKind.Built)
+                    ? "地块"
+                    : "单位";
+            return "目标：" + target + "  |  范围：" + card.Range.Count +
+                " 格  |  时间轴：" + timelineCells + " 格";
+        }
+
         public static string GetCardName(string stableId)
         {
             switch (stableId)
@@ -88,7 +155,7 @@ namespace TimeKey.Presentation.Localization
             return creationId == "tower" ? "高塔" : GetEntityName(runtimeId);
         }
 
-        private static string GetEntityName(string entityId)
+        public static string GetEntityName(string entityId)
         {
             return entityId == "target-01" ? "目标 01" : "目标";
         }

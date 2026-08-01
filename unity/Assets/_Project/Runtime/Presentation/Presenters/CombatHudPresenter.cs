@@ -145,6 +145,12 @@ namespace TimeKey.Presentation.Presenters
                     : CombatChineseText.ClearHits(state.ClearPreview.HitActions.Count);
             }
 
+            if (state.LifecycleChanges.Count > 0)
+            {
+                var change = state.LifecycleChanges[state.LifecycleChanges.Count - 1];
+                return CombatChineseText.LifecycleOccupantStatus(change);
+            }
+
             if (state.LastResolution != null)
             {
                 var occupantResults = state.LastResolution.OccupantEffectResults;

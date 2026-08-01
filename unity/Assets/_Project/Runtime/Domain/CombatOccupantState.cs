@@ -182,5 +182,16 @@ namespace TimeKey.Domain
             PoisonStacks = checked(PoisonStacks + amount);
             return true;
         }
+
+        internal bool TrySetPoisonStacks(int stacks)
+        {
+            if (!SupportsStatus || stacks < 0)
+            {
+                return false;
+            }
+
+            PoisonStacks = stacks;
+            return true;
+        }
     }
 }

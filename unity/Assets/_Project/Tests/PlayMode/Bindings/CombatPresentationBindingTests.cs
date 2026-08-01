@@ -1,9 +1,11 @@
 using System;
 using System.Reflection;
 using NUnit.Framework;
+using TimeKey.Presentation.Actions;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
+using TimeKey.Presentation.Tooltips;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -123,6 +125,10 @@ namespace TimeKey.Tests.PlayMode.Bindings
                 timelinePresenter,
                 "timelineCells",
                 new System.Collections.Generic.List<TimeKey.Presentation.TimelineCellView> { timelineCell });
+            var actionLayer = CreateChild(root, "ActionLayer", typeof(RectTransform))
+                .GetComponent<RectTransform>();
+            SetField(timelinePresenter, "actionLayer", actionLayer);
+            SetField(timelinePresenter, "actionFramePrefab", CreateActionFrame(root));
 
             var hudPresenter = CreateChild(root, "CombatHudPresenter").AddComponent<CombatHudPresenter>();
             SetField(hudPresenter, "statusText", statusText);
@@ -131,6 +137,8 @@ namespace TimeKey.Tests.PlayMode.Bindings
 
             var occupantPresenter = CreateChild(root, "CombatOccupantPresenter")
                 .AddComponent<CombatOccupantPresenter>();
+            var interactionOverlayPresenter = CreateChild(root, "InteractionOverlay")
+                .AddComponent<CombatInteractionOverlayPresenter>();
 
             var binding = root.AddComponent<CombatPresentationBinding>();
             SetField(binding, "cardHandPresenter", cardPresenter);
@@ -138,6 +146,7 @@ namespace TimeKey.Tests.PlayMode.Bindings
             SetField(binding, "timelinePresenter", timelinePresenter);
             SetField(binding, "hudPresenter", hudPresenter);
             SetField(binding, "occupantPresenter", occupantPresenter);
+            SetField(binding, "interactionOverlayPresenter", interactionOverlayPresenter);
 
             root.SetActive(true);
             return new BindingRig(
@@ -149,6 +158,31 @@ namespace TimeKey.Tests.PlayMode.Bindings
                 statusText,
                 targetText,
                 resolveButton);
+        }
+
+        private static TimelineActionFrame CreateActionFrame(GameObject root)
+        {
+            var frameObject = CreateChild(
+                root,
+                "ActionFrameFixture",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(CanvasGroup),
+                typeof(Outline));
+            var frame = frameObject.AddComponent<TimelineActionFrame>();
+            var stripe = CreateChild(frameObject, "Stripe", typeof(RectTransform), typeof(Image))
+                .GetComponent<Image>();
+            var label = CreateChild(frameObject, "Label", typeof(RectTransform))
+                .AddComponent<Text>();
+            var badge = CreateChild(frameObject, "Badge", typeof(RectTransform))
+                .AddComponent<Text>();
+            SetField(frame, "background", frameObject.GetComponent<Image>());
+            SetField(frame, "stripe", stripe);
+            SetField(frame, "outline", frameObject.GetComponent<Outline>());
+            SetField(frame, "label", label);
+            SetField(frame, "badge", badge);
+            SetField(frame, "canvasGroup", frameObject.GetComponent<CanvasGroup>());
+            return frame;
         }
 
         internal static GameObject CreateChild(GameObject parent, string name, params Type[] components)

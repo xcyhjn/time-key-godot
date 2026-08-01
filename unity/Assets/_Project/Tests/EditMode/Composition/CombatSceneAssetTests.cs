@@ -4,6 +4,7 @@ using NUnit.Framework;
 using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Actions;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Localization;
@@ -11,6 +12,7 @@ using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
+using TimeKey.Presentation.Tooltips;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -41,7 +43,9 @@ namespace TimeKey.Tests.EditMode.Composition
             AssertPath(root.transform, "EventSystem");
             AssertPath(root.transform, "SliceCanvas/HUD/Header");
             AssertPath(root.transform, "SliceCanvas/HUD/Timeline");
+            AssertPath(root.transform, "SliceCanvas/HUD/Timeline/ActionLayer");
             AssertPath(root.transform, "SliceCanvas/HUD/CardHandHost");
+            AssertPath(root.transform, "SliceCanvas/HUD/EffectFrameHost");
             AssertPath(root.transform, "SliceCanvas/HUD/DetailPanel");
 
             var controller = root.GetComponent<VerticalSliceController>();
@@ -75,9 +79,11 @@ namespace TimeKey.Tests.EditMode.Composition
             Assert.That(root.GetComponentInChildren<ClearTimelinePreview>(true), Is.Not.Null);
             Assert.That(root.GetComponentInChildren<CombatHudPresenter>(true), Is.Not.Null);
             Assert.That(root.GetComponentInChildren<CombatOccupantPresenter>(true), Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<CombatInteractionOverlayPresenter>(true), Is.Not.Null);
 
             var bindingSerialized = new SerializedObject(binding);
             AssertReference(bindingSerialized, "occupantPresenter");
+            AssertReference(bindingSerialized, "interactionOverlayPresenter");
 
             var compositionSerialized = new SerializedObject(composition);
             AssertReference(compositionSerialized, "controller");
@@ -96,6 +102,8 @@ namespace TimeKey.Tests.EditMode.Composition
             var timelineSerialized = new SerializedObject(timelinePresenter);
             AssertReference(timelineSerialized, "timelinePreview");
             AssertReference(timelineSerialized, "clearTimelinePreview");
+            AssertReference(timelineSerialized, "actionLayer");
+            AssertReference(timelineSerialized, "actionFramePrefab");
             var cells = timelineSerialized.FindProperty("timelineCells");
             Assert.That(cells.arraySize, Is.EqualTo(36));
             var coordinates = new HashSet<TimelineCell>();
@@ -118,6 +126,8 @@ namespace TimeKey.Tests.EditMode.Composition
             AssertPrefab<WorldTargetView>("Assets/_Project/Prefabs/Battle/Targets/TargetView.prefab");
             AssertPrefab<CombatOccupantView>("Assets/_Project/Prefabs/Battle/Occupants/Tower.prefab");
             AssertPrefab<PoisonStatusView>("Assets/_Project/Prefabs/Battle/Status/PoisonStatus.prefab");
+            AssertPrefab<CardEffectFrame>("Assets/_Project/Prefabs/Battle/UI/CardEffectFrame.prefab");
+            AssertPrefab<TimelineActionFrame>("Assets/_Project/Prefabs/Battle/UI/TimelineActionFrame.prefab");
 
             var tower = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/_Project/Prefabs/Battle/Occupants/Tower.prefab");
@@ -160,6 +170,34 @@ namespace TimeKey.Tests.EditMode.Composition
             var timelineText = timelinePrefab.GetComponentInChildren<Text>(true);
             Assert.That(timelineText, Is.Not.Null);
             Assert.That(timelineText.font, Is.EqualTo(font));
+
+            var effectFrame = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Battle/UI/CardEffectFrame.prefab");
+            var actionFrame = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Battle/UI/TimelineActionFrame.prefab");
+            foreach (var text in effectFrame.GetComponentsInChildren<Text>(true))
+            {
+                Assert.That(text.font, Is.EqualTo(font), text.name);
+            }
+
+            foreach (var text in actionFrame.GetComponentsInChildren<Text>(true))
+            {
+                Assert.That(text.font, Is.EqualTo(font), text.name);
+            }
+
+            var tower = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Battle/Occupants/Tower.prefab");
+            var towerHealth = tower.transform.Find("Health").GetComponent<TextMesh>();
+            Assert.That(towerHealth, Is.Not.Null);
+            Assert.That(towerHealth.font, Is.EqualTo(font));
+            Assert.That(towerHealth.GetComponent<MeshRenderer>().sharedMaterial, Is.EqualTo(font.material));
+
+            var poison = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Battle/Status/PoisonStatus.prefab");
+            var poisonStacks = poison.transform.Find("Stacks").GetComponent<TextMesh>();
+            Assert.That(poisonStacks, Is.Not.Null);
+            Assert.That(poisonStacks.font, Is.EqualTo(font));
+            Assert.That(poisonStacks.GetComponent<MeshRenderer>().sharedMaterial, Is.EqualTo(font.material));
 
             const string requiredGlyphs =
                 "时之钥战斗棋盘目标生命敌方意图第格二行结算轴已选择清除牌请位置锁定有效点击确认范围超出无效行动放置取消完成更新推进结束无需地图预览命中移除个高塔中毒层块正持有未能入雷击地震台风恢复龙卷风未知卡·";

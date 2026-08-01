@@ -75,7 +75,7 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(root.transform.childCount, Is.EqualTo(stableChildCount));
             Assert.That(controller.BoardTileCount, Is.EqualTo(19));
             Assert.That(controller.TimelineSlotCount, Is.EqualTo(36));
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
             Assert.That(Object.FindObjectsByType<BoardTileView>(FindObjectsSortMode.None).Length, Is.EqualTo(19));
             Assert.That(Object.FindObjectsByType<WorldTargetView>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
         }
@@ -145,7 +145,7 @@ namespace TimeKey.Tests.PlayMode
             var snapshot = controller.ResolveTimeline();
 
             Assert.That(controller.CurrentTargetHp, Is.Zero);
-            Assert.That(controller.EnemyIntentResolved, Is.True);
+            Assert.That(controller.EnemyIntentResolved, Is.False);
             Assert.That(snapshot.TargetHpBefore, Is.EqualTo(10));
             Assert.That(snapshot.TargetHpAfter, Is.Zero);
             Assert.That(snapshot.ResolutionOrder.Select(item => item.CardId),
@@ -196,9 +196,10 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(towerObject.GetComponent<CombatOccupantView>(), Is.Not.Null);
             Assert.That(towerObject.transform.Find("OriginalArt-tower"), Is.Not.Null);
             Assert.That(towerObject.GetComponentsInChildren<Collider>(true), Is.Empty);
+            Assert.That(towerObject.GetComponent<CombatOccupantView>().Hp, Is.EqualTo(50));
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
-                Is.EqualTo("高塔 | 生命 100"));
+                Is.EqualTo("高塔 | 生命 50"));
         }
 
         [UnityTest]
@@ -218,18 +219,11 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(snapshot.OccupantEffectResults[0].Before.PoisonStacks, Is.Zero);
             Assert.That(snapshot.OccupantEffectResults[0].After.PoisonStacks, Is.EqualTo(2));
             var statusObject = GameObject.Find("PoisonStatus-" + VerticalSliceController.TargetId);
-            Assert.That(statusObject, Is.Not.Null);
-            var status = statusObject.GetComponent<PoisonStatusView>();
-            Assert.That(status, Is.Not.Null);
-            Assert.That(status.Stacks, Is.EqualTo(2));
-            Assert.That(statusObject.GetComponentInChildren<TextMesh>(true).text, Is.EqualTo("2"));
-            var icon = statusObject.GetComponentInChildren<SpriteRenderer>(true).sprite;
-            Assert.That(icon, Is.Not.Null);
-            Assert.That(icon.texture.width, Is.EqualTo(160));
-            Assert.That(icon.texture.height, Is.EqualTo(160));
+            Assert.That(statusObject, Is.Null);
+            Assert.That(controller.CurrentTargetHp, Is.Zero);
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
-                Is.EqualTo("目标 01 | 中毒 2 层"));
+                Is.EqualTo("目标 01 | 生命 0"));
         }
 
         [UnityTest]
@@ -238,21 +232,31 @@ namespace TimeKey.Tests.PlayMode
             yield return LoadSlice();
             var controller = GetController();
 
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
             Assert.That(controller.SelectCard("wind"), Is.True);
             Assert.That(controller.SelectedCardId, Is.EqualTo("wind"));
-            Assert.That(controller.PreviewTimelineSelected(1, 0), Is.True);
+            var intentCell = controller.TimelineActions.Single().OccupiedCells[0];
+            var clearOrigin = new TimelineCell(
+                Mathf.Max(0, intentCell.X - 1),
+                Mathf.Max(0, intentCell.Y - 1));
+            Assert.That(
+                controller.PreviewTimelineSelected(clearOrigin.X, clearOrigin.Y),
+                Is.True);
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
                 Is.EqualTo(CombatChineseText.ClearHits(1)));
-            Assert.That(GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText,
+            Assert.That(GameObject.Find(
+                    string.Format("Slot-{0}-{1}", intentCell.X, intentCell.Y))
+                .GetComponent<TimelineCellView>().DisplayText,
                 Is.EqualTo(CombatChineseText.ClearHit));
 
-            Assert.That(controller.TryPlaceSelected(1, 0), Is.True);
+            Assert.That(controller.TryPlaceSelected(clearOrigin.X, clearOrigin.Y), Is.True);
 
             Assert.That(controller.TimelineOccupiedCellCount, Is.Zero);
-            Assert.That(GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText,
-                Is.EqualTo("03"));
+            Assert.That(GameObject.Find(
+                    string.Format("Slot-{0}-{1}", intentCell.X, intentCell.Y))
+                .GetComponent<TimelineCellView>().DisplayText,
+                Is.Not.EqualTo(CombatChineseText.ClearHit));
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
                 Is.EqualTo(CombatChineseText.ClearRemoved(1)));
@@ -265,6 +269,8 @@ namespace TimeKey.Tests.PlayMode
             yield return LoadSlice();
             var controller = GetController();
             var clearPreview = Object.FindFirstObjectByType<ClearTimelinePreview>();
+            var intentRow = controller.TimelineActions.Single().OccupiedCells[0].Y;
+            var emptyRow = (intentRow + 1) % TimelineGrid.DefaultHeight;
 
             Assert.That(controller.SelectCard("tornado"), Is.True);
             Assert.That(controller.PreviewTimelineSelected(1, 0), Is.False);
@@ -275,11 +281,11 @@ namespace TimeKey.Tests.PlayMode
                 GameObject.Find("Status").GetComponent<Text>().text,
                 Is.EqualTo(CombatChineseText.ClearPositionOutOfBounds));
 
-            Assert.That(controller.PreviewTimelineSelected(0, 0), Is.True);
+            Assert.That(controller.PreviewTimelineSelected(0, emptyRow), Is.True);
             Assert.That(clearPreview.ActiveCoordinates.Count, Is.EqualTo(12));
-            Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
+            Assert.That(controller.TryPlaceSelected(0, emptyRow), Is.True);
 
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
                 Is.EqualTo(CombatChineseText.ClearRemoved(0)));
@@ -383,13 +389,13 @@ namespace TimeKey.Tests.PlayMode
             var invalidOutline = GameObject.Find("Slot-11-0").GetComponent<Outline>();
             Assert.That(invalidOutline, Is.Not.Null);
             Assert.That(invalidOutline.enabled, Is.True);
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
 
             Assert.That(controller.PreviewTimelineSelected(0, 0), Is.True);
             Assert.That(controller.TimelinePreview.ActiveCoordinates,
                 Is.EqualTo(new[] { new TimelineCell(0, 0), new TimelineCell(1, 0) }));
             Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(3));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(4));
 
             var snapshot = controller.ResolveTimeline();
 
@@ -441,7 +447,7 @@ namespace TimeKey.Tests.PlayMode
             yield return LoadSlice();
             var controller = GetController();
 
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1), "Enemy intent is the only initial action.");
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2), "Enemy intent is the only initial action.");
             Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
             Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
             Assert.That(controller.CardPlayState, Is.EqualTo(CardPlaySessionState.TargetSelected));
@@ -458,25 +464,29 @@ namespace TimeKey.Tests.PlayMode
                     Is.EqualTo(new[] { new HexCoord(1, 0), new HexCoord(2, 0) }));
             }
 
-            Assert.That(controller.PreviewTimelineSelected(2, 1), Is.False);
+            var occupied = controller.TimelineActions.Single().OccupiedCells[0];
+            Assert.That(controller.PreviewTimelineSelected(occupied.X, occupied.Y), Is.False);
             Assert.That(controller.TimelinePreview.IsValid, Is.False);
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
 
             Assert.That(controller.PreviewTimelineSelected(0, 0), Is.True);
             Assert.That(controller.TimelinePreview.IsValid, Is.True);
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
             Assert.That(controller.CardHand.InteractionState, Is.EqualTo(CardHandInteractionState.Scheduling));
 
             Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(3));
             Assert.That(controller.BoardRangePreview.ActiveCoordinates, Is.Empty);
             Assert.That(controller.TimelinePreview.ActiveCoordinates, Is.Empty);
-            Assert.That(controller.CardHand.gameObject.activeSelf, Is.False);
+            Assert.That(controller.CardHand.gameObject.activeSelf, Is.True);
+            Assert.That(
+                controller.CardHand.InteractionState,
+                Is.EqualTo(CardHandInteractionState.Disabled));
             Assert.That(controller.BoardCamera.InputEnabled, Is.True);
 
             var snapshot = controller.ResolveTimeline();
             Assert.That(snapshot.TargetHpAfter, Is.Zero);
-            Assert.That(snapshot.EnemyIntentResolved, Is.True);
+            Assert.That(snapshot.EnemyIntentResolved, Is.False);
         }
 
         [UnityTest]

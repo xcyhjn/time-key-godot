@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Domain;
+using TimeKey.Presentation.Actions;
 using TimeKey.Presentation.Targeting;
 using UnityEngine;
 
@@ -14,14 +15,25 @@ namespace TimeKey.Presentation.Presenters
         [SerializeField] private ClearTimelinePreview clearTimelinePreview = null;
         [SerializeField] private List<TimelineCellView> timelineCells =
             new List<TimelineCellView>();
+        [SerializeField] private RectTransform actionLayer = null;
+        [SerializeField] private TimelineActionFrame actionFramePrefab = null;
 
         private readonly Dictionary<TimelineCell, TimelineCellView> _cellsByCoordinate =
             new Dictionary<TimelineCell, TimelineCellView>();
+        private readonly Dictionary<TimelineActionIdentity, TimelineActionFrame> _framesByActionId =
+            new Dictionary<TimelineActionIdentity, TimelineActionFrame>();
+        private readonly Dictionary<TimelineCell, TimelineActionIdentity> _actionIdsByCell =
+            new Dictionary<TimelineCell, TimelineActionIdentity>();
+        private readonly Dictionary<TimelineActionIdentity, TimelineActionPresentationSnapshot>
+            _snapshotsByActionId =
+                new Dictionary<TimelineActionIdentity, TimelineActionPresentationSnapshot>();
+        private TimelineActionIdentity? _highlightedActionId;
         private bool _isBound;
 
         public event Action<TimelineCell> TimelineSelected;
         public event Action<TimelineCell> TimelinePreviewRequested;
         public event Action TimelinePreviewCleared;
+        public event Action<TimelineActionPresentationSnapshot, bool> ActionHovered;
 
         public bool IsBound => _isBound;
 
@@ -82,6 +94,7 @@ namespace TimeKey.Presentation.Presenters
             }
 
             ValidateDependencies();
+            RenderScheduledActions(state.TimelineActions);
             if (state.InteractionMode == CombatInteractionMode.TimelineClear &&
                 state.ClearPreview != null)
             {
@@ -168,6 +181,7 @@ namespace TimeKey.Presentation.Presenters
             for (var actionIndex = 0; actionIndex < result.RemovedActions.Count; actionIndex++)
             {
                 var action = result.RemovedActions[actionIndex];
+                RemoveActionFrame(action.ActionId);
                 for (var cellIndex = 0; cellIndex < action.OccupiedCells.Count; cellIndex++)
                 {
                     if (_cellsByCoordinate.TryGetValue(action.OccupiedCells[cellIndex], out var cell))
@@ -201,6 +215,8 @@ namespace TimeKey.Presentation.Presenters
             {
                 clearTimelinePreview.Clear();
             }
+
+            ClearActionFrames();
         }
 
         private void ValidateDependencies()
@@ -221,6 +237,12 @@ namespace TimeKey.Presentation.Presenters
             {
                 throw new InvalidOperationException(
                     name + " is missing serialized timelineCells references.");
+            }
+
+            if (actionLayer == null || actionFramePrefab == null)
+            {
+                throw new InvalidOperationException(
+                    name + " is missing serialized action-frame references.");
             }
 
             for (var index = 0; index < timelineCells.Count; index++)
@@ -251,12 +273,196 @@ namespace TimeKey.Presentation.Presenters
 
         private void HandleTimelinePreviewRequested(TimelineCell coordinate)
         {
+            if (_actionIdsByCell.TryGetValue(coordinate, out var actionId) &&
+                _snapshotsByActionId.TryGetValue(actionId, out var snapshot))
+            {
+                HighlightAction(actionId, true);
+                ActionHovered?.Invoke(snapshot, true);
+                return;
+            }
+
             TimelinePreviewRequested?.Invoke(coordinate);
         }
 
         private void HandleTimelinePreviewCleared()
         {
+            if (_highlightedActionId.HasValue &&
+                _snapshotsByActionId.TryGetValue(_highlightedActionId.Value, out var snapshot))
+            {
+                HighlightAction(_highlightedActionId.Value, false);
+                ActionHovered?.Invoke(snapshot, false);
+            }
+
             TimelinePreviewCleared?.Invoke();
+        }
+
+        public void HighlightAction(TimelineActionIdentity actionId, bool highlighted)
+        {
+            if (_highlightedActionId.HasValue &&
+                _framesByActionId.TryGetValue(_highlightedActionId.Value, out var previous))
+            {
+                previous.SetHighlighted(false);
+            }
+
+            _highlightedActionId = highlighted ? actionId : (TimelineActionIdentity?)null;
+            if (_framesByActionId.TryGetValue(actionId, out var frame))
+            {
+                frame.SetHighlighted(highlighted);
+            }
+        }
+
+        public void HighlightCardActions(string stableId, bool highlighted)
+        {
+            foreach (var pair in _snapshotsByActionId)
+            {
+                if (string.Equals(pair.Value.CardStableId, stableId, StringComparison.Ordinal))
+                {
+                    HighlightAction(pair.Key, highlighted);
+                }
+            }
+        }
+
+        public void RemoveActionsBySource(string sourceRuntimeId)
+        {
+            if (string.IsNullOrWhiteSpace(sourceRuntimeId))
+            {
+                return;
+            }
+
+            var actionIds = new List<TimelineActionIdentity>();
+            foreach (var pair in _snapshotsByActionId)
+            {
+                if (string.Equals(
+                        pair.Value.SourceId,
+                        sourceRuntimeId,
+                        StringComparison.Ordinal))
+                {
+                    actionIds.Add(pair.Key);
+                }
+            }
+
+            for (var index = 0; index < actionIds.Count; index++)
+            {
+                RemoveActionFrame(actionIds[index]);
+            }
+        }
+
+        private void RenderScheduledActions(
+            IReadOnlyList<TimelineActionPresentationSnapshot> snapshots)
+        {
+            if (!_isBound)
+            {
+                Bind();
+            }
+
+            for (var index = 0; index < timelineCells.Count; index++)
+            {
+                timelineCells[index].ClearContent();
+            }
+
+            _actionIdsByCell.Clear();
+            _snapshotsByActionId.Clear();
+            var retained = new HashSet<TimelineActionIdentity>();
+            for (var index = 0; index < snapshots.Count; index++)
+            {
+                var snapshot = snapshots[index];
+                retained.Add(snapshot.ActionId);
+                _snapshotsByActionId[snapshot.ActionId] = snapshot;
+                for (var cellIndex = 0; cellIndex < snapshot.OccupiedCells.Count; cellIndex++)
+                {
+                    var coordinate = snapshot.OccupiedCells[cellIndex];
+                    _actionIdsByCell[coordinate] = snapshot.ActionId;
+                    if (_cellsByCoordinate.TryGetValue(coordinate, out var cell))
+                    {
+                        cell.SetContent(
+                            snapshot.Display.Title,
+                            snapshot.ActorKind == TimelineActorKind.Enemy
+                                ? new Color(0.48f, 0.13f, 0.14f, 1f)
+                                : new Color(0.06f, 0.42f, 0.43f, 1f));
+                    }
+                }
+
+                if (!_framesByActionId.TryGetValue(snapshot.ActionId, out var frame))
+                {
+                    frame = Instantiate(actionFramePrefab, actionLayer, false);
+                    frame.name = "Action-" + snapshot.ActionId.Value.Replace('/', '-').Replace(':', '-');
+                    _framesByActionId.Add(snapshot.ActionId, frame);
+                }
+
+                frame.Apply(snapshot, _cellsByCoordinate, actionLayer);
+            }
+
+            var staleIds = new List<TimelineActionIdentity>();
+            foreach (var pair in _framesByActionId)
+            {
+                if (!retained.Contains(pair.Key))
+                {
+                    staleIds.Add(pair.Key);
+                }
+            }
+
+            for (var index = 0; index < staleIds.Count; index++)
+            {
+                RemoveActionFrame(staleIds[index]);
+            }
+
+            actionLayer.SetAsLastSibling();
+        }
+
+        private void RemoveActionFrame(TimelineActionIdentity actionId)
+        {
+            if (_framesByActionId.TryGetValue(actionId, out var frame))
+            {
+                _framesByActionId.Remove(actionId);
+                if (frame != null)
+                {
+                    DestroyActionFrame(frame);
+                }
+            }
+
+            _snapshotsByActionId.Remove(actionId);
+            var staleCells = new List<TimelineCell>();
+            foreach (var pair in _actionIdsByCell)
+            {
+                if (pair.Value == actionId)
+                {
+                    staleCells.Add(pair.Key);
+                }
+            }
+
+            for (var index = 0; index < staleCells.Count; index++)
+            {
+                _actionIdsByCell.Remove(staleCells[index]);
+            }
+        }
+
+        private void ClearActionFrames()
+        {
+            foreach (var frame in _framesByActionId.Values)
+            {
+                if (frame != null)
+                {
+                    DestroyActionFrame(frame);
+                }
+            }
+
+            _framesByActionId.Clear();
+            _snapshotsByActionId.Clear();
+            _actionIdsByCell.Clear();
+            _highlightedActionId = null;
+        }
+
+        private static void DestroyActionFrame(TimelineActionFrame frame)
+        {
+            frame.gameObject.SetActive(false);
+            if (UnityEngine.Application.isPlaying)
+            {
+                Destroy(frame.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(frame.gameObject);
+            }
         }
     }
 }

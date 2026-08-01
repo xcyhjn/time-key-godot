@@ -3,6 +3,7 @@
     "rootNamespace": "TimeKey.Editor",
     "references": [
         "TimeKey.Domain",
+        "TimeKey.Application",
         "TimeKey.Infrastructure",
         "TimeKey.Presentation",
         "TimeKey.Composition"

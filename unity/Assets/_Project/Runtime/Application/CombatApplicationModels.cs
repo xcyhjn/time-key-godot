@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TimeKey.Domain;
 
 namespace TimeKey.Application
@@ -37,7 +38,8 @@ namespace TimeKey.Application
         Cancelled,
         NoCommittedAction,
         AlreadyResolved,
-        InteractionModeMismatch
+        InteractionModeMismatch,
+        LifecycleFailed
     }
 
     public sealed class CombatSessionView
@@ -46,6 +48,7 @@ namespace TimeKey.Application
             CombatSessionPhase phase,
             CardDefinition selectedCard,
             TimelineActionIdentity? pendingActionId,
+            IReadOnlyList<TimelineActionPresentationSnapshot> timelineActions,
             CombatTargetKind? requiredTargetKind,
             CombatTarget? target,
             TimelineCell? timelineOrigin,
@@ -53,11 +56,13 @@ namespace TimeKey.Application
             ResolutionSnapshot lastResolution,
             CombatInteractionMode? interactionMode,
             TimelineClearPreview clearPreview,
-            TimelineClearResult lastClearResult)
+            TimelineClearResult lastClearResult,
+            IReadOnlyList<LifecycleOccupantChangeResult> lifecycleChanges)
         {
             Phase = phase;
             SelectedCard = selectedCard;
             PendingActionId = pendingActionId;
+            TimelineActions = timelineActions;
             RequiredTargetKind = requiredTargetKind;
             Target = target;
             TimelineOrigin = timelineOrigin;
@@ -66,6 +71,7 @@ namespace TimeKey.Application
             InteractionMode = interactionMode;
             ClearPreview = clearPreview;
             LastClearResult = lastClearResult;
+            LifecycleChanges = lifecycleChanges;
         }
 
         public CombatSessionPhase Phase { get; }
@@ -75,6 +81,8 @@ namespace TimeKey.Application
         public string SelectedStableId => SelectedCard == null ? null : SelectedCard.StableId;
 
         public TimelineActionIdentity? PendingActionId { get; }
+
+        public IReadOnlyList<TimelineActionPresentationSnapshot> TimelineActions { get; }
 
         public CombatTargetKind? RequiredTargetKind { get; }
 
@@ -91,6 +99,8 @@ namespace TimeKey.Application
         public TimelineClearPreview ClearPreview { get; }
 
         public TimelineClearResult LastClearResult { get; }
+
+        public IReadOnlyList<LifecycleOccupantChangeResult> LifecycleChanges { get; }
     }
 
     public sealed class CombatCommandResult

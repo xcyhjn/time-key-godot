@@ -10,6 +10,19 @@ namespace TimeKey.Presentation.Presenters
     [DisallowMultipleComponent]
     public sealed class CombatOccupantPresenter : MonoBehaviour
     {
+        private readonly struct LifecycleStamp
+        {
+            public LifecycleStamp(long sequence, TurnLifecyclePhase phase)
+            {
+                Sequence = sequence;
+                Phase = phase;
+            }
+
+            public long Sequence { get; }
+
+            public TurnLifecyclePhase Phase { get; }
+        }
+
         [Serializable]
         private sealed class CreationViewRegistration
         {
@@ -32,6 +45,10 @@ namespace TimeKey.Presentation.Presenters
             new Dictionary<string, CombatOccupantView>(StringComparer.Ordinal);
         private readonly Dictionary<string, PoisonStatusView> _poisonStatuses =
             new Dictionary<string, PoisonStatusView>(StringComparer.Ordinal);
+        private readonly Dictionary<string, LifecycleStamp> _lifecycleStamps =
+            new Dictionary<string, LifecycleStamp>(StringComparer.Ordinal);
+
+        public event Action<string> OccupantRemoved;
 
         public int OccupantViewCount => _views.Count;
 
@@ -62,6 +79,17 @@ namespace TimeKey.Presentation.Presenters
             }
 
             view.Initialize(occupant.RuntimeId);
+            if (occupant.SupportsHealth)
+            {
+                view.SetHealth(occupant.Hp);
+            }
+
+            if (_views.TryGetValue(occupant.RuntimeId, out var existing) && existing != view)
+            {
+                RemovePoisonStatus(occupant.RuntimeId);
+                DestroyOwned(existing);
+            }
+
             _views[occupant.RuntimeId] = view;
             ApplyStatus(occupant, view);
         }
@@ -84,7 +112,53 @@ namespace TimeKey.Presentation.Presenters
                 }
 
                 var view = GetOrCreateView(result.After);
+                if (result.After.SupportsHealth)
+                {
+                    view.SetHealth(result.After.Hp);
+                }
+
                 ApplyStatus(result.After, view);
+            }
+        }
+
+        public void ApplyLifecycleChanges(IReadOnlyList<LifecycleOccupantChangeResult> results)
+        {
+            if (results == null)
+            {
+                throw new ArgumentNullException(nameof(results));
+            }
+
+            for (var index = 0; index < results.Count; index++)
+            {
+                var result = results[index] ??
+                    throw new ArgumentException(
+                        "Lifecycle occupant results cannot contain null.",
+                        nameof(results));
+                if (!ShouldApply(result))
+                {
+                    continue;
+                }
+
+                _lifecycleStamps[result.RuntimeId] =
+                    new LifecycleStamp(result.Sequence, result.Phase);
+                if (result.Removed)
+                {
+                    RemoveOccupant(result.RuntimeId);
+                    OccupantRemoved?.Invoke(result.RuntimeId);
+                    continue;
+                }
+
+                if (!_views.TryGetValue(result.RuntimeId, out var view) || view == null)
+                {
+                    continue;
+                }
+
+                if (view.HasHealth || result.BeforeHp > 0 || result.AfterHp > 0)
+                {
+                    view.SetHealth(result.AfterHp);
+                }
+
+                ApplyPoisonStacks(result.RuntimeId, result.AfterPoisonStacks, view);
             }
         }
 
@@ -107,7 +181,12 @@ namespace TimeKey.Presentation.Presenters
         {
             if (_views.TryGetValue(occupant.RuntimeId, out var existing))
             {
-                return existing;
+                if (existing != null)
+                {
+                    return existing;
+                }
+
+                _views.Remove(occupant.RuntimeId);
             }
 
             if (!_columns.TryGetValue(occupant.Coordinate, out var column))
@@ -132,6 +211,11 @@ namespace TimeKey.Presentation.Presenters
 
             view.name = "Occupant-" + occupant.RuntimeId;
             view.Initialize(occupant.RuntimeId);
+            if (occupant.SupportsHealth)
+            {
+                view.SetHealth(occupant.Hp);
+            }
+
             foreach (var billboard in view.GetComponentsInChildren<CameraFacingBillboard>(true))
             {
                 billboard.Initialize(sceneCamera);
@@ -158,13 +242,27 @@ namespace TimeKey.Presentation.Presenters
 
         private void ApplyStatus(CombatOccupantSnapshot occupant, CombatOccupantView view)
         {
-            if (occupant.PoisonStacks <= 0)
+            ApplyPoisonStacks(occupant.RuntimeId, occupant.PoisonStacks, view);
+        }
+
+        private void ApplyPoisonStacks(
+            string runtimeId,
+            int poisonStacks,
+            CombatOccupantView view)
+        {
+            if (poisonStacks <= 0)
             {
+                RemovePoisonStatus(runtimeId);
                 return;
             }
 
-            if (!_poisonStatuses.TryGetValue(occupant.RuntimeId, out var status))
+            if (!_poisonStatuses.TryGetValue(runtimeId, out var status) || status == null)
             {
+                if (poisonStatusPrefab == null)
+                {
+                    throw new InvalidOperationException(name + " is missing its poison status Prefab.");
+                }
+
                 var statusObject = Instantiate(poisonStatusPrefab, view.StatusAnchor, false);
                 status = statusObject.GetComponent<PoisonStatusView>();
                 if (status == null)
@@ -173,17 +271,70 @@ namespace TimeKey.Presentation.Presenters
                         poisonStatusPrefab.name + " is missing PoisonStatusView.");
                 }
 
-                status.name = "PoisonStatus-" + occupant.RuntimeId;
+                status.name = "PoisonStatus-" + runtimeId;
                 var billboard = status.GetComponent<CameraFacingBillboard>();
                 if (billboard != null)
                 {
                     billboard.Initialize(sceneCamera);
                 }
 
-                _poisonStatuses.Add(occupant.RuntimeId, status);
+                _poisonStatuses[runtimeId] = status;
             }
 
-            status.SetStacks(occupant.PoisonStacks);
+            status.SetStacks(poisonStacks);
+        }
+
+        private bool ShouldApply(LifecycleOccupantChangeResult result)
+        {
+            if (!_lifecycleStamps.TryGetValue(result.RuntimeId, out var latest))
+            {
+                return true;
+            }
+
+            return result.Sequence > latest.Sequence ||
+                   (result.Sequence == latest.Sequence && result.Phase > latest.Phase);
+        }
+
+        private void RemoveOccupant(string runtimeId)
+        {
+            RemovePoisonStatus(runtimeId);
+            if (!_views.TryGetValue(runtimeId, out var view))
+            {
+                return;
+            }
+
+            _views.Remove(runtimeId);
+            DestroyOwned(view);
+        }
+
+        private void RemovePoisonStatus(string runtimeId)
+        {
+            if (!_poisonStatuses.TryGetValue(runtimeId, out var status))
+            {
+                return;
+            }
+
+            _poisonStatuses.Remove(runtimeId);
+            DestroyOwned(status);
+        }
+
+        private static void DestroyOwned(Component component)
+        {
+            if (component == null)
+            {
+                return;
+            }
+
+            var owned = component.gameObject;
+            owned.SetActive(false);
+            if (UnityEngine.Application.isPlaying)
+            {
+                Destroy(owned);
+            }
+            else
+            {
+                DestroyImmediate(owned);
+            }
         }
 
         private void ValidateConfiguration()

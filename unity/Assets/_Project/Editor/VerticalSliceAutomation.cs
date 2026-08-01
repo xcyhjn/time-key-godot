@@ -1,14 +1,19 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Collections.Generic;
+using TimeKey.Application;
 using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Actions;
+using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Targeting;
+using TimeKey.Presentation.Tooltips;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -98,6 +103,368 @@ namespace TimeKey.Editor
             CopySilverAttribution(buildDirectory);
             WriteSimplifiedChineseSummary(evidenceDirectory, captures, report);
             Debug.Log("TIMEKEY_SIMPLIFIED_CHINESE_HARNESS_PASS");
+        }
+
+        [MenuItem("Time Key/Capture Turn Lifecycle Gate B")]
+        public static void CaptureTurnLifecycleGateB()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var evidenceDirectory = GetTurnLifecycleGateBEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var captures = new List<CaptureStats>();
+            var controller = OpenInitializedSlice();
+            controller.SetBoardView(32f);
+
+            if (controller.CardHandHost.CardCount != 7)
+            {
+                throw new InvalidOperationException("The seven-card hand is incomplete.");
+            }
+
+            var middleCardId = controller.CardHandHost.Cards[3].StableId;
+            if (!controller.SelectCard(middleCardId))
+            {
+                throw new InvalidOperationException("The middle card could not be selected.");
+            }
+
+            controller.CardHandHost.ApplyVisualStateImmediate();
+            var effectFrame = UnityEngine.Object.FindAnyObjectByType<CardEffectFrame>();
+            if (effectFrame == null || !effectFrame.IsVisible ||
+                effectFrame.DisplayTitle != CombatChineseText.GetCardName(middleCardId))
+            {
+                throw new InvalidOperationException("The selected card detail frame is incomplete.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "selected-middle-1280x720.png",
+                1280,
+                720));
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "selected-middle-1920x1080.png",
+                1920,
+                1080));
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "selected-middle-2560x1080.png",
+                2560,
+                1080));
+
+            controller = OpenInitializedSlice();
+            controller.SetBoardView(32f);
+            var towerCoordinate = new HexCoord(0, 0);
+            if (!controller.SelectCard("tower") ||
+                !controller.SelectEarthquakeTarget(towerCoordinate) ||
+                !controller.PreviewTimelineSelected(4, 0) ||
+                !controller.TryPlaceSelected(4, 0))
+            {
+                throw new InvalidOperationException("The Tower action could not be committed.");
+            }
+
+            effectFrame = UnityEngine.Object.FindAnyObjectByType<CardEffectFrame>();
+
+            var actionFrames = UnityEngine.Object.FindObjectsByType<TimelineActionFrame>(
+                FindObjectsInactive.Exclude);
+            if (actionFrames.Length != 2 || actionFrames[0].ActionId == actionFrames[1].ActionId)
+            {
+                throw new InvalidOperationException(
+                    "Player and enemy actions are not rendered as two distinct action identities.");
+            }
+
+            TimelineActionFrame playerActionFrame = null;
+            TimelineActionFrame enemyActionFrame = null;
+            for (var index = 0; index < actionFrames.Length; index++)
+            {
+                if (actionFrames[index].ActorKind == TimelineActorKind.Player)
+                {
+                    playerActionFrame = actionFrames[index];
+                }
+                else
+                {
+                    enemyActionFrame = actionFrames[index];
+                }
+            }
+
+            if (playerActionFrame == null || enemyActionFrame == null)
+            {
+                throw new InvalidOperationException("The action frames are missing an actor mapping.");
+            }
+
+            var playerCoordinate = playerActionFrame.OccupiedCells[0];
+            var playerCell = GameObject.Find(
+                string.Format("Slot-{0}-{1}", playerCoordinate.X, playerCoordinate.Y))
+                .GetComponent<TimelineCellView>();
+            playerCell.OnPointerEnter(null);
+            if (!effectFrame.DisplayTitle.StartsWith("玩家行动", StringComparison.Ordinal) ||
+                controller.BoardRangePreview.ActiveCoordinates.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "Player action hover did not map to its card detail and board range.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "player-action-mapping-1920x1080.png",
+                1920,
+                1080));
+            playerCell.OnPointerExit(null);
+
+            var enemyCoordinate = enemyActionFrame.OccupiedCells[0];
+            var enemyCell = GameObject.Find(
+                string.Format("Slot-{0}-{1}", enemyCoordinate.X, enemyCoordinate.Y))
+                .GetComponent<TimelineCellView>();
+            enemyCell.OnPointerEnter(null);
+            if (!effectFrame.DisplayTitle.StartsWith("敌方意图", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Enemy intent hover did not map to its unsupported-effect detail.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "enemy-intent-unsupported-1920x1080.png",
+                1920,
+                1080));
+            enemyCell.OnPointerExit(null);
+
+            controller.ResolveTimeline();
+            var refreshedFrames = UnityEngine.Object.FindObjectsByType<TimelineActionFrame>(
+                FindObjectsInactive.Exclude);
+            if (refreshedFrames.Length != 1 ||
+                refreshedFrames[0].ActorKind != TimelineActorKind.Enemy)
+            {
+                throw new InvalidOperationException(
+                    "Resolved frames were not replaced atomically by the next enemy intent.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "resolved-actions-next-intent-1920x1080.png",
+                1920,
+                1080));
+            WriteTurnLifecycleGateBSummary(evidenceDirectory, captures);
+            Debug.Log("TIMEKEY_TURN_LIFECYCLE_GATE_B_CAPTURE_PASS");
+        }
+
+        [MenuItem("Time Key/Capture Turn Lifecycle Gate D")]
+        public static void CaptureTurnLifecycleGateD()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var evidenceDirectory = GetTurnLifecycleGateDEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var captures = new List<CaptureStats>();
+            var controller = OpenInitializedSlice();
+            controller.SetBoardView(0f);
+
+            var session = GetPrivateField<CombatApplicationSession>(
+                controller,
+                "_applicationSession");
+            var state = GetPrivateField<CombatSliceState>(controller, "_state");
+            var timeline = GetPrivateField<TimelineGrid>(controller, "_timeline");
+            var binding = UnityEngine.Object.FindAnyObjectByType<CombatPresentationBinding>();
+            if (session == null || state == null || timeline == null || binding == null)
+            {
+                throw new InvalidOperationException(
+                    "The lifecycle visual harness could not resolve the shared runtime state.");
+            }
+
+            var towerCoordinate = new HexCoord(0, 0);
+            if (!controller.SelectCard("tower") ||
+                !controller.SelectEarthquakeTarget(towerCoordinate) ||
+                !controller.PreviewTimelineSelected(0, 0) ||
+                !controller.TryPlaceSelected(0, 0))
+            {
+                throw new InvalidOperationException("The Tower action could not be committed.");
+            }
+
+            CardDefinition poisonCard = null;
+            for (var index = 0; index < session.Cards.Count; index++)
+            {
+                if (session.Cards[index].StableId == "poison")
+                {
+                    poisonCard = session.Cards[index];
+                    break;
+                }
+            }
+
+            if (poisonCard == null)
+            {
+                throw new InvalidOperationException("The Poison card is missing from the session.");
+            }
+
+            var targetCoordinate = new HexCoord(1, 0);
+            TimelineAction poisonAction = null;
+            for (var x = 0; x < timeline.Width && poisonAction == null; x++)
+            {
+                for (var y = 0; y < timeline.Height; y++)
+                {
+                    var candidate = new TimelineAction(
+                        new TimelineActionIdentity("cycle:1/action:99"),
+                        TimelineActorKind.Player,
+                        0,
+                        null,
+                        null,
+                        poisonCard.StableId,
+                        VerticalSliceController.TargetId,
+                        new TimelineCell(x, y),
+                        poisonCard.Shape,
+                        targetCoordinate,
+                        poisonCard.Effects,
+                        new[] { targetCoordinate });
+                    if (timeline.TryPlace(candidate))
+                    {
+                        poisonAction = candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (poisonAction == null)
+            {
+                throw new InvalidOperationException(
+                    "The Poison action could not share the player/enemy timeline.");
+            }
+
+            binding.Refresh(session.Current);
+            var committedFrames = UnityEngine.Object.FindObjectsByType<TimelineActionFrame>(
+                FindObjectsInactive.Exclude);
+            if (committedFrames.Length != 3)
+            {
+                throw new InvalidOperationException(
+                    "Tower, Poison, and enemy intent must render as three action identities.");
+            }
+
+            var poisonCell = GameObject.Find(string.Format(
+                "Slot-{0}-{1}",
+                poisonAction.Origin.X + poisonAction.Shape[0].X,
+                poisonAction.Origin.Y + poisonAction.Shape[0].Y))
+                .GetComponent<TimelineCellView>();
+            poisonCell.OnPointerEnter(null);
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "cycle-1-committed-tower-poison-intent-1920x1080.png",
+                1920,
+                1080));
+            poisonCell.OnPointerExit(null);
+
+            var first = controller.ResolveTimeline();
+            var towerEffect = FindOccupantEffect(first, CardEffectKind.Built);
+            var poisonEffect = FindOccupantEffect(first, CardEffectKind.Poison);
+            if (towerEffect == null || towerEffect.After == null || towerEffect.After.Hp != 100 ||
+                poisonEffect == null || poisonEffect.After == null ||
+                poisonEffect.After.PoisonStacks != 2)
+            {
+                throw new InvalidOperationException(
+                    "The first cycle did not preserve the HP100 creation and Poison application results.");
+            }
+
+            var towerRuntimeId = towerEffect.After.RuntimeId;
+            if (!state.TryGetOccupant(towerRuntimeId, out var towerAfterCycle) ||
+                towerAfterCycle.Hp != 50 || towerAfterCycle.PoisonStacks != 1 ||
+                state.TargetHp != 0)
+            {
+                throw new InvalidOperationException(
+                    "Tower decay or Poison new-infection isolation is inconsistent after cycle one.");
+            }
+
+            var occupantPresenter = binding.OccupantPresenter;
+            if (occupantPresenter.GetView(towerRuntimeId) == null ||
+                occupantPresenter.GetView(towerRuntimeId).Hp != 50 ||
+                occupantPresenter.GetPoisonStatus(towerRuntimeId) == null ||
+                occupantPresenter.GetPoisonStatus(towerRuntimeId).Stacks != 1)
+            {
+                throw new InvalidOperationException(
+                    "Tower HP50 and Poison stack 1 were not synchronized to Presentation.");
+            }
+
+            foreach (var yaw in new[] { 0f, 90f, 180f, 270f })
+            {
+                controller.SetBoardView(yaw);
+                captures.Add(Capture(
+                    controller,
+                    evidenceDirectory,
+                    string.Format("cycle-1-tower-hp50-poison1-yaw-{0}.png", (int)yaw),
+                    1920,
+                    1080));
+            }
+
+            controller.SetBoardView(0f);
+            if (!controller.SelectCard(VerticalSliceController.EarthquakeCardId) ||
+                !controller.SelectEarthquakeTarget(new HexCoord(-2, 0)) ||
+                !controller.PreviewTimelineSelected(0, 0) ||
+                !controller.TryPlaceSelected(0, 0))
+            {
+                throw new InvalidOperationException(
+                    "The second continuous lifecycle could not be committed.");
+            }
+
+            controller.ResolveTimeline();
+            if (state.TryGetOccupant(towerRuntimeId, out _) ||
+                occupantPresenter.GetView(towerRuntimeId) != null ||
+                occupantPresenter.GetPoisonStatus(towerRuntimeId) != null ||
+                controller.TimelineOccupiedCellCount != 0)
+            {
+                throw new InvalidOperationException(
+                    "The second lifecycle left Tower, status, intent, or timeline residue.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "cycle-2-tower-removed-and-intent-cleared-1920x1080.png",
+                1920,
+                1080));
+            WriteTurnLifecycleGateDSummary(evidenceDirectory, captures);
+            Debug.Log("TIMEKEY_TURN_LIFECYCLE_GATE_D_CAPTURE_PASS");
+        }
+
+        [MenuItem("Time Key/Build Turn Lifecycle Gate D")]
+        public static void BuildTurnLifecycleGateD()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var evidenceDirectory = GetTurnLifecycleGateDEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var buildDirectory = Path.GetFullPath(
+                Path.Combine(UnityEngine.Application.dataPath, "..", "Builds", "Windows"));
+            Directory.CreateDirectory(buildDirectory);
+            var playerPath = Path.Combine(buildDirectory, "TimeKeySlice.exe");
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = playerPath,
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.Development
+            });
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "Turn lifecycle Windows Player build failed: " + report.summary.result);
+            }
+
+            CopySilverAttribution(buildDirectory);
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"target\": \"StandaloneWindows64\",");
+            builder.AppendLine("  \"developmentBuild\": true,");
+            builder.AppendLine("  \"font\": \"Silver\",");
+            builder.AppendLine("  \"silverAttributionCopied\": true,");
+            builder.AppendLine("  \"buildResult\": \"" + report.summary.result + "\",");
+            builder.AppendLine("  \"buildBytes\": " + report.summary.totalSize + ",");
+            builder.AppendLine(
+                "  \"playerPath\": \"" + playerPath.Replace("\\", "\\\\") + "\"");
+            builder.AppendLine("}");
+            File.WriteAllText(
+                Path.Combine(evidenceDirectory, "turn-lifecycle-gate-d-build.json"),
+                builder.ToString());
+            Debug.Log("TIMEKEY_TURN_LIFECYCLE_GATE_D_BUILD_PASS");
         }
 
         [MenuItem("Time Key/Build, Validate and Capture Combat Board")]
@@ -950,6 +1317,67 @@ namespace TimeKey.Editor
                 "simplified-chinese-localization");
         }
 
+        private static string GetTurnLifecycleGateBEvidenceDirectory()
+        {
+            var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
+            if (string.IsNullOrWhiteSpace(repositoryRoot))
+            {
+                repositoryRoot = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", ".."));
+            }
+
+            return Path.Combine(
+                repositoryRoot,
+                "docs",
+                "migration",
+                "unity-3d",
+                "04-verification",
+                "evidence",
+                "turn-lifecycle-gate-b");
+        }
+
+        private static string GetTurnLifecycleGateDEvidenceDirectory()
+        {
+            var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
+            if (string.IsNullOrWhiteSpace(repositoryRoot))
+            {
+                repositoryRoot = Path.GetFullPath(
+                    Path.Combine(UnityEngine.Application.dataPath, "..", ".."));
+            }
+
+            return Path.Combine(
+                repositoryRoot,
+                "docs",
+                "migration",
+                "unity-3d",
+                "04-verification",
+                "evidence",
+                "turn-lifecycle-gate-d");
+        }
+
+        private static OccupantEffectResult FindOccupantEffect(
+            ResolutionSnapshot snapshot,
+            CardEffectKind kind)
+        {
+            for (var index = 0; index < snapshot.OccupantEffectResults.Count; index++)
+            {
+                if (snapshot.OccupantEffectResults[index].EffectKind == kind)
+                {
+                    return snapshot.OccupantEffectResults[index];
+                }
+            }
+
+            return null;
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName)
+            where T : class
+        {
+            var field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            return field == null ? null : field.GetValue(target) as T;
+        }
+
         private static void ValidateSimplifiedChinesePresentation(VerticalSliceController controller)
         {
             var font = AssetDatabase.LoadAssetAtPath<Font>(VerticalSliceSceneAuthoring.ChineseFontAssetPath);
@@ -1001,6 +1429,60 @@ namespace TimeKey.Editor
             builder.AppendLine("  \"buildBytes\": " + report.summary.totalSize);
             builder.AppendLine("}");
             File.WriteAllText(Path.Combine(directory, "localization-summary.json"), builder.ToString());
+        }
+
+        private static void WriteTurnLifecycleGateBSummary(
+            string directory,
+            IReadOnlyList<CaptureStats> captures)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"font\": \"Silver\",");
+            builder.AppendLine("  \"responsiveViewports\": [\"1280x720\", \"1920x1080\", \"2560x1080\"],");
+            builder.AppendLine("  \"distinctActionFrames\": 2,");
+            builder.AppendLine("  \"unsupportedEnemyIntentVisible\": true,");
+            builder.AppendLine("  \"resolvedActionFrames\": 0,");
+            builder.AppendLine("  \"nextCycleIntentFrames\": 1,");
+            builder.AppendLine("  \"screenshots\": [");
+            for (var index = 0; index < captures.Count; index++)
+            {
+                AppendCapture(builder, captures[index], index < captures.Count - 1);
+            }
+            builder.AppendLine("  ]");
+            builder.AppendLine("}");
+            File.WriteAllText(
+                Path.Combine(directory, "turn-lifecycle-gate-b-summary.json"),
+                builder.ToString());
+        }
+
+        private static void WriteTurnLifecycleGateDSummary(
+            string directory,
+            IReadOnlyList<CaptureStats> captures)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"continuousLifecycles\": 2,");
+            builder.AppendLine("  \"towerCreatedHp\": 100,");
+            builder.AppendLine("  \"towerSameCycleHp\": 50,");
+            builder.AppendLine("  \"towerNextCycleRemoved\": true,");
+            builder.AppendLine("  \"poisonAppliedStacks\": 2,");
+            builder.AppendLine("  \"newInfectionStacks\": 1,");
+            builder.AppendLine("  \"newInfectionDamagedSameCycle\": false,");
+            builder.AppendLine("  \"unsupportedEnemyEffectApplied\": false,");
+            builder.AppendLine("  \"yawEvidence\": [0, 90, 180, 270],");
+            builder.AppendLine("  \"font\": \"Silver\",");
+            builder.AppendLine("  \"screenshots\": [");
+            for (var index = 0; index < captures.Count; index++)
+            {
+                AppendCapture(builder, captures[index], index < captures.Count - 1);
+            }
+            builder.AppendLine("  ]");
+            builder.AppendLine("}");
+            File.WriteAllText(
+                Path.Combine(directory, "turn-lifecycle-gate-d-summary.json"),
+                builder.ToString());
         }
 
         private static string GetRemainingCardsGateAEvidenceDirectory()

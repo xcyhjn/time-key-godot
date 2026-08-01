@@ -5,6 +5,7 @@ using System.Linq;
 using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Actions;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Localization;
@@ -12,6 +13,7 @@ using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
+using TimeKey.Presentation.Tooltips;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -26,6 +28,10 @@ namespace TimeKey.Editor
         public const string ScenePath = "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity";
         public const string TimelineCellPrefabPath = "Assets/_Project/Prefabs/Battle/UI/TimelineCell.prefab";
         public const string CardViewPrefabPath = "Assets/_Project/Prefabs/Battle/Cards/CardView.prefab";
+        public const string CardEffectFramePrefabPath =
+            "Assets/_Project/Prefabs/Battle/UI/CardEffectFrame.prefab";
+        public const string TimelineActionFramePrefabPath =
+            "Assets/_Project/Prefabs/Battle/UI/TimelineActionFrame.prefab";
         public const string GrassBlockPrefabPath = "Assets/_Project/Prefabs/Battle/Terrain/HexBlockGrass.prefab";
         public const string DirtBlockPrefabPath = "Assets/_Project/Prefabs/Battle/Terrain/HexBlockDirt.prefab";
         public const string HexColumnPrefabPath = "Assets/_Project/Prefabs/Battle/Terrain/HexColumn.prefab";
@@ -86,6 +92,8 @@ namespace TimeKey.Editor
             var poisonStatusView = CreatePoisonStatusPrefab(poisonStatusSprite);
             CreateTimelineCellPrefab();
             CreateCardViewPrefab(lightingCard);
+            CreateCardEffectFramePrefab();
+            CreateTimelineActionFramePrefab();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
@@ -99,6 +107,10 @@ namespace TimeKey.Editor
                 .GetComponent<PoisonStatusView>();
             var timelineCellPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(TimelineCellPrefabPath);
             var cardViewPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CardViewPrefabPath);
+            var cardEffectFramePrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(CardEffectFramePrefabPath);
+            var timelineActionFramePrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(TimelineActionFramePrefabPath);
 
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             var root = scene.GetRootGameObjects().SingleOrDefault(value => value.name == "VerticalSliceRoot");
@@ -201,7 +213,7 @@ namespace TimeKey.Editor
                 new Color(0.06f, 0.08f, 0.09f, 1f));
             CreateText(header, "Title", CombatChineseText.SceneTitle, 28, TextAnchor.MiddleLeft,
                 new Vector2(22f, 8f), new Vector2(-22f, -38f));
-            var statusText = CreateText(header, "Status", string.Empty, 20, TextAnchor.MiddleLeft,
+            var statusText = CreateText(header, "Status", CombatChineseText.SelectCard, 20, TextAnchor.MiddleLeft,
                 new Vector2(22f, 42f), new Vector2(-22f, -8f));
 
             var timelineRoot = CreatePanel(
@@ -237,6 +249,12 @@ namespace TimeKey.Editor
                 }
             }
 
+            var actionLayer = CreateRect("ActionLayer", timelineRoot);
+            Stretch(actionLayer);
+            var actionLayout = actionLayer.gameObject.AddComponent<LayoutElement>();
+            actionLayout.ignoreLayout = true;
+            actionLayer.SetAsLastSibling();
+
             var cardHandRect = CreateRect("CardHandHost", hudRoot);
             SetRect(
                 cardHandRect,
@@ -250,6 +268,20 @@ namespace TimeKey.Editor
             ConfigureCardHandHost(cardHandHost, cardContainer, cardViewPrefab.GetComponent<CardHandView>());
             var cardHandPresenter = cardHandRect.gameObject.AddComponent<CardHandPresenter>();
             ConfigureReference(cardHandPresenter, "cardHand", cardHandHost);
+
+            var effectFrameHost = CreateRect("EffectFrameHost", hudRoot);
+            SetRect(
+                effectFrameHost,
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(24f, 300f),
+                new Vector2(390f, 494f));
+            var interactionOverlayPresenter =
+                effectFrameHost.gameObject.AddComponent<CombatInteractionOverlayPresenter>();
+            ConfigureInteractionOverlay(
+                interactionOverlayPresenter,
+                effectFrameHost,
+                cardEffectFramePrefab.GetComponent<CardEffectFrame>());
 
             var detailPanel = CreatePanel(
                 hudRoot,
@@ -278,7 +310,9 @@ namespace TimeKey.Editor
                 timelinePresenter,
                 timelinePreview,
                 clearTimelinePreview,
-                timelineCells);
+                timelineCells,
+                actionLayer,
+                timelineActionFramePrefab.GetComponent<TimelineActionFrame>());
             var presentationBinding = GetOrAddComponent<CombatPresentationBinding>(root);
             ConfigurePresentationBinding(
                 presentationBinding,
@@ -286,7 +320,8 @@ namespace TimeKey.Editor
                 boardRangePresenter,
                 timelinePresenter,
                 hudPresenter,
-                occupantPresenter);
+                occupantPresenter,
+                interactionOverlayPresenter);
 
             ConfigureController(
                 controller,
@@ -710,7 +745,28 @@ namespace TimeKey.Editor
 
             var statusAnchor = CreateTransform("StatusAnchor", root.transform);
             statusAnchor.localPosition = new Vector3(0.54f, 1.58f, 0f);
-            ConfigureReference(root.GetComponent<CombatOccupantView>(), "statusAnchor", statusAnchor);
+
+            var healthObject = new GameObject(
+                "Health",
+                typeof(TextMesh),
+                typeof(CameraFacingBillboard));
+            healthObject.transform.SetParent(root.transform, false);
+            healthObject.transform.localPosition = new Vector3(-0.38f, 1.42f, -0.02f);
+            var health = healthObject.GetComponent<TextMesh>();
+            health.anchor = TextAnchor.MiddleCenter;
+            health.alignment = TextAlignment.Center;
+            health.fontSize = 38;
+            health.characterSize = 0.09f;
+            health.color = Color.white;
+            health.text = "100";
+            health.font = AssetDatabase.LoadAssetAtPath<Font>(ChineseFontAssetPath);
+            var healthRenderer = health.GetComponent<MeshRenderer>();
+            healthRenderer.sharedMaterial = health.font.material;
+            healthRenderer.sortingOrder = 112;
+
+            var view = root.GetComponent<CombatOccupantView>();
+            ConfigureReference(view, "statusAnchor", statusAnchor);
+            ConfigureReference(view, "healthLabel", health);
 
             PrefabUtility.SaveAsPrefabAsset(root, TowerPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
@@ -742,7 +798,10 @@ namespace TimeKey.Editor
             label.characterSize = 0.08f;
             label.color = Color.white;
             label.text = "2";
-            label.GetComponent<MeshRenderer>().sortingOrder = 151;
+            label.font = AssetDatabase.LoadAssetAtPath<Font>(ChineseFontAssetPath);
+            var labelRenderer = label.GetComponent<MeshRenderer>();
+            labelRenderer.sharedMaterial = label.font.material;
+            labelRenderer.sortingOrder = 151;
 
             var view = root.GetComponent<PoisonStatusView>();
             ConfigureReference(view, "icon", icon);
@@ -784,6 +843,97 @@ namespace TimeKey.Editor
             PrefabUtility.SaveAsPrefabAsset(root, CardViewPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return AssetDatabase.LoadAssetAtPath<GameObject>(CardViewPrefabPath).GetComponent<CardHandView>();
+        }
+
+        private static CardEffectFrame CreateCardEffectFramePrefab()
+        {
+            var root = new GameObject(
+                "CardEffectFrame",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(CanvasGroup),
+                typeof(Outline),
+                typeof(CardEffectFrame));
+            var rect = root.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(366f, 194f);
+            var background = root.GetComponent<Image>();
+            background.color = new Color(0.055f, 0.075f, 0.078f, 0.98f);
+            background.raycastTarget = false;
+            var outline = root.GetComponent<Outline>();
+            outline.effectColor = new Color(0.18f, 0.76f, 0.72f, 0.92f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            var stripeRect = CreateRect("ActorStripe", root.transform);
+            SetRect(stripeRect, Vector2.zero, new Vector2(0f, 1f), Vector2.zero, new Vector2(7f, 0f));
+            var stripe = stripeRect.gameObject.AddComponent<Image>();
+            stripe.color = new Color(0.18f, 0.76f, 0.72f, 1f);
+            stripe.raycastTarget = false;
+            var title = CreateText(root.transform, "Title", "卡牌详情", 22, TextAnchor.MiddleLeft,
+                new Vector2(22f, 140f), new Vector2(-18f, -14f));
+            var description = CreateText(root.transform, "Description", "效果说明", 18,
+                TextAnchor.UpperLeft, new Vector2(22f, 72f), new Vector2(-18f, -58f));
+            var metadata = CreateText(root.transform, "Metadata", "目标 / 范围 / 时间轴", 15,
+                TextAnchor.UpperLeft, new Vector2(22f, 16f), new Vector2(-18f, -126f));
+            title.raycastTarget = false;
+            description.raycastTarget = false;
+            metadata.raycastTarget = false;
+
+            var frame = root.GetComponent<CardEffectFrame>();
+            var serialized = new SerializedObject(frame);
+            SetReference(serialized, "background", background);
+            SetReference(serialized, "actorStripe", stripe);
+            SetReference(serialized, "title", title);
+            SetReference(serialized, "description", description);
+            SetReference(serialized, "metadata", metadata);
+            SetReference(serialized, "canvasGroup", root.GetComponent<CanvasGroup>());
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            PrefabUtility.SaveAsPrefabAsset(root, CardEffectFramePrefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return AssetDatabase.LoadAssetAtPath<GameObject>(CardEffectFramePrefabPath)
+                .GetComponent<CardEffectFrame>();
+        }
+
+        private static TimelineActionFrame CreateTimelineActionFramePrefab()
+        {
+            var root = new GameObject(
+                "TimelineActionFrame",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(CanvasGroup),
+                typeof(Outline),
+                typeof(TimelineActionFrame));
+            var background = root.GetComponent<Image>();
+            background.color = new Color(0.04f, 0.38f, 0.40f, 0.38f);
+            background.raycastTarget = false;
+            var outline = root.GetComponent<Outline>();
+            outline.effectColor = new Color(0.18f, 0.88f, 0.80f, 1f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            var stripeRect = CreateRect("Stripe", root.transform);
+            SetRect(stripeRect, Vector2.zero, new Vector2(0f, 1f), Vector2.zero, new Vector2(6f, 0f));
+            var stripe = stripeRect.gameObject.AddComponent<Image>();
+            stripe.color = new Color(0.95f, 0.31f, 0.27f, 0.90f);
+            stripe.raycastTarget = false;
+            var label = CreateText(root.transform, "Label", "行动", 12, TextAnchor.MiddleCenter,
+                new Vector2(8f, 1f), new Vector2(-8f, -1f));
+            var badge = CreateText(root.transform, "Badge", "玩家", 9, TextAnchor.UpperLeft,
+                new Vector2(8f, 22f), new Vector2(-4f, -2f));
+            label.raycastTarget = false;
+            badge.raycastTarget = false;
+
+            var frame = root.GetComponent<TimelineActionFrame>();
+            var serialized = new SerializedObject(frame);
+            SetReference(serialized, "background", background);
+            SetReference(serialized, "stripe", stripe);
+            SetReference(serialized, "outline", outline);
+            SetReference(serialized, "label", label);
+            SetReference(serialized, "badge", badge);
+            SetReference(serialized, "canvasGroup", root.GetComponent<CanvasGroup>());
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            PrefabUtility.SaveAsPrefabAsset(root, TimelineActionFramePrefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return AssetDatabase.LoadAssetAtPath<GameObject>(TimelineActionFramePrefabPath)
+                .GetComponent<TimelineActionFrame>();
         }
 
         private static void ConfigureTimelineCell(TimelineCellView view, int column, int row)
@@ -896,7 +1046,8 @@ namespace TimeKey.Editor
             BoardRangePresenter boardRangePresenter,
             TimelinePresenter timelinePresenter,
             CombatHudPresenter hudPresenter,
-            CombatOccupantPresenter occupantPresenter)
+            CombatOccupantPresenter occupantPresenter,
+            CombatInteractionOverlayPresenter interactionOverlayPresenter)
         {
             var serialized = new SerializedObject(binding);
             SetReference(serialized, "cardHandPresenter", cardHandPresenter);
@@ -904,6 +1055,7 @@ namespace TimeKey.Editor
             SetReference(serialized, "timelinePresenter", timelinePresenter);
             SetReference(serialized, "hudPresenter", hudPresenter);
             SetReference(serialized, "occupantPresenter", occupantPresenter);
+            SetReference(serialized, "interactionOverlayPresenter", interactionOverlayPresenter);
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -928,11 +1080,15 @@ namespace TimeKey.Editor
             TimelinePresenter presenter,
             TimelinePlacementPreview preview,
             ClearTimelinePreview clearPreview,
-            IReadOnlyList<TimelineCellView> timelineCells)
+            IReadOnlyList<TimelineCellView> timelineCells,
+            RectTransform actionLayer,
+            TimelineActionFrame actionFramePrefab)
         {
             var serialized = new SerializedObject(presenter);
             SetReference(serialized, "timelinePreview", preview);
             SetReference(serialized, "clearTimelinePreview", clearPreview);
+            SetReference(serialized, "actionLayer", actionLayer);
+            SetReference(serialized, "actionFramePrefab", actionFramePrefab);
             var cells = serialized.FindProperty("timelineCells");
             cells.arraySize = timelineCells.Count;
             for (var index = 0; index < timelineCells.Count; index++)
@@ -940,6 +1096,17 @@ namespace TimeKey.Editor
                 cells.GetArrayElementAtIndex(index).objectReferenceValue = timelineCells[index];
             }
 
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureInteractionOverlay(
+            CombatInteractionOverlayPresenter presenter,
+            RectTransform frameHost,
+            CardEffectFrame framePrefab)
+        {
+            var serialized = new SerializedObject(presenter);
+            SetReference(serialized, "frameHost", frameHost);
+            SetReference(serialized, "framePrefab", framePrefab);
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

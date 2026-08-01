@@ -70,7 +70,7 @@ namespace TimeKey.Tests.PlayMode.Cards
             Assert.That(
                 Mathf.Abs(((RectTransform)lighting.transform).anchoredPosition.x -
                     ((RectTransform)earthquake.transform).anchoredPosition.x),
-                Is.InRange(102f, 116f));
+                Is.InRange(92f, 126f));
 
             _host.Build(Models());
             _host.Build(Models());
@@ -105,7 +105,7 @@ namespace TimeKey.Tests.PlayMode.Cards
             Assert.That(lighting.InteractionState, Is.EqualTo(CardHandInteractionState.Idle));
             Assert.That(earthquake.InteractionState, Is.EqualTo(CardHandInteractionState.Selected));
             Assert.That(lighting.CardVisual.anchoredPosition, Is.EqualTo(Vector2.zero));
-            Assert.That(earthquake.CardVisual.anchoredPosition.y, Is.EqualTo(80f).Within(0.01f));
+            Assert.That(earthquake.CardVisual.anchoredPosition.y, Is.EqualTo(48f).Within(0.01f));
             Assert.That(earthquake.transform.GetSiblingIndex(), Is.EqualTo(earthquake.transform.parent.childCount - 1));
 
             var cancel = Pointer(PointerEventData.InputButton.Right);

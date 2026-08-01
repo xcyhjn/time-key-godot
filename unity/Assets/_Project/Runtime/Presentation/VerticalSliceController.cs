@@ -85,6 +85,11 @@ namespace TimeKey.Presentation
 
         public int TimelineOccupiedCellCount => _timeline == null ? 0 : _timeline.OccupiedCellCount;
 
+        public IReadOnlyList<TimelineActionPresentationSnapshot> TimelineActions =>
+            _applicationSession == null
+                ? Array.Empty<TimelineActionPresentationSnapshot>()
+                : _applicationSession.Current.TimelineActions;
+
         public HexCoord? SelectedTile => _selectedTile == null ? (HexCoord?)null : _selectedTile.Coordinate;
 
         public Vector3 TargetWorldPosition => _targetObject == null ? Vector3.zero : _targetObject.transform.position;
@@ -167,7 +172,7 @@ namespace TimeKey.Presentation
                     SelectTarget(TargetId) &&
                     TryPlaceSelected(0, 0);
                 var snapshot = arranged ? ResolveTimeline() : null;
-                if (snapshot == null || snapshot.TargetHpAfter != 0 || !snapshot.EnemyIntentResolved)
+                if (snapshot == null || snapshot.TargetHpAfter != 0 || snapshot.EnemyIntentResolved)
                 {
                     throw new InvalidOperationException("The Player smoke path did not satisfy the frozen slice contract.");
                 }
@@ -227,10 +232,6 @@ namespace TimeKey.Presentation
 
             BuildWorld();
             BuildInterface();
-            for (var index = 0; index < initialActions.Count; index++)
-            {
-                RenderTimelineAction(initialActions[index]);
-            }
             _initialized = true;
             BindViews();
             RefreshPresentation();
@@ -486,7 +487,7 @@ namespace TimeKey.Presentation
                 }
 
                 presentationBinding.ApplyTimelineClearResult(clearCommit.ClearResult);
-                SetHandCardsActive(false);
+                SetHandCardsActive(true);
                 BoardCamera.InputEnabled = true;
                 RefreshPresentation();
                 return true;
@@ -511,12 +512,7 @@ namespace TimeKey.Presentation
                 return false;
             }
 
-            var label = GetTimelineLabel(card);
-            var color = card.Effects.Count > 0 && card.Effects[0].Kind == CardEffectKind.Elevation
-                ? new Color(0.84f, 0.58f, 0.18f, 1f)
-                : new Color(0.16f, 0.74f, 0.82f, 1f);
-            presentationBinding.RenderTimelineAction(cell, card.Shape, label, color);
-            SetHandCardsActive(false);
+            SetHandCardsActive(true);
             BoardCamera.InputEnabled = true;
             RefreshPresentation();
             return true;
@@ -577,6 +573,8 @@ namespace TimeKey.Presentation
             _lastSnapshot = result.Resolution;
             ApplyTileEffects(_lastSnapshot);
             presentationBinding.ApplyOccupantEffects(_lastSnapshot.OccupantEffectResults);
+            presentationBinding.ApplyLifecycleChanges(
+                _applicationSession.LastLifecycleChanges);
             if (CurrentTargetHp == 0)
             {
                 _targetMaterial.color = new Color(0.24f, 0.68f, 0.46f, 1f);
@@ -690,7 +688,18 @@ namespace TimeKey.Presentation
             tileView.Initialize(coordinate, ToArray(column.Renderers));
             _tiles.Add(coordinate, tileView);
             _columns.Add(coordinate, column);
-            _state.Board.AddTile(coordinate, logicalLayerCount);
+            if (_state.Board.TryGetTile(coordinate, out var existingTile))
+            {
+                if (existingTile.LogicalLayerCount != logicalLayerCount)
+                {
+                    throw new InvalidOperationException(
+                        "The authored board height does not match the lifecycle board snapshot.");
+                }
+            }
+            else
+            {
+                _state.Board.AddTile(coordinate, logicalLayerCount);
+            }
             _boardRangePreview.Register(coordinate, tileView);
             presentationBinding.RegisterOccupantColumn(coordinate, column);
         }
@@ -721,15 +730,6 @@ namespace TimeKey.Presentation
             }
         }
 
-        private void RenderTimelineAction(TimelineAction intent)
-        {
-            presentationBinding.RenderTimelineAction(
-                intent.Origin,
-                intent.Shape,
-                CombatChineseText.EnemyIntentTimelineLabel,
-                new Color(0.78f, 0.27f, 0.25f, 1f));
-        }
-
         private static Vector3 HexToWorld(HexCoord coordinate, float elevation)
         {
             const float radius = 1f;
@@ -747,7 +747,7 @@ namespace TimeKey.Presentation
         {
             for (var index = 0; index < _cardHandHost.Cards.Count; index++)
             {
-                _cardHandHost.Cards[index].gameObject.SetActive(active);
+                _cardHandHost.Cards[index].gameObject.SetActive(true);
             }
         }
 

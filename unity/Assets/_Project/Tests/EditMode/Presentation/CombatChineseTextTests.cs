@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Presentation.Localization;
 
@@ -61,6 +62,31 @@ namespace TimeKey.Tests.EditMode.Presentation
             {
                 Assert.That(values[index], Does.Not.Match("[A-Za-z]"), values[index]);
             }
+        }
+
+        [Test]
+        public void ActionDisplayCatalog_LocalizesRuntimeIdentities()
+        {
+            var enemy = new TimelineAction(
+                new TimelineActionIdentity("cycle:1/action:0"),
+                TimelineActorKind.Enemy,
+                0,
+                "target-01",
+                new HexCoord(0, 0),
+                "enemy-intent",
+                "target-01",
+                new TimelineCell(2, 1),
+                new[] { new TimelineCell(0, 0) },
+                new HexCoord(0, 0),
+                System.Array.Empty<CardEffect>(),
+                System.Array.Empty<HexCoord>());
+
+            var display = CombatChineseActionDisplayCatalog.Instance.GetDisplay(enemy);
+
+            Assert.That(display.SourceLabel, Is.EqualTo("来源：目标 01"));
+            Assert.That(display.TargetLabel, Is.EqualTo("目标：自身"));
+            Assert.That(display.Description, Is.EqualTo("源命令暂不支持，本轮不产生效果"));
+            StringAssert.DoesNotContain("target-01", display.SourceLabel + display.TargetLabel);
         }
     }
 }
