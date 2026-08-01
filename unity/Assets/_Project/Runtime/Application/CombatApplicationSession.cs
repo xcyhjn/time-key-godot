@@ -425,6 +425,33 @@ namespace TimeKey.Application
                             afterValue: tile.AfterLayers));
                     }
                 }
+                else if (effect.Kind == CardEffectKind.Recover)
+                {
+                    for (var resultIndex = 0;
+                         resultIndex < resolution.OccupantEffectResults.Count;
+                         resultIndex++)
+                    {
+                        var occupant = resolution.OccupantEffectResults[resultIndex];
+                        if (occupant.EffectKind != CardEffectKind.Recover ||
+                            occupant.Before == null ||
+                            occupant.After == null)
+                        {
+                            continue;
+                        }
+
+                        TryRecord(new CombatTraceEntry(
+                            "resolve-effect",
+                            CombatSessionPhase.Resolved.ToString(),
+                            CombatSessionPhase.Resolved.ToString(),
+                            stableId,
+                            targetId: occupant.After.RuntimeId,
+                            targetCoordinate: occupant.After.Coordinate,
+                            timelineOrigin: origin,
+                            effectKind: effect.Kind,
+                            beforeValue: occupant.Before.Hp,
+                            afterValue: occupant.After.Hp));
+                    }
+                }
             }
         }
 
@@ -452,7 +479,31 @@ namespace TimeKey.Application
         {
             if (target.Kind == CombatTargetKind.Entity)
             {
-                return string.Equals(target.EntityId, _state.TargetId, StringComparison.Ordinal);
+                for (var index = 0; index < _selectedCard.Effects.Count; index++)
+                {
+                    if (_selectedCard.Effects[index].Kind == CardEffectKind.Recover)
+                    {
+                        if (_selectedCard.Range.Count == 0 ||
+                            !_state.TryGetOccupant(
+                                target.EntityId,
+                                target.Coordinate,
+                                out var occupant) ||
+                            !occupant.SupportsHealth ||
+                            occupant.Hp >= occupant.MaxHp)
+                        {
+                            return false;
+                        }
+                    }
+                    else if (!string.Equals(
+                                 target.EntityId,
+                                 _state.TargetId,
+                                 StringComparison.Ordinal))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             return _state.Board.TryGetTile(target.Coordinate, out _);

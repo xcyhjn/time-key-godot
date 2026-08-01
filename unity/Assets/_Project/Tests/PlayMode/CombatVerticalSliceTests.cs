@@ -150,6 +150,26 @@ namespace TimeKey.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Recover_PublicScenePathRestoresTargetAndReportsOccupantResult()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+
+            Assert.That(controller.CurrentTargetHp, Is.EqualTo(10));
+            Assert.That(controller.SelectCard("recover"), Is.True);
+            Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
+            Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
+
+            var snapshot = controller.ResolveTimeline();
+
+            Assert.That(controller.CurrentTargetHp, Is.EqualTo(100));
+            Assert.That(snapshot.OccupantEffectResults.Count, Is.EqualTo(1));
+            Assert.That(snapshot.OccupantEffectResults[0].EffectKind, Is.EqualTo(CardEffectKind.Recover));
+            Assert.That(snapshot.OccupantEffectResults[0].Before.Hp, Is.EqualTo(10));
+            Assert.That(snapshot.OccupantEffectResults[0].After.Hp, Is.EqualTo(100));
+        }
+
+        [UnityTest]
         public IEnumerator CardSelectionAndCancel_RestoreHandAndOrbitInput()
         {
             yield return LoadSlice();

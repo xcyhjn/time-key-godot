@@ -44,7 +44,8 @@ namespace TimeKey.Infrastructure.Effects
                 new[]
                 {
                     new CardEffectRegistration(CardEffectKind.Damage),
-                    new CardEffectRegistration(CardEffectKind.Elevation)
+                    new CardEffectRegistration(CardEffectKind.Elevation),
+                    new CardEffectRegistration(CardEffectKind.Recover)
                 });
         }
 

@@ -76,6 +76,154 @@ namespace TimeKey.Tests.EditMode.Application
         }
 
         [Test]
+        public void RecoverPath_RequiresExactOccupantAndResolvesClampedBeforeAfterResult()
+        {
+            var target = CombatTarget.ForEntity("target-01", new HexCoord(0, 0));
+            var state = CreateRecoverState(25, 100);
+            var session = CreateSession(state, out var grid, out var sink);
+
+            Assert.That(session.SelectCard("recover").Succeeded, Is.True);
+            Assert.That(session.SelectTarget(target).Succeeded, Is.True);
+            Assert.That(session.PreviewTimeline(new TimelineCell(9, 0)).Succeeded, Is.True);
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+            Assert.That(session.CommitTimeline().Succeeded, Is.True);
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(4));
+
+            var result = session.ResolveTimeline();
+
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That(state.TryGetOccupant("target-01", new HexCoord(0, 0), out var occupant), Is.True);
+            Assert.That(occupant.Hp, Is.EqualTo(100));
+            Assert.That(result.Resolution.OccupantEffectResults, Has.Count.EqualTo(1));
+            Assert.That(result.Resolution.OccupantEffectResults[0].Before.Hp, Is.EqualTo(25));
+            Assert.That(result.Resolution.OccupantEffectResults[0].After.Hp, Is.EqualTo(100));
+            var trace = sink.Entries.Single(item =>
+                item.Command == "resolve-effect" && item.EffectKind == CardEffectKind.Recover);
+            Assert.That(trace.TargetId, Is.EqualTo("target-01"));
+            Assert.That(trace.TargetCoordinate, Is.EqualTo(new HexCoord(0, 0)));
+            Assert.That(trace.BeforeValue, Is.EqualTo(25));
+            Assert.That(trace.AfterValue, Is.EqualTo(100));
+        }
+
+        [Test]
+        public void RecoverSelection_RejectsFullHealthIdMismatchCoordMismatchAndMissingRange()
+        {
+            var state = CreateRecoverState(100, 100);
+            var session = CreateSession(state, out var grid, out _);
+            Assert.That(session.SelectCard("recover").Succeeded, Is.True);
+
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Failure,
+                Is.EqualTo(CombatCommandFailure.InvalidTarget));
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForEntity("other", new HexCoord(0, 0))).Failure,
+                Is.EqualTo(CombatCommandFailure.InvalidTarget));
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForEntity("target-01", new HexCoord(1, 0))).Failure,
+                Is.EqualTo(CombatCommandFailure.InvalidTarget));
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+
+            var missingRangeCard = new CardDefinition(
+                "recover-no-range",
+                5,
+                new[] { new CardEffect(CardEffectKind.Recover, 100) },
+                Array.Empty<HexCoord>(),
+                new[] { new TimelineCell(0, 0) });
+            var missingRangeSession = new CombatApplicationSession(
+                new TestCardCatalog(new[] { missingRangeCard }),
+                CreateRecoverState(25, 100),
+                new TimelineGrid());
+            Assert.That(missingRangeSession.SelectCard("recover-no-range").Succeeded, Is.True);
+            Assert.That(
+                missingRangeSession.SelectTarget(
+                    CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Failure,
+                Is.EqualTo(CombatCommandFailure.InvalidTarget));
+        }
+
+        [Test]
+        public void RecoverSelection_AllowsExistingZeroHpOccupant()
+        {
+            var state = CreateRecoverState(0, 100);
+            var session = CreateSession(state, out _, out _);
+
+            Assert.That(session.SelectCard("recover").Succeeded, Is.True);
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Succeeded,
+                Is.True);
+            Assert.That(session.PreviewTimeline(new TimelineCell(0, 0)).Succeeded, Is.True);
+            Assert.That(session.CommitTimeline().Succeeded, Is.True);
+            Assert.That(session.ResolveTimeline().Succeeded, Is.True);
+            Assert.That(state.TryGetOccupant("target-01", new HexCoord(0, 0), out var occupant), Is.True);
+            Assert.That(occupant.Hp, Is.EqualTo(100));
+        }
+
+        [Test]
+        public void RecoverSelection_UsesMatchingOccupantInsteadOfLegacyPrimaryTargetOnly()
+        {
+            var board = CreateSevenTileBoard();
+            var ally = new CombatOccupantState(
+                "ally-02",
+                new HexCoord(0, 0),
+                "entity",
+                CombatAttitude.Player,
+                hp: 10,
+                maxHp: 100,
+                poisonStacks: 0,
+                supportsHealth: true,
+                supportsStatus: true);
+            var state = new CombatSliceState(
+                "target-01",
+                731,
+                board,
+                new[] { ally });
+            var session = CreateSession(state, out _, out _);
+
+            Assert.That(session.SelectCard("recover").Succeeded, Is.True);
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForEntity("ally-02", new HexCoord(0, 0))).Succeeded,
+                Is.True);
+            Assert.That(session.PreviewTimeline(new TimelineCell(0, 0)).Succeeded, Is.True);
+            Assert.That(session.CommitTimeline().Succeeded, Is.True);
+            var result = session.ResolveTimeline();
+
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That(state.TryGetOccupant("ally-02", new HexCoord(0, 0), out var recovered), Is.True);
+            Assert.That(recovered.Hp, Is.EqualTo(100));
+            Assert.That(result.Resolution.OccupantEffectResults[0].After.RuntimeId, Is.EqualTo("ally-02"));
+        }
+
+        [Test]
+        public void RecoverResolve_RevalidatesDisappearanceAndFullHealthWithoutMutation()
+        {
+            var removedState = CreateRecoverState(25, 100);
+            var removedSession = CreateSession(removedState, out _, out _);
+            CommitRecover(removedSession);
+            Assert.That(
+                removedState.TryRemoveOccupant("target-01", new HexCoord(0, 0)),
+                Is.True);
+
+            var removedResult = removedSession.ResolveTimeline();
+
+            Assert.That(removedResult.Succeeded, Is.True);
+            Assert.That(removedResult.Resolution.OccupantEffectResults, Is.Empty);
+            Assert.That(removedState.OccupantCount, Is.Zero);
+
+            var fullState = CreateRecoverState(25, 100);
+            var fullSession = CreateSession(fullState, out _, out _);
+            CommitRecover(fullSession);
+            Assert.That(
+                fullState.TrySetOccupantHealth("target-01", new HexCoord(0, 0), 100),
+                Is.True);
+
+            var fullResult = fullSession.ResolveTimeline();
+
+            Assert.That(fullResult.Succeeded, Is.True);
+            Assert.That(fullResult.Resolution.OccupantEffectResults, Is.Empty);
+            Assert.That(fullState.TryGetOccupant("target-01", new HexCoord(0, 0), out var full), Is.True);
+            Assert.That(full.Hp, Is.EqualTo(100));
+        }
+
+        [Test]
         public void InvalidCommandOrderReturnsStructuredFailuresWithoutMutation()
         {
             var session = CreateSession(out var grid, out var sink);
@@ -208,7 +356,7 @@ namespace TimeKey.Tests.EditMode.Application
         public void UnsupportedEffectFailsExplicitlyBeforeOccupyingTimelineAndIsTraced()
         {
             var session = CreateSession(out var grid, out var sink);
-            Assert.That(session.SelectCard("recover").Succeeded, Is.True);
+            Assert.That(session.SelectCard("poison").Succeeded, Is.True);
             Assert.That(
                 session.SelectTarget(CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Succeeded,
                 Is.True);
@@ -216,9 +364,9 @@ namespace TimeKey.Tests.EditMode.Application
             var result = session.PreviewTimeline(new TimelineCell(0, 0));
 
             Assert.That(result.Failure, Is.EqualTo(CombatCommandFailure.UnsupportedEffect));
-            Assert.That(result.FailureReason, Does.Contain("Recover"));
+            Assert.That(result.FailureReason, Does.Contain("Poison"));
             Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
-            Assert.That(sink.Entries.Last().FailureReason, Does.Contain("Recover"));
+            Assert.That(sink.Entries.Last().FailureReason, Does.Contain("Poison"));
         }
 
         [Test]
@@ -310,6 +458,36 @@ namespace TimeKey.Tests.EditMode.Application
                 sink);
         }
 
+        private static CombatSliceState CreateRecoverState(int hp, int maxHp)
+        {
+            var board = CreateSevenTileBoard();
+            var occupant = new CombatOccupantState(
+                "target-01",
+                new HexCoord(0, 0),
+                "entity",
+                CombatAttitude.Enemy,
+                hp,
+                maxHp,
+                poisonStacks: 0,
+                supportsHealth: true,
+                supportsStatus: true);
+            return new CombatSliceState(
+                "target-01",
+                731,
+                board,
+                new[] { occupant });
+        }
+
+        private static void CommitRecover(CombatApplicationSession session)
+        {
+            Assert.That(session.SelectCard("recover").Succeeded, Is.True);
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Succeeded,
+                Is.True);
+            Assert.That(session.PreviewTimeline(new TimelineCell(0, 0)).Succeeded, Is.True);
+            Assert.That(session.CommitTimeline().Succeeded, Is.True);
+        }
+
         private static ResolutionSnapshot RunLightingScenario(ICombatTraceSink sink)
         {
             var grid = new TimelineGrid();
@@ -345,7 +523,8 @@ namespace TimeKey.Tests.EditMode.Application
             {
                 CreateLighting(),
                 CreateEarthquake(),
-                CreateRecover()
+                CreateRecover(),
+                CreatePoison()
             });
         }
 
@@ -382,8 +561,28 @@ namespace TimeKey.Tests.EditMode.Application
         {
             return new CardDefinition(
                 "recover",
-                3,
-                new[] { new CardEffect(CardEffectKind.Recover, 2) },
+                5,
+                new[] { new CardEffect(CardEffectKind.Recover, 100) },
+                new[]
+                {
+                    new HexCoord(0, 0),
+                    new HexCoord(1, 0),
+                    new HexCoord(-1, 1)
+                },
+                new[]
+                {
+                    new TimelineCell(0, 0),
+                    new TimelineCell(1, 0),
+                    new TimelineCell(2, 0)
+                });
+        }
+
+        private static CardDefinition CreatePoison()
+        {
+            return new CardDefinition(
+                "poison",
+                7,
+                new[] { new CardEffect(CardEffectKind.Poison, 2) },
                 new[] { new HexCoord(0, 0) },
                 new[] { new TimelineCell(0, 0) });
         }

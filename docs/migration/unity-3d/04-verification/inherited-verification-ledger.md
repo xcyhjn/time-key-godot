@@ -108,3 +108,7 @@ R3 已完成并使 Presentation、Infrastructure、Composition、资源映射与
 | R3 Timeline 普通 valid/invalid | 普通路径回归基线 | Clear preview/Timeline Presenter 改动后必须刷新 |
 
 本阶段最终不能用 R3 build/Player 或旧 idle 截图证明新 Recover/Tower/Poison/Clear；只继承未受改动影响的源证据和历史契约。
+
+## Remaining Cards Gate A 刷新记录
+
+Recover 修改了共享 Domain/Application effect 与 occupant 边界，因此该边界的 R3 测试证据已经刷新：全量 EditMode `107/107`、Recover 公共 Scene PlayMode `1/1`，0 失败。启用图形设备的 Editor Harness 生成 5 张 1280x720 状态图并断言目标 10→100；人工确认原卡面、目标反馈、三格 Timeline 和结算 HUD 可读。`VerticalSliceController.cs`、Scene/Prefab、Terrain/Camera 与卡图资源未变，因此 R3 的三视口 idle、四向镜头、0.32 层高和 Scene/Prefab 证据仍按原条件可继承到 Gate B 首次触及这些边界。Gate A 未重建 Player，最终 Build/Player 仍必须在 Gate D 刷新。

@@ -52,7 +52,8 @@ namespace TimeKey.Domain
             bool enemyIntentResolved,
             int seed,
             IReadOnlyList<TimelineSnapshotAction> resolutionOrder,
-            IReadOnlyList<TileEffectResult> effectResults = null)
+            IReadOnlyList<TileEffectResult> effectResults = null,
+            IReadOnlyList<OccupantEffectResult> occupantEffectResults = null)
         {
             Turn = turn;
             Phase = "resolved";
@@ -63,6 +64,8 @@ namespace TimeKey.Domain
             Seed = seed;
             ResolutionOrder = Copy(resolutionOrder);
             EffectResults = Copy(effectResults ?? new TileEffectResult[0]);
+            OccupantEffectResults = Copy(
+                occupantEffectResults ?? new OccupantEffectResult[0]);
         }
 
         public int Turn { get; }
@@ -82,6 +85,8 @@ namespace TimeKey.Domain
         public IReadOnlyList<TimelineSnapshotAction> ResolutionOrder { get; }
 
         public IReadOnlyList<TileEffectResult> EffectResults { get; }
+
+        public IReadOnlyList<OccupantEffectResult> OccupantEffectResults { get; }
 
         private static ReadOnlyCollection<TimelineSnapshotAction> Copy(
             IReadOnlyList<TimelineSnapshotAction> source)
@@ -105,6 +110,18 @@ namespace TimeKey.Domain
             }
 
             return new ReadOnlyCollection<TileEffectResult>(result);
+        }
+
+        private static ReadOnlyCollection<OccupantEffectResult> Copy(
+            IReadOnlyList<OccupantEffectResult> source)
+        {
+            var result = new List<OccupantEffectResult>(source.Count);
+            for (var index = 0; index < source.Count; index++)
+            {
+                result.Add(source[index]);
+            }
+
+            return new ReadOnlyCollection<OccupantEffectResult>(result);
         }
     }
 }

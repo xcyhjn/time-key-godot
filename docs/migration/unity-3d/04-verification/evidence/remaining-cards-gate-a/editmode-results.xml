@@ -1,0 +1,764 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="107" result="Passed" total="107" passed="107" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:55Z" duration="1.1349432">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="107" result="Passed" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:55Z" duration="1.134943" total="107" passed="107" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1077" name="TimeKey.Tests.EditMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.EditMode.dll" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:55Z" duration="1.078774" total="66" passed="66" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="62048" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1078" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:55Z" duration="1.078510" total="66" passed="66" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1079" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:55Z" duration="1.078442" total="66" passed="66" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1080" name="EditMode" fullname="TimeKey.Tests.EditMode" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:55Z" duration="1.078306" total="66" passed="66" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1085" name="Application" fullname="TimeKey.Tests.EditMode.Application" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:54Z" duration="0.064250" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1059" name="CombatApplicationSessionTests" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:54Z" duration="0.063097" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1072" name="CancelIsIdempotentUntilASelectionIsCommitted" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.CancelIsIdempotentUntilASelectionIsCommitted" methodname="CancelIsIdempotentUntilASelectionIsCommitted" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="850295405" result="Passed" start-time="2026-08-01 10:26:53Z" end-time="2026-08-01 10:26:54Z" duration="0.025799" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1071" name="CommitDetectsConcurrentTimelineMutationWithoutAdditionalPlacement" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.CommitDetectsConcurrentTimelineMutationWithoutAdditionalPlacement" methodname="CommitDetectsConcurrentTimelineMutationWithoutAdditionalPlacement" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="363124403" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.002183" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1076" name="DisposeIsIdempotentAndFurtherCommandsFailWithoutMutation" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.DisposeIsIdempotentAndFurtherCommandsFailWithoutMutation" methodname="DisposeIsIdempotentAndFurtherCommandsFailWithoutMutation" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1653881650" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000401" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1061" name="EarthquakePath_UsesTypedTileTargetAndRaisesSevenTilesByTwo" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.EarthquakePath_UsesTypedTileTargetAndRaisesSevenTilesByTwo" methodname="EarthquakePath_UsesTypedTileTargetAndRaisesSevenTilesByTwo" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="523992597" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.006747" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1067" name="InvalidCommandOrderReturnsStructuredFailuresWithoutMutation" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.InvalidCommandOrderReturnsStructuredFailuresWithoutMutation" methodname="InvalidCommandOrderReturnsStructuredFailuresWithoutMutation" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1614471613" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000472" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1060" name="LightingPath_SelectsTargetsCommitsAndResolvesThroughApplication" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.LightingPath_SelectsTargetsCommitsAndResolvesThroughApplication" methodname="LightingPath_SelectsTargetsCommitsAndResolvesThroughApplication" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1343473774" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.001258" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1069" name="PreviewRequiresTargetAndInvalidOriginDoesNotOccupyTimeline" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.PreviewRequiresTargetAndInvalidOriginDoesNotOccupyTimeline" methodname="PreviewRequiresTargetAndInvalidOriginDoesNotOccupyTimeline" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="727550060" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000402" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1062" name="RecoverPath_RequiresExactOccupantAndResolvesClampedBeforeAfterResult" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.RecoverPath_RequiresExactOccupantAndResolvesClampedBeforeAfterResult" methodname="RecoverPath_RequiresExactOccupantAndResolvesClampedBeforeAfterResult" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1390535660" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.006405" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1066" name="RecoverResolve_RevalidatesDisappearanceAndFullHealthWithoutMutation" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.RecoverResolve_RevalidatesDisappearanceAndFullHealthWithoutMutation" methodname="RecoverResolve_RevalidatesDisappearanceAndFullHealthWithoutMutation" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="622498361" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.001237" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1064" name="RecoverSelection_AllowsExistingZeroHpOccupant" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.RecoverSelection_AllowsExistingZeroHpOccupant" methodname="RecoverSelection_AllowsExistingZeroHpOccupant" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="2004418131" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000328" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1063" name="RecoverSelection_RejectsFullHealthIdMismatchCoordMismatchAndMissingRange" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.RecoverSelection_RejectsFullHealthIdMismatchCoordMismatchAndMissingRange" methodname="RecoverSelection_RejectsFullHealthIdMismatchCoordMismatchAndMissingRange" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="621754071" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000631" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1065" name="RecoverSelection_UsesMatchingOccupantInsteadOfLegacyPrimaryTargetOnly" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.RecoverSelection_UsesMatchingOccupantInsteadOfLegacyPrimaryTargetOnly" methodname="RecoverSelection_UsesMatchingOccupantInsteadOfLegacyPrimaryTargetOnly" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="2003078132" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000431" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1074" name="RepeatedPreviewCommitAndResolveDoNotDuplicateMutation" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.RepeatedPreviewCommitAndResolveDoNotDuplicateMutation" methodname="RepeatedPreviewCommitAndResolveDoNotDuplicateMutation" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="13558465" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000565" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1070" name="SelectingSecondCardReplacesUncommittedSelectionWithoutPresentationEvents" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.SelectingSecondCardReplacesUncommittedSelectionWithoutPresentationEvents" methodname="SelectingSecondCardReplacesUncommittedSelectionWithoutPresentationEvents" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1726581688" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000667" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1068" name="SelectTargetRejectsWrongKindUnknownEntityAndMissingTile" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.SelectTargetRejectsWrongKindUnknownEntityAndMissingTile" methodname="SelectTargetRejectsWrongKindUnknownEntityAndMissingTile" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1484824633" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000458" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1075" name="TraceSinkCannotChangeGameplayResult" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.TraceSinkCannotChangeGameplayResult" methodname="TraceSinkCannotChangeGameplayResult" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1446458739" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.002700" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1073" name="UnsupportedEffectFailsExplicitlyBeforeOccupyingTimelineAndIsTraced" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.UnsupportedEffectFailsExplicitlyBeforeOccupyingTimelineAndIsTraced" methodname="UnsupportedEffectFailsExplicitlyBeforeOccupyingTimelineAndIsTraced" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1022315964" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.001031" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1001" name="CardPlaySessionTests" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.006194" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1013" name="Cancel_AfterPreviewIsIdempotentAndPreventsCommit" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.Cancel_AfterPreviewIsIdempotentAndPreventsCommit" methodname="Cancel_AfterPreviewIsIdempotentAndPreventsCommit" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="1536925446" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000754" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1012" name="Commit_RepeatedCallDoesNotPlaceActionTwice" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.Commit_RepeatedCallDoesNotPlaceActionTwice" methodname="Commit_RepeatedCallDoesNotPlaceActionTwice" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="1367934585" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000376" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1011" name="Commit_WhenTimelineChangesAfterPreviewFailsWithoutAdditionalMutation" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.Commit_WhenTimelineChangesAfterPreviewFailsWithoutAdditionalMutation" methodname="Commit_WhenTimelineChangesAfterPreviewFailsWithoutAdditionalMutation" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="1755124641" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000349" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1002" name="LegalPath_CommitsLightingWithStableTargetAndDamage" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.LegalPath_CommitsLightingWithStableTargetAndDamage" methodname="LegalPath_CommitsLightingWithStableTargetAndDamage" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="618207239" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.001233" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1009" name="PreviewTimeline_ConflictIsInvalidAndDoesNotMutateGrid" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.PreviewTimeline_ConflictIsInvalidAndDoesNotMutateGrid" methodname="PreviewTimeline_ConflictIsInvalidAndDoesNotMutateGrid" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="13191537" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000303" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1008" name="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.001026" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1004" name="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid(-1,0)" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid(-1,0)" methodname="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="411558528" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000357" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1005" name="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid(12,0)" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid(12,0)" methodname="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="554746718" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000060" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1006" name="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid(0,-1)" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid(0,-1)" methodname="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="1839455277" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000039" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1007" name="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid(0,3)" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid(0,3)" methodname="PreviewTimeline_OutOfBoundsIsInvalidAndDoesNotMutateGrid" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="1064481336" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000035" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1010" name="PreviewTimeline_RepeatedQueriesDoNotMutateGrid" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.PreviewTimeline_RepeatedQueriesDoNotMutateGrid" methodname="PreviewTimeline_RepeatedQueriesDoNotMutateGrid" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="1318854077" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000244" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1003" name="PreviewTimeline_WithoutTargetReturnsExplicitFailure" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.PreviewTimeline_WithoutTargetReturnsExplicitFailure" methodname="PreviewTimeline_WithoutTargetReturnsExplicitFailure" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="476368790" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000195" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1014" name="TimelineGrid_CanPlaceMatchesTryPlaceWithoutMutation" fullname="TimeKey.Tests.EditMode.CardPlaySessionTests.TimelineGrid_CanPlaceMatchesTryPlaceWithoutMutation" methodname="TimelineGrid_CanPlaceMatchesTryPlaceWithoutMutation" classname="TimeKey.Tests.EditMode.CardPlaySessionTests" runstate="Runnable" seed="1835498387" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.000251" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestSuite" id="1084" name="Composition" fullname="TimeKey.Tests.EditMode.Composition" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.246408" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1055" name="CombatSceneAssetTests" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.246175" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1058" name="ControllerSource_DoesNotConstructStableSceneObjects" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests.ControllerSource_DoesNotConstructStableSceneObjects" methodname="ControllerSource_DoesNotConstructStableSceneObjects" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" seed="862267229" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.002450" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1057" name="ProductionPrefabs_AreSavedAssetsWithExpectedComponents" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests.ProductionPrefabs_AreSavedAssetsWithExpectedComponents" methodname="ProductionPrefabs_AreSavedAssetsWithExpectedComponents" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" seed="32884451" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.036315" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1056" name="SceneAsset_SerializesStableHierarchyAndAllControllerReferences" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests.SceneAsset_SerializesStableHierarchyAndAllControllerReferences" methodname="SceneAsset_SerializesStableHierarchyAndAllControllerReferences" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" seed="2109468139" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:54Z" duration="0.206662" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1083" name="Diagnostics" fullname="TimeKey.Tests.EditMode.Diagnostics" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 10:26:54Z" end-time="2026-08-01 10:26:55Z" duration="0.743356" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1052" name="CollectingCombatTraceSinkTests" fullname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests" classname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.004933" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1054" name="ClearIsRepeatableAndRecordRejectsNull" fullname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests.ClearIsRepeatableAndRecordRejectsNull" methodname="ClearIsRepeatableAndRecordRejectsNull" classname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests" runstate="Runnable" seed="370999094" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.003768" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1053" name="RecordPreservesInsertionOrder" fullname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests.RecordPreservesInsertionOrder" methodname="RecordPreservesInsertionOrder" classname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests" runstate="Runnable" seed="863203090" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000532" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1082" name="Effects" fullname="TimeKey.Tests.EditMode.Effects" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.004760" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1041" name="RecoverCardEffectHandlerTests" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.004445" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1043" name="Resolve_ExistingZeroHpOccupantCanRecover" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_ExistingZeroHpOccupantCanRecover" methodname="Resolve_ExistingZeroHpOccupantCanRecover" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="2005642999" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000703" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1044" name="Resolve_FullHealthOccupantIsNoOpWithoutResult" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_FullHealthOccupantIsNoOpWithoutResult" methodname="Resolve_FullHealthOccupantIsNoOpWithoutResult" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="492132116" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000295" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1042" name="Resolve_HealsInjuredOccupantAndCapturesClampedBeforeAfterSnapshots" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_HealsInjuredOccupantAndCapturesClampedBeforeAfterSnapshots" methodname="Resolve_HealsInjuredOccupantAndCapturesClampedBeforeAfterSnapshots" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="1993768812" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000670" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1049" name="Resolve_MissingEffectRangeIsPureNoOp" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_MissingEffectRangeIsPureNoOp" methodname="Resolve_MissingEffectRangeIsPureNoOp" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="1186935728" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000327" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-suite type="ParameterizedMethod" id="1047" name="Resolve_MissingIdOrCoordinateMatchIsPureNoOp" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_MissingIdOrCoordinateMatchIsPureNoOp" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000797" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                  <properties />
+                  <test-case id="1045" name="Resolve_MissingIdOrCoordinateMatchIsPureNoOp(&quot;missing-id&quot;,2,-1)" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_MissingIdOrCoordinateMatchIsPureNoOp(&quot;missing-id&quot;,2,-1)" methodname="Resolve_MissingIdOrCoordinateMatchIsPureNoOp" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="2108353208" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000357" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1046" name="Resolve_MissingIdOrCoordinateMatchIsPureNoOp(&quot;target-01&quot;,3,-1)" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_MissingIdOrCoordinateMatchIsPureNoOp(&quot;target-01&quot;,3,-1)" methodname="Resolve_MissingIdOrCoordinateMatchIsPureNoOp" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="826237485" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000067" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                </test-suite>
+                <test-case id="1050" name="Resolve_OccupantWithoutHealthCapabilityIsPureNoOp" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_OccupantWithoutHealthCapabilityIsPureNoOp" methodname="Resolve_OccupantWithoutHealthCapabilityIsPureNoOp" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="793967261" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000208" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1048" name="Resolve_ReplacedOccupantWithDifferentRuntimeIdIsNoOp" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.Resolve_ReplacedOccupantWithDifferentRuntimeIdIsNoOp" methodname="Resolve_ReplacedOccupantWithDifferentRuntimeIdIsNoOp" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="1268059416" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000234" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1051" name="ThreeCellShape_FitsAtLastLegalOriginAndRejectsBoundaryCrossing" fullname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests.ThreeCellShape_FitsAtLastLegalOriginAndRejectsBoundaryCrossing" methodname="ThreeCellShape_FitsAtLastLegalOriginAndRejectsBoundaryCrossing" classname="TimeKey.Tests.EditMode.Effects.RecoverCardEffectHandlerTests" runstate="Runnable" seed="1407734838" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000213" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1081" name="Terrain" fullname="TimeKey.Tests.EditMode.Terrain" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.006899" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1031" name="EarthquakeResolutionTests" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.006669" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1037" name="CardPlaySession_EarthquakeCommitPreservesTargetCoordinateForResolve" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.CardPlaySession_EarthquakeCommitPreservesTargetCoordinateForResolve" methodname="CardPlaySession_EarthquakeCommitPreservesTargetCoordinateForResolve" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="1583734777" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.001554" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1038" name="CardPlaySession_EarthquakeCrossingRightEdgeIsInvalidAndPure" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.CardPlaySession_EarthquakeCrossingRightEdgeIsInvalidAndPure" methodname="CardPlaySession_EarthquakeCrossingRightEdgeIsInvalidAndPure" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="1921212488" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000380" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1036" name="CardPlaySession_EarthquakeTwoCellShapePreviewsAndCommitsOnce" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.CardPlaySession_EarthquakeTwoCellShapePreviewsAndCommitsOnce" methodname="CardPlaySession_EarthquakeTwoCellShapePreviewsAndCommitsOnce" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="2082502879" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000262" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1035" name="CombatBoardState_ElevationAtGodotMinimumRemovesTileAtZero" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.CombatBoardState_ElevationAtGodotMinimumRemovesTileAtZero" methodname="CombatBoardState_ElevationAtGodotMinimumRemovesTileAtZero" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="254727466" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000475" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1040" name="Resolve_EarthquakeFixtureIsDeterministic" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.Resolve_EarthquakeFixtureIsDeterministic" methodname="Resolve_EarthquakeFixtureIsDeterministic" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="1441705591" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000517" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1032" name="Resolve_EarthquakeRaisesSevenExistingTilesByTwo" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.Resolve_EarthquakeRaisesSevenExistingTilesByTwo" methodname="Resolve_EarthquakeRaisesSevenExistingTilesByTwo" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="864246478" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000376" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1034" name="Resolve_EarthquakeRemovesTileAboveGodotMaximum" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.Resolve_EarthquakeRemovesTileAboveGodotMaximum" methodname="Resolve_EarthquakeRemovesTileAboveGodotMaximum" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="1359831218" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000267" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1033" name="Resolve_EarthquakeSkipsMissingRangeTileWithoutCreatingIt" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.Resolve_EarthquakeSkipsMissingRangeTileWithoutCreatingIt" methodname="Resolve_EarthquakeSkipsMissingRangeTileWithoutCreatingIt" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="113013455" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000584" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1039" name="TimelineAction_CopiesTargetEffectsAndRange" fullname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests.TimelineAction_CopiesTargetEffectsAndRange" methodname="TimelineAction_CopiesTargetEffectsAndRange" classname="TimeKey.Tests.EditMode.Terrain.EarthquakeResolutionTests" runstate="Runnable" seed="128909168" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.001236" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1015" name="TimelineGridTests" fullname="TimeKey.Tests.EditMode.TimelineGridTests" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.005987" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1028" name="Constructor_RejectsDuplicateEffectHandlers" fullname="TimeKey.Tests.EditMode.TimelineGridTests.Constructor_RejectsDuplicateEffectHandlers" methodname="Constructor_RejectsDuplicateEffectHandlers" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="723543729" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000767" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1025" name="Resolve_ClampsDamageAtZero" fullname="TimeKey.Tests.EditMode.TimelineGridTests.Resolve_ClampsDamageAtZero" methodname="Resolve_ClampsDamageAtZero" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="1527308338" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000314" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1024" name="Resolve_ExecutesMultiCellActionOnlyOnce" fullname="TimeKey.Tests.EditMode.TimelineGridTests.Resolve_ExecutesMultiCellActionOnlyOnce" methodname="Resolve_ExecutesMultiCellActionOnlyOnce" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="827623304" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000291" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1023" name="Resolve_OrdersActionsByColumnThenRow" fullname="TimeKey.Tests.EditMode.TimelineGridTests.Resolve_OrdersActionsByColumnThenRow" methodname="Resolve_OrdersActionsByColumnThenRow" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="948981983" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000496" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1029" name="Resolve_ProducesFrozenFixtureSnapshot" fullname="TimeKey.Tests.EditMode.TimelineGridTests.Resolve_ProducesFrozenFixtureSnapshot" methodname="Resolve_ProducesFrozenFixtureSnapshot" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="1101973288" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000825" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1030" name="Resolve_RepeatedFixtureRunsAreDeterministic" fullname="TimeKey.Tests.EditMode.TimelineGridTests.Resolve_RepeatedFixtureRunsAreDeterministic" methodname="Resolve_RepeatedFixtureRunsAreDeterministic" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="301509680" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000294" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1027" name="TryPlace_InvalidRecoverPayloadFailsBeforeOccupyingTimeline" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_InvalidRecoverPayloadFailsBeforeOccupyingTimeline" methodname="TryPlace_InvalidRecoverPayloadFailsBeforeOccupyingTimeline" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="248289870" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000397" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1020" name="TryPlace_RejectsOutOfBoundsOrigins" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_RejectsOutOfBoundsOrigins" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000722" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1016" name="TryPlace_RejectsOutOfBoundsOrigins(-1,0)" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_RejectsOutOfBoundsOrigins(-1,0)" methodname="TryPlace_RejectsOutOfBoundsOrigins" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="718507310" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000177" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1017" name="TryPlace_RejectsOutOfBoundsOrigins(12,0)" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_RejectsOutOfBoundsOrigins(12,0)" methodname="TryPlace_RejectsOutOfBoundsOrigins" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="1123019719" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000039" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1018" name="TryPlace_RejectsOutOfBoundsOrigins(0,-1)" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_RejectsOutOfBoundsOrigins(0,-1)" methodname="TryPlace_RejectsOutOfBoundsOrigins" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="414108098" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000028" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1019" name="TryPlace_RejectsOutOfBoundsOrigins(0,3)" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_RejectsOutOfBoundsOrigins(0,3)" methodname="TryPlace_RejectsOutOfBoundsOrigins" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="147342582" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000024" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1022" name="TryPlace_RejectsOverlappingActions" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_RejectsOverlappingActions" methodname="TryPlace_RejectsOverlappingActions" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="2141610425" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000223" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1021" name="TryPlace_RejectsShapeThatCrossesBoundary" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_RejectsShapeThatCrossesBoundary" methodname="TryPlace_RejectsShapeThatCrossesBoundary" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="1461355665" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000114" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1026" name="TryPlace_UnsupportedTypedEffectFailsBeforeOccupyingTimeline" fullname="TimeKey.Tests.EditMode.TimelineGridTests.TryPlace_UnsupportedTypedEffectFailsBeforeOccupyingTimeline" methodname="TryPlace_UnsupportedTypedEffectFailsBeforeOccupyingTimeline" classname="TimeKey.Tests.EditMode.TimelineGridTests" runstate="Runnable" seed="1388476487" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000320" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1136" name="TimeKey.Tests.Infrastructure.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.Infrastructure.dll" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.051213" total="41" passed="41" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="62048" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1137" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.051012" total="41" passed="41" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1138" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.050936" total="41" passed="41" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1139" name="Infrastructure" fullname="TimeKey.Tests.Infrastructure" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.050833" total="41" passed="41" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1086" name="CardJsonAdapterTests" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" testcasecount="35" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.039848" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1110" name="Parse_BuiltWithoutCreation_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_BuiltWithoutCreation_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.021898" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1108" name="Parse_BuiltWithoutCreation_ThrowsFormatException(&quot;\&quot;creation\&quot;:\&quot;\&quot;,\&quot;value\&quot;:1&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_BuiltWithoutCreation_ThrowsFormatException(&quot;\&quot;creation\&quot;:\&quot;\&quot;,\&quot;value\&quot;:1&quot;)" methodname="Parse_BuiltWithoutCreation_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1600077007" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.021449" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1109" name="Parse_BuiltWithoutCreation_ThrowsFormatException(&quot;\&quot;value\&quot;:1&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_BuiltWithoutCreation_ThrowsFormatException(&quot;\&quot;value\&quot;:1&quot;)" methodname="Parse_BuiltWithoutCreation_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1300694071" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000181" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1116" name="Parse_ClearMixedWithResolveEffect_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_ClearMixedWithResolveEffect_ThrowsFormatException" methodname="Parse_ClearMixedWithResolveEffect_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="429994864" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000286" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1126" name="Parse_EmptyOccupiedShape_FallsBackToSingleCellForResolveCard" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_EmptyOccupiedShape_FallsBackToSingleCellForResolveCard" methodname="Parse_EmptyOccupiedShape_FallsBackToSingleCellForResolveCard" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="112056706" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.001271" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1096" name="Parse_IgnoresUnmappedChineseDescriptionFields" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_IgnoresUnmappedChineseDescriptionFields" methodname="Parse_IgnoresUnmappedChineseDescriptionFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="708721481" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.002484" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1115" name="Parse_InvalidClearMask_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidClearMask_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.001330" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1111" name="Parse_InvalidClearMask_ThrowsFormatException(&quot;\&quot;value\&quot;:\&quot;\&quot;&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidClearMask_ThrowsFormatException(&quot;\&quot;value\&quot;:\&quot;\&quot;&quot;)" methodname="Parse_InvalidClearMask_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1310387920" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000504" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1112" name="Parse_InvalidClearMask_ThrowsFormatException(&quot;\&quot;value\&quot;:\&quot;0\&quot;&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidClearMask_ThrowsFormatException(&quot;\&quot;value\&quot;:\&quot;0\&quot;&quot;)" methodname="Parse_InvalidClearMask_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="743792645" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000121" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1113" name="Parse_InvalidClearMask_ThrowsFormatException(&quot;\&quot;value\&quot;:\&quot;10x\&quot;&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidClearMask_ThrowsFormatException(&quot;\&quot;value\&quot;:\&quot;10x\&quot;&quot;)" methodname="Parse_InvalidClearMask_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="961503341" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000070" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1114" name="Parse_InvalidClearMask_ThrowsFormatException(&quot;\&quot;value\&quot;:\&quot;1,11\&quot;&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidClearMask_ThrowsFormatException(&quot;\&quot;value\&quot;:\&quot;1,11\&quot;&quot;)" methodname="Parse_InvalidClearMask_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1226657323" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000069" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1105" name="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.002398" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1099" name="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;damage&quot;,&quot;\&quot;100\&quot;&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;damage&quot;,&quot;\&quot;100\&quot;&quot;)" methodname="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1212933458" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000299" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1100" name="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;elevation&quot;,&quot;\&quot;2\&quot;&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;elevation&quot;,&quot;\&quot;2\&quot;&quot;)" methodname="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="2142822335" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000085" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1101" name="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;recover&quot;,&quot;null&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;recover&quot;,&quot;null&quot;)" methodname="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1491837945" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000401" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1102" name="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;recover&quot;,&quot;1.5&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;recover&quot;,&quot;1.5&quot;)" methodname="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1505937468" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000895" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1103" name="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;poison&quot;,&quot;-1&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;poison&quot;,&quot;-1&quot;)" methodname="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1350857465" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000111" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1104" name="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;clear&quot;,&quot;1&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException(&quot;clear&quot;,&quot;1&quot;)" methodname="Parse_InvalidEffectValueTypeOrAmount_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="808499682" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000061" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1122" name="Parse_InvalidFrontImage_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidFrontImage_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000840" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1117" name="Parse_InvalidFrontImage_ThrowsFormatException(&quot;&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidFrontImage_ThrowsFormatException(&quot;&quot;)" methodname="Parse_InvalidFrontImage_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1368530107" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000216" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1118" name="Parse_InvalidFrontImage_ThrowsFormatException(&quot;../lighting.png&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidFrontImage_ThrowsFormatException(&quot;../lighting.png&quot;)" methodname="Parse_InvalidFrontImage_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1866273427" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000059" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1119" name="Parse_InvalidFrontImage_ThrowsFormatException(&quot;cards/lighting.png&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidFrontImage_ThrowsFormatException(&quot;cards/lighting.png&quot;)" methodname="Parse_InvalidFrontImage_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1457034048" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000040" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1120" name="Parse_InvalidFrontImage_ThrowsFormatException(&quot;cards\\lighting.png&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidFrontImage_ThrowsFormatException(&quot;cards\\lighting.png&quot;)" methodname="Parse_InvalidFrontImage_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1812215218" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000037" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1121" name="Parse_InvalidFrontImage_ThrowsFormatException(&quot;/lighting.png&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidFrontImage_ThrowsFormatException(&quot;/lighting.png&quot;)" methodname="Parse_InvalidFrontImage_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="138069298" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000036" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1125" name="Parse_InvalidShape_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidShape_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000518" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1123" name="Parse_InvalidShape_ThrowsFormatException(&quot;1x&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidShape_ThrowsFormatException(&quot;1x&quot;)" methodname="Parse_InvalidShape_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="941055471" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000204" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1124" name="Parse_InvalidShape_ThrowsFormatException(&quot;x&quot;)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_InvalidShape_ThrowsFormatException(&quot;x&quot;)" methodname="Parse_InvalidShape_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1098872729" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000076" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1095" name="Parse_LightingFixture_PreservesLegacyValueProperty" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_LightingFixture_PreservesLegacyValueProperty" methodname="Parse_LightingFixture_PreservesLegacyValueProperty" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="262766091" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000702" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1107" name="Parse_MissingEffects_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_MissingEffects_ThrowsFormatException" methodname="Parse_MissingEffects_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1966992789" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000176" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1106" name="Parse_MissingEffectValue_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_MissingEffectValue_ThrowsFormatException" methodname="Parse_MissingEffectValue_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="125600567" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000164" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1094" name="Parse_RealFixture_PreservesContractFields" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_RealFixture_PreservesContractFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.005063" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1087" name="Parse_RealFixture_PreservesContractFields(lighting)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_RealFixture_PreservesContractFields(lighting)" methodname="Parse_RealFixture_PreservesContractFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1091215577" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.001101" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1088" name="Parse_RealFixture_PreservesContractFields(earthquake)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_RealFixture_PreservesContractFields(earthquake)" methodname="Parse_RealFixture_PreservesContractFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1855378820" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000477" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1089" name="Parse_RealFixture_PreservesContractFields(wind)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_RealFixture_PreservesContractFields(wind)" methodname="Parse_RealFixture_PreservesContractFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="423444883" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.001105" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1090" name="Parse_RealFixture_PreservesContractFields(recover)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_RealFixture_PreservesContractFields(recover)" methodname="Parse_RealFixture_PreservesContractFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1390190174" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000484" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1091" name="Parse_RealFixture_PreservesContractFields(tower)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_RealFixture_PreservesContractFields(tower)" methodname="Parse_RealFixture_PreservesContractFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="155975358" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000389" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1092" name="Parse_RealFixture_PreservesContractFields(poison)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_RealFixture_PreservesContractFields(poison)" methodname="Parse_RealFixture_PreservesContractFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="328058047" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000377" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1093" name="Parse_RealFixture_PreservesContractFields(tornado)" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_RealFixture_PreservesContractFields(tornado)" methodname="Parse_RealFixture_PreservesContractFields" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="624642831" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000444" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1127" name="Parse_ShapeRows_AcceptsWhitespaceSeparators" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_ShapeRows_AcceptsWhitespaceSeparators" methodname="Parse_ShapeRows_AcceptsWhitespaceSeparators" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="934949196" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000565" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1098" name="Parse_UnknownEffect_ThrowsFormatException" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.Parse_UnknownEffect_ThrowsFormatException" methodname="Parse_UnknownEffect_ThrowsFormatException" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="1833422293" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000206" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1097" name="TryParse_MissingStableId_ReturnsExplicitFailure" fullname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests.TryParse_MissingStableId_ReturnsExplicitFailure" methodname="TryParse_MissingStableId_ReturnsExplicitFailure" classname="TimeKey.Tests.Infrastructure.CardJsonAdapterTests" runstate="Runnable" seed="2043008280" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000420" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestSuite" id="1141" name="Cards" fullname="TimeKey.Tests.Infrastructure.Cards" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.007769" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1131" name="CardContentCatalogTests" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.007471" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1135" name="Constructor_AdditionalOrdinaryCard_NeedsNoRoutingChange" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests.Constructor_AdditionalOrdinaryCard_NeedsNoRoutingChange" methodname="Constructor_AdditionalOrdinaryCard_NeedsNoRoutingChange" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" seed="85853893" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.003049" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1133" name="Constructor_DuplicateStableId_FailsExplicitly" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests.Constructor_DuplicateStableId_FailsExplicitly" methodname="Constructor_DuplicateStableId_FailsExplicitly" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" seed="1405085077" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000618" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1134" name="FromJson_InvalidDocument_PropagatesTypedSchemaFailure" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests.FromJson_InvalidDocument_PropagatesTypedSchemaFailure" methodname="FromJson_InvalidDocument_PropagatesTypedSchemaFailure" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" seed="1197626312" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000332" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1132" name="FromJson_LoadsAllSevenRealCardsAndFrontImages" fullname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests.FromJson_LoadsAllSevenRealCardsAndFrontImages" methodname="FromJson_LoadsAllSevenRealCardsAndFrontImages" classname="TimeKey.Tests.Infrastructure.Cards.CardContentCatalogTests" runstate="Runnable" seed="1863156799" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.002663" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1140" name="Effects" fullname="TimeKey.Tests.Infrastructure.Effects" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.002950" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1128" name="CardEffectRegistrationCatalogTests" fullname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests" classname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.002608" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1130" name="Constructor_DuplicateKind_FailsExplicitly" fullname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests.Constructor_DuplicateKind_FailsExplicitly" methodname="Constructor_DuplicateKind_FailsExplicitly" classname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests" runstate="Runnable" seed="401999955" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.001372" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1129" name="VerticalSlice_RegistersDamageElevationAndRecoverByKind" fullname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests.VerticalSlice_RegistersDamageElevationAndRecoverByKind" methodname="VerticalSlice_RegistersDamageElevationAndRecoverByKind" classname="TimeKey.Tests.Infrastructure.Effects.CardEffectRegistrationCatalogTests" runstate="Runnable" seed="118583844" result="Passed" start-time="2026-08-01 10:26:55Z" end-time="2026-08-01 10:26:55Z" duration="0.000756" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

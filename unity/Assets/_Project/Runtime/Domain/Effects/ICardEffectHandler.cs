@@ -1,16 +1,16 @@
-using System.Collections.Generic;
-
 namespace TimeKey.Domain
 {
     public interface ICardEffectHandler
     {
         CardEffectKind Kind { get; }
 
+        bool Supports(CardEffect effect);
+
         void Apply(
             CombatSliceState state,
             TimelineAction action,
             CardEffect effect,
-            ICollection<TileEffectResult> effectResults);
+            CardEffectResultBuffer effectResults);
     }
 
     public sealed class UnsupportedCardEffectException : System.InvalidOperationException
@@ -21,6 +21,12 @@ namespace TimeKey.Domain
             Kind = kind;
         }
 
+        public UnsupportedCardEffectException(CardEffect effect)
+            : base("No card effect handler supports the payload for " + effect.Kind + ".")
+        {
+            Kind = effect.Kind;
+        }
+
         public CardEffectKind Kind { get; }
     }
 
@@ -28,11 +34,16 @@ namespace TimeKey.Domain
     {
         public CardEffectKind Kind => CardEffectKind.Damage;
 
+        public bool Supports(CardEffect effect)
+        {
+            return effect.Kind == Kind && effect.NumericAmount.HasValue;
+        }
+
         public void Apply(
             CombatSliceState state,
             TimelineAction action,
             CardEffect effect,
-            ICollection<TileEffectResult> effectResults)
+            CardEffectResultBuffer effectResults)
         {
             state.ApplyDamage(action.TargetId, effect.Value);
         }
@@ -42,11 +53,16 @@ namespace TimeKey.Domain
     {
         public CardEffectKind Kind => CardEffectKind.Elevation;
 
+        public bool Supports(CardEffect effect)
+        {
+            return effect.Kind == Kind && effect.NumericAmount.HasValue;
+        }
+
         public void Apply(
             CombatSliceState state,
             TimelineAction action,
             CardEffect effect,
-            ICollection<TileEffectResult> effectResults)
+            CardEffectResultBuffer effectResults)
         {
             if (!action.TargetCoord.HasValue)
             {
@@ -61,7 +77,7 @@ namespace TimeKey.Domain
                     action.TargetCoord.Value.R + offset.R);
                 if (state.Board.TryApplyElevation(coordinate, effect.Value, out var result))
                 {
-                    effectResults.Add(result);
+                    effectResults.AddTile(result);
                 }
             }
         }

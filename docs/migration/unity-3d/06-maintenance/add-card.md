@@ -22,3 +22,7 @@
 解析失败先看 `CardJsonAdapter` 的明确异常；目录失败看 stable ID 唯一性；无图看 `CardContentEntry.ArtworkResourcePath` 与 Unity import 类型；不可用看 `UnsupportedEffect` trace。不要在 Presenter 写例外分支。
 
 回滚时移除这张 JSON、卡面及 Composition 引用，并删除只属于它的测试；保留共享 catalog、Controller 和其他资源，不改 Godot 原数据。
+
+## 已验证样例：Recover
+
+`recover.json` 证明新增普通卡不需要修改 Controller：目录从原 fixture 读取 stable ID、`FrontImage`、`Recover +100`、三格 shape 与 range；Infrastructure 只注册已落地的 `CardEffectKind.Recover`。Application 按稳定 occupant ID + `HexCoord` 选择和 Resolve 重判，Domain handler 产出 occupant before/after 快照。完整路径与 1280x720 截图见 `04-verification/evidence/remaining-cards-gate-a/`。

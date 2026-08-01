@@ -73,7 +73,7 @@ Agent B 与 C 的冻结路径保持互斥，并且都不修改 Controller、Scen
 | 波次 | 角色 | 独占路径摘要 | 启动条件 | 状态 |
 | --- | --- | --- | --- | --- |
 | Gate 0 | 三个只读审计 | 各自 `agents/reports/remaining-cards-*.md` | 前置解耦关闭 | 已完成交回 |
-| Gate A | Agent A Recover | 共享 occupant/result、Recover handler、TimelineGrid、Application 与对应 EditMode tests | Prompt review PASS | 已派发 |
+| Gate A | Agent A Recover | 共享 occupant/result、Recover handler、TimelineGrid、Application 与对应 EditMode tests | Prompt review PASS | 已完成并交回；40/40 Agent filter、Gate A 全量 107/107 |
 | Gate B | Agent B1 Built | 新 Built handler/test/report | Gate A 交回 | 待启动，可与 B2 并行 |
 | Gate B | Agent B2 Poison | 新 Poison handler/test/report | Gate A 交回 | 待启动，可与 B1 并行 |
 | Gate C | Agent C1 Clear Domain | TimelineGrid clear API、clear session、Application 与 EditMode tests | Gate B 集成 | 待启动 |

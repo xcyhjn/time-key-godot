@@ -95,7 +95,7 @@ namespace TimeKey.Domain
             var resolutionOrder = new List<TimelineSnapshotAction>(orderedActions.Count);
             var targetHpBefore = state.TargetHp;
             var enemyIntentResolved = false;
-            var effectResults = new List<TileEffectResult>();
+            var effectResults = new CardEffectResultBuffer();
 
             for (var index = 0; index < orderedActions.Count; index++)
             {
@@ -125,13 +125,14 @@ namespace TimeKey.Domain
                 enemyIntentResolved,
                 state.Seed,
                 resolutionOrder,
-                effectResults);
+                effectResults.TileResults,
+                effectResults.OccupantResults);
         }
 
         private void ApplyPlayerEffects(
             CombatSliceState state,
             TimelineAction action,
-            ICollection<TileEffectResult> effectResults)
+            CardEffectResultBuffer effectResults)
         {
             for (var effectIndex = 0; effectIndex < action.Effects.Count; effectIndex++)
             {
@@ -164,9 +165,15 @@ namespace TimeKey.Domain
 
             for (var index = 0; index < action.Effects.Count; index++)
             {
-                if (!_effectHandlers.ContainsKey(action.Effects[index].Kind))
+                var effect = action.Effects[index];
+                if (!_effectHandlers.TryGetValue(effect.Kind, out var handler))
                 {
-                    throw new UnsupportedCardEffectException(action.Effects[index].Kind);
+                    throw new UnsupportedCardEffectException(effect.Kind);
+                }
+
+                if (!handler.Supports(effect))
+                {
+                    throw new UnsupportedCardEffectException(effect);
                 }
             }
         }
@@ -176,7 +183,8 @@ namespace TimeKey.Domain
             return new ICardEffectHandler[]
             {
                 new DamageCardEffectHandler(),
-                new ElevationCardEffectHandler()
+                new ElevationCardEffectHandler(),
+                new RecoverCardEffectHandler()
             };
         }
 

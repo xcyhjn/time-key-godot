@@ -104,12 +104,30 @@ namespace TimeKey.Tests.EditMode
         public void TryPlace_UnsupportedTypedEffectFailsBeforeOccupyingTimeline()
         {
             var card = new CardDefinition(
-                "recover",
+                "poison",
                 3,
-                new[] { new CardEffect(CardEffectKind.Recover, 2) },
+                new[] { new CardEffect(CardEffectKind.Poison, 2) },
                 new[] { new HexCoord(0, 0) },
                 new[] { new TimelineCell(0, 0) });
             var action = TimelineAction.FromCard(card, "target", new TimelineCell(0, 0));
+            var grid = new TimelineGrid();
+
+            var exception = Assert.Throws<UnsupportedCardEffectException>(() => grid.TryPlace(action));
+
+            Assert.That(exception.Kind, Is.EqualTo(CardEffectKind.Poison));
+            Assert.That(grid.OccupiedCellCount, Is.Zero);
+        }
+
+        [Test]
+        public void TryPlace_InvalidRecoverPayloadFailsBeforeOccupyingTimeline()
+        {
+            var card = new CardDefinition(
+                "recover",
+                5,
+                new[] { new CardEffect(CardEffectKind.Recover, 0) },
+                new[] { new HexCoord(0, 0) },
+                new[] { new TimelineCell(0, 0) });
+            var action = TimelineAction.FromCard(card, "target", new HexCoord(0, 0), new TimelineCell(0, 0));
             var grid = new TimelineGrid();
 
             var exception = Assert.Throws<UnsupportedCardEffectException>(() => grid.TryPlace(action));
@@ -229,11 +247,16 @@ namespace TimeKey.Tests.EditMode
 
             public CardEffectKind Kind { get; }
 
+            public bool Supports(CardEffect effect)
+            {
+                return effect.Kind == Kind;
+            }
+
             public void Apply(
                 CombatSliceState state,
                 TimelineAction action,
                 CardEffect effect,
-                System.Collections.Generic.ICollection<TileEffectResult> effectResults)
+                CardEffectResultBuffer effectResults)
             {
             }
         }

@@ -189,6 +189,72 @@ namespace TimeKey.Editor
             Debug.Log("TIMEKEY_DECOUPLING_R3_HARNESS_PASS");
         }
 
+        [MenuItem("Time Key/Capture Remaining Cards Gate A")]
+        public static void CaptureRemainingCardsGateA()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+            {
+                throw new InvalidOperationException("The vertical slice scene could not be opened.");
+            }
+
+            var root = GameObject.Find("VerticalSliceRoot");
+            var controller = root == null ? null : root.GetComponent<VerticalSliceController>();
+            var composition = root == null ? null : root.GetComponent<CombatCompositionRoot>();
+            if (controller == null || composition == null)
+            {
+                throw new InvalidOperationException("The vertical slice root is incomplete.");
+            }
+
+            composition.Initialize();
+            controller.BuildSceneGraph();
+            ValidateScene(controller, composition);
+            controller.SetBoardView(32f);
+
+            var evidenceDirectory = GetRemainingCardsGateAEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var captures = new List<CaptureStats>();
+            if (!controller.SelectCard("recover"))
+            {
+                throw new InvalidOperationException("The RECOVER card could not be selected.");
+            }
+
+            controller.CardHandHost.ApplyVisualStateImmediate();
+            captures.Add(Capture(controller, evidenceDirectory, "recover-selected.png", 1280, 720));
+            if (!controller.SelectTarget(VerticalSliceController.TargetId))
+            {
+                throw new InvalidOperationException("The recover target could not be selected.");
+            }
+
+            captures.Add(Capture(controller, evidenceDirectory, "recover-targeted.png", 1280, 720));
+            if (!controller.PreviewTimelineSelected(0, 0))
+            {
+                throw new InvalidOperationException("The recover timeline preview was not legal.");
+            }
+
+            captures.Add(Capture(controller, evidenceDirectory, "recover-timeline-valid.png", 1280, 720));
+            if (!controller.TryPlaceSelected(0, 0))
+            {
+                throw new InvalidOperationException("The recover action could not be committed.");
+            }
+
+            captures.Add(Capture(controller, evidenceDirectory, "recover-before-resolve.png", 1280, 720));
+            var snapshot = controller.ResolveTimeline();
+            if (snapshot.OccupantEffectResults.Count != 1 ||
+                snapshot.OccupantEffectResults[0].EffectKind != CardEffectKind.Recover ||
+                snapshot.OccupantEffectResults[0].Before.Hp != 10 ||
+                snapshot.OccupantEffectResults[0].After.Hp != 100 ||
+                controller.CurrentTargetHp != 100)
+            {
+                throw new InvalidOperationException("Recover did not resolve from 10 HP to 100 HP.");
+            }
+
+            captures.Add(Capture(controller, evidenceDirectory, "recover-after-resolve.png", 1280, 720));
+            WriteRemainingCardsGateASummary(evidenceDirectory, captures);
+            Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_A_CAPTURE_PASS");
+        }
+
         private static void ValidateScene(
             VerticalSliceController controller,
             CombatCompositionRoot composition)
@@ -349,6 +415,44 @@ namespace TimeKey.Editor
                 "04-verification",
                 "evidence",
                 "unity-decoupling-r3");
+        }
+
+        private static string GetRemainingCardsGateAEvidenceDirectory()
+        {
+            var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
+            if (string.IsNullOrWhiteSpace(repositoryRoot))
+            {
+                repositoryRoot = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", ".."));
+            }
+
+            return Path.Combine(
+                repositoryRoot,
+                "docs",
+                "migration",
+                "unity-3d",
+                "04-verification",
+                "evidence",
+                "remaining-cards-gate-a");
+        }
+
+        private static void WriteRemainingCardsGateASummary(
+            string directory,
+            IReadOnlyList<CaptureStats> captures)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"card\": \"recover\",");
+            builder.AppendLine("  \"targetHpBefore\": 10,");
+            builder.AppendLine("  \"targetHpAfter\": 100,");
+            builder.AppendLine("  \"screenshots\": [");
+            for (var index = 0; index < captures.Count; index++)
+            {
+                AppendCapture(builder, captures[index], index < captures.Count - 1);
+            }
+            builder.AppendLine("  ]");
+            builder.AppendLine("}");
+            File.WriteAllText(Path.Combine(directory, "gate-a-summary.json"), builder.ToString());
         }
 
         private static void WriteSummary(

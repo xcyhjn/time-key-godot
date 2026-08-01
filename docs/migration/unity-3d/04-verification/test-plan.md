@@ -1,6 +1,6 @@
 # Unity 战斗切片与解耦阶段测试计划
 
-> 状态：解耦 R3 全部门禁已通过
+> 状态：Remaining Cards Gate A 已通过，Gate B 待执行
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
@@ -63,6 +63,9 @@
 | 解耦 R3 Harness/build | 场景验证通过，14 张 PNG 生成并通过像素门禁，Windows build `Succeeded`、`206747014` bytes | `evidence/unity-decoupling-r3/harness-summary.json` |
 | 解耦 R3 Windows Player | 退出码 0，运行日志包含 `TIMEKEY_PLAYER_SMOKE_PASS`；原始日志按规则不入 Git | `evidence/unity-decoupling-r3/verification-summary.md` |
 | 解耦 R3 人工视觉审查 | 七卡在 1280/1920/2560 三视口完整可见；四向范围、valid/invalid 时间轴与 earthquake 前后均通过 | `evidence/unity-decoupling-r3/*.png` |
+| Remaining Cards Gate A EditMode | `107/107`，0 失败、0 跳过；Recover 与完整既有领域/应用/基础设施回归 | `evidence/remaining-cards-gate-a/editmode-results.xml` |
+| Remaining Cards Gate A PlayMode | Recover 真实 Scene 公共路径 `1/1`，0 失败 | `evidence/remaining-cards-gate-a/playmode-results.xml` |
+| Remaining Cards Gate A 视觉 | 5 张 1280x720 PNG；卡面、目标、三格 Timeline、提交前与 10→100 结算后人工通过 | `evidence/remaining-cards-gate-a/verification-summary.md` |
 
 ## Wave 02B1 计划门禁
 
@@ -127,3 +130,5 @@ R3 结构化证据位于 `evidence/unity-decoupling-r3/`。旧切片结果保留
 - Catalog/Hand：七 ID/原图/配置顺序、同一 CardView Prefab、单选/右键/drag、重复 Build 无复制；三视口检查中间卡 selected/drag 风险。
 - Scene/Prefab：Play 前稳定对象存在；Tower/Poison/CardView/TimelineCell 来自 Prefab；Inspector 引用完整且运行时不覆盖布局。
 - 最终：full EditMode、full PlayMode、harness、Windows build、Player smoke；1280x720、1920x1080、2560x1080 与 yaw 0/90/180/270 人工开图。
+
+Gate A 已完成上述 Recover 矩阵：全量 EditMode `107/107`、公共 Scene PlayMode `1/1`、启用图形设备的 Editor Harness 与 5 张人工检查截图全部通过；Controller 零 diff。Built/Poison/Clear 仍按后续门禁执行。

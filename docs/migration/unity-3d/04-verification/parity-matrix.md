@@ -22,7 +22,7 @@
 | 时间轴 | 12×3，按列再按行 | 相同，冲突/边界受测 | 等价 | EditMode XML |
 | 雷击效果 | damage 100 | 10 HP 目标钳制为 0 | 等价 | snapshot 测试 + resolved PNG |
 | 地震效果 | 目标中心与六邻格 `elevation +2`；Godot 层高间隔为 `0.32` | 七个有效柱各新增两个独立 mesh/renderer/collider block，顶面与 occupant anchor 上移 `0.64` | 等价 | `evidence/unity-decoupling-r3/earthquake-before-1920x1080.png`、`earthquake-after-1920x1080.png` + PlayMode |
-| Recover | `+100`，Resolve 重查当前 occupant，钳制 MaxHP | Gate A 实现中；冻结为稳定 ID+HexCoord 重判和 typed before/after | 待验证 | `agents/reports/remaining-cards-source-semantics.md` |
+| Recover | `+100`，Resolve 重查当前 occupant，钳制 MaxHP | 稳定 ID+HexCoord 选择与 Resolve 重判；HP=0 可恢复，满血/消失/替换 no-op，10→100 并输出 typed before/after | 等价 | `evidence/remaining-cards-gate-a/editmode-results.xml`、`playmode-results.xml`、5 张 PNG |
 | Built/Tower | 空地创建 Middle Tower，HP100；同结束回合 decay 属于下一波 | Gate B 待实现原 Tower billboard Prefab 与 Neutral HP100 occupant；本阶段不 decay | 待验证 | `agents/reports/remaining-cards-asset-ui-audit.md` |
 | Poison | 活体 +2，无上限累加；回合开始 tick 属于下一波 | Gate B 待实现 typed stacks 与原 poison icon+层数；本阶段不 tick | 待验证 | `agents/reports/remaining-cards-source-semantics.md` |
 | Wind/Tornado clear | 无地图目标；2x2/12x1 mask；空清；任一格命中整 action 删除 | Gate C 待实现独立 clear session、identity 去重和三态预览 | 待验证 | `agents/reports/remaining-cards-unity-extension-audit.md` |
@@ -34,4 +34,4 @@
 | 胜负/奖励/返回 | 可进入奖励与局外返回路径 | 非首切片目标 | 未实现 | source map |
 | 视觉 | 2D 像素/UI；1920 基线且 1280 菜单可读 | Blender 低多边形地块 + 原建筑 billboard + uGUI；1280/1920/2560 七卡、四向范围和结算前后均可读 | 允许差异 | `evidence/unity-decoupling-r3/` 的 14 张 PNG + 3 张 Blender PNG |
 
-判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1/R2/R3 已关闭；Remaining Cards Gate 0 已通过，Gate A 实现中。Tower decay、Poison tick 与敌方/建筑行动留给 02B3，牌库/回合资源/胜负留给 02B4，局外保持原状。
+判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1、Wave 02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate A 已关闭。Tower decay、Poison tick 与敌方/建筑行动留给 02B3，牌库/回合资源/胜负留给 02B4，局外保持原状。
