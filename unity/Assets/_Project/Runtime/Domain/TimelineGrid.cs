@@ -64,6 +64,48 @@ namespace TimeKey.Domain
             return true;
         }
 
+        public TimelineClearPreview PreviewClear(TimelineCell origin, CardEffect clearEffect)
+        {
+            EnsureClearEffect(clearEffect);
+            return BuildClearPreview(origin, clearEffect, out _);
+        }
+
+        public TimelineClearResult TryClear(TimelineCell origin, CardEffect clearEffect)
+        {
+            EnsureClearEffect(clearEffect);
+            var preview = BuildClearPreview(origin, clearEffect, out var hitActions);
+            if (!preview.IsInBounds)
+            {
+                return new TimelineClearResult(
+                    false,
+                    preview,
+                    Array.Empty<TimelineClearActionSnapshot>(),
+                    0);
+            }
+
+            var removedActions = new List<TimelineClearActionSnapshot>(hitActions.Count);
+            var removedCellCount = 0;
+            for (var actionIndex = 0; actionIndex < hitActions.Count; actionIndex++)
+            {
+                var action = hitActions[actionIndex];
+                removedActions.Add(new TimelineClearActionSnapshot(action));
+                for (var shapeIndex = 0; shapeIndex < action.Shape.Count; shapeIndex++)
+                {
+                    var cell = action.Origin + action.Shape[shapeIndex];
+                    if (_cells.TryGetValue(cell, out var occupyingAction) &&
+                        ReferenceEquals(occupyingAction, action))
+                    {
+                        _cells.Remove(cell);
+                        removedCellCount++;
+                    }
+                }
+
+                _placedActions.Remove(action);
+            }
+
+            return new TimelineClearResult(true, preview, removedActions, removedCellCount);
+        }
+
         private bool IsPlacementValid(TimelineAction action)
         {
             if (action == null || _placedActions.Contains(action))
@@ -188,6 +230,75 @@ namespace TimeKey.Domain
                 new BuiltCardEffectHandler(),
                 new PoisonCardEffectHandler()
             };
+        }
+
+        private TimelineClearPreview BuildClearPreview(
+            TimelineCell origin,
+            CardEffect clearEffect,
+            out List<TimelineAction> hitActions)
+        {
+            var cells = new List<TimelineClearCellPreview>(clearEffect.ClearMask.Count);
+            hitActions = new List<TimelineAction>();
+            var hitActionSet = new HashSet<TimelineAction>();
+            var snapshots = new Dictionary<TimelineAction, TimelineClearActionSnapshot>();
+            var isInBounds = true;
+
+            for (var index = 0; index < clearEffect.ClearMask.Count; index++)
+            {
+                var cell = origin + clearEffect.ClearMask[index];
+                if (!Contains(cell))
+                {
+                    isInBounds = false;
+                    cells.Add(new TimelineClearCellPreview(
+                        cell,
+                        TimelineClearCellState.OutOfBounds,
+                        null));
+                    continue;
+                }
+
+                if (!_cells.TryGetValue(cell, out var action))
+                {
+                    cells.Add(new TimelineClearCellPreview(
+                        cell,
+                        TimelineClearCellState.Empty,
+                        null));
+                    continue;
+                }
+
+                if (!snapshots.TryGetValue(action, out var snapshot))
+                {
+                    snapshot = new TimelineClearActionSnapshot(action);
+                    snapshots.Add(action, snapshot);
+                }
+
+                if (hitActionSet.Add(action))
+                {
+                    hitActions.Add(action);
+                }
+
+                cells.Add(new TimelineClearCellPreview(
+                    cell,
+                    TimelineClearCellState.Occupied,
+                    snapshot));
+            }
+
+            var hitActionSnapshots = new List<TimelineClearActionSnapshot>(hitActions.Count);
+            for (var index = 0; index < hitActions.Count; index++)
+            {
+                hitActionSnapshots.Add(snapshots[hitActions[index]]);
+            }
+
+            return new TimelineClearPreview(origin, isInBounds, cells, hitActionSnapshots);
+        }
+
+        private static void EnsureClearEffect(CardEffect clearEffect)
+        {
+            if (clearEffect.Kind != CardEffectKind.Clear || clearEffect.ClearMask.Count == 0)
+            {
+                throw new ArgumentException(
+                    "Timeline clear requires a typed Clear effect with a non-empty mask.",
+                    nameof(clearEffect));
+            }
         }
 
         private bool Contains(TimelineCell cell)

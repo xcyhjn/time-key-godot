@@ -11,6 +11,7 @@ namespace TimeKey.Presentation.Presenters
     public sealed class TimelinePresenter : MonoBehaviour
     {
         [SerializeField] private TimelinePlacementPreview timelinePreview = null;
+        [SerializeField] private ClearTimelinePreview clearTimelinePreview = null;
         [SerializeField] private List<TimelineCellView> timelineCells =
             new List<TimelineCellView>();
 
@@ -40,6 +41,7 @@ namespace TimeKey.Presentation.Presenters
                 var cell = timelineCells[index];
                 _cellsByCoordinate.Add(cell.Coordinate, cell);
                 timelinePreview.Register(cell.Coordinate, cell.Graphic);
+                clearTimelinePreview.Register(cell.Coordinate, cell);
                 cell.Clicked += HandleTimelineSelected;
                 cell.PointerEntered += HandleTimelinePreviewRequested;
                 cell.PointerExited += HandleTimelinePreviewCleared;
@@ -80,6 +82,15 @@ namespace TimeKey.Presentation.Presenters
             }
 
             ValidateDependencies();
+            if (state.InteractionMode == CombatInteractionMode.TimelineClear &&
+                state.ClearPreview != null)
+            {
+                timelinePreview.Clear();
+                clearTimelinePreview.Show(state.ClearPreview);
+                return;
+            }
+
+            clearTimelinePreview.Clear();
             if (state.Phase != CombatSessionPhase.TimelinePreview ||
                 state.SelectedCard == null ||
                 !state.TimelineOrigin.HasValue)
@@ -133,11 +144,46 @@ namespace TimeKey.Presentation.Presenters
         {
             ValidateDependencies();
             timelinePreview.Clear();
+            clearTimelinePreview.Clear();
+        }
+
+        public void ApplyClearResult(TimelineClearResult result)
+        {
+            if (result == null)
+            {
+                throw new ArgumentNullException(nameof(result));
+            }
+
+            if (!result.Succeeded)
+            {
+                return;
+            }
+
+            if (!_isBound)
+            {
+                Bind();
+            }
+
+            ClearPreview();
+            for (var actionIndex = 0; actionIndex < result.RemovedActions.Count; actionIndex++)
+            {
+                var action = result.RemovedActions[actionIndex];
+                for (var cellIndex = 0; cellIndex < action.OccupiedCells.Count; cellIndex++)
+                {
+                    if (_cellsByCoordinate.TryGetValue(action.OccupiedCells[cellIndex], out var cell))
+                    {
+                        cell.ClearContent();
+                    }
+                }
+            }
         }
 
         private void OnEnable()
         {
-            if (timelinePreview != null && timelineCells != null && timelineCells.Count > 0)
+            if (timelinePreview != null &&
+                clearTimelinePreview != null &&
+                timelineCells != null &&
+                timelineCells.Count > 0)
             {
                 Bind();
             }
@@ -150,6 +196,11 @@ namespace TimeKey.Presentation.Presenters
             {
                 timelinePreview.Clear();
             }
+
+            if (clearTimelinePreview != null)
+            {
+                clearTimelinePreview.Clear();
+            }
         }
 
         private void ValidateDependencies()
@@ -158,6 +209,12 @@ namespace TimeKey.Presentation.Presenters
             {
                 throw new InvalidOperationException(
                     name + " is missing serialized timelinePreview reference.");
+            }
+
+            if (clearTimelinePreview == null)
+            {
+                throw new InvalidOperationException(
+                    name + " is missing serialized clearTimelinePreview reference.");
             }
 
             if (timelineCells == null || timelineCells.Count == 0)

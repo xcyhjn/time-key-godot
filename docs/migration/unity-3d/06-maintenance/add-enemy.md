@@ -10,6 +10,8 @@
 
 Gate B 新增的 Tower 是 `CombatAttitude.Neutral` occupant 与表现 Prefab，不是敌人；本阶段没有 Tower decay、意图生成或行动。可以复用它验证 occupant identity/result/anchor，但不得把它当成敌人系统已实现的证据。
 
+Gate C 证明 Clear 对 `TimelineActorKind.Player/Enemy` 都不做过滤：mask 命中任一敌方意图占格时会移除完整 action。这只证明时间轴 action identity 规则，不代表敌人生成、目标、伤害或生命周期已经实现。
+
 这是 MIG-002 冻结的源行为，不是完整敌人系统。在 Godot 玩法波次明确敌人意图命令前，不得在 Unity 中自行发明敌人伤害、AI 或章节奖励。
 
 ## Godot 权威参考

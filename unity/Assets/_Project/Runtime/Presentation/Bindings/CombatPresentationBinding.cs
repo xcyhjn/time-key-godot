@@ -114,6 +114,12 @@ namespace TimeKey.Presentation.Bindings
             timelinePresenter.ClearPreview();
         }
 
+        public void ApplyTimelineClearResult(TimelineClearResult result)
+        {
+            ValidateDependencies();
+            timelinePresenter.ApplyClearResult(result);
+        }
+
         public void RegisterOccupantColumn(HexCoord coordinate, HexTileColumn column)
         {
             ValidateDependencies();

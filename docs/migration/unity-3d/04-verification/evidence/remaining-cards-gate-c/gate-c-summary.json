@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "windMaskCells": 4,
+  "windRemovedActions": 1,
+  "tornadoMaskCells": 12,
+  "tornadoRemovedActions": 0,
+  "screenshots": [
+    {"file": "wind-selected.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "wind-clear-invalid.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "wind-clear-hit.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "wind-after-cancel.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "wind-after-clear.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "tornado-selected.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "tornado-clear-invalid.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "tornado-clear-empty.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "tornado-after-empty-clear.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600}
+  ]
+}

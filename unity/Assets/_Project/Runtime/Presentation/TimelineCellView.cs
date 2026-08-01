@@ -13,6 +13,13 @@ namespace TimeKey.Presentation
         [SerializeField] private int row;
         [SerializeField] private Button button = null;
         [SerializeField] private Text label = null;
+        [SerializeField] private bool hasDefaultAppearance;
+        [SerializeField] private Color defaultColor = Color.white;
+        [SerializeField] private string defaultText = string.Empty;
+
+        private bool _defaultAppearanceCaptured;
+        private Color _defaultColor;
+        private string _defaultText;
 
         public event Action<TimelineCell> Clicked;
 
@@ -25,6 +32,10 @@ namespace TimeKey.Presentation
         public Button Button => button;
 
         public Graphic Graphic => button == null ? null : button.targetGraphic;
+
+        public Color DisplayColor => Graphic == null ? default : Graphic.color;
+
+        public string DisplayText => label == null ? null : label.text;
 
         public void SetContent(string value, Color color)
         {
@@ -41,6 +52,38 @@ namespace TimeKey.Presentation
             colors.pressedColor = new Color(0.72f, 0.82f, 0.86f, 1f);
             colors.disabledColor = new Color(0.42f, 0.44f, 0.45f, 0.75f);
             button.colors = colors;
+        }
+
+        public void SetPreviewContent(string value, Color color)
+        {
+            if (button == null || label == null)
+            {
+                throw new InvalidOperationException(name + " has incomplete serialized timeline-cell references.");
+            }
+
+            label.text = value;
+            button.targetGraphic.color = color;
+        }
+
+        public void ClearContent()
+        {
+            CaptureDefaultAppearance();
+            SetContent(_defaultText, _defaultColor);
+        }
+
+        public void CaptureCurrentAsDefault()
+        {
+            if (button == null || button.targetGraphic == null || label == null)
+            {
+                throw new InvalidOperationException(name + " has incomplete serialized timeline-cell references.");
+            }
+
+            defaultColor = button.targetGraphic.color;
+            defaultText = label.text;
+            hasDefaultAppearance = true;
+            _defaultColor = defaultColor;
+            _defaultText = defaultText;
+            _defaultAppearanceCaptured = true;
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -62,6 +105,7 @@ namespace TimeKey.Presentation
 
             button.onClick.RemoveListener(RaiseClicked);
             button.onClick.AddListener(RaiseClicked);
+            CaptureDefaultAppearance();
         }
 
         private void OnDisable()
@@ -75,6 +119,18 @@ namespace TimeKey.Presentation
         private void RaiseClicked()
         {
             Clicked?.Invoke(Coordinate);
+        }
+
+        private void CaptureDefaultAppearance()
+        {
+            if (_defaultAppearanceCaptured || button == null || button.targetGraphic == null || label == null)
+            {
+                return;
+            }
+
+            _defaultColor = hasDefaultAppearance ? defaultColor : button.targetGraphic.color;
+            _defaultText = hasDefaultAppearance ? defaultText : label.text;
+            _defaultAppearanceCaptured = true;
         }
     }
 }

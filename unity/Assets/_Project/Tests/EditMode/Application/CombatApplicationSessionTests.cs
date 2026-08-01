@@ -311,6 +311,139 @@ namespace TimeKey.Tests.EditMode.Application
         }
 
         [Test]
+        public void WindClear_SelectsNoMapTargetPreviewsThreeStatesAndCommitsImmediately()
+        {
+            var session = CreateSession(out var grid, out _);
+
+            var selected = session.SelectCard("wind");
+
+            Assert.That(selected.Succeeded, Is.True);
+            Assert.That(selected.RequiredTargetKind, Is.Null);
+            Assert.That(selected.InteractionMode, Is.EqualTo(CombatInteractionMode.TimelineClear));
+            Assert.That(session.Current.InteractionMode, Is.EqualTo(CombatInteractionMode.TimelineClear));
+            Assert.That(session.Current.Target, Is.Null);
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForTile(new HexCoord(0, 0))).Failure,
+                Is.EqualTo(CombatCommandFailure.InteractionModeMismatch));
+            Assert.That(
+                session.PreviewTimeline(new TimelineCell(2, 0)).Failure,
+                Is.EqualTo(CombatCommandFailure.InteractionModeMismatch));
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+
+            var preview = session.PreviewClear(new TimelineCell(2, 0));
+
+            Assert.That(preview.Succeeded, Is.True);
+            Assert.That(preview.IsPlacementValid, Is.True);
+            Assert.That(preview.ClearPreview.IsInBounds, Is.True);
+            Assert.That(preview.ClearPreview.Cells, Has.Count.EqualTo(4));
+            Assert.That(
+                preview.ClearPreview.Cells.Count(cell =>
+                    cell.State == TimelineClearCellState.Occupied),
+                Is.EqualTo(1));
+            Assert.That(preview.ClearPreview.HitActions, Has.Count.EqualTo(1));
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+
+            var committed = session.CommitClear();
+
+            Assert.That(committed.Succeeded, Is.True);
+            Assert.That(committed.PhaseAfter, Is.EqualTo(CombatSessionPhase.Resolved));
+            Assert.That(committed.InteractionMode, Is.EqualTo(CombatInteractionMode.TimelineClear));
+            Assert.That(committed.ClearResult.Succeeded, Is.True);
+            Assert.That(committed.ClearResult.RemovedActions, Has.Count.EqualTo(1));
+            Assert.That(committed.ClearResult.RemovedActions[0].CardId, Is.EqualTo("enemy-intent"));
+            Assert.That(session.Current.SelectedCard, Is.Null);
+            Assert.That(session.Current.InteractionMode, Is.Null);
+            Assert.That(session.Current.LastClearResult, Is.SameAs(committed.ClearResult));
+            Assert.That(grid.OccupiedCellCount, Is.Zero);
+            Assert.That(
+                session.ResolveTimeline().Failure,
+                Is.EqualTo(CombatCommandFailure.AlreadyResolved));
+        }
+
+        [Test]
+        public void TornadoClear_UsesTypedTwelveByOneMaskAndClearsEnemyIntent()
+        {
+            var session = CreateSession(out var grid, out _);
+            Assert.That(session.SelectCard("tornado").Succeeded, Is.True);
+
+            var preview = session.PreviewClear(new TimelineCell(0, 0));
+            var committed = session.CommitClear();
+
+            Assert.That(preview.Succeeded, Is.True);
+            Assert.That(preview.ClearPreview.Cells, Has.Count.EqualTo(12));
+            Assert.That(preview.ClearPreview.HitActions, Has.Count.EqualTo(1));
+            Assert.That(committed.Succeeded, Is.True);
+            Assert.That(committed.ClearResult.RemovedActions, Has.Count.EqualTo(1));
+            Assert.That(committed.ClearResult.RemovedCellCount, Is.EqualTo(1));
+            Assert.That(grid.OccupiedCellCount, Is.Zero);
+        }
+
+        [Test]
+        public void ClearOutOfBoundsAndCancelArePureWhileRepeatedPreviewStaysDeterministic()
+        {
+            var session = CreateSession(out var grid, out _);
+            Assert.That(session.SelectCard("wind").Succeeded, Is.True);
+
+            var first = session.PreviewClear(new TimelineCell(11, 1));
+            var repeated = session.PreviewClear(new TimelineCell(11, 1));
+            var commit = session.CommitClear();
+
+            Assert.That(first.Failure, Is.EqualTo(CombatCommandFailure.InvalidTimelinePlacement));
+            Assert.That(repeated.Failure, Is.EqualTo(CombatCommandFailure.InvalidTimelinePlacement));
+            Assert.That(
+                repeated.ClearPreview.Cells.Select(cell => cell.State),
+                Is.EqualTo(first.ClearPreview.Cells.Select(cell => cell.State)));
+            Assert.That(commit.Failure, Is.EqualTo(CombatCommandFailure.InvalidTimelinePlacement));
+            Assert.That(commit.ClearResult.Succeeded, Is.False);
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+
+            var cancelled = session.CancelCard();
+            var repeatedCancel = session.CancelCard();
+
+            Assert.That(cancelled.Succeeded, Is.True);
+            Assert.That(repeatedCancel.Succeeded, Is.True);
+            Assert.That(session.Current.Phase, Is.EqualTo(CombatSessionPhase.Cancelled));
+            Assert.That(session.Current.ClearPreview, Is.Null);
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void EmptyClearSucceedsWithoutOrdinaryCommitOrResolve()
+        {
+            var grid = new TimelineGrid();
+            var session = new CombatApplicationSession(
+                new TestCardCatalog(new[] { CreateWind() }),
+                new CombatSliceState("target-01", 10, 731, CreateSevenTileBoard()),
+                grid);
+
+            Assert.That(session.SelectCard("wind").Succeeded, Is.True);
+            Assert.That(session.PreviewClear(new TimelineCell(4, 1)).Succeeded, Is.True);
+            var committed = session.CommitClear();
+
+            Assert.That(committed.Succeeded, Is.True);
+            Assert.That(committed.ClearResult.RemovedActions, Is.Empty);
+            Assert.That(committed.ClearResult.RemovedCellCount, Is.Zero);
+            Assert.That(session.Current.Phase, Is.EqualTo(CombatSessionPhase.Resolved));
+            Assert.That(grid.OccupiedCellCount, Is.Zero);
+        }
+
+        [Test]
+        public void OrdinaryCardRejectsClearCommandsWithoutChangingItsSession()
+        {
+            var session = CreateSession(out var grid, out _);
+            Assert.That(session.SelectCard("lighting").Succeeded, Is.True);
+
+            var preview = session.PreviewClear(new TimelineCell(0, 0));
+            var commit = session.CommitClear();
+
+            Assert.That(preview.Failure, Is.EqualTo(CombatCommandFailure.InteractionModeMismatch));
+            Assert.That(commit.Failure, Is.EqualTo(CombatCommandFailure.InteractionModeMismatch));
+            Assert.That(session.Current.Phase, Is.EqualTo(CombatSessionPhase.CardSelected));
+            Assert.That(session.Current.InteractionMode, Is.EqualTo(CombatInteractionMode.OrdinaryTimeline));
+            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+        }
+
+        [Test]
         public void InvalidCommandOrderReturnsStructuredFailuresWithoutMutation()
         {
             var session = CreateSession(out var grid, out var sink);
@@ -624,7 +757,9 @@ namespace TimeKey.Tests.EditMode.Application
                 CreateEarthquake(),
                 CreateRecover(),
                 CreatePoison(),
-                CreateBuilt()
+                CreateBuilt(),
+                CreateWind(),
+                CreateTornado()
             });
         }
 
@@ -701,6 +836,42 @@ namespace TimeKey.Tests.EditMode.Application
                     new TimelineCell(1, 1),
                     new TimelineCell(2, 1)
                 });
+        }
+
+        private static CardDefinition CreateWind()
+        {
+            return new CardDefinition(
+                "wind",
+                4,
+                new[]
+                {
+                    new CardEffect(CardEffectKind.Clear, new[]
+                    {
+                        new TimelineCell(0, 0),
+                        new TimelineCell(1, 0),
+                        new TimelineCell(0, 1),
+                        new TimelineCell(1, 1)
+                    })
+                },
+                new[] { new HexCoord(0, 0) },
+                Array.Empty<TimelineCell>());
+        }
+
+        private static CardDefinition CreateTornado()
+        {
+            return new CardDefinition(
+                "tornado",
+                8,
+                new[]
+                {
+                    new CardEffect(
+                        CardEffectKind.Clear,
+                        Enumerable.Range(0, 12)
+                            .Select(x => new TimelineCell(x, 0))
+                            .ToArray())
+                },
+                new[] { new HexCoord(0, 0) },
+                Array.Empty<TimelineCell>());
         }
 
         private static CombatBoardState CreateSevenTileBoard()

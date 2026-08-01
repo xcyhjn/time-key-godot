@@ -1,6 +1,6 @@
 # 添加卡牌效果
 
-> 状态：当前普通时间轴已注册 `Damage`、`Elevation`、`Recover`、`Built` 与 `Poison`；`Clear` 使用后续独立会话
+> 状态：普通时间轴已注册 `Damage`、`Elevation`、`Recover`、`Built`、`Poison`；`Clear` 使用已验证的独立会话
 
 ## 最小修改面
 
@@ -9,6 +9,8 @@
 3. 在 `CombatApplicationSession.TryGetRequiredTargetKind` 定义 entity/tile 目标策略。这里按 effect kind 分支是用例策略；禁止在 Controller/Presenter 按 stable ID 分支。
 4. 在 `CardEffectRegistrationCatalog` 注册已真正支持的 kind。只更新枚举或 JSON 而没有 handler 时必须保持 `UnsupportedEffect`。
 5. 让 Composition 注入所需 handler/状态；Presenter 只消费 session view 与结果。若现有通用颜色/标签足够，不新增卡牌专属 View 代码。
+
+Clear 不走普通 handler/target/Resolve 步骤：在 `TimelineGrid.PreviewClear/TryClear` 增加纯 mask 规则，由 `TimelineClearSession` 管理 Preview/Commit/Cancel，再由 Application 暴露 `TimelineClearPreview/Result`。View 只能读取逐格状态与 `RemovedActions[].OccupiedCells`，不得扫描 UI label 推断占用或 action identity。
 
 ## 测试与调试
 
@@ -23,3 +25,5 @@ Trace 的 `resolve-effect` 条目应包含 kind、before、after。逻辑错误�
 `Built tower,1` 只在真实空 tile Resolve 时创建一个 Neutral HP100 occupant，结果为 `Before=null, After=tower`；`Poison +2` 只对仍存活且支持状态的 stable occupant 累加 stacks。两者共用 `CombatOccupantState` 和 `CardEffectResultBuffer`；Presentation 只消费 snapshot。Tower 生命周期和 Poison tick 不属于“添加效果”步骤，必须由回合/意图阶段另行实现。
 
 Inspector 只应新增真实需要的 Prefab/Presenter 引用，不把 handler 做成场景对象。回滚按 adapter、Domain handler、Application target policy、registration、测试/表现的单一切片撤销；不得留下已注册但无实现的效果。
+
+Clear 三态表现的已验证约定是：空格天蓝 `○`、命中绿色 `HIT`、越界红色 `!`；颜色外必须保留 marker/边框冗余。`TimelineCellView` 默认文字/颜色由 Scene authoring 显式保存，Clear/Cancel 后恢复，不依赖 `Awake/OnEnable` 执行顺序。

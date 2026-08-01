@@ -461,15 +461,41 @@ namespace TimeKey.Presentation
         {
             EnsureBuilt();
             var current = _applicationSession.Current;
-            if (current.SelectedCard == null ||
-                !current.Target.HasValue ||
-                current.Phase == CombatSessionPhase.Committed)
+            if (current.SelectedCard == null || current.Phase == CombatSessionPhase.Committed)
             {
                 return false;
             }
 
             var cell = new TimelineCell(column, row);
             var card = current.SelectedCard;
+            if (current.InteractionMode == CombatInteractionMode.TimelineClear)
+            {
+                var clearPreview = _applicationSession.PreviewClear(cell);
+                RefreshPresentation();
+                if (!clearPreview.Succeeded || !clearPreview.IsPlacementValid)
+                {
+                    return false;
+                }
+
+                var clearCommit = _applicationSession.CommitClear();
+                if (!clearCommit.Succeeded || clearCommit.ClearResult == null)
+                {
+                    SetStatus(card.StableId + " could not clear the timeline.");
+                    return false;
+                }
+
+                presentationBinding.ApplyTimelineClearResult(clearCommit.ClearResult);
+                SetHandCardsActive(false);
+                BoardCamera.InputEnabled = true;
+                RefreshPresentation();
+                return true;
+            }
+
+            if (!current.Target.HasValue)
+            {
+                return false;
+            }
+
             var preview = _applicationSession.PreviewTimeline(cell);
             RefreshPresentation();
             if (!preview.Succeeded || !preview.IsPlacementValid)
@@ -499,14 +525,24 @@ namespace TimeKey.Presentation
         {
             EnsureBuilt();
             var current = _applicationSession.Current;
-            if (current.SelectedCard == null ||
-                !current.Target.HasValue ||
-                current.Phase == CombatSessionPhase.Committed)
+            if (current.SelectedCard == null || current.Phase == CombatSessionPhase.Committed)
             {
                 return false;
             }
 
             var cell = new TimelineCell(column, row);
+            if (current.InteractionMode == CombatInteractionMode.TimelineClear)
+            {
+                var clearTransition = _applicationSession.PreviewClear(cell);
+                RefreshPresentation();
+                return clearTransition.Succeeded && clearTransition.IsPlacementValid;
+            }
+
+            if (!current.Target.HasValue)
+            {
+                return false;
+            }
+
             var transition = _applicationSession.PreviewTimeline(cell);
             RefreshPresentation();
             return transition.Succeeded && transition.IsPlacementValid;

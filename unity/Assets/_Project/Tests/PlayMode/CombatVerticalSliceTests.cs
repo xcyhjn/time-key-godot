@@ -5,6 +5,7 @@ using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Occupants;
+using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -228,6 +229,59 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
                 Is.EqualTo("TARGET-01  |  POISON 2"));
+        }
+
+        [UnityTest]
+        public IEnumerator Wind_PublicScenePathClearsCompleteEnemyActionWithoutMapTarget()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(controller.SelectCard("wind"), Is.True);
+            Assert.That(controller.SelectedCardId, Is.EqualTo("wind"));
+            Assert.That(controller.PreviewTimelineSelected(1, 0), Is.True);
+            Assert.That(
+                GameObject.Find("TargetStatus").GetComponent<Text>().text,
+                Is.EqualTo("CLEAR  |  HITS 1"));
+            Assert.That(GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText,
+                Is.EqualTo("HIT"));
+
+            Assert.That(controller.TryPlaceSelected(1, 0), Is.True);
+
+            Assert.That(controller.TimelineOccupiedCellCount, Is.Zero);
+            Assert.That(GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText,
+                Is.EqualTo("03"));
+            Assert.That(
+                GameObject.Find("TargetStatus").GetComponent<Text>().text,
+                Is.EqualTo("CLEAR  |  REMOVED 1"));
+            Assert.That(GameObject.Find("Resolve").GetComponent<Button>().interactable, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator Tornado_PublicScenePathShowsOutOfBoundsThenCompletesLegalEmptyClear()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            var clearPreview = Object.FindFirstObjectByType<ClearTimelinePreview>();
+
+            Assert.That(controller.SelectCard("tornado"), Is.True);
+            Assert.That(controller.PreviewTimelineSelected(1, 0), Is.False);
+            Assert.That(clearPreview.IsInBounds, Is.False);
+            Assert.That(GameObject.Find("Slot-1-0").GetComponent<TimelineCellView>().DisplayText,
+                Is.EqualTo("!"));
+            Assert.That(
+                GameObject.Find("Status").GetComponent<Text>().text,
+                Is.EqualTo("CLEAR POSITION OUT OF BOUNDS"));
+
+            Assert.That(controller.PreviewTimelineSelected(0, 0), Is.True);
+            Assert.That(clearPreview.ActiveCoordinates.Count, Is.EqualTo(12));
+            Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
+
+            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
+            Assert.That(
+                GameObject.Find("TargetStatus").GetComponent<Text>().text,
+                Is.EqualTo("CLEAR  |  REMOVED 0"));
         }
 
         [UnityTest]

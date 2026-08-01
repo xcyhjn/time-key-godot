@@ -1,6 +1,6 @@
-# 添加普通卡牌
+# 添加卡牌
 
-> 适用范围：复用已注册效果的普通时间轴卡；Clear 仍属于后续独立会话切片
+> 适用范围：复用已注册效果的普通时间轴卡或独立即时 Clear 卡
 
 ## 最小修改面
 
@@ -10,6 +10,8 @@
 4. 确认卡牌的每个 `CardEffectKind` 已被 `CardEffectRegistrationCatalog` 支持。未注册效果会让卡牌保留在目录中但命令显式失败，不会静默 no-op。
 
 普通新卡不应修改 `VerticalSliceController`。需要新效果时按 `add-effect.md` 扩展；Clear 不得伪装成普通 `TimelineAction`。
+
+Clear 卡必须只有一个 typed `CardEffectKind.Clear`，mask 只来自 `effects[].value`，普通 `shape` 必须为空且不能作为 fallback。Application 通过 `CombatInteractionMode.TimelineClear` 进入独立 session；新增同语义 Clear 卡只需内容、注册和测试，不应在 Controller 添加 stable-ID 分支。
 
 ## 测试与 Inspector
 

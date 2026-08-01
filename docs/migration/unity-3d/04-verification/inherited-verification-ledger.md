@@ -116,3 +116,7 @@ Recover 修改了共享 Domain/Application effect 与 occupant 边界，因此�
 ## Remaining Cards Gate B 刷新记录
 
 Built/Poison 触及 Domain/Application、Infrastructure registration、occupant Presentation、TargetView 与 Scene Inspector，因此这些边界已经以全量 EditMode `130/130`、Scene PlayMode `3/3`、两个保存 Prefab、定向 authoring 和 8 张 1280x720 图刷新。Terrain/Camera、CardView/TimelineCell Prefab 与七卡布局代码未改，R3 的三视口 idle、四 yaw 和 0.32 层高仍可作为风险参考；Gate D 必须在 Clear 集成后重跑完整 PlayMode、build、Player smoke 与三视口。Tower/Poison 源 PNG 哈希未变并由 Unity 副本逐字节继承。
+
+## Remaining Cards Gate C 刷新记录
+
+Clear 触及 TimelineGrid/Application、effect registration、Timeline Presenter/Cell、Binding/Controller、Scene Inspector 与 Editor harness，因此这些边界已经以全量 EditMode `152/152`、Scene/Presentation PlayMode `4/4`、定向 authoring 和 9 张 1280x720 图刷新。普通 Timeline valid/invalid 在同一全量 EditMode 与 Presentation 回归中保持通过；Terrain/Camera、occupant Prefab、卡图和七卡布局未改。Gate D 仍必须在最终集成态重跑完整 PlayMode、Windows build、Player smoke 与三视口，不能用 Gate C 的局部图替代。

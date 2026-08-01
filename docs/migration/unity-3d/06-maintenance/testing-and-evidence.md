@@ -1,6 +1,6 @@
 # 测试与证据指南
 
-> 状态：解耦 R3 最终门禁已通过
+> 状态：Remaining Cards Gate C 已通过，Gate D 最终门禁待执行
 > Unity：6000.4.10f1
 
 ## 分层门禁
@@ -10,8 +10,8 @@
 | Domain/EditMode | `unity/Assets/_Project/Tests/EditMode/**` | 坐标、时间轴、效果、快照、确定性与失败无副作用 |
 | Application/EditMode | `Tests/EditMode/Application/**`、`Diagnostics/**` | 命令顺序、typed target、取消、幂等和 trace 中立性 |
 | Infrastructure/EditMode | `Tests/Infrastructure/**` | 七卡 JSON、typed token、catalog、`front_image` 定位和效果注册 |
-| Scene/EditMode | `Tests/EditMode/Composition/CombatSceneAssetTests.cs` | Play 前层级、Inspector 引用与六个 Prefab |
-| Presentation/PlayMode | `Tests/PlayMode/**` | Binding 生命周期、卡手、范围、Timeline、地形和四向选择 |
+| Scene/EditMode | `Tests/EditMode/Composition/CombatSceneAssetTests.cs` | Play 前层级、Inspector 引用、八个 Prefab 与 Clear preview 接线 |
+| Presentation/PlayMode | `Tests/PlayMode/**` | Binding 生命周期、卡手、范围、普通/Clear Timeline、地形和四向选择 |
 | Editor harness | `TimeKey.Editor.VerticalSliceAutomation.BuildValidateAndCapture` | 实际渲染、公共交互路径、像素检查与 Windows build |
 | Player smoke | `TimeKeySlice.exe -timekeySmokeQuit` | 构建产物端到端路径和退出码 |
 
@@ -45,7 +45,7 @@ $Process = Start-Process $Player -ArgumentList @('-batchmode','-timekeySmokeQuit
 if ($Process.ExitCode -ne 0 -or -not (Select-String $PlayerLog 'TIMEKEY_PLAYER_SMOKE_PASS' -Quiet)) { throw 'Player smoke failed' }
 ```
 
-Unity 退出码不足以证明测试执行；还要解析 XML 根 `test-run`，确认 `total=passed`、`failed=0` 且 `total>0`。R3 最终结果为 EditMode `92/92`、PlayMode `31/31`、build `Succeeded`、Player 退出码 0。
+Unity 退出码不足以证明测试执行；还要解析 XML 根 `test-run`，确认 `total=passed`、`failed=0` 且 `total>0`。Gate C 当前结果为 EditMode `152/152`、Clear Scene/Presentation PlayMode `4/4`；完整 PlayMode、build 与 Player 必须在 Gate D 最终刷新。
 
 ## 视觉与继承
 

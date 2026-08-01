@@ -90,6 +90,7 @@ namespace TimeKey.Tests.PlayMode.Bindings
 
             var timelineObject = CreateChild(root, "TimelinePreview");
             var timelinePreview = timelineObject.AddComponent<TimelinePlacementPreview>();
+            var clearTimelinePreview = timelineObject.AddComponent<ClearTimelinePreview>();
             var timelineCellObject = CreateChild(
                 root,
                 "TimelineCell",
@@ -117,6 +118,7 @@ namespace TimeKey.Tests.PlayMode.Bindings
 
             var timelinePresenter = CreateChild(root, "TimelinePresenter").AddComponent<TimelinePresenter>();
             SetField(timelinePresenter, "timelinePreview", timelinePreview);
+            SetField(timelinePresenter, "clearTimelinePreview", clearTimelinePreview);
             SetField(
                 timelinePresenter,
                 "timelineCells",

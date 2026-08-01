@@ -7,6 +7,7 @@ using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Occupants;
+using TimeKey.Presentation.Targeting;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -354,6 +355,98 @@ namespace TimeKey.Editor
             Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_B_CAPTURE_PASS");
         }
 
+        [MenuItem("Time Key/Capture Remaining Cards Gate C")]
+        public static void CaptureRemainingCardsGateC()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var evidenceDirectory = GetRemainingCardsGateCEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var captures = new List<CaptureStats>();
+
+            var windController = OpenInitializedSlice();
+            windController.SetBoardView(32f);
+            if (!windController.SelectCard("wind"))
+            {
+                throw new InvalidOperationException("The WIND card could not be selected.");
+            }
+
+            windController.CardHandHost.ApplyVisualStateImmediate();
+            captures.Add(Capture(windController, evidenceDirectory, "wind-selected.png", 1280, 720));
+            if (windController.PreviewTimelineSelected(11, 0))
+            {
+                throw new InvalidOperationException("The right-edge Wind clear mask was reported as legal.");
+            }
+
+            captures.Add(Capture(windController, evidenceDirectory, "wind-clear-invalid.png", 1280, 720));
+            if (!windController.PreviewTimelineSelected(1, 0))
+            {
+                throw new InvalidOperationException("The Wind clear hit preview was not legal.");
+            }
+
+            var clearPreview = UnityEngine.Object.FindFirstObjectByType<ClearTimelinePreview>();
+            if (clearPreview == null ||
+                clearPreview.ActiveCoordinates.Count != 4 ||
+                GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText != "HIT")
+            {
+                throw new InvalidOperationException("The Wind preview did not expose its 2x2 occupied state.");
+            }
+
+            captures.Add(Capture(windController, evidenceDirectory, "wind-clear-hit.png", 1280, 720));
+            if (!windController.CancelSelectedCard() ||
+                GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText != "INTENT")
+            {
+                throw new InvalidOperationException("Cancelling Wind did not restore the original action view.");
+            }
+
+            captures.Add(Capture(windController, evidenceDirectory, "wind-after-cancel.png", 1280, 720));
+            if (!windController.SelectCard("wind") ||
+                !windController.PreviewTimelineSelected(1, 0) ||
+                !windController.TryPlaceSelected(1, 0) ||
+                windController.TimelineOccupiedCellCount != 0)
+            {
+                throw new InvalidOperationException("Wind did not remove the complete enemy action.");
+            }
+
+            captures.Add(Capture(windController, evidenceDirectory, "wind-after-clear.png", 1280, 720));
+
+            var tornadoController = OpenInitializedSlice();
+            tornadoController.SetBoardView(32f);
+            if (!tornadoController.SelectCard("tornado"))
+            {
+                throw new InvalidOperationException("The TORNADO card could not be selected.");
+            }
+
+            tornadoController.CardHandHost.ApplyVisualStateImmediate();
+            captures.Add(Capture(tornadoController, evidenceDirectory, "tornado-selected.png", 1280, 720));
+            if (tornadoController.PreviewTimelineSelected(1, 0))
+            {
+                throw new InvalidOperationException("The shifted Tornado mask was reported as legal.");
+            }
+
+            captures.Add(Capture(tornadoController, evidenceDirectory, "tornado-clear-invalid.png", 1280, 720));
+            if (!tornadoController.PreviewTimelineSelected(0, 0))
+            {
+                throw new InvalidOperationException("The 12x1 Tornado empty clear was not legal.");
+            }
+
+            clearPreview = UnityEngine.Object.FindFirstObjectByType<ClearTimelinePreview>();
+            if (clearPreview == null || clearPreview.ActiveCoordinates.Count != 12)
+            {
+                throw new InvalidOperationException("The Tornado preview did not cover all 12 row cells.");
+            }
+
+            captures.Add(Capture(tornadoController, evidenceDirectory, "tornado-clear-empty.png", 1280, 720));
+            if (!tornadoController.TryPlaceSelected(0, 0) ||
+                tornadoController.TimelineOccupiedCellCount != 1)
+            {
+                throw new InvalidOperationException("The legal Tornado empty clear changed the enemy action.");
+            }
+
+            captures.Add(Capture(tornadoController, evidenceDirectory, "tornado-after-empty-clear.png", 1280, 720));
+            WriteRemainingCardsGateCSummary(evidenceDirectory, captures);
+            Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_C_CAPTURE_PASS");
+        }
+
         private static VerticalSliceController OpenInitializedSlice()
         {
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
@@ -442,6 +535,12 @@ namespace TimeKey.Editor
             if (controller.TimelinePreview == null || controller.TimelinePreview.RegisteredCount != 36)
             {
                 throw new InvalidOperationException("The timeline preview is not registered to all 36 cells.");
+            }
+
+            var clearTimelinePreview = UnityEngine.Object.FindFirstObjectByType<ClearTimelinePreview>();
+            if (clearTimelinePreview == null || clearTimelinePreview.RegisteredCount != 36)
+            {
+                throw new InvalidOperationException("The clear timeline preview is not registered to all 36 cells.");
             }
         }
 
@@ -574,6 +673,24 @@ namespace TimeKey.Editor
                 "remaining-cards-gate-b");
         }
 
+        private static string GetRemainingCardsGateCEvidenceDirectory()
+        {
+            var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
+            if (string.IsNullOrWhiteSpace(repositoryRoot))
+            {
+                repositoryRoot = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", ".."));
+            }
+
+            return Path.Combine(
+                repositoryRoot,
+                "docs",
+                "migration",
+                "unity-3d",
+                "04-verification",
+                "evidence",
+                "remaining-cards-gate-c");
+        }
+
         private static void WriteRemainingCardsGateASummary(
             string directory,
             IReadOnlyList<CaptureStats> captures)
@@ -611,6 +728,27 @@ namespace TimeKey.Editor
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             File.WriteAllText(Path.Combine(directory, "gate-b-summary.json"), builder.ToString());
+        }
+
+        private static void WriteRemainingCardsGateCSummary(
+            string directory,
+            IReadOnlyList<CaptureStats> captures)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"windMaskCells\": 4,");
+            builder.AppendLine("  \"windRemovedActions\": 1,");
+            builder.AppendLine("  \"tornadoMaskCells\": 12,");
+            builder.AppendLine("  \"tornadoRemovedActions\": 0,");
+            builder.AppendLine("  \"screenshots\": [");
+            for (var index = 0; index < captures.Count; index++)
+            {
+                AppendCapture(builder, captures[index], index < captures.Count - 1);
+            }
+            builder.AppendLine("  ]");
+            builder.AppendLine("}");
+            File.WriteAllText(Path.Combine(directory, "gate-c-summary.json"), builder.ToString());
         }
 
         private static void WriteSummary(

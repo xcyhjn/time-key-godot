@@ -14,11 +14,15 @@ namespace TimeKey.Application
         private CombatSessionPhase _phase;
         private CardDefinition _selectedCard;
         private CardPlaySession _cardPlaySession;
+        private TimelineClearSession _timelineClearSession;
+        private CombatInteractionMode? _interactionMode;
         private CombatTargetKind? _requiredTargetKind;
         private CombatTarget? _target;
         private TimelineCell? _timelineOrigin;
         private bool _isPlacementValid;
         private ResolutionSnapshot _lastResolution;
+        private TimelineClearPreview _clearPreview;
+        private TimelineClearResult _lastClearResult;
 
         public CombatApplicationSession(
             ICardCatalog catalog,
@@ -49,7 +53,10 @@ namespace TimeKey.Application
             _target,
             _timelineOrigin,
             _isPlacementValid,
-            _lastResolution);
+            _lastResolution,
+            _interactionMode,
+            _clearPreview,
+            _lastClearResult);
 
         public CombatCommandResult SelectCard(string stableId)
         {
@@ -76,7 +83,9 @@ namespace TimeKey.Application
                 return Failure("select-card", before, CombatCommandFailure.UnknownCard, stableId);
             }
 
-            if (!TryGetRequiredTargetKind(card, out var targetKind))
+            var isClearCard = TryGetClearEffect(card, out _);
+            var targetKind = default(CombatTargetKind);
+            if (!isClearCard && !TryGetRequiredTargetKind(card, out targetKind))
             {
                 return Failure(
                     "select-card",
@@ -87,11 +96,17 @@ namespace TimeKey.Application
             }
 
             _selectedCard = card;
-            _cardPlaySession = new CardPlaySession(card);
-            _requiredTargetKind = targetKind;
+            _cardPlaySession = isClearCard ? null : new CardPlaySession(card);
+            _timelineClearSession = isClearCard ? new TimelineClearSession(card) : null;
+            _interactionMode = isClearCard
+                ? CombatInteractionMode.TimelineClear
+                : CombatInteractionMode.OrdinaryTimeline;
+            _requiredTargetKind = isClearCard ? null : targetKind;
             _target = null;
             _timelineOrigin = null;
             _isPlacementValid = false;
+            _clearPreview = null;
+            _lastClearResult = null;
             _phase = CombatSessionPhase.CardSelected;
             return Success("select-card", before, stableId);
         }
@@ -123,9 +138,22 @@ namespace TimeKey.Application
                     target: target);
             }
 
-            if (_selectedCard == null || _cardPlaySession == null || !_requiredTargetKind.HasValue)
+            if (_selectedCard == null)
             {
                 return Failure("select-target", before, CombatCommandFailure.NoCardSelected, target: target);
+            }
+
+            if (_interactionMode != CombatInteractionMode.OrdinaryTimeline ||
+                _cardPlaySession == null ||
+                !_requiredTargetKind.HasValue)
+            {
+                return Failure(
+                    "select-target",
+                    before,
+                    CombatCommandFailure.InteractionModeMismatch,
+                    CurrentStableId,
+                    target,
+                    reason: "Timeline clear cards do not select a map target.");
             }
 
             if (target.Kind != _requiredTargetKind.Value)
@@ -172,7 +200,7 @@ namespace TimeKey.Application
         public CombatCommandResult PreviewTimeline(TimelineCell origin)
         {
             var before = _phase;
-            var unavailable = GetSessionUnavailableFailure();
+            var unavailable = GetOrdinarySessionUnavailableFailure();
             if (unavailable != CombatCommandFailure.None)
             {
                 return Failure(
@@ -217,7 +245,7 @@ namespace TimeKey.Application
         public CombatCommandResult CommitTimeline()
         {
             var before = _phase;
-            var unavailable = GetSessionUnavailableFailure();
+            var unavailable = GetOrdinarySessionUnavailableFailure();
             if (unavailable != CombatCommandFailure.None)
             {
                 return Failure(
@@ -264,6 +292,94 @@ namespace TimeKey.Application
             }
         }
 
+        public CombatCommandResult PreviewClear(TimelineCell origin)
+        {
+            var before = _phase;
+            var unavailable = GetClearSessionUnavailableFailure();
+            if (unavailable != CombatCommandFailure.None)
+            {
+                return Failure(
+                    "preview-clear",
+                    before,
+                    unavailable,
+                    CurrentStableId,
+                    origin: origin);
+            }
+
+            var transition = _timelineClearSession.Preview(_timeline, origin);
+            _timelineOrigin = _timelineClearSession.Origin;
+            _clearPreview = transition.Preview;
+            _isPlacementValid = transition.Preview != null && transition.Preview.IsInBounds;
+            _phase = MapPhase(transition.State);
+            return transition.Succeeded
+                ? Success(
+                    "preview-clear",
+                    before,
+                    CurrentStableId,
+                    origin: origin,
+                    clearPreview: transition.Preview)
+                : Failure(
+                    "preview-clear",
+                    before,
+                    MapFailure(transition.Failure),
+                    CurrentStableId,
+                    origin: origin,
+                    clearPreview: transition.Preview);
+        }
+
+        public CombatCommandResult CommitClear()
+        {
+            var before = _phase;
+            var unavailable = GetClearSessionUnavailableFailure();
+            if (unavailable != CombatCommandFailure.None)
+            {
+                return Failure(
+                    "commit-clear",
+                    before,
+                    unavailable,
+                    CurrentStableId,
+                    origin: _timelineOrigin,
+                    clearPreview: _clearPreview);
+            }
+
+            var stableId = CurrentStableId;
+            var transition = _timelineClearSession.Commit(_timeline);
+            _timelineOrigin = _timelineClearSession.Origin;
+            _clearPreview = transition.Preview;
+            _lastClearResult = transition.Result;
+            _isPlacementValid = transition.Result != null && transition.Result.Succeeded;
+            _phase = MapPhase(transition.State);
+            if (!transition.Succeeded)
+            {
+                return Failure(
+                    "commit-clear",
+                    before,
+                    MapFailure(transition.Failure),
+                    stableId,
+                    origin: _timelineOrigin,
+                    clearPreview: transition.Preview,
+                    clearResult: transition.Result);
+            }
+
+            _phase = CombatSessionPhase.Resolved;
+            _clearPreview = null;
+            _isPlacementValid = false;
+            var commandResult = Success(
+                "commit-clear",
+                before,
+                stableId,
+                origin: _timelineOrigin,
+                clearResult: transition.Result);
+            _selectedCard = null;
+            _cardPlaySession = null;
+            _timelineClearSession = null;
+            _interactionMode = null;
+            _requiredTargetKind = null;
+            _target = null;
+            _timelineOrigin = null;
+            return commandResult;
+        }
+
         public CombatCommandResult CancelCard()
         {
             var before = _phase;
@@ -293,7 +409,7 @@ namespace TimeKey.Application
                 return Success("cancel-card", before);
             }
 
-            if (_cardPlaySession == null || _selectedCard == null)
+            if (_selectedCard == null || !_interactionMode.HasValue)
             {
                 return Failure("cancel-card", before, CombatCommandFailure.NoCardSelected);
             }
@@ -301,25 +417,52 @@ namespace TimeKey.Application
             var stableId = CurrentStableId;
             var target = _target;
             var origin = _timelineOrigin;
-            var transition = _cardPlaySession.Cancel();
-            if (!transition.Succeeded)
+            var succeeded = false;
+            var failure = CombatCommandFailure.None;
+            if (_interactionMode == CombatInteractionMode.OrdinaryTimeline)
+            {
+                var transition = _cardPlaySession.Cancel();
+                succeeded = transition.Succeeded;
+                failure = MapFailure(transition.Failure);
+            }
+            else
+            {
+                var transition = _timelineClearSession.Cancel();
+                succeeded = transition.Succeeded;
+                failure = MapFailure(transition.Failure);
+            }
+
+            if (!succeeded)
             {
                 return Failure(
                     "cancel-card",
                     before,
-                    MapFailure(transition.Failure),
+                    failure,
                     stableId,
                     target,
-                    origin);
+                    origin,
+                    clearPreview: _clearPreview);
             }
 
+            _phase = CombatSessionPhase.Cancelled;
+            var commandResult = Success(
+                "cancel-card",
+                before,
+                stableId,
+                target,
+                origin,
+                clearPreview: _clearPreview);
             _selectedCard = null;
+            _cardPlaySession = null;
+            _timelineClearSession = null;
+            _interactionMode = null;
             _requiredTargetKind = null;
             _target = null;
             _timelineOrigin = null;
             _isPlacementValid = false;
-            _phase = CombatSessionPhase.Cancelled;
-            return Success("cancel-card", before, stableId, target, origin);
+            _clearPreview = null;
+            _lastClearResult = null;
+            return commandResult;
         }
 
         public CombatCommandResult ResolveTimeline()
@@ -333,6 +476,18 @@ namespace TimeKey.Application
             if (_phase == CombatSessionPhase.Resolved)
             {
                 return Failure("resolve-timeline", before, CombatCommandFailure.AlreadyResolved);
+            }
+
+            if (_interactionMode == CombatInteractionMode.TimelineClear)
+            {
+                return Failure(
+                    "resolve-timeline",
+                    before,
+                    CombatCommandFailure.InteractionModeMismatch,
+                    CurrentStableId,
+                    _target,
+                    _timelineOrigin,
+                    reason: "Timeline clear commits immediately and does not use ordinary Resolve.");
             }
 
             if (_phase != CombatSessionPhase.Committed || _selectedCard == null)
@@ -368,6 +523,8 @@ namespace TimeKey.Application
 
             _selectedCard = null;
             _cardPlaySession = null;
+            _timelineClearSession = null;
+            _interactionMode = null;
             _requiredTargetKind = null;
             _target = null;
             _timelineOrigin = null;
@@ -495,10 +652,14 @@ namespace TimeKey.Application
             var before = _phase;
             _selectedCard = null;
             _cardPlaySession = null;
+            _timelineClearSession = null;
+            _interactionMode = null;
             _requiredTargetKind = null;
             _target = null;
             _timelineOrigin = null;
             _isPlacementValid = false;
+            _clearPreview = null;
+            _lastClearResult = null;
             _phase = CombatSessionPhase.Disposed;
             TryRecord(new CombatTraceEntry("dispose", before.ToString(), _phase.ToString()));
         }
@@ -568,7 +729,7 @@ namespace TimeKey.Application
             return true;
         }
 
-        private CombatCommandFailure GetSessionUnavailableFailure()
+        private CombatCommandFailure GetOrdinarySessionUnavailableFailure()
         {
             if (_phase == CombatSessionPhase.Disposed)
             {
@@ -580,9 +741,41 @@ namespace TimeKey.Application
                 return CombatCommandFailure.AlreadyResolved;
             }
 
-            if (_selectedCard == null || _cardPlaySession == null)
+            if (_selectedCard == null)
             {
                 return CombatCommandFailure.NoCardSelected;
+            }
+
+            if (_interactionMode != CombatInteractionMode.OrdinaryTimeline ||
+                _cardPlaySession == null)
+            {
+                return CombatCommandFailure.InteractionModeMismatch;
+            }
+
+            return CombatCommandFailure.None;
+        }
+
+        private CombatCommandFailure GetClearSessionUnavailableFailure()
+        {
+            if (_phase == CombatSessionPhase.Disposed)
+            {
+                return CombatCommandFailure.Disposed;
+            }
+
+            if (_phase == CombatSessionPhase.Resolved)
+            {
+                return CombatCommandFailure.AlreadyResolved;
+            }
+
+            if (_selectedCard == null)
+            {
+                return CombatCommandFailure.NoCardSelected;
+            }
+
+            if (_interactionMode != CombatInteractionMode.TimelineClear ||
+                _timelineClearSession == null)
+            {
+                return CombatCommandFailure.InteractionModeMismatch;
             }
 
             return CombatCommandFailure.None;
@@ -663,13 +856,27 @@ namespace TimeKey.Application
             return true;
         }
 
+        private static bool TryGetClearEffect(CardDefinition card, out CardEffect clearEffect)
+        {
+            clearEffect = default;
+            if (card.Effects.Count != 1 || card.Effects[0].Kind != CardEffectKind.Clear)
+            {
+                return false;
+            }
+
+            clearEffect = card.Effects[0];
+            return clearEffect.ClearMask.Count > 0;
+        }
+
         private CombatCommandResult Success(
             string command,
             CombatSessionPhase phaseBefore,
             string stableId = null,
             CombatTarget? target = null,
             TimelineCell? origin = null,
-            ResolutionSnapshot resolution = null)
+            ResolutionSnapshot resolution = null,
+            TimelineClearPreview clearPreview = null,
+            TimelineClearResult clearResult = null)
         {
             return Complete(
                 command,
@@ -679,7 +886,9 @@ namespace TimeKey.Application
                 stableId,
                 target,
                 origin,
-                resolution);
+                resolution,
+                clearPreview,
+                clearResult);
         }
 
         private CombatCommandResult Failure(
@@ -689,7 +898,9 @@ namespace TimeKey.Application
             string stableId = null,
             CombatTarget? target = null,
             TimelineCell? origin = null,
-            string reason = null)
+            string reason = null,
+            TimelineClearPreview clearPreview = null,
+            TimelineClearResult clearResult = null)
         {
             return Complete(
                 command,
@@ -699,7 +910,9 @@ namespace TimeKey.Application
                 stableId,
                 target,
                 origin,
-                null);
+                null,
+                clearPreview,
+                clearResult);
         }
 
         private CombatCommandResult Complete(
@@ -710,7 +923,9 @@ namespace TimeKey.Application
             string stableId,
             CombatTarget? target,
             TimelineCell? origin,
-            ResolutionSnapshot resolution)
+            ResolutionSnapshot resolution,
+            TimelineClearPreview clearPreview,
+            TimelineClearResult clearResult)
         {
             var result = new CombatCommandResult(
                 failure,
@@ -722,7 +937,10 @@ namespace TimeKey.Application
                 target,
                 origin,
                 _isPlacementValid,
-                resolution);
+                resolution,
+                _interactionMode,
+                clearPreview ?? _clearPreview,
+                clearResult);
             TryRecord(new CombatTraceEntry(
                 command,
                 phaseBefore.ToString(),
@@ -773,6 +991,23 @@ namespace TimeKey.Application
             }
         }
 
+        private static CombatSessionPhase MapPhase(TimelineClearSessionState state)
+        {
+            switch (state)
+            {
+                case TimelineClearSessionState.Selected:
+                    return CombatSessionPhase.CardSelected;
+                case TimelineClearSessionState.Preview:
+                    return CombatSessionPhase.TimelinePreview;
+                case TimelineClearSessionState.Committed:
+                    return CombatSessionPhase.Committed;
+                case TimelineClearSessionState.Cancelled:
+                    return CombatSessionPhase.Cancelled;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(state));
+            }
+        }
+
         private static CombatCommandFailure MapFailure(CardPlayFailure failure)
         {
             switch (failure)
@@ -790,6 +1025,25 @@ namespace TimeKey.Application
                 case CardPlayFailure.AlreadyCommitted:
                     return CombatCommandFailure.AlreadyCommitted;
                 case CardPlayFailure.Cancelled:
+                    return CombatCommandFailure.Cancelled;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(failure));
+            }
+        }
+
+        private static CombatCommandFailure MapFailure(TimelineClearFailure failure)
+        {
+            switch (failure)
+            {
+                case TimelineClearFailure.None:
+                    return CombatCommandFailure.None;
+                case TimelineClearFailure.PreviewRequired:
+                    return CombatCommandFailure.PreviewRequired;
+                case TimelineClearFailure.InvalidTimelinePlacement:
+                    return CombatCommandFailure.InvalidTimelinePlacement;
+                case TimelineClearFailure.AlreadyCommitted:
+                    return CombatCommandFailure.AlreadyCommitted;
+                case TimelineClearFailure.Cancelled:
                     return CombatCommandFailure.Cancelled;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(failure));

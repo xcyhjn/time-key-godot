@@ -8,7 +8,7 @@ namespace TimeKey.Tests.Infrastructure.Effects
     public sealed class CardEffectRegistrationCatalogTests
     {
         [Test]
-        public void VerticalSlice_RegistersImplementedOrdinaryEffectsByKind()
+        public void VerticalSlice_RegistersImplementedOrdinaryAndClearEffectsByKind()
         {
             var catalog = CardEffectRegistrationCatalog.CreateVerticalSlice();
 
@@ -20,7 +20,7 @@ namespace TimeKey.Tests.Infrastructure.Effects
             Assert.That(catalog.Supports(CreateCard(CardEffectKind.Damage)), Is.True);
             Assert.That(catalog.Supports(CreateCard(CardEffectKind.Recover)), Is.True);
             Assert.That(catalog.Supports(CreateCard(CardEffectKind.Poison)), Is.True);
-            Assert.That(catalog.Supports(CardEffectKind.Clear), Is.False);
+            Assert.That(catalog.Supports(CardEffectKind.Clear), Is.True);
         }
 
         [Test]

@@ -8,6 +8,7 @@ using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
+using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -67,6 +68,7 @@ namespace TimeKey.Tests.EditMode.Composition
             Assert.That(root.GetComponentInChildren<BoardRangePresenter>(true), Is.Not.Null);
             var timelinePresenter = root.GetComponentInChildren<TimelinePresenter>(true);
             Assert.That(timelinePresenter, Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<ClearTimelinePreview>(true), Is.Not.Null);
             Assert.That(root.GetComponentInChildren<CombatHudPresenter>(true), Is.Not.Null);
             Assert.That(root.GetComponentInChildren<CombatOccupantPresenter>(true), Is.Not.Null);
 
@@ -89,6 +91,7 @@ namespace TimeKey.Tests.EditMode.Composition
 
             var timelineSerialized = new SerializedObject(timelinePresenter);
             AssertReference(timelineSerialized, "timelinePreview");
+            AssertReference(timelineSerialized, "clearTimelinePreview");
             var cells = timelineSerialized.FindProperty("timelineCells");
             Assert.That(cells.arraySize, Is.EqualTo(36));
             var coordinates = new HashSet<TimelineCell>();

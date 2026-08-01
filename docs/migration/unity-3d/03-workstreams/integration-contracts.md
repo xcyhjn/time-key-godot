@@ -1,8 +1,8 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：Wave 01/02A/02B1/02B2A 与解耦 R1/R2/R3 已冻结并验证
+> 状态：Wave 01/02A/02B1/02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate A/B/C 已冻结并验证
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-02
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
 
 ## Domain API
@@ -148,9 +148,9 @@ HexTileColumn -> LayerCount/Blocks/TopBounds/OccupantAnchor/Changed
 - 主智能体独占 Controller/BoardTileView/scene 接线，把 `lighting` 和 `earthquake` 分别路由到既有 damage 与新增 elevation Domain；UI 不复制规则。
 - Timeline invalid 不能只使用与敌人意图接近的红色；必须同时有边框、图标或形状标记，并接受 PlayMode/截图检查。
 
-### Future clear boundary
+### Clear boundary
 
-`wind/tornado` 留到 Wave 02B2C，届时必须使用独立 `TimelineClearSession` 或等价窄 API：合法性只看 mask 边界，重叠仍合法，Commit 不创建 TimelineAction，命中任一格即移除完整 action，空清合法。02B2A 不实现该运行流程，但 schema 必须无损保留 clear mask。
+`wind/tornado` 已在 Wave 02B2C 使用独立 `TimelineClearSession`：合法性只看 mask 边界，重叠仍合法，Commit 不创建 TimelineAction，命中任一格即按 identity 去重并移除完整 action，空清合法。Presentation 只消费三态 preview 与 removed action snapshot。
 
 ### Wave 02B2A 实际冻结结果
 
@@ -204,7 +204,7 @@ R3 冻结证据为 full EditMode `92/92`、full PlayMode `31/31`、Windows build
 
 ## Remaining Cards Gate 0 冻结契约
 
-> 状态：2026-08-01 Gate A Recover 与 Gate B Built/Poison 通过；实现按 Gate C 推进
+> 状态：2026-08-02 Gate A Recover、Gate B Built/Poison 与 Gate C Clear 全部通过
 
 ```text
 ordinary: CardDefinition -> CombatApplicationSession -> CardPlaySession
@@ -227,5 +227,7 @@ clear:    CardDefinition.ClearMask -> TimelineClearSession
 Gate A 已以 Controller 零 diff、全量 EditMode `107/107`、Recover 公共 Scene PlayMode `1/1` 和 5 张实际渲染图验收。共享 occupant/result 与 `ICardEffectHandler.Supports(CardEffect)` 契约现为 Gate B 的输入，不得由 Built/Poison 各自复制第二套状态模型。
 
 Gate B 已以全量 EditMode `130/130`、Scene PlayMode `3/3`、定向 authoring、两个保存 Prefab 和 8 张实际渲染图验收。`CombatOccupantPresenter` 只以 creation→Prefab 序列化表和 snapshot 状态创建/刷新 View，不持有 Domain identity；Tower decay 与 Poison tick 继续留给 02B3。
+
+Gate C 已以全量 EditMode `152/152`、Scene/Presentation PlayMode `4/4`、定向 authoring 和 9 张实际渲染图验收。`ClearTimelinePreview` 使用红 `!`、蓝 `○`、绿 `HIT` 三态冗余；取消恢复原 action，Wind 完整移除敌方 action，Tornado 空清保留未命中的 action。
 
 Gate 0 最小冒烟为 EditMode `24/24`、PlayMode `10/10`，0 失败。旧 R3 build/Player/未受影响视觉先继承；修改对应运行程序集/Scene 后在 Gate D 全量刷新。

@@ -216,6 +216,7 @@ namespace TimeKey.Editor
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = TimelineGrid.DefaultWidth;
             var timelinePreview = timelineRoot.gameObject.AddComponent<TimelinePlacementPreview>();
+            var clearTimelinePreview = timelineRoot.gameObject.AddComponent<ClearTimelinePreview>();
             var timelinePresenter = timelineRoot.gameObject.AddComponent<TimelinePresenter>();
             var timelineCells = new List<TimelineCellView>(36);
             for (var row = 0; row < TimelineGrid.DefaultHeight; row++)
@@ -228,6 +229,7 @@ namespace TimeKey.Editor
                     var view = instance.GetComponent<TimelineCellView>();
                     ConfigureTimelineCell(view, column, row);
                     view.SetContent(string.Format("{0:00}", column + 1), new Color(0.16f, 0.19f, 0.20f, 1f));
+                    view.CaptureCurrentAsDefault();
                     timelineCells.Add(view);
                 }
             }
@@ -269,7 +271,11 @@ namespace TimeKey.Editor
 
             var hudPresenter = detailPanel.gameObject.AddComponent<CombatHudPresenter>();
             ConfigureHudPresenter(hudPresenter, statusText, targetText, resolveButton);
-            ConfigureTimelinePresenter(timelinePresenter, timelinePreview, timelineCells);
+            ConfigureTimelinePresenter(
+                timelinePresenter,
+                timelinePreview,
+                clearTimelinePreview,
+                timelineCells);
             var presentationBinding = GetOrAddComponent<CombatPresentationBinding>(root);
             ConfigurePresentationBinding(
                 presentationBinding,
@@ -369,6 +375,44 @@ namespace TimeKey.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
             Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_B_AUTHORING_PASS");
+        }
+
+        [MenuItem("Time Key/Author Remaining Cards Gate C Clear UI")]
+        public static void AuthorRemainingCardsGateCClearUi()
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var root = scene.GetRootGameObjects().SingleOrDefault(value => value.name == "VerticalSliceRoot");
+            if (root == null)
+            {
+                throw new InvalidOperationException("VerticalSliceRoot is missing from " + ScenePath + ".");
+            }
+
+            var timeline = root.transform.Find("SliceCanvas/HUD/Timeline");
+            if (timeline == null)
+            {
+                throw new InvalidOperationException("The saved combat scene is missing SliceCanvas/HUD/Timeline.");
+            }
+
+            var presenter = timeline.GetComponent<TimelinePresenter>();
+            if (presenter == null)
+            {
+                throw new InvalidOperationException("Timeline is missing TimelinePresenter.");
+            }
+
+            var clearPreview = GetOrAddComponent<ClearTimelinePreview>(timeline.gameObject);
+            ConfigureReference(presenter, "clearTimelinePreview", clearPreview);
+            var timelineCells = timeline.GetComponentsInChildren<TimelineCellView>(true);
+            for (var index = 0; index < timelineCells.Length; index++)
+            {
+                timelineCells[index].CaptureCurrentAsDefault();
+                EditorUtility.SetDirty(timelineCells[index]);
+            }
+
+            EditorUtility.SetDirty(presenter);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_C_AUTHORING_PASS");
         }
 
         private static void EnsureAssetDirectories()
@@ -796,10 +840,12 @@ namespace TimeKey.Editor
         private static void ConfigureTimelinePresenter(
             TimelinePresenter presenter,
             TimelinePlacementPreview preview,
+            ClearTimelinePreview clearPreview,
             IReadOnlyList<TimelineCellView> timelineCells)
         {
             var serialized = new SerializedObject(presenter);
             SetReference(serialized, "timelinePreview", preview);
+            SetReference(serialized, "clearTimelinePreview", clearPreview);
             var cells = serialized.FindProperty("timelineCells");
             cells.arraySize = timelineCells.Count;
             for (var index = 0; index < timelineCells.Count; index++)

@@ -93,10 +93,22 @@ namespace TimeKey.Presentation.Presenters
             switch (state.Phase)
             {
                 case CombatSessionPhase.CardSelected:
+                    if (state.InteractionMode == CombatInteractionMode.TimelineClear)
+                    {
+                        return "CLEAR SELECTED  |  CHOOSE A TIMELINE POSITION";
+                    }
+
                     return "CARD SELECTED  |  CHOOSE A TARGET";
                 case CombatSessionPhase.TargetSelected:
                     return "TARGET LOCKED  |  CHOOSE A TIMELINE POSITION";
                 case CombatSessionPhase.TimelinePreview:
+                    if (state.InteractionMode == CombatInteractionMode.TimelineClear)
+                    {
+                        return state.IsPlacementValid
+                            ? "CLEAR POSITION VALID  |  CLICK TO CONFIRM"
+                            : "CLEAR POSITION OUT OF BOUNDS";
+                    }
+
                     return state.IsPlacementValid
                         ? "TIMELINE POSITION VALID  |  CLICK TO CONFIRM"
                         : "TIMELINE POSITION INVALID";
@@ -105,6 +117,11 @@ namespace TimeKey.Presentation.Presenters
                 case CombatSessionPhase.Cancelled:
                     return "CARD CANCELLED  |  SELECT A CARD";
                 case CombatSessionPhase.Resolved:
+                    if (state.LastClearResult != null)
+                    {
+                        return "CLEAR RESOLVED  |  TIMELINE UPDATED";
+                    }
+
                     return "RESOLVED  |  TIMELINE COMPLETE";
                 case CombatSessionPhase.Disposed:
                     return "SESSION CLOSED";
@@ -115,6 +132,18 @@ namespace TimeKey.Presentation.Presenters
 
         private static string GetTargetStatus(CombatSessionView state)
         {
+            if (state.LastClearResult != null)
+            {
+                return "CLEAR  |  REMOVED " + state.LastClearResult.RemovedActions.Count;
+            }
+
+            if (state.InteractionMode == CombatInteractionMode.TimelineClear)
+            {
+                return state.ClearPreview == null
+                    ? "CLEAR  |  NO MAP TARGET"
+                    : "CLEAR  |  HITS " + state.ClearPreview.HitActions.Count;
+            }
+
             if (state.LastResolution != null)
             {
                 var occupantResults = state.LastResolution.OccupantEffectResults;

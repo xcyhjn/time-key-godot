@@ -2,6 +2,12 @@ using TimeKey.Domain;
 
 namespace TimeKey.Application
 {
+    public enum CombatInteractionMode
+    {
+        OrdinaryTimeline,
+        TimelineClear
+    }
+
     public enum CombatSessionPhase
     {
         Idle,
@@ -30,7 +36,8 @@ namespace TimeKey.Application
         AlreadyCommitted,
         Cancelled,
         NoCommittedAction,
-        AlreadyResolved
+        AlreadyResolved,
+        InteractionModeMismatch
     }
 
     public sealed class CombatSessionView
@@ -42,7 +49,10 @@ namespace TimeKey.Application
             CombatTarget? target,
             TimelineCell? timelineOrigin,
             bool isPlacementValid,
-            ResolutionSnapshot lastResolution)
+            ResolutionSnapshot lastResolution,
+            CombatInteractionMode? interactionMode,
+            TimelineClearPreview clearPreview,
+            TimelineClearResult lastClearResult)
         {
             Phase = phase;
             SelectedCard = selectedCard;
@@ -51,6 +61,9 @@ namespace TimeKey.Application
             TimelineOrigin = timelineOrigin;
             IsPlacementValid = isPlacementValid;
             LastResolution = lastResolution;
+            InteractionMode = interactionMode;
+            ClearPreview = clearPreview;
+            LastClearResult = lastClearResult;
         }
 
         public CombatSessionPhase Phase { get; }
@@ -68,6 +81,12 @@ namespace TimeKey.Application
         public bool IsPlacementValid { get; }
 
         public ResolutionSnapshot LastResolution { get; }
+
+        public CombatInteractionMode? InteractionMode { get; }
+
+        public TimelineClearPreview ClearPreview { get; }
+
+        public TimelineClearResult LastClearResult { get; }
     }
 
     public sealed class CombatCommandResult
@@ -82,7 +101,10 @@ namespace TimeKey.Application
             CombatTarget? target,
             TimelineCell? timelineOrigin,
             bool isPlacementValid,
-            ResolutionSnapshot resolution)
+            ResolutionSnapshot resolution,
+            CombatInteractionMode? interactionMode,
+            TimelineClearPreview clearPreview,
+            TimelineClearResult clearResult)
         {
             Failure = failure;
             FailureReason = failureReason;
@@ -94,6 +116,9 @@ namespace TimeKey.Application
             TimelineOrigin = timelineOrigin;
             IsPlacementValid = isPlacementValid;
             Resolution = resolution;
+            InteractionMode = interactionMode;
+            ClearPreview = clearPreview;
+            ClearResult = clearResult;
         }
 
         public bool Succeeded => Failure == CombatCommandFailure.None;
@@ -117,5 +142,11 @@ namespace TimeKey.Application
         public bool IsPlacementValid { get; }
 
         public ResolutionSnapshot Resolution { get; }
+
+        public CombatInteractionMode? InteractionMode { get; }
+
+        public TimelineClearPreview ClearPreview { get; }
+
+        public TimelineClearResult ClearResult { get; }
     }
 }

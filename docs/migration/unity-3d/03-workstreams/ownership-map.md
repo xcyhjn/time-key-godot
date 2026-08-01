@@ -1,8 +1,8 @@
 # 多智能体所有权图
 
-> 状态：解耦 R3 全部所有权已交回并完成集成
+> 状态：Remaining Cards Gate C 全部所有权已交回并完成集成
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-02
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
 
 ## 独占写入范围
@@ -76,8 +76,8 @@ Agent B 与 C 的冻结路径保持互斥，并且都不修改 Controller、Scen
 | Gate A | Agent A Recover | 共享 occupant/result、Recover handler、TimelineGrid、Application 与对应 EditMode tests | Prompt review PASS | 已完成并交回；40/40 Agent filter、Gate A 全量 107/107 |
 | Gate B | Agent B1 Built | 新 Built handler/test/report | Gate A 交回 | 已完成交回；10 个独占 case 静态通过，纳入全量 130/130 |
 | Gate B | Agent B2 Poison | 新 Poison handler/test/report | Gate A 交回 | 外部 Agent 鉴权失败后主智能体按 reviewed Prompt 接管完成；纳入全量 130/130 |
-| Gate C | Agent C1 Clear Domain | TimelineGrid clear API、clear session、Application 与 EditMode tests | Gate B 集成 | 待启动 |
-| Gate C | Agent C2 Clear Presentation | Timeline preview/presenter/cell 与对应 PlayMode tests | C1 契约冻结 | 待启动 |
+| Gate C | Agent C1 Clear Domain | TimelineGrid clear API、clear session、Application 与 EditMode tests | Gate B 集成 | 已完成交回；纯 C# 0 warning/error、定向 EditMode 56/56 |
+| Gate C | C2 Clear Presentation 所有权切片 | Timeline preview/presenter/cell 与对应 PlayMode tests | C1 契约冻结 | C1 交回后由主智能体按 reviewed C2 路径完成；Gate C 全量 EditMode 152/152、PlayMode 4/4 |
 | 全程 | 主智能体 | Controller/Binding/Composition/Infrastructure registry、Scene/Prefab/资产、Editor、asmdef、共享文档/证据/Git | 每波交回 | 进行中 |
 
 路径审查位于 `agents/prompt-review-remaining-cards.md`。Agent A 运行期间主智能体不修改其独占路径；B1/B2 只新增互斥文件；C1 完成后才开放 C2。所有 Agent 都不是仓库唯一工作者，不得回退、stash、暂存、commit 或 push。

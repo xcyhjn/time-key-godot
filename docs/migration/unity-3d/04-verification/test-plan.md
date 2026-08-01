@@ -1,8 +1,8 @@
 # Unity 战斗切片与解耦阶段测试计划
 
-> 状态：Remaining Cards Gate B 已通过，Gate C 待执行
+> 状态：Remaining Cards Gate C 已通过，Gate D 待执行
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-02
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
 
 ## EditMode
@@ -69,6 +69,9 @@
 | Remaining Cards Gate B EditMode | `130/130`，0 失败、0 跳过；Built/Poison 与 Scene/Prefab 全回归 | `evidence/remaining-cards-gate-b/editmode-results.xml` |
 | Remaining Cards Gate B PlayMode | Tower、Poison、序列化场景 `3/3`，0 失败 | `evidence/remaining-cards-gate-b/playmode-results.xml` |
 | Remaining Cards Gate B 视觉 | 8 张 1280x720 PNG；Tower HP100 与 Poison stacks2 的卡面/目标/Timeline/结算人工通过 | `evidence/remaining-cards-gate-b/verification-summary.md` |
+| Remaining Cards Gate C EditMode | `152/152`，0 失败、0 跳过；Clear Domain/Application、registry 与 Scene 全回归 | `evidence/remaining-cards-gate-c/editmode-results.xml` |
+| Remaining Cards Gate C PlayMode | Wind、Tornado、2×2/12×1 三态与完整 UI 清除 `4/4`，0 失败 | `evidence/remaining-cards-gate-c/playmode-results.xml` |
+| Remaining Cards Gate C 视觉 | 9 张 1280x720 PNG；红 `!`、蓝 `○`、绿 `HIT`、取消恢复、Wind 移除与 Tornado 空清人工通过 | `evidence/remaining-cards-gate-c/verification-summary.md` |
 
 ## Wave 02B1 计划门禁
 
@@ -137,3 +140,5 @@ R3 结构化证据位于 `evidence/unity-decoupling-r3/`。旧切片结果保留
 Gate A 已完成上述 Recover 矩阵：全量 EditMode `107/107`、公共 Scene PlayMode `1/1`、启用图形设备的 Editor Harness 与 5 张人工检查截图全部通过；Controller 零 diff。Built/Poison/Clear 仍按后续门禁执行。
 
 Gate B 已完成 Built/Poison 矩阵：全量 EditMode `130/130`、Scene PlayMode `3/3`、定向 Scene/Prefab authoring 与 8 张人工检查截图全部通过。Tower decay、Poison tick/传播/伤害未越界实现；Clear 仍按 Gate C 执行。
+
+Gate C 已完成 Clear 矩阵：全量 EditMode `152/152`、Scene/Presentation PlayMode `4/4`、定向 Scene authoring 与 9 张人工检查截图全部通过。Wind 2×2 命中完整移除敌方 action，Tornado 12×1 合法空清，越界/取消无副作用；最终完整 PlayMode、build、Player smoke 与多视口按 Gate D 执行。

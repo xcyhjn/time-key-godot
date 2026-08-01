@@ -47,7 +47,8 @@ namespace TimeKey.Infrastructure.Effects
                     new CardEffectRegistration(CardEffectKind.Elevation),
                     new CardEffectRegistration(CardEffectKind.Recover),
                     new CardEffectRegistration(CardEffectKind.Built),
-                    new CardEffectRegistration(CardEffectKind.Poison)
+                    new CardEffectRegistration(CardEffectKind.Poison),
+                    new CardEffectRegistration(CardEffectKind.Clear)
                 });
         }
 
