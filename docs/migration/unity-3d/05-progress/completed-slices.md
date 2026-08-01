@@ -1,6 +1,6 @@
 # 已完成切片
 
-> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1/R2 已完成
+> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1/R2/R3 已完成
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：Slice Definition of Done
@@ -79,3 +79,14 @@
 - Controller 原公共方法/属性保持，但选中、目标、时间轴和结算顺序已委托给 Application。
 - 未注册 Recover/Built/Poison/Clear 不再静默 no-op；失败在玩家 action 占格前返回并记录 trace。
 - Application/Diagnostics `14/14`、全量 EditMode `86/86`、PlayMode `26/26`、11 张刷新截图、Windows build 和 Player smoke 全部通过。
+
+## 解耦 R3：Presentation、Infrastructure 与 Composition
+
+完成日期：2026-08-01。
+
+- `CardContentCatalog` 从七份真实 fixture 建立有序内容目录并精确映射 `FrontImage`；data-only effect registry 显式区分已支持与未支持效果，新增普通卡不再要求 Controller 路由改动。
+- `CombatCompositionRoot` 统一装配并释放 Application session、catalog、trace sink、Presenter binding 与运行时 sprite；新增 Composition asmdef 后依赖方向保持无环。
+- CardHand、BoardRange、Timeline 与 CombatHud 四个 Presenter 只消费 Application view/result，`CombatPresentationBinding` 统一拥有输入订阅；Presentation 不再依赖 Infrastructure。
+- Controller 不再解析 JSON、调用 Resources、持有 36 格 Timeline Inspector 列表或按 stable ID 决定视觉；场景 Inspector 引用完整且可编辑。
+- trace 新增 effect kind 与 before/after，Unity sink 可关闭；sink 失败不改变战斗结算结果。
+- 全量 EditMode `92/92`、PlayMode `31/31`，Windows build `Succeeded`、`206747014` bytes，Player smoke 退出码 0；14 张三视口/四向/时间轴/前后实际渲染证据人工通过。

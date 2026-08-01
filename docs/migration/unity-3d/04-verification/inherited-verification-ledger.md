@@ -5,7 +5,7 @@
 > 建立日期：2026-08-01
 > 规则：证据只能按未受影响的责任边界继承；触及边界后必须在同一波重新验证。
 
-## 当前门禁
+## 阶段进入门禁（历史）
 
 | 项目 | 事实 | 状态 |
 | --- | --- | --- |
@@ -70,3 +70,25 @@
 ## R1 刷新记录
 
 R1 已刷新：EditMode `70/70`、PlayMode `26/26`、Scene authoring marker、Windows build、Player smoke、11 张截图与人工视觉检查。证据位于 `evidence/decoupling-r1/**` 和 `evidence/unity-decoupling-r1/**`。Domain、七卡 schema 和 Godot 基线在 R1 未修改，继续按本账本条件继承。
+
+## R2 刷新记录
+
+R2 已刷新：Application/Diagnostics `14/14`、全量 EditMode `86/86`、PlayMode `26/26`、11 张截图、Windows build 与 Player smoke 全部通过。`CombatApplicationSession` 成为唯一用例编排入口，Controller 只保留兼容 facade；sink 中立性与程序集依赖方向已重新验证。
+
+## R3 最终刷新记录
+
+R3 已完成并使 Presentation、Infrastructure、Composition、资源映射与 trace 边界的旧证据失效后重建。最终证据位于 `evidence/unity-decoupling-r3/`：
+
+| 门禁 | 最终事实 | 状态 |
+| --- | --- | --- |
+| 全量 EditMode | `92/92`，0 失败、0 跳过 | 通过 |
+| 全量 PlayMode | `31/31`，0 失败、0 跳过 | 通过 |
+| Composition/依赖 | `CombatCompositionRoot` 统一装配；Presentation 不依赖 Infrastructure；程序集无环 | 通过 |
+| 七卡内容 | `CardContentCatalog` 载入七份真实 fixture 与对应 `FrontImage`；effect registry 显式区分已注册/未注册效果 | 通过 |
+| 输入与刷新 | `CombatPresentationBinding` 统一订阅；四个 Presenter 消费 Application view/result；重复绑定不复制监听 | 通过 |
+| 诊断 | effect kind 与 before/after 已进入 trace；Unity sink 可关闭且保持中立 | 通过 |
+| Harness/build | 14 张 PNG；Windows build `Succeeded`、`206747014` bytes | 通过 |
+| Player smoke | 退出码 0，包含 `TIMEKEY_PLAYER_SMOKE_PASS` | 通过 |
+| 人工视觉 | 三视口七卡、四向范围、valid/invalid 时间轴、lighting 与 earthquake 前后逐张检查 | 通过 |
+
+最终仍可继承的旧证据只剩未受 Unity 解耦影响的 Godot 权威基线、源素材哈希与历史切片记录。当前 Unity 完成态一律以 R3 全量 XML、harness JSON、Player 日志和 14 张实际渲染 PNG 为准。

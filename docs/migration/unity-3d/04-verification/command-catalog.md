@@ -12,7 +12,7 @@ $UnityEditor = 'C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe'
 $GodotConsole = 'D:\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe'
 $RepositoryRoot = (Get-Location).Path
 $UnityProjectAlias = 'D:\timekey-unity-731'
-$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\unity-slice-02b2a'
+$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\unity-decoupling-r3'
 $env:ALLUSERSPROFILE = $env:ProgramData
 $env:TIMEKEY_REPOSITORY_ROOT = $RepositoryRoot
 ```
@@ -75,4 +75,4 @@ git diff --cached --name-only
 
 ## 下一阶段 AI 接管
 
-在 Codex Desktop 新对话中直接要求接手 AI 进入 `D:\godot\时之钥\时之钥`，确认 `unity_7.31`，完整读取并执行 `docs/migration/unity-3d/00-bootstrap/NEXT_STAGE_DECOUPLING_PROMPT.md` 的“主 Prompt”。解耦门禁完成后再执行 `NEXT_STAGE_REMAINING_CARDS_PROMPT.md`；不要用摘要替代原文，也不要重复已经关闭的 Wave 00/01/02A/02B1/02B2A。
+解耦 R1/R2/R3 已关闭。下一阶段接手 AI 应进入 `D:\godot\时之钥\时之钥`，确认 `unity_7.31`，先确认当前 checkpoint 与受保护未提交改动，再完整读取并执行 `docs/migration/unity-3d/00-bootstrap/NEXT_STAGE_REMAINING_CARDS_PROMPT.md` 的“主 Prompt”。不要用摘要替代原文，也不要重复已经关闭的 Wave 00/01/02A/02B1/02B2A 或解耦阶段。

@@ -1,6 +1,6 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：Wave 01/02A/02B1/02B2A 已冻结；解耦 R2 已实现并验证
+> 状态：Wave 01/02A/02B1/02B2A 与解耦 R1/R2/R3 已冻结并验证
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
@@ -180,3 +180,24 @@ Current -> CombatSessionView
 - Recover/Built/Poison/Clear 在 handler/session 未支持时返回结构化失败，不静默 no-op。
 - `ICombatTraceSink` 异常不能改变快照；R3 在不改 port 消费方向的前提下扩展 effect before/after 字段。
 - R2 冻结证据为 Application/Diagnostics `14/14`、全量 EditMode `86/86`、PlayMode `26/26`、Windows build/Player smoke/11 张截图全通过。
+
+## 解耦 R3 Composition、Catalog 与 Presenter 契约
+
+```text
+CombatCompositionRoot
+  -> CardContentCatalog + CardEffectRegistrationCatalog
+  -> CombatApplicationSession
+  -> VerticalSliceController.Initialize(...)
+  -> CombatPresentationBinding.Bind(...)
+```
+
+- `CardContentCatalog` 实现 `ICardCatalog`，接受任意非空且 stable ID 唯一的卡牌列表并保持顺序；新增第八张普通卡不得修改 Controller 路由。
+- `CardContentEntry` 只从 `CardDefinition.FrontImage` 生成 `Art/Battle/Cards/<stem>`，不得从 stable ID 猜素材。
+- `CardEffectRegistrationCatalog` 只声明当前真正支持的 effect kind；未注册效果保持 visible + explicit failure，不静默 no-op。
+- `CombatCompositionRoot` 是运行时状态、session、trace、sprite 生命周期和 Scene Inspector 引用的唯一组装入口；不得演化为全局 Service Locator。
+- `CombatPresentationBinding` 独占输入订阅/解除订阅；`CardHandPresenter`、`BoardRangePresenter`、`TimelinePresenter`、`CombatHudPresenter` 各自只刷新一个界面区域。
+- `VerticalSliceController` 保留既有公共 facade 和真实 3D 棋盘/射线同步，不再解析 JSON、加载 Resources、构造 catalog/session、持有 36 格列表或按 stable ID 选择卡图/Timeline 标签。
+- `CombatTraceEntry` 的结算记录包含 effect kind 与 before/after；`UnityCombatTraceSink` 可在 Inspector 关闭，sink 故障不得改变结果。
+- 最终依赖中 `Presentation` 不引用 `Infrastructure`，`Domain` 与 `Application` 均为 `noEngineReferences=true`，asmdef 图无环。
+
+R3 冻结证据为 full EditMode `92/92`、full PlayMode `31/31`、Windows build `Succeeded`、Player marker `TIMEKEY_PLAYER_SMOKE_PASS` 和 14 张人工检查截图，详见 `04-verification/evidence/unity-decoupling-r3/verification-summary.md`。

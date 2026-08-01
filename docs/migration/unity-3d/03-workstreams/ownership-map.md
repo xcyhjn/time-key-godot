@@ -1,6 +1,6 @@
 # 多智能体所有权图
 
-> 状态：解耦 R2 Agent A 已交回并通过门禁；R3 Agent B/C 等待 R2 检查点
+> 状态：解耦 R3 全部所有权已交回并完成集成
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
@@ -62,8 +62,8 @@ Domain、Infrastructure、Presentation 的运行时代码和各自测试/报告�
 | 角色 | 独占路径 | 状态 |
 | --- | --- | --- |
 | Agent A / Application + Diagnostics | `Runtime/Application/**`、`Runtime/Diagnostics/**`、`Tests/EditMode/Application/**`、`Tests/EditMode/Diagnostics/**`、独占报告 | 已完成交回；正式 Unity filter `14/14` |
-| Agent B / Presenter + Binding | `Runtime/Presentation/Presenters/**`、`Bindings/**`、对应 PlayMode tests/报告 | R2 推送后启动 |
-| Agent C / Catalog + Content | `Runtime/Infrastructure/Cards/**`、`Effects/**`、对应 Infrastructure tests、`Data/Catalogs/**`/报告 | R2 推送后启动 |
-| 主智能体 | Controller、Scene/Prefab/Composition、asmdef、harness、共享 docs/evidence/Git | R2 集成门禁已通过；准备检查点 |
+| Agent B / Presenter + Binding | `Runtime/Presentation/Presenters/**`、`Bindings/**`、对应 PlayMode tests/报告 | 已完成交回；Binding/Presenter 集成测试通过 |
+| Agent C / Catalog + Content | `Runtime/Infrastructure/Cards/**`、`Effects/**`、对应 Infrastructure tests、`Data/Catalogs/**`/报告 | 按冻结的 Agent-C 所有权由主集成串行落地；filter `6/6` |
+| 主智能体 | Controller、Scene/Prefab/Composition、asmdef、harness、共享 docs/evidence/Git | 已完成 R3 组装、终验、证据与检查点 |
 
-Agent B 与 C 路径互斥，只能在 R2 commit/push 与 Application API 冻结后并行。它们不修改 Controller、Scene、Prefab 或 asmdef；主智能体在两者返回后串行集成。
+Agent B 与 C 的冻结路径保持互斥，并且都不修改 Controller、Scene、Prefab 或 asmdef。Agent B 已交回独占实现；Agent C 未作为并行写入者启动，其所有权等价范围由主智能体在无并发冲突时串行实现。最终另有只读 Domain/Application 审计、Scene/Prefab 审计、扩展文档审计和集成复核；报告位于 `agents/reports/decoupling-*.md`。所有权现已全部交回主智能体。

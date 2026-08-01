@@ -1,54 +1,105 @@
 # Unity 局内战斗模块架构
 
-> 状态：R2 已实现；R3 Composition/Presenter 执行前基线
+> 状态：R3 已实现并通过验证
 > 最后验证日期：2026-08-01
 
 ## 依赖方向
+
+R3 的运行时程序集形成单向、无环依赖图：
 
 ```text
 TimeKey.Domain          -> []
 TimeKey.Application     -> Domain
 TimeKey.Infrastructure  -> Domain, Application
 TimeKey.Diagnostics     -> Domain, Application
-TimeKey.Presentation    -> Domain, Application, Infrastructure  # R3 移除 Infrastructure
-TimeKey.Editor          -> Domain, Infrastructure, Presentation
+TimeKey.Presentation    -> Domain, Application
+TimeKey.Composition     -> Domain, Application, Infrastructure,
+                           Diagnostics, Presentation
 ```
 
-`Domain` 和 `Application` 的 `noEngineReferences=true`，两者对 `UnityEngine`、Presentation 和 Infrastructure 引用均为 0。禁止 `Domain -> Application`、`Application -> Infrastructure`、`Presentation -> Infrastructure` 的最终形态，以及任何反向查询 View/Prefab 的依赖。
+对应定义位于 `unity/Assets/_Project/Runtime/*/TimeKey.*.asmdef`。`Domain`、`Application` 和 `Diagnostics` 均设置 `noEngineReferences=true`；`Presentation` 已移除 R2 的 `Infrastructure` 引用。只有最外层 `Composition` 同时看见内容实现、诊断端口实现和 Unity 表现层，因此内层模块不会反向查找 Scene、Prefab、`Resources` 或 View。
 
-## 运行调用链
+## 运行时组装与生命周期
+
+`unity/Assets/_Project/Runtime/Composition/CombatCompositionRoot.cs` 是 Scene 的显式组合根。它通过 Inspector 持有 `VerticalSliceController`、`CombatPresentationBinding`、卡牌 `TextAsset` 列表和 `UnityCombatTraceSink`，在 `Awake()` 中执行一次 `Initialize()`：
 
 ```text
-serialized Scene / input intent
-  -> VerticalSliceController compatibility facade
-  -> CombatApplicationSession command
-  -> CardPlaySession + TimelineGrid + ICardEffectHandler
-  -> CombatCommandResult / ResolutionSnapshot
-  -> Controller (R2) or Presenter (R3) updates views
-  -> optional ICombatTraceSink
+serialized card TextAssets
+  -> CardContentCatalog.FromJson
+  -> CardContentEntry.ArtworkResourcePath
+  -> Resources.Load card artwork
+  -> CardViewModel list + CombatPresentationBinding.ConfigureCards
+  -> CombatSliceState + TimelineGrid + enemy intent
+  -> CombatApplicationSession
+  -> VerticalSliceController.Initialize
 ```
 
-`CombatApplicationSession` 是用例状态的唯一所有者。它消费 `ICardCatalog`，持有选卡、typed target、timeline origin、commit/resolve phase，并返回不可变 view/result。`TimelineGrid` 仍是占格和结算顺序的唯一来源；`ICardEffectHandler` 是效果结算变化点。
+组合根拥有 `CombatApplicationSession` 和运行时创建的 `Sprite`。`OnDestroy()` 负责释放 session，并按 Play/Edit 模式销毁这些 Sprite。它不拥有目标规则、时间轴占格或效果结算；缺失 Inspector 引用、空 fixture 列表、空 fixture 元素或缺失卡图会在初始化时显式失败。
+
+没有使用服务定位器或全局单例。新增依赖必须从 Scene Inspector 或构造参数进入组合根，生命周期也必须由创建它的边界关闭。
+
+## 输入、用例与表现链路
+
+```text
+CardHandHost / TimelineCellView / resolve Button
+  -> four narrow Presenters
+  -> CombatPresentationBinding events
+  -> VerticalSliceController compatibility facade and Unity hit testing
+  -> CombatApplicationSession commands
+  -> CardPlaySession + TimelineGrid + ICardEffectHandler
+  -> CombatCommandResult / ResolutionSnapshot / CombatSessionView
+  -> CombatPresentationBinding.Refresh
+  -> four Presenters update serialized Views
+```
+
+`CombatApplicationSession` 是选卡、typed target、timeline origin、commit/resolve phase 的用例状态所有者。`TimelineGrid` 是占格、结算顺序和已注册 `ICardEffectHandler` 的权威来源。`VerticalSliceController` 仍保留兼容 facade、Unity 射线检测、棋盘 mesh/collider 同步与镜头协调，但不解析 JSON、不加载卡图，也不拥有应用会话的创建或销毁。
+
+`unity/Assets/_Project/Runtime/Presentation/Bindings/CombatPresentationBinding.cs` 统一对 Controller 暴露输入事件，并把同一个 `CombatSessionView` 分发给四个窄 Presenter：
+
+| Presenter | Inspector 依赖 | 职责 |
+| --- | --- | --- |
+| `CardHandPresenter` | `CardHandHost` | 构建卡牌 ViewModel、同步选中态和交互 phase、转发选择/取消/拖拽 |
+| `BoardRangePresenter` | `BoardRangePreview` | 根据 typed tile target 和卡牌 range 显示或清除范围 |
+| `TimelinePresenter` | `TimelinePlacementPreview`、序列化 `TimelineCellView` 列表 | 注册时间轴格、预览合法性、渲染已提交 action、对称解绑输入 |
+| `CombatHudPresenter` | 状态文本、目标文本、Resolve 按钮 | 显示会话 phase/目标状态、控制 Resolve 可用性并转发命令 |
+
+`Bind()`/`Unbind()` 均可重复调用，不复制监听；`CombatPresentationBinding` 不解析内容，也不重算 Domain 规则。
+
+## 内容、原图与效果支持
+
+`unity/Assets/_Project/Runtime/Infrastructure/Cards/CardContentCatalog.cs` 实现 Application 的 `ICardCatalog`。它接受至少一张 typed `CardDefinition`，保持输入顺序，拒绝重复 stable ID，并同时公开只读 `Cards` 与 `Entries`。`CardContentEntry` 从 JSON 的 `front_image` 文件名派生严格资源路径：
+
+```text
+front_image: "tower_card.png"
+  -> ArtworkResourcePath: "Art/Battle/Cards/tower_card"
+```
+
+因此普通新增卡牌由 JSON、同名原图和 Scene 中的 `TextAsset` 引用驱动，不允许在 Controller 中按 stable ID 增加玩法或图片分支。
+
+`unity/Assets/_Project/Runtime/Infrastructure/Effects/CardEffectRegistrationCatalog.cs` 是内容可用性登记表。`CreateVerticalSlice()` 当前登记 `Damage` 和 `Elevation`，组合根用 `Supports(CardDefinition)` 决定卡面是否可交互。它不是效果执行器；真正执行由 `TimelineGrid` 中按 `CardEffectKind` 注册的 `ICardEffectHandler` 完成。未登记效果仍可被 catalog 解析并显示，但保持不可交互；缺少 Domain handler 的 action 在占格前以 `UnsupportedCardEffectException` 失败。
+
+## 结构化诊断
+
+Application 端口 `unity/Assets/_Project/Runtime/Application/Ports/ICombatTraceSink.cs` 定义 `CombatTraceEntry`。每条记录始终包含 `Command`、`PhaseBefore` 和 `PhaseAfter`，并可附带 stable ID、typed target、timeline origin、failure reason、`EffectKind`、`BeforeValue`、`AfterValue`。结算会为 damage 和 elevation 记录可比较的效果前后值。
+
+`unity/Assets/_Project/Runtime/Composition/UnityCombatTraceSink.cs` 是可在 Inspector 关闭的 Unity 适配器。开启时输出以 `TIMEKEY_COMBAT_TRACE` 开头的 `key=value` 日志；关闭时不产生日志。Application 仍只依赖 `ICombatTraceSink`，诊断失败不得改变 seed、战斗快照或命令成败。
 
 ## 模块所有权
 
 | 模块 | 拥有 | 不得拥有 |
 | --- | --- | --- |
-| Domain | 格坐标、卡牌数据、时间轴合法性、效果处理、战斗快照 | Unity 类型、资源路径、UI |
-| Application | 命令顺序、typed target、会话 phase、ports、结构化失败 | JSON/Resources、Prefab、规则重算 |
-| Infrastructure | JSON adapter、卡牌 catalog 和结构化资源定位 | 玩法结果、View |
-| Diagnostics | no-op/collecting/Unity trace sink | 影响 seed、状态或命令成败 |
-| Presentation | 输入映射、View state、相机、范围/时间轴表现 | JSON 解析、stable ID 玩法分支、占格规则 |
-| Composition | Scene Inspector 引用、catalog/trace/session 组装和生命周期 | Domain 规则 |
+| Domain | 格坐标、卡牌 typed schema、时间轴合法性、效果处理器、战斗快照 | Unity 类型、资源路径、UI、Scene 生命周期 |
+| Application | 命令顺序、typed target、会话 phase、ports、结构化结果与 trace entry | JSON/`Resources`、Prefab、表现规则 |
+| Infrastructure | JSON adapter、`CardContentCatalog`、原图资源路径映射、效果支持登记 | 玩法结果、View、Scene 生命周期 |
+| Diagnostics | no-op/collecting trace sink | Unity 日志、改变命令结果 |
+| Presentation | 输入映射、四个 Presenter、Binding、相机与世界/UI 同步 | JSON 解析、stable ID 玩法分支、资源定位、占格规则 |
+| Composition | Inspector 引用、对象图创建、Unity trace sink、session/Sprite 生命周期 | Domain 规则、卡牌专用 Controller 分支 |
 
-## 扩展变化点
+## 扩展约束
 
-新普通卡牌应只增加 fixture/原图/catalog 条目和针对性测试，不修改 Controller。新效果修改 typed payload/adapter、Domain handler 及目标策略，不在 Presenter 写结算。新敌人尚未实现；必须先有纯数据实体与权威 Godot 意图契约。
+- 新普通卡牌：增加合法 JSON、`front_image` 对应原图和组合根 fixture 引用；若只使用已登记效果，不修改 Controller 或 Presenter。
+- 新效果：扩展 typed schema/adapter、Domain `ICardEffectHandler` 和 Application 目标策略，再加入 `CardEffectRegistrationCatalog`；Presenter 只消费结果。
+- 新表现：优先扩展窄 Presenter 或新增 Binding 输出，不让 Application 引用 Unity。
+- 新基础设施：实现 Application/Domain 定义的端口，由 Composition 注入；禁止内层模块反向引用。
 
-## R3 必须关闭的临时债
-
-- 将七卡 catalog/front-image 定位移出 Controller。
-- 增加 Composition 组装边界，移除 `Presentation -> Infrastructure`。
-- 将 CardHand、Timeline、Board/HUD 重复的表现协调交给窄 Presenter/Binding。
-- 把 trace 扩展为包含 effect kind 和 before/after，并接入可关闭 Unity sink。
-- 用场景、Prefab、PlayMode 和实际截图证明组装与生命周期。
+R3 后仍保留的刻意边界是 `VerticalSliceController` 的 Unity 世界表现 facade。后续拆分只能在保留现有 Scene/Prefab 序列化引用、typed session 行为和渲染证据的前提下进行。

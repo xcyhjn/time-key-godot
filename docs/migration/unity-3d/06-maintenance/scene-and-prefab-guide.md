@@ -1,30 +1,38 @@
 # Scene 与 Prefab 维护指南
 
-## 权威资产
+> 状态：解耦 R3 已验证
+> 入口场景：`unity/Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`
 
-- Scene：`unity/Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`
-- UI Prefab：`Prefabs/Battle/UI/TimelineCell.prefab`
-- 卡牌 Prefab：`Prefabs/Battle/Cards/CardView.prefab`
-- 地形 Prefab：`Prefabs/Battle/Terrain/HexBlockGrass.prefab`、`HexBlockDirt.prefab`、`HexColumn.prefab`
-- 目标 Prefab：`Prefabs/Battle/Targets/TargetView.prefab`
+## 可编辑边界
 
-## 稳定与动态边界
+进入 Play 前，场景中应已存在相机 rig、Main Camera、双灯、地面、`BoardRoot`、`TargetAnchor`、EventSystem、Canvas/HUD、`Timeline`、`CardHandHost`、范围预览和时间轴预览。稳定对象不得由 `VerticalSliceController.BuildSceneGraph()` 重新创建。
 
-Play 前必须存在：Camera/rig、Environment/双灯、BattlefieldGround、CombatBoardRoot、TargetAnchor、EventSystem、Canvas/HUD、Header、36 格 Timeline、CardHandHost、DetailPanel 和两个 Preview。
+六个权威 Prefab 位于 `unity/Assets/_Project/Prefabs/Battle/`：`TimelineCell`、`CardView`、草地/裸土 `HexBlock`、`HexColumn` 和 `TargetView`。Prefab 的外观、碰撞体和稳定子层级在 Prefab Mode 修改；不要把实例改动留成未应用 override。
 
-运行时允许变化：19 个 fixture 棋盘柱与各层 block、两张手牌实例、目标实例、Timeline action 状态和后续敌人/VFX。动态对象必须来自保存 Prefab 或职责明确的组件工厂。
+只允许动态实例化运行数据决定的对象：19 个 fixture 六边形列及其高度块、七张手牌实例、目标实例、时间轴行动标记和一次性预览。地块必须从 Prefab 创建；每层有独立 mesh/renderer/collider，中心间距由 `HexTileColumn.BlockSpacing = 0.32` 约束。
 
-## 编辑流程
+## Inspector 接线
 
-1. 直接打开 Scene 或对应 Prefab 修改布局、灯光、材质与序列化字段。
-2. 不在 `VerticalSliceController` 中新增稳定对象构造，也不使用 `GameObject.Find` 补引用。
-3. 若层级损坏，可在干净 Unity 写入窗口执行 `Time Key > Author Editable Combat Scene`；该命令会重建本垂直切片 Scene，因此执行前先确认没有需要保留的未保存 Scene 编辑。
-4. 修改 Prefab/Scene 后先跑 `CombatSceneAssetTests`，再跑完整 EditMode/PlayMode 和视觉 harness。
+场景根的 `CombatCompositionRoot` 持有 `VerticalSliceController`、`CombatPresentationBinding`、`UnityCombatTraceSink` 和卡牌 `TextAsset` 列表。卡牌列表由 authoring 工具按内容目录排序写入；增加普通卡后可重跑工具或在 Inspector 添加对应 JSON，不能在 Controller 增加 stable-ID 分支。
 
-## Inspector 门禁
+`CombatPresentationBinding` 显式引用 `CardHandPresenter`、`BoardRangePresenter`、`TimelinePresenter` 和 `CombatHudPresenter`。`TimelinePresenter` 的槽位列表必须是 36 个唯一单元；`CardHandPresenter` 引用保存的 `CardView` Prefab；`VerticalSliceController` 保留棋盘/目标 Prefab、相机和兼容调用面所需的序列化引用。
 
-Controller 的 Content、Stable Scene References 与 Dynamic Prefabs 三组字段必须全部非空；`timelineCells` 必须恰好 36 个且坐标唯一。`HexColumn` 必须包含 `HexTileColumn`、`BoardTileView` 和 `OccupantAnchor`；每种 HexBlock 必须包含 mesh、renderer、collider。
+缺失引用时先检查组件本身和 Prefab GUID，再运行 `CombatSceneAssetTests`。禁止用 `GameObject.Find`、字符串层级路径、singleton 或 Service Locator 补洞。
 
-## earthquake 不变量
+## 人工编辑流程
 
-任何 Scene/Prefab 修改都必须保持每层间距 `0.32`。earthquake 结算后七个有效柱各新增两块，顶面与 `TargetAnchor` 上移 `0.64`，并在 yaw 0/90/180/270 仍能选择抬高后的中心格。
+1. 在 Unity 打开 `CombatVerticalSlice.unity`，停止 Play 后修改稳定布局或 Prefab。
+2. 保存 Scene/Prefab，重新打开场景确认修改持久化。
+3. 若确需重建权威资产，运行 Editor 菜单对应的 scene authoring 入口；这是覆盖式维护操作，执行前先审查工作树。
+4. 运行 Scene asset EditMode、全量 PlayMode 和 harness；布局或表现变化必须重拍三视口与相关交互截图。
+
+可复制验证命令见 `testing-and-evidence.md`。最小结构测试位于 `unity/Assets/_Project/Tests/EditMode/Composition/CombatSceneAssetTests.cs`，生命周期和集成测试位于 `Tests/PlayMode/`。
+
+## 常见故障与回滚
+
+- 进入 Play 后稳定对象复制：检查是否重新引入运行时 `new GameObject`/`AddComponent`，以及 Binding 是否重复订阅。
+- 手牌或 Timeline 丢失：检查 Presenter 的 Prefab/槽位引用和 Canvas 锚点，不在 Domain 重算布局。
+- 地震后目标浮空或选择失效：检查 `HexTileColumn.TopBounds`、`OccupantAnchor` 和动态 collider 是否随真实 block collection 刷新。
+- 卡牌在 1280 宽度遮住右侧 HUD：检查 `CardHandHost` 的底部左侧锚点、67% 宽度与 280 高度约束。
+
+回滚以单一 Scene/Prefab 检查点为单位，先恢复可验证的序列化引用，再重跑受影响门禁。不得覆盖 Godot 资源、用户脏文件或清理未知目录。

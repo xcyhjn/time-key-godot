@@ -1,6 +1,6 @@
-# Unity Slice 01 / Wave 02A / Wave 02B2A 测试计划
+# Unity 战斗切片与解耦阶段测试计划
 
-> 状态：Wave 02B2A 全部门禁已通过
+> 状态：解耦 R3 全部门禁已通过
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
@@ -58,6 +58,11 @@
 | Wave 02B1 Harness/build | 12 张集成 PNG、场景验证与 Windows build `Succeeded` | `evidence/unity-slice-02b1/harness-summary.json` |
 | Wave 02B1 Windows Player | 退出码 0，日志含 `TIMEKEY_PLAYER_SMOKE_PASS` | `evidence/unity-slice-02b1/verification-summary.md` |
 | Wave 02B1 人工视觉审查 | 1920、1280、2560 与四向镜头无卡面变形/裁切/关键遮挡/预览漂移 | `evidence/unity-slice-02b1/verification-summary.md` |
+| 解耦 R3 Unity EditMode | `92/92`，0 失败、0 跳过；覆盖 Composition、Infrastructure catalog/registry、Application 与 trace 回归 | `evidence/unity-decoupling-r3/editmode-results.xml` |
+| 解耦 R3 Unity PlayMode | `31/31`，0 失败、0 跳过；覆盖 Binding/Presenter、七卡 hand、lighting/earthquake 与 Scene 回归 | `evidence/unity-decoupling-r3/playmode-results.xml` |
+| 解耦 R3 Harness/build | 场景验证通过，14 张 PNG 生成并通过像素门禁，Windows build `Succeeded`、`206747014` bytes | `evidence/unity-decoupling-r3/harness-summary.json` |
+| 解耦 R3 Windows Player | 退出码 0，运行日志包含 `TIMEKEY_PLAYER_SMOKE_PASS`；原始日志按规则不入 Git | `evidence/unity-decoupling-r3/verification-summary.md` |
+| 解耦 R3 人工视觉审查 | 七卡在 1280/1920/2560 三视口完整可见；四向范围、valid/invalid 时间轴与 earthquake 前后均通过 | `evidence/unity-decoupling-r3/*.png` |
 
 ## Wave 02B1 计划门禁
 
@@ -98,3 +103,15 @@
 - Windows build 成功；Player 退出码 0 且含 `TIMEKEY_PLAYER_SMOKE_PASS`。
 
 以上门禁已执行并通过：EditMode `67/67`、PlayMode `25/25`、Cards 子集 `9/9`、Terrain 子集 `3/3`；Editor harness 输出 11 张集成 PNG，Windows x64 development build 为 `Succeeded`，Player 退出码 0 且包含 smoke marker。结构化结果与人工视觉结论见 `evidence/unity-slice-02b2a/verification-summary.md`。
+
+## 解耦 R3 最终门禁
+
+- Infrastructure：七份真实 JSON 进入 `CardContentCatalog`，顺序、唯一 stable ID 与 `FrontImage` 资源路径受测；新增普通卡不要求 Controller 路由变更。
+- Composition：`CombatCompositionRoot` 持有并释放 Application session 与运行时 sprite，统一注入 catalog、effect registry、trace sink 和 Presentation binding；程序集依赖无环。
+- Presentation：`CardHandPresenter`、`BoardRangePresenter`、`TimelinePresenter`、`CombatHudPresenter` 只消费 view/result；`CombatPresentationBinding` 统一拥有输入订阅，重复 Bind/disable/enable 不复制监听。
+- Diagnostics：effect trace 记录 effect kind 与 before/after；关闭或抛异常的 Unity sink 不改变战斗 snapshot。
+- 回归：全量 EditMode `92/92`、PlayMode `31/31`；`lighting` 仍为 10 HP -> 0，`earthquake` 仍对七个有效柱各执行 `+2`，层距严格 `0.32`。
+- 实跑：14 张 `unity-decoupling-r3` PNG 逐张人工通过，覆盖三视口七卡、两卡交互、四向 yaw、时间轴 valid/invalid 与 earthquake 前后。
+- 构建：Windows build `Succeeded`，大小 `206747014` bytes；Player 退出码 0 且 smoke marker 存在。
+
+R3 结构化证据位于 `evidence/unity-decoupling-r3/`。旧切片结果保留为历史证据，最终完成判定以本节全量门禁为准。
