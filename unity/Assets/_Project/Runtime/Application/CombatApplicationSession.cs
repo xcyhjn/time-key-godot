@@ -425,18 +425,48 @@ namespace TimeKey.Application
                             afterValue: tile.AfterLayers));
                     }
                 }
-                else if (effect.Kind == CardEffectKind.Recover)
+                else if (effect.Kind == CardEffectKind.Recover ||
+                         effect.Kind == CardEffectKind.Built ||
+                         effect.Kind == CardEffectKind.Poison)
                 {
                     for (var resultIndex = 0;
                          resultIndex < resolution.OccupantEffectResults.Count;
                          resultIndex++)
                     {
                         var occupant = resolution.OccupantEffectResults[resultIndex];
-                        if (occupant.EffectKind != CardEffectKind.Recover ||
-                            occupant.Before == null ||
-                            occupant.After == null)
+                        if (occupant.EffectKind != effect.Kind || occupant.After == null)
                         {
                             continue;
+                        }
+
+                        int beforeValue;
+                        int afterValue;
+                        switch (effect.Kind)
+                        {
+                            case CardEffectKind.Recover:
+                                if (occupant.Before == null)
+                                {
+                                    continue;
+                                }
+
+                                beforeValue = occupant.Before.Hp;
+                                afterValue = occupant.After.Hp;
+                                break;
+                            case CardEffectKind.Built:
+                                beforeValue = 0;
+                                afterValue = occupant.After.Hp;
+                                break;
+                            case CardEffectKind.Poison:
+                                if (occupant.Before == null)
+                                {
+                                    continue;
+                                }
+
+                                beforeValue = occupant.Before.PoisonStacks;
+                                afterValue = occupant.After.PoisonStacks;
+                                break;
+                            default:
+                                continue;
                         }
 
                         TryRecord(new CombatTraceEntry(
@@ -448,8 +478,8 @@ namespace TimeKey.Application
                             targetCoordinate: occupant.After.Coordinate,
                             timelineOrigin: origin,
                             effectKind: effect.Kind,
-                            beforeValue: occupant.Before.Hp,
-                            afterValue: occupant.After.Hp));
+                            beforeValue: beforeValue,
+                            afterValue: afterValue));
                     }
                 }
             }
@@ -494,6 +524,20 @@ namespace TimeKey.Application
                             return false;
                         }
                     }
+                    else if (_selectedCard.Effects[index].Kind == CardEffectKind.Poison)
+                    {
+                        if (_selectedCard.Range.Count == 0 ||
+                            !_state.TryGetOccupant(
+                                target.EntityId,
+                                target.Coordinate,
+                                out var poisonOccupant) ||
+                            !poisonOccupant.SupportsHealth ||
+                            poisonOccupant.Hp <= 0 ||
+                            !poisonOccupant.SupportsStatus)
+                        {
+                            return false;
+                        }
+                    }
                     else if (!string.Equals(
                                  target.EntityId,
                                  _state.TargetId,
@@ -506,7 +550,22 @@ namespace TimeKey.Application
                 return true;
             }
 
-            return _state.Board.TryGetTile(target.Coordinate, out _);
+            if (!_state.Board.TryGetTile(target.Coordinate, out _))
+            {
+                return false;
+            }
+
+            for (var index = 0; index < _selectedCard.Effects.Count; index++)
+            {
+                if (_selectedCard.Effects[index].Kind == CardEffectKind.Built &&
+                    (_selectedCard.Range.Count == 0 ||
+                     _state.TryGetOccupant(target.Coordinate, out _)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private CombatCommandFailure GetSessionUnavailableFailure()

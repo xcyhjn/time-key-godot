@@ -117,6 +117,32 @@ namespace TimeKey.Presentation.Presenters
         {
             if (state.LastResolution != null)
             {
+                var occupantResults = state.LastResolution.OccupantEffectResults;
+                if (occupantResults.Count > 0)
+                {
+                    var result = occupantResults[occupantResults.Count - 1];
+                    if (result.After != null)
+                    {
+                        var label = string.IsNullOrWhiteSpace(result.After.CreationId)
+                            ? result.After.RuntimeId
+                            : result.After.CreationId;
+                        if (result.Before != null &&
+                            result.After.PoisonStacks != result.Before.PoisonStacks)
+                        {
+                            return label.ToUpperInvariant() +
+                                   "  |  POISON " +
+                                   result.After.PoisonStacks;
+                        }
+
+                        if (result.After.SupportsHealth)
+                        {
+                            return label.ToUpperInvariant() +
+                                   "  |  HP " +
+                                   result.After.Hp;
+                        }
+                    }
+                }
+
                 return "TARGET  |  HP " + state.LastResolution.TargetHpAfter;
             }
 

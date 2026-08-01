@@ -208,6 +208,7 @@ MonoBehaviour:
   boardRangePresenter: {fileID: 2037198124}
   timelinePresenter: {fileID: 1140603687}
   hudPresenter: {fileID: 1073426465}
+  occupantPresenter: {fileID: 1759641343}
 --- !u!114 &1004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7292,6 +7293,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1759641342}
+  - component: {fileID: 1759641343}
   m_Layer: 0
   m_Name: CombatBoardRoot
   m_TagString: Untagged
@@ -7316,6 +7318,23 @@ Transform:
   - {fileID: 2037198122}
   m_Father: {fileID: 87960575}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1759641343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1759641341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77bd0c1080254fddb70e9a22a5917b85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Presenters.CombatOccupantPresenter
+  sceneCamera: {fileID: 1810554362}
+  creationViews:
+  - creationId: tower
+    prefab: {fileID: 6314564684784629840, guid: 805397ae71bc4b34a9b63d8acbdd941e, type: 3}
+  poisonStatusPrefab: {fileID: 784423089715163707, guid: 735925780bf15cf45b8b3b71c73edf7a, type: 3}
 --- !u!1001 &1775586395
 PrefabInstance:
   m_ObjectHideFlags: 0

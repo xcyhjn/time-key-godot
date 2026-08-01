@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
+using TimeKey.Presentation.Terrain;
 using UnityEngine;
 
 namespace TimeKey.Presentation.Bindings
@@ -15,6 +17,7 @@ namespace TimeKey.Presentation.Bindings
         [SerializeField] private BoardRangePresenter boardRangePresenter = null;
         [SerializeField] private TimelinePresenter timelinePresenter = null;
         [SerializeField] private CombatHudPresenter hudPresenter = null;
+        [SerializeField] private CombatOccupantPresenter occupantPresenter = null;
 
         private bool _isBound;
 
@@ -29,6 +32,8 @@ namespace TimeKey.Presentation.Bindings
         public bool IsBound => _isBound;
 
         public int TimelineCellCount => timelinePresenter == null ? 0 : timelinePresenter.CellCount;
+
+        public CombatOccupantPresenter OccupantPresenter => occupantPresenter;
 
         public void ConfigureCards(IReadOnlyList<CardViewModel> cards)
         {
@@ -109,12 +114,33 @@ namespace TimeKey.Presentation.Bindings
             timelinePresenter.ClearPreview();
         }
 
+        public void RegisterOccupantColumn(HexCoord coordinate, HexTileColumn column)
+        {
+            ValidateDependencies();
+            occupantPresenter.RegisterColumn(coordinate, column);
+        }
+
+        public void RegisterExistingOccupant(
+            CombatOccupantSnapshot occupant,
+            CombatOccupantView view)
+        {
+            ValidateDependencies();
+            occupantPresenter.RegisterExisting(occupant, view);
+        }
+
+        public void ApplyOccupantEffects(IReadOnlyList<OccupantEffectResult> results)
+        {
+            ValidateDependencies();
+            occupantPresenter.Apply(results);
+        }
+
         private void OnEnable()
         {
             if (cardHandPresenter != null &&
                 boardRangePresenter != null &&
                 timelinePresenter != null &&
-                hudPresenter != null)
+                hudPresenter != null &&
+                occupantPresenter != null)
             {
                 Bind();
             }
@@ -145,6 +171,11 @@ namespace TimeKey.Presentation.Bindings
             if (hudPresenter == null)
             {
                 throw MissingReference(nameof(hudPresenter));
+            }
+
+            if (occupantPresenter == null)
+            {
+                throw MissingReference(nameof(occupantPresenter));
             }
         }
 

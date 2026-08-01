@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Occupants;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -255,6 +256,126 @@ namespace TimeKey.Editor
             Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_A_CAPTURE_PASS");
         }
 
+        [MenuItem("Time Key/Capture Remaining Cards Gate B")]
+        public static void CaptureRemainingCardsGateB()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var evidenceDirectory = GetRemainingCardsGateBEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var captures = new List<CaptureStats>();
+
+            var towerController = OpenInitializedSlice();
+            towerController.SetBoardView(32f);
+            if (!towerController.SelectCard("tower"))
+            {
+                throw new InvalidOperationException("The TOWER card could not be selected.");
+            }
+
+            towerController.CardHandHost.ApplyVisualStateImmediate();
+            captures.Add(Capture(towerController, evidenceDirectory, "tower-selected.png", 1280, 720));
+            var towerCoordinate = new HexCoord(0, 0);
+            if (!towerController.SelectEarthquakeTarget(towerCoordinate))
+            {
+                throw new InvalidOperationException("The empty Tower tile could not be selected.");
+            }
+
+            captures.Add(Capture(towerController, evidenceDirectory, "tower-targeted.png", 1280, 720));
+            if (!towerController.PreviewTimelineSelected(4, 0))
+            {
+                throw new InvalidOperationException("The Tower timeline preview was not legal.");
+            }
+
+            captures.Add(Capture(towerController, evidenceDirectory, "tower-timeline-valid.png", 1280, 720));
+            if (!towerController.TryPlaceSelected(4, 0))
+            {
+                throw new InvalidOperationException("The Tower action could not be committed.");
+            }
+
+            var towerSnapshot = towerController.ResolveTimeline();
+            if (towerSnapshot.OccupantEffectResults.Count != 1 ||
+                towerSnapshot.OccupantEffectResults[0].After == null ||
+                towerSnapshot.OccupantEffectResults[0].After.CreationId != "tower" ||
+                towerSnapshot.OccupantEffectResults[0].After.Hp != 100)
+            {
+                throw new InvalidOperationException("Tower did not create one 100 HP occupant.");
+            }
+
+            var towerObject = GameObject.Find(
+                "Occupant-" + towerSnapshot.OccupantEffectResults[0].After.RuntimeId);
+            if (towerObject == null ||
+                towerObject.GetComponent<CombatOccupantView>() == null ||
+                towerObject.GetComponentsInChildren<Collider>(true).Length != 0)
+            {
+                throw new InvalidOperationException("The rendered Tower Prefab is incomplete.");
+            }
+
+            captures.Add(Capture(towerController, evidenceDirectory, "tower-after-resolve.png", 1280, 720));
+
+            var poisonController = OpenInitializedSlice();
+            poisonController.SetBoardView(32f);
+            if (!poisonController.SelectCard("poison"))
+            {
+                throw new InvalidOperationException("The POISON card could not be selected.");
+            }
+
+            poisonController.CardHandHost.ApplyVisualStateImmediate();
+            captures.Add(Capture(poisonController, evidenceDirectory, "poison-selected.png", 1280, 720));
+            if (!poisonController.SelectTarget(VerticalSliceController.TargetId))
+            {
+                throw new InvalidOperationException("The poison target could not be selected.");
+            }
+
+            captures.Add(Capture(poisonController, evidenceDirectory, "poison-targeted.png", 1280, 720));
+            if (!poisonController.PreviewTimelineSelected(4, 0))
+            {
+                throw new InvalidOperationException("The poison timeline preview was not legal.");
+            }
+
+            captures.Add(Capture(poisonController, evidenceDirectory, "poison-timeline-valid.png", 1280, 720));
+            if (!poisonController.TryPlaceSelected(4, 0))
+            {
+                throw new InvalidOperationException("The poison action could not be committed.");
+            }
+
+            var poisonSnapshot = poisonController.ResolveTimeline();
+            var poisonStatus = GameObject.Find("PoisonStatus-" + VerticalSliceController.TargetId);
+            if (poisonSnapshot.OccupantEffectResults.Count != 1 ||
+                poisonSnapshot.OccupantEffectResults[0].Before.PoisonStacks != 0 ||
+                poisonSnapshot.OccupantEffectResults[0].After.PoisonStacks != 2 ||
+                poisonStatus == null ||
+                poisonStatus.GetComponent<PoisonStatusView>() == null ||
+                poisonStatus.GetComponent<PoisonStatusView>().Stacks != 2)
+            {
+                throw new InvalidOperationException("Poison did not render its +2 status result.");
+            }
+
+            captures.Add(Capture(poisonController, evidenceDirectory, "poison-after-resolve.png", 1280, 720));
+            WriteRemainingCardsGateBSummary(evidenceDirectory, captures);
+            Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_B_CAPTURE_PASS");
+        }
+
+        private static VerticalSliceController OpenInitializedSlice()
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+            {
+                throw new InvalidOperationException("The vertical slice scene could not be opened.");
+            }
+
+            var root = GameObject.Find("VerticalSliceRoot");
+            var controller = root == null ? null : root.GetComponent<VerticalSliceController>();
+            var composition = root == null ? null : root.GetComponent<CombatCompositionRoot>();
+            if (controller == null || composition == null)
+            {
+                throw new InvalidOperationException("The vertical slice root is incomplete.");
+            }
+
+            composition.Initialize();
+            controller.BuildSceneGraph();
+            ValidateScene(controller, composition);
+            return controller;
+        }
+
         private static void ValidateScene(
             VerticalSliceController controller,
             CombatCompositionRoot composition)
@@ -435,6 +556,24 @@ namespace TimeKey.Editor
                 "remaining-cards-gate-a");
         }
 
+        private static string GetRemainingCardsGateBEvidenceDirectory()
+        {
+            var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
+            if (string.IsNullOrWhiteSpace(repositoryRoot))
+            {
+                repositoryRoot = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", ".."));
+            }
+
+            return Path.Combine(
+                repositoryRoot,
+                "docs",
+                "migration",
+                "unity-3d",
+                "04-verification",
+                "evidence",
+                "remaining-cards-gate-b");
+        }
+
         private static void WriteRemainingCardsGateASummary(
             string directory,
             IReadOnlyList<CaptureStats> captures)
@@ -453,6 +592,25 @@ namespace TimeKey.Editor
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             File.WriteAllText(Path.Combine(directory, "gate-a-summary.json"), builder.ToString());
+        }
+
+        private static void WriteRemainingCardsGateBSummary(
+            string directory,
+            IReadOnlyList<CaptureStats> captures)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"towerHp\": 100,");
+            builder.AppendLine("  \"poisonStacks\": 2,");
+            builder.AppendLine("  \"screenshots\": [");
+            for (var index = 0; index < captures.Count; index++)
+            {
+                AppendCapture(builder, captures[index], index < captures.Count - 1);
+            }
+            builder.AppendLine("  ]");
+            builder.AppendLine("}");
+            File.WriteAllText(Path.Combine(directory, "gate-b-summary.json"), builder.ToString());
         }
 
         private static void WriteSummary(

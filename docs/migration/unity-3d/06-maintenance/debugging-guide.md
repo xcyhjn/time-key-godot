@@ -12,7 +12,7 @@ CardHandHost / TimelineCell / world raycast
   -> CombatApplicationSession
   -> CardPlaySession + TimelineGrid + registered Domain handlers
   -> CombatCommandResult / CombatSessionView / ResolutionSnapshot
-  -> presenters refresh HUD, range, timeline and world columns
+  -> presenters refresh HUD, range, timeline, world columns and occupant/status views
   -> optional ICombatTraceSink
 ```
 
@@ -28,6 +28,7 @@ Composition 入口是 `Runtime/Composition/CombatCompositionRoot.cs`。它创建
 - 状态机或失败原因：`CombatApplicationSession.SelectCard/SelectTarget/PreviewTimeline/CommitTimeline/ResolveTimeline`。
 - 时间轴合法性：`TimelineGrid.CanPlace/TryPlace/Resolve`，不要在 Presenter 复制规则。
 - 地震结果：Domain elevation handler 的 `EffectResults`，随后检查 Controller 对 `HexTileColumn.ApplyLogicalLayerCount` 的同步。
+- Tower/Poison：先看 `OccupantEffectResults` 的 runtime ID、coordinate、creation/HP/stacks before/after，再看 `CombatOccupantPresenter` 的 anchor、Prefab registration 和 status View；不要从 GameObject 反推规则状态。
 - 资源错误：`CardJsonAdapter.Parse`、`CardContentCatalog`、`CardContentEntry.ArtworkResourcePath` 和 Composition 的 `Resources.Load<Sprite>`。
 
 ## 常见故障
@@ -38,6 +39,7 @@ Composition 入口是 `Runtime/Composition/CombatCompositionRoot.cs`。它创建
 - 范围/Timeline 颜色错误：确认 Presenter 消费 `CombatSessionView` 与 `CanPlace` 结果，没有重新计算领域合法性。
 - 地震视觉层数不对：先比较 trace 的 before/after，再检查每列 blocks、`TopBounds`、anchor 和 collider；逻辑正确而截图不对属于 Presentation 同步问题。
 - 四向点选失败：检查 EventSystem 的 UI 输入门禁、camera input 状态和抬高后顶层 collider。
+- Tower 不显示或 Poison 图标为 Missing：检查 Scene 的 `CombatOccupantPresenter.creationViews` / `poisonStatusPrefab` 是否为非零 Prefab GUID，以及原 PNG import 是否 Point、Clamp、无 mipmap/压缩。
 
 运行命令与证据规则见 `testing-and-evidence.md`。调试修复后先跑对应 filter，再跑全量 EditMode/PlayMode；渲染或场景接线变化还必须重跑 harness、build、Player 并人工开图。
 

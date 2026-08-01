@@ -23,8 +23,8 @@
 | 雷击效果 | damage 100 | 10 HP 目标钳制为 0 | 等价 | snapshot 测试 + resolved PNG |
 | 地震效果 | 目标中心与六邻格 `elevation +2`；Godot 层高间隔为 `0.32` | 七个有效柱各新增两个独立 mesh/renderer/collider block，顶面与 occupant anchor 上移 `0.64` | 等价 | `evidence/unity-decoupling-r3/earthquake-before-1920x1080.png`、`earthquake-after-1920x1080.png` + PlayMode |
 | Recover | `+100`，Resolve 重查当前 occupant，钳制 MaxHP | 稳定 ID+HexCoord 选择与 Resolve 重判；HP=0 可恢复，满血/消失/替换 no-op，10→100 并输出 typed before/after | 等价 | `evidence/remaining-cards-gate-a/editmode-results.xml`、`playmode-results.xml`、5 张 PNG |
-| Built/Tower | 空地创建 Middle Tower，HP100；同结束回合 decay 属于下一波 | Gate B 待实现原 Tower billboard Prefab 与 Neutral HP100 occupant；本阶段不 decay | 待验证 | `agents/reports/remaining-cards-asset-ui-audit.md` |
-| Poison | 活体 +2，无上限累加；回合开始 tick 属于下一波 | Gate B 待实现 typed stacks 与原 poison icon+层数；本阶段不 tick | 待验证 | `agents/reports/remaining-cards-source-semantics.md` |
+| Built/Tower | 空地创建 Middle Tower，HP100；同结束回合 decay 属于下一波 | 空 tile 选择与 Resolve 重判，创建 Neutral Tower HP100；原图 billboard Prefab、无 collider；本阶段不 decay | 等价 | `evidence/remaining-cards-gate-b/editmode-results.xml`、`playmode-results.xml`、Tower PNG |
+| Poison | 活体 +2，无上限累加；回合开始 tick 属于下一波 | 活体+status 重判，checked `0→2→4` typed snapshot；原 poison icon+整数层数；本阶段不 tick | 等价 | `evidence/remaining-cards-gate-b/editmode-results.xml`、Poison PNG |
 | Wind/Tornado clear | 无地图目标；2x2/12x1 mask；空清；任一格命中整 action 删除 | Gate C 待实现独立 clear session、identity 去重和三态预览 | 待验证 | `agents/reports/remaining-cards-unity-extension-audit.md` |
 | 场景与组合边界 | Godot 场景保存稳定节点，脚本在运行时组织玩法 | Unity 稳定层级与六个 Prefab 可在 Inspector 编辑；`CombatCompositionRoot` 只在组合层装配 session、catalog、presenter 与 trace sink | 允许差异 | `evidence/unity-decoupling-r3/harness-summary.json` + Scene/Prefab EditMode |
 | 表现层输入与刷新 | Godot 节点信号驱动卡牌、范围、时间轴和 HUD | `CombatPresentationBinding` 统一订阅输入，四个 Presenter 只消费 Application view/result；Controller 不再加载 JSON/Resources 或按 stable ID 分支 | 允许差异 | `evidence/unity-decoupling-r3/editmode-results.xml` + PlayMode |
@@ -34,4 +34,4 @@
 | 胜负/奖励/返回 | 可进入奖励与局外返回路径 | 非首切片目标 | 未实现 | source map |
 | 视觉 | 2D 像素/UI；1920 基线且 1280 菜单可读 | Blender 低多边形地块 + 原建筑 billboard + uGUI；1280/1920/2560 七卡、四向范围和结算前后均可读 | 允许差异 | `evidence/unity-decoupling-r3/` 的 14 张 PNG + 3 张 Blender PNG |
 
-判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1、Wave 02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate A 已关闭。Tower decay、Poison tick 与敌方/建筑行动留给 02B3，牌库/回合资源/胜负留给 02B4，局外保持原状。
+判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1、Wave 02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate A/B 已关闭。Tower decay、Poison tick 与敌方/建筑行动留给 02B3，牌库/回合资源/胜负留给 02B4，局外保持原状。

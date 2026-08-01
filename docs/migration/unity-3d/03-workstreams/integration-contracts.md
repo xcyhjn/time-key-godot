@@ -204,7 +204,7 @@ R3 冻结证据为 full EditMode `92/92`、full PlayMode `31/31`、Windows build
 
 ## Remaining Cards Gate 0 冻结契约
 
-> 状态：2026-08-01 三路只读审计、最小冒烟与 Gate A Recover 通过；实现按 Gate B/C 推进
+> 状态：2026-08-01 Gate A Recover 与 Gate B Built/Poison 通过；实现按 Gate C 推进
 
 ```text
 ordinary: CardDefinition -> CombatApplicationSession -> CardPlaySession
@@ -225,5 +225,7 @@ clear:    CardDefinition.ClearMask -> TimelineClearSession
 - Gate A 架构验收：`recover` 完整链不得修改 `VerticalSliceController.cs`。
 
 Gate A 已以 Controller 零 diff、全量 EditMode `107/107`、Recover 公共 Scene PlayMode `1/1` 和 5 张实际渲染图验收。共享 occupant/result 与 `ICardEffectHandler.Supports(CardEffect)` 契约现为 Gate B 的输入，不得由 Built/Poison 各自复制第二套状态模型。
+
+Gate B 已以全量 EditMode `130/130`、Scene PlayMode `3/3`、定向 authoring、两个保存 Prefab 和 8 张实际渲染图验收。`CombatOccupantPresenter` 只以 creation→Prefab 序列化表和 snapshot 状态创建/刷新 View，不持有 Domain identity；Tower decay 与 Poison tick 继续留给 02B3。
 
 Gate 0 最小冒烟为 EditMode `24/24`、PlayMode `10/10`，0 失败。旧 R3 build/Player/未受影响视觉先继承；修改对应运行程序集/Scene 后在 Gate D 全量刷新。

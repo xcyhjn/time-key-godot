@@ -101,12 +101,12 @@ namespace TimeKey.Tests.EditMode
         }
 
         [Test]
-        public void TryPlace_UnsupportedTypedEffectFailsBeforeOccupyingTimeline()
+        public void TryPlace_InvalidPoisonPayloadFailsBeforeOccupyingTimeline()
         {
             var card = new CardDefinition(
                 "poison",
                 3,
-                new[] { new CardEffect(CardEffectKind.Poison, 2) },
+                new[] { new CardEffect(CardEffectKind.Poison, 3) },
                 new[] { new HexCoord(0, 0) },
                 new[] { new TimelineCell(0, 0) });
             var action = TimelineAction.FromCard(card, "target", new TimelineCell(0, 0));

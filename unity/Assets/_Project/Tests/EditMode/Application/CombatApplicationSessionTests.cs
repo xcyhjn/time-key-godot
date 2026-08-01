@@ -224,6 +224,93 @@ namespace TimeKey.Tests.EditMode.Application
         }
 
         [Test]
+        public void BuiltPath_RequiresEmptyTileAndCreatesTowerThroughApplication()
+        {
+            var state = new CombatSliceState("target-01", 10, 731, CreateSevenTileBoard());
+            var session = CreateSession(state, out _, out var sink);
+
+            Assert.That(session.SelectCard("tower").Succeeded, Is.True);
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForTile(new HexCoord(1, 0))).Failure,
+                Is.EqualTo(CombatCommandFailure.InvalidTarget));
+            Assert.That(
+                session.SelectTarget(CombatTarget.ForTile(new HexCoord(0, 0))).Succeeded,
+                Is.True);
+            Assert.That(session.PreviewTimeline(new TimelineCell(4, 0)).Succeeded, Is.True);
+            Assert.That(session.CommitTimeline().Succeeded, Is.True);
+
+            var result = session.ResolveTimeline();
+
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That(result.Resolution.OccupantEffectResults, Has.Count.EqualTo(1));
+            var tower = result.Resolution.OccupantEffectResults[0].After;
+            Assert.That(tower.CreationId, Is.EqualTo("tower"));
+            Assert.That(tower.Attitude, Is.EqualTo(CombatAttitude.Neutral));
+            Assert.That(tower.Hp, Is.EqualTo(100));
+            Assert.That(tower.Coordinate, Is.EqualTo(new HexCoord(0, 0)));
+            var trace = sink.Entries.Single(item =>
+                item.Command == "resolve-effect" && item.EffectKind == CardEffectKind.Built);
+            Assert.That(trace.BeforeValue, Is.Zero);
+            Assert.That(trace.AfterValue, Is.EqualTo(100));
+        }
+
+        [Test]
+        public void PoisonPath_RequiresLivingStatusOccupantAndAccumulatesStacks()
+        {
+            var state = CreateRecoverState(10, 100);
+            var session = CreateSession(state, out _, out var sink);
+
+            Assert.That(session.SelectCard("poison").Succeeded, Is.True);
+            Assert.That(
+                session.SelectTarget(
+                    CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Succeeded,
+                Is.True);
+            Assert.That(session.PreviewTimeline(new TimelineCell(4, 0)).Succeeded, Is.True);
+            Assert.That(session.CommitTimeline().Succeeded, Is.True);
+
+            var result = session.ResolveTimeline();
+
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That(result.Resolution.OccupantEffectResults, Has.Count.EqualTo(1));
+            Assert.That(result.Resolution.OccupantEffectResults[0].Before.PoisonStacks, Is.Zero);
+            Assert.That(result.Resolution.OccupantEffectResults[0].After.PoisonStacks, Is.EqualTo(2));
+            var trace = sink.Entries.Single(item =>
+                item.Command == "resolve-effect" && item.EffectKind == CardEffectKind.Poison);
+            Assert.That(trace.BeforeValue, Is.Zero);
+            Assert.That(trace.AfterValue, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void PoisonSelection_RejectsDeadOrStatusUnsupportedOccupant()
+        {
+            var deadSession = CreateSession(CreateRecoverState(0, 100), out _, out _);
+            Assert.That(deadSession.SelectCard("poison").Succeeded, Is.True);
+            Assert.That(
+                deadSession.SelectTarget(
+                    CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Failure,
+                Is.EqualTo(CombatCommandFailure.InvalidTarget));
+
+            var board = CreateSevenTileBoard();
+            var unsupported = new CombatOccupantState(
+                "target-01",
+                new HexCoord(0, 0),
+                "entity",
+                CombatAttitude.Enemy,
+                hp: 10,
+                maxHp: 100,
+                poisonStacks: 0,
+                supportsHealth: true,
+                supportsStatus: false);
+            var state = new CombatSliceState("target-01", 731, board, new[] { unsupported });
+            var unsupportedSession = CreateSession(state, out _, out _);
+            Assert.That(unsupportedSession.SelectCard("poison").Succeeded, Is.True);
+            Assert.That(
+                unsupportedSession.SelectTarget(
+                    CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Failure,
+                Is.EqualTo(CombatCommandFailure.InvalidTarget));
+        }
+
+        [Test]
         public void InvalidCommandOrderReturnsStructuredFailuresWithoutMutation()
         {
             var session = CreateSession(out var grid, out var sink);
@@ -353,10 +440,22 @@ namespace TimeKey.Tests.EditMode.Application
         }
 
         [Test]
-        public void UnsupportedEffectFailsExplicitlyBeforeOccupyingTimelineAndIsTraced()
+        public void InvalidEffectPayloadFailsExplicitlyBeforeOccupyingTimelineAndIsTraced()
         {
-            var session = CreateSession(out var grid, out var sink);
-            Assert.That(session.SelectCard("poison").Succeeded, Is.True);
+            var invalidPoison = new CardDefinition(
+                "poison-invalid",
+                70,
+                new[] { new CardEffect(CardEffectKind.Poison, 3) },
+                new[] { new HexCoord(0, 0) },
+                new[] { new TimelineCell(0, 0) });
+            var grid = new TimelineGrid();
+            var sink = new CollectingCombatTraceSink();
+            var session = new CombatApplicationSession(
+                new TestCardCatalog(new[] { invalidPoison }),
+                CreateRecoverState(10, 100),
+                grid,
+                traceSink: sink);
+            Assert.That(session.SelectCard("poison-invalid").Succeeded, Is.True);
             Assert.That(
                 session.SelectTarget(CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Succeeded,
                 Is.True);
@@ -365,7 +464,7 @@ namespace TimeKey.Tests.EditMode.Application
 
             Assert.That(result.Failure, Is.EqualTo(CombatCommandFailure.UnsupportedEffect));
             Assert.That(result.FailureReason, Does.Contain("Poison"));
-            Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
+            Assert.That(grid.OccupiedCellCount, Is.Zero);
             Assert.That(sink.Entries.Last().FailureReason, Does.Contain("Poison"));
         }
 
@@ -524,7 +623,8 @@ namespace TimeKey.Tests.EditMode.Application
                 CreateLighting(),
                 CreateEarthquake(),
                 CreateRecover(),
-                CreatePoison()
+                CreatePoison(),
+                CreateBuilt()
             });
         }
 
@@ -585,6 +685,22 @@ namespace TimeKey.Tests.EditMode.Application
                 new[] { new CardEffect(CardEffectKind.Poison, 2) },
                 new[] { new HexCoord(0, 0) },
                 new[] { new TimelineCell(0, 0) });
+        }
+
+        private static CardDefinition CreateBuilt()
+        {
+            return new CardDefinition(
+                "tower",
+                6,
+                new[] { new CardEffect(CardEffectKind.Built, 1, "tower") },
+                new[] { new HexCoord(0, 0) },
+                new[]
+                {
+                    new TimelineCell(1, 0),
+                    new TimelineCell(0, 1),
+                    new TimelineCell(1, 1),
+                    new TimelineCell(2, 1)
+                });
         }
 
         private static CombatBoardState CreateSevenTileBoard()

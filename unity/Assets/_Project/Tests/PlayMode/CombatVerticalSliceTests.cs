@@ -4,6 +4,7 @@ using NUnit.Framework;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Terrain;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -167,6 +168,66 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(snapshot.OccupantEffectResults[0].EffectKind, Is.EqualTo(CardEffectKind.Recover));
             Assert.That(snapshot.OccupantEffectResults[0].Before.Hp, Is.EqualTo(10));
             Assert.That(snapshot.OccupantEffectResults[0].After.Hp, Is.EqualTo(100));
+        }
+
+        [UnityTest]
+        public IEnumerator Built_PublicScenePathCreatesTowerPrefabViewOnEmptyTile()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            var coordinate = new HexCoord(0, 0);
+
+            Assert.That(controller.SelectCard("tower"), Is.True);
+            Assert.That(controller.SelectEarthquakeTarget(coordinate), Is.True);
+            Assert.That(controller.PreviewTimelineSelected(4, 0), Is.True);
+            Assert.That(controller.TryPlaceSelected(4, 0), Is.True);
+
+            var snapshot = controller.ResolveTimeline();
+
+            Assert.That(snapshot.OccupantEffectResults, Has.Count.EqualTo(1));
+            var tower = snapshot.OccupantEffectResults[0].After;
+            Assert.That(tower.CreationId, Is.EqualTo("tower"));
+            Assert.That(tower.Coordinate, Is.EqualTo(coordinate));
+            Assert.That(tower.Hp, Is.EqualTo(100));
+            var towerObject = GameObject.Find("Occupant-" + tower.RuntimeId);
+            Assert.That(towerObject, Is.Not.Null);
+            Assert.That(towerObject.GetComponent<CombatOccupantView>(), Is.Not.Null);
+            Assert.That(towerObject.transform.Find("OriginalArt-tower"), Is.Not.Null);
+            Assert.That(towerObject.GetComponentsInChildren<Collider>(true), Is.Empty);
+            Assert.That(
+                GameObject.Find("TargetStatus").GetComponent<Text>().text,
+                Is.EqualTo("TOWER  |  HP 100"));
+        }
+
+        [UnityTest]
+        public IEnumerator Poison_PublicScenePathShowsOriginalIconAndStackCount()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+
+            Assert.That(controller.SelectCard("poison"), Is.True);
+            Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
+            Assert.That(controller.PreviewTimelineSelected(4, 0), Is.True);
+            Assert.That(controller.TryPlaceSelected(4, 0), Is.True);
+
+            var snapshot = controller.ResolveTimeline();
+
+            Assert.That(snapshot.OccupantEffectResults, Has.Count.EqualTo(1));
+            Assert.That(snapshot.OccupantEffectResults[0].Before.PoisonStacks, Is.Zero);
+            Assert.That(snapshot.OccupantEffectResults[0].After.PoisonStacks, Is.EqualTo(2));
+            var statusObject = GameObject.Find("PoisonStatus-" + VerticalSliceController.TargetId);
+            Assert.That(statusObject, Is.Not.Null);
+            var status = statusObject.GetComponent<PoisonStatusView>();
+            Assert.That(status, Is.Not.Null);
+            Assert.That(status.Stacks, Is.EqualTo(2));
+            Assert.That(statusObject.GetComponentInChildren<TextMesh>(true).text, Is.EqualTo("2"));
+            var icon = statusObject.GetComponentInChildren<SpriteRenderer>(true).sprite;
+            Assert.That(icon, Is.Not.Null);
+            Assert.That(icon.texture.width, Is.EqualTo(160));
+            Assert.That(icon.texture.height, Is.EqualTo(160));
+            Assert.That(
+                GameObject.Find("TargetStatus").GetComponent<Text>().text,
+                Is.EqualTo("TARGET-01  |  POISON 2"));
         }
 
         [UnityTest]

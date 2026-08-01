@@ -184,7 +184,9 @@ namespace TimeKey.Domain
             {
                 new DamageCardEffectHandler(),
                 new ElevationCardEffectHandler(),
-                new RecoverCardEffectHandler()
+                new RecoverCardEffectHandler(),
+                new BuiltCardEffectHandler(),
+                new PoisonCardEffectHandler()
             };
         }
 

@@ -74,8 +74,8 @@ Agent B 与 C 的冻结路径保持互斥，并且都不修改 Controller、Scen
 | --- | --- | --- | --- | --- |
 | Gate 0 | 三个只读审计 | 各自 `agents/reports/remaining-cards-*.md` | 前置解耦关闭 | 已完成交回 |
 | Gate A | Agent A Recover | 共享 occupant/result、Recover handler、TimelineGrid、Application 与对应 EditMode tests | Prompt review PASS | 已完成并交回；40/40 Agent filter、Gate A 全量 107/107 |
-| Gate B | Agent B1 Built | 新 Built handler/test/report | Gate A 交回 | 待启动，可与 B2 并行 |
-| Gate B | Agent B2 Poison | 新 Poison handler/test/report | Gate A 交回 | 待启动，可与 B1 并行 |
+| Gate B | Agent B1 Built | 新 Built handler/test/report | Gate A 交回 | 已完成交回；10 个独占 case 静态通过，纳入全量 130/130 |
+| Gate B | Agent B2 Poison | 新 Poison handler/test/report | Gate A 交回 | 外部 Agent 鉴权失败后主智能体按 reviewed Prompt 接管完成；纳入全量 130/130 |
 | Gate C | Agent C1 Clear Domain | TimelineGrid clear API、clear session、Application 与 EditMode tests | Gate B 集成 | 待启动 |
 | Gate C | Agent C2 Clear Presentation | Timeline preview/presenter/cell 与对应 PlayMode tests | C1 契约冻结 | 待启动 |
 | 全程 | 主智能体 | Controller/Binding/Composition/Infrastructure registry、Scene/Prefab/资产、Editor、asmdef、共享文档/证据/Git | 每波交回 | 进行中 |

@@ -1,6 +1,6 @@
 # 添加卡牌效果
 
-> 状态：当前运行时已注册 `Damage`、`Elevation` 与 `Recover`；其他 typed schema 仍 fail-fast
+> 状态：当前普通时间轴已注册 `Damage`、`Elevation`、`Recover`、`Built` 与 `Poison`；`Clear` 使用后续独立会话
 
 ## 最小修改面
 
@@ -19,5 +19,7 @@ Trace 的 `resolve-effect` 条目应包含 kind、before、after。逻辑错误�
 例如 `Elevation +2` 的验收不是只看数值：七个有效柱各新增两个独立 mesh/renderer/collider，块间 `0.32`，顶面与 occupant anchor 上移 `0.64`，范围和四向选择继续正确。
 
 `Recover +100` 的已验证最小切片是：handler 精确重查 runtime ID + coordinate，只接受存在、支持生命且未满血的 occupant；HP=0 可恢复，结果钳制 `MaxHP`，满血/消失/不同 ID 替换/缺 range 均无副作用。Infrastructure 注册后真实卡立即沿公共 Scene 路径可用；`VerticalSliceController.cs` 不应产生差异。对应测试与截图位于 `04-verification/evidence/remaining-cards-gate-a/`。
+
+`Built tower,1` 只在真实空 tile Resolve 时创建一个 Neutral HP100 occupant，结果为 `Before=null, After=tower`；`Poison +2` 只对仍存活且支持状态的 stable occupant 累加 stacks。两者共用 `CombatOccupantState` 和 `CardEffectResultBuffer`；Presentation 只消费 snapshot。Tower 生命周期和 Poison tick 不属于“添加效果”步骤，必须由回合/意图阶段另行实现。
 
 Inspector 只应新增真实需要的 Prefab/Presenter 引用，不把 handler 做成场景对象。回滚按 adapter、Domain handler、Application target policy、registration、测试/表现的单一切片撤销；不得留下已注册但无实现的效果。

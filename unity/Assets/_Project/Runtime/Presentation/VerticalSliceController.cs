@@ -5,6 +5,7 @@ using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
 using UnityEngine;
@@ -251,6 +252,11 @@ namespace TimeKey.Presentation
 
         public bool SelectTarget(string targetId)
         {
+            return SelectTarget(targetId, TargetCoordinate);
+        }
+
+        public bool SelectTarget(string targetId, HexCoord coordinate)
+        {
             EnsureBuilt();
             var current = _applicationSession.Current;
             if (current.SelectedCard == null ||
@@ -261,7 +267,7 @@ namespace TimeKey.Presentation
             }
 
             var result = _applicationSession.SelectTarget(
-                CombatTarget.ForEntity(targetId, TargetCoordinate));
+                CombatTarget.ForEntity(targetId, coordinate));
             if (!result.Succeeded)
             {
                 return false;
@@ -376,7 +382,9 @@ namespace TimeKey.Presentation
                     }
                 }
 
-                return nearestTarget != null && SelectTarget(nearestTarget.TargetId);
+                return nearestTarget != null &&
+                       _state.TryGetOccupant(nearestTarget.TargetId, out var occupant) &&
+                       SelectTarget(nearestTarget.TargetId, occupant.Coordinate);
             }
 
             if (current.SelectedCard != null &&
@@ -531,6 +539,7 @@ namespace TimeKey.Presentation
 
             _lastSnapshot = result.Resolution;
             ApplyTileEffects(_lastSnapshot);
+            presentationBinding.ApplyOccupantEffects(_lastSnapshot.OccupantEffectResults);
             if (CurrentTargetHp == 0)
             {
                 _targetMaterial.color = new Color(0.24f, 0.68f, 0.46f, 1f);
@@ -603,6 +612,16 @@ namespace TimeKey.Presentation
             {
                 billboard.Initialize(sceneCamera);
             }
+
+            var occupantView = _targetObject.GetComponent<CombatOccupantView>();
+            if (occupantView == null ||
+                !_state.TryGetOccupant(TargetId, TargetCoordinate, out var targetOccupant))
+            {
+                throw new InvalidOperationException(
+                    "The target view Prefab or target occupant registration is incomplete.");
+            }
+
+            presentationBinding.RegisterExistingOccupant(targetOccupant, occupantView);
         }
 
         private void BuildInterface()
@@ -636,6 +655,7 @@ namespace TimeKey.Presentation
             _columns.Add(coordinate, column);
             _state.Board.AddTile(coordinate, logicalLayerCount);
             _boardRangePreview.Register(coordinate, tileView);
+            presentationBinding.RegisterOccupantColumn(coordinate, column);
         }
 
         private void HandleCardCancelRequested(string stableId)

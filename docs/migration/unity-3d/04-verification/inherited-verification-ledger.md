@@ -112,3 +112,7 @@ R3 已完成并使 Presentation、Infrastructure、Composition、资源映射与
 ## Remaining Cards Gate A 刷新记录
 
 Recover 修改了共享 Domain/Application effect 与 occupant 边界，因此该边界的 R3 测试证据已经刷新：全量 EditMode `107/107`、Recover 公共 Scene PlayMode `1/1`，0 失败。启用图形设备的 Editor Harness 生成 5 张 1280x720 状态图并断言目标 10→100；人工确认原卡面、目标反馈、三格 Timeline 和结算 HUD 可读。`VerticalSliceController.cs`、Scene/Prefab、Terrain/Camera 与卡图资源未变，因此 R3 的三视口 idle、四向镜头、0.32 层高和 Scene/Prefab 证据仍按原条件可继承到 Gate B 首次触及这些边界。Gate A 未重建 Player，最终 Build/Player 仍必须在 Gate D 刷新。
+
+## Remaining Cards Gate B 刷新记录
+
+Built/Poison 触及 Domain/Application、Infrastructure registration、occupant Presentation、TargetView 与 Scene Inspector，因此这些边界已经以全量 EditMode `130/130`、Scene PlayMode `3/3`、两个保存 Prefab、定向 authoring 和 8 张 1280x720 图刷新。Terrain/Camera、CardView/TimelineCell Prefab 与七卡布局代码未改，R3 的三视口 idle、四 yaw 和 0.32 层高仍可作为风险参考；Gate D 必须在 Clear 集成后重跑完整 PlayMode、build、Player smoke 与三视口。Tower/Poison 源 PNG 哈希未变并由 Unity 副本逐字节继承。

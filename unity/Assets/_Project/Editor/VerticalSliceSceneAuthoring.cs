@@ -7,6 +7,7 @@ using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
@@ -28,6 +29,13 @@ namespace TimeKey.Editor
         public const string DirtBlockPrefabPath = "Assets/_Project/Prefabs/Battle/Terrain/HexBlockDirt.prefab";
         public const string HexColumnPrefabPath = "Assets/_Project/Prefabs/Battle/Terrain/HexColumn.prefab";
         public const string TargetViewPrefabPath = "Assets/_Project/Prefabs/Battle/Targets/TargetView.prefab";
+        public const string TowerPrefabPath = "Assets/_Project/Prefabs/Battle/Occupants/Tower.prefab";
+        public const string PoisonStatusPrefabPath = "Assets/_Project/Prefabs/Battle/Status/PoisonStatus.prefab";
+
+        private const string TowerTexturePath =
+            "Assets/_Project/Resources/Art/Battle/Occupants/tower.png";
+        private const string PoisonStatusTexturePath =
+            "Assets/_Project/Resources/Art/Battle/Status/poison_icon.png";
 
         private const string GeneratedAssetDirectory = "Assets/_Project/Art/Generated/VerticalSlice";
         private const string MaterialDirectory = "Assets/_Project/Materials/VerticalSlice";
@@ -52,6 +60,15 @@ namespace TimeKey.Editor
                 GeneratedAssetDirectory + "/lighting.asset",
                 "Art/Battle/Cards/lighting");
 
+            ConfigureSpriteImporter(TowerTexturePath);
+            ConfigureSpriteImporter(PoisonStatusTexturePath);
+            var towerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(TowerTexturePath);
+            var poisonStatusSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PoisonStatusTexturePath);
+            if (towerSprite == null || poisonStatusSprite == null)
+            {
+                throw new InvalidOperationException("Tower or poison source artwork failed to import as a Sprite.");
+            }
+
             var grassBlock = CreateHexBlockPrefab(
                 GrassBlockPrefabPath,
                 "HexBlockGrass",
@@ -62,6 +79,8 @@ namespace TimeKey.Editor
                 "Art/Battle/Models/HexTile_Dirt");
             var hexColumn = CreateHexColumnPrefab(grassBlock, dirtBlock);
             var targetView = CreateTargetViewPrefab(targetMaterial, centerAltar);
+            var towerView = CreateTowerPrefab(towerSprite);
+            var poisonStatusView = CreatePoisonStatusPrefab(poisonStatusSprite);
             CreateTimelineCellPrefab();
             CreateCardViewPrefab(lightingCard);
 
@@ -71,6 +90,10 @@ namespace TimeKey.Editor
             dirtBlock = AssetDatabase.LoadAssetAtPath<GameObject>(DirtBlockPrefabPath);
             hexColumn = AssetDatabase.LoadAssetAtPath<GameObject>(HexColumnPrefabPath);
             targetView = AssetDatabase.LoadAssetAtPath<GameObject>(TargetViewPrefabPath);
+            towerView = AssetDatabase.LoadAssetAtPath<GameObject>(TowerPrefabPath)
+                .GetComponent<CombatOccupantView>();
+            poisonStatusView = AssetDatabase.LoadAssetAtPath<GameObject>(PoisonStatusPrefabPath)
+                .GetComponent<PoisonStatusView>();
             var timelineCellPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(TimelineCellPrefabPath);
             var cardViewPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CardViewPrefabPath);
 
@@ -136,6 +159,12 @@ namespace TimeKey.Editor
             var boardRangePreview = boardRangeObject.GetComponent<BoardRangePreview>();
             var boardRangePresenter = boardRangeObject.AddComponent<BoardRangePresenter>();
             ConfigureReference(boardRangePresenter, "rangePreview", boardRangePreview);
+            var occupantPresenter = boardRoot.gameObject.AddComponent<CombatOccupantPresenter>();
+            ConfigureOccupantPresenter(
+                occupantPresenter,
+                sceneCamera,
+                towerView.gameObject,
+                poisonStatusView.gameObject);
 
             var eventSystemObject = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             eventSystemObject.transform.SetParent(root.transform, false);
@@ -247,7 +276,8 @@ namespace TimeKey.Editor
                 cardHandPresenter,
                 boardRangePresenter,
                 timelinePresenter,
-                hudPresenter);
+                hudPresenter,
+                occupantPresenter);
 
             ConfigureController(
                 controller,
@@ -282,6 +312,65 @@ namespace TimeKey.Editor
             Debug.Log("TIMEKEY_EDITABLE_SCENE_AUTHORING_PASS");
         }
 
+        [MenuItem("Time Key/Author Remaining Cards Gate B Assets")]
+        public static void AuthorRemainingCardsGateBAssets()
+        {
+            EnsureAssetDirectories();
+            ConfigureSpriteImporter(TowerTexturePath);
+            ConfigureSpriteImporter(PoisonStatusTexturePath);
+            var towerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(TowerTexturePath);
+            var poisonStatusSprite = AssetDatabase.LoadAssetAtPath<Sprite>(PoisonStatusTexturePath);
+            if (towerSprite == null || poisonStatusSprite == null)
+            {
+                throw new InvalidOperationException("Tower or poison source artwork failed to import as a Sprite.");
+            }
+
+            CreateTowerPrefab(towerSprite);
+            CreatePoisonStatusPrefab(poisonStatusSprite);
+            AddStatusAnchorToTargetPrefab();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+            var towerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(TowerPrefabPath);
+            var poisonStatusPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PoisonStatusPrefabPath);
+            if (towerPrefab == null || poisonStatusPrefab == null ||
+                towerPrefab.GetComponent<CombatOccupantView>() == null ||
+                poisonStatusPrefab.GetComponent<PoisonStatusView>() == null)
+            {
+                throw new InvalidOperationException(
+                    "The saved Tower or PoisonStatus Prefab is missing its root view component.");
+            }
+
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var root = scene.GetRootGameObjects().SingleOrDefault(value => value.name == "VerticalSliceRoot");
+            if (root == null)
+            {
+                throw new InvalidOperationException("VerticalSliceRoot is missing from " + ScenePath + ".");
+            }
+
+            var boardRoot = root.transform.Find("World/CombatBoardRoot");
+            var sceneCamera = root.transform.Find("World/SliceCamera")
+                .GetComponent<Camera>();
+            var binding = root.GetComponent<CombatPresentationBinding>();
+            if (boardRoot == null || sceneCamera == null || binding == null)
+            {
+                throw new InvalidOperationException("The saved combat scene is missing a Gate B integration dependency.");
+            }
+
+            var occupantPresenter = GetOrAddComponent<CombatOccupantPresenter>(boardRoot.gameObject);
+            ConfigureOccupantPresenter(
+                occupantPresenter,
+                sceneCamera,
+                towerPrefab,
+                poisonStatusPrefab);
+            ConfigureReference(binding, "occupantPresenter", occupantPresenter);
+            EditorUtility.SetDirty(binding);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_B_AUTHORING_PASS");
+        }
+
         private static void EnsureAssetDirectories()
         {
             var directories = new[]
@@ -290,6 +379,8 @@ namespace TimeKey.Editor
                 "Assets/_Project/Prefabs/Battle/Cards",
                 "Assets/_Project/Prefabs/Battle/Terrain",
                 "Assets/_Project/Prefabs/Battle/Targets",
+                "Assets/_Project/Prefabs/Battle/Occupants",
+                "Assets/_Project/Prefabs/Battle/Status",
                 GeneratedAssetDirectory,
                 MaterialDirectory
             };
@@ -349,6 +440,25 @@ namespace TimeKey.Editor
             return sprite;
         }
 
+        private static void ConfigureSpriteImporter(string assetPath)
+        {
+            var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer == null)
+            {
+                throw new InvalidOperationException("Texture importer is missing: " + assetPath + ".");
+            }
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 100f;
+            importer.filterMode = FilterMode.Point;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.alphaIsTransparency = true;
+            importer.SaveAndReimport();
+        }
+
         private static GameObject CreateHexBlockPrefab(string path, string name, string resourcePath)
         {
             var source = Resources.Load<GameObject>(resourcePath);
@@ -395,7 +505,10 @@ namespace TimeKey.Editor
 
         private static GameObject CreateTargetViewPrefab(Material material, Sprite artwork)
         {
-            var root = new GameObject("TargetView", typeof(WorldTargetView));
+            var root = new GameObject(
+                "TargetView",
+                typeof(WorldTargetView),
+                typeof(CombatOccupantView));
             var hitProxy = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             hitProxy.name = "HitProxy";
             hitProxy.transform.SetParent(root.transform, false);
@@ -417,9 +530,96 @@ namespace TimeKey.Editor
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             art.GetComponent<BoxCollider>().size = new Vector3(2.25f, 2.25f, 0.16f);
 
+            var statusAnchor = CreateTransform("StatusAnchor", root.transform);
+            statusAnchor.localPosition = new Vector3(0.62f, 1.48f, 0f);
+            ConfigureReference(root.GetComponent<CombatOccupantView>(), "statusAnchor", statusAnchor);
+
             PrefabUtility.SaveAsPrefabAsset(root, TargetViewPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return AssetDatabase.LoadAssetAtPath<GameObject>(TargetViewPrefabPath);
+        }
+
+        private static void AddStatusAnchorToTargetPrefab()
+        {
+            var root = PrefabUtility.LoadPrefabContents(TargetViewPrefabPath);
+            try
+            {
+                var view = GetOrAddComponent<CombatOccupantView>(root);
+                var statusAnchor = root.transform.Find("StatusAnchor");
+                if (statusAnchor == null)
+                {
+                    statusAnchor = CreateTransform("StatusAnchor", root.transform);
+                }
+
+                statusAnchor.localPosition = new Vector3(0.62f, 1.48f, 0f);
+                ConfigureReference(view, "statusAnchor", statusAnchor);
+                PrefabUtility.SaveAsPrefabAsset(root, TargetViewPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static CombatOccupantView CreateTowerPrefab(Sprite artwork)
+        {
+            var root = new GameObject("Tower", typeof(CombatOccupantView));
+            var art = new GameObject(
+                "OriginalArt-tower",
+                typeof(SpriteRenderer),
+                typeof(CameraFacingBillboard));
+            art.transform.SetParent(root.transform, false);
+            art.transform.localPosition = new Vector3(0f, 0.86f, 0f);
+            art.transform.localScale = Vector3.one * 0.65f;
+            var renderer = art.GetComponent<SpriteRenderer>();
+            renderer.sprite = artwork;
+            renderer.color = Color.white;
+            renderer.sortingOrder = 110;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            var statusAnchor = CreateTransform("StatusAnchor", root.transform);
+            statusAnchor.localPosition = new Vector3(0.54f, 1.58f, 0f);
+            ConfigureReference(root.GetComponent<CombatOccupantView>(), "statusAnchor", statusAnchor);
+
+            PrefabUtility.SaveAsPrefabAsset(root, TowerPrefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return AssetDatabase.LoadAssetAtPath<GameObject>(TowerPrefabPath)
+                .GetComponent<CombatOccupantView>();
+        }
+
+        private static PoisonStatusView CreatePoisonStatusPrefab(Sprite artwork)
+        {
+            var root = new GameObject(
+                "PoisonStatus",
+                typeof(PoisonStatusView),
+                typeof(CameraFacingBillboard));
+            var iconObject = new GameObject("Icon", typeof(SpriteRenderer));
+            iconObject.transform.SetParent(root.transform, false);
+            iconObject.transform.localScale = Vector3.one * 0.20f;
+            var icon = iconObject.GetComponent<SpriteRenderer>();
+            icon.sprite = artwork;
+            icon.color = Color.white;
+            icon.sortingOrder = 150;
+
+            var labelObject = new GameObject("Stacks", typeof(TextMesh));
+            labelObject.transform.SetParent(root.transform, false);
+            labelObject.transform.localPosition = new Vector3(0.24f, -0.02f, -0.01f);
+            var label = labelObject.GetComponent<TextMesh>();
+            label.anchor = TextAnchor.MiddleCenter;
+            label.alignment = TextAlignment.Center;
+            label.fontSize = 42;
+            label.characterSize = 0.08f;
+            label.color = Color.white;
+            label.text = "2";
+            label.GetComponent<MeshRenderer>().sortingOrder = 151;
+
+            var view = root.GetComponent<PoisonStatusView>();
+            ConfigureReference(view, "icon", icon);
+            ConfigureReference(view, "stackLabel", label);
+            PrefabUtility.SaveAsPrefabAsset(root, PoisonStatusPrefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return AssetDatabase.LoadAssetAtPath<GameObject>(PoisonStatusPrefabPath)
+                .GetComponent<PoisonStatusView>();
         }
 
         private static TimelineCellView CreateTimelineCellPrefab()
@@ -564,13 +764,32 @@ namespace TimeKey.Editor
             CardHandPresenter cardHandPresenter,
             BoardRangePresenter boardRangePresenter,
             TimelinePresenter timelinePresenter,
-            CombatHudPresenter hudPresenter)
+            CombatHudPresenter hudPresenter,
+            CombatOccupantPresenter occupantPresenter)
         {
             var serialized = new SerializedObject(binding);
             SetReference(serialized, "cardHandPresenter", cardHandPresenter);
             SetReference(serialized, "boardRangePresenter", boardRangePresenter);
             SetReference(serialized, "timelinePresenter", timelinePresenter);
             SetReference(serialized, "hudPresenter", hudPresenter);
+            SetReference(serialized, "occupantPresenter", occupantPresenter);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureOccupantPresenter(
+            CombatOccupantPresenter presenter,
+            Camera sceneCamera,
+            GameObject towerPrefab,
+            GameObject poisonStatusPrefab)
+        {
+            var serialized = new SerializedObject(presenter);
+            SetReference(serialized, "sceneCamera", sceneCamera);
+            SetReference(serialized, "poisonStatusPrefab", poisonStatusPrefab);
+            var creationViews = serialized.FindProperty("creationViews");
+            creationViews.arraySize = 1;
+            var tower = creationViews.GetArrayElementAtIndex(0);
+            tower.FindPropertyRelative("creationId").stringValue = "tower";
+            tower.FindPropertyRelative("prefab").objectReferenceValue = towerPrefab;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

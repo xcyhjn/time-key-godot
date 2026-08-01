@@ -6,6 +6,7 @@ using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Terrain;
 using UnityEditor;
@@ -67,6 +68,10 @@ namespace TimeKey.Tests.EditMode.Composition
             var timelinePresenter = root.GetComponentInChildren<TimelinePresenter>(true);
             Assert.That(timelinePresenter, Is.Not.Null);
             Assert.That(root.GetComponentInChildren<CombatHudPresenter>(true), Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<CombatOccupantPresenter>(true), Is.Not.Null);
+
+            var bindingSerialized = new SerializedObject(binding);
+            AssertReference(bindingSerialized, "occupantPresenter");
 
             var compositionSerialized = new SerializedObject(composition);
             AssertReference(compositionSerialized, "controller");
@@ -104,6 +109,16 @@ namespace TimeKey.Tests.EditMode.Composition
             AssertPrefab<MeshRenderer>("Assets/_Project/Prefabs/Battle/Terrain/HexBlockDirt.prefab");
             AssertPrefab<HexTileColumn>("Assets/_Project/Prefabs/Battle/Terrain/HexColumn.prefab");
             AssertPrefab<WorldTargetView>("Assets/_Project/Prefabs/Battle/Targets/TargetView.prefab");
+            AssertPrefab<CombatOccupantView>("Assets/_Project/Prefabs/Battle/Occupants/Tower.prefab");
+            AssertPrefab<PoisonStatusView>("Assets/_Project/Prefabs/Battle/Status/PoisonStatus.prefab");
+
+            var tower = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Battle/Occupants/Tower.prefab");
+            Assert.That(tower.GetComponentsInChildren<Collider>(true), Is.Empty);
+            Assert.That(tower.transform.Find("OriginalArt-tower"), Is.Not.Null);
+
+            AssertPointSprite("Assets/_Project/Resources/Art/Battle/Occupants/tower.png");
+            AssertPointSprite("Assets/_Project/Resources/Art/Battle/Status/poison_icon.png");
         }
 
         [Test]
@@ -154,6 +169,17 @@ namespace TimeKey.Tests.EditMode.Composition
             Assert.That(prefab, Is.Not.Null, path);
             Assert.That(PrefabUtility.GetPrefabAssetType(prefab), Is.Not.EqualTo(PrefabAssetType.NotAPrefab));
             Assert.That(prefab.GetComponentInChildren<T>(true), Is.Not.Null, path);
+        }
+
+        private static void AssertPointSprite(string path)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            Assert.That(importer, Is.Not.Null, path);
+            Assert.That(importer.textureType, Is.EqualTo(TextureImporterType.Sprite), path);
+            Assert.That(importer.filterMode, Is.EqualTo(FilterMode.Point), path);
+            Assert.That(importer.mipmapEnabled, Is.False, path);
+            Assert.That(importer.textureCompression,
+                Is.EqualTo(TextureImporterCompression.Uncompressed), path);
         }
     }
 }

@@ -8,6 +8,8 @@
 
 当前 Unity 切片没有敌人定义、敌人运行态、敌人 Prefab 或敌人效果结算。`VerticalSliceController` 组装一个 `cardId=enemy-intent`、伤害为 0 的 `TimelineAction`；`TimelineGrid.Resolve()` 对 enemy action 只在 `ResolutionSnapshot.EnemyIntentResolved` 中记录“已处理”。
 
+Gate B 新增的 Tower 是 `CombatAttitude.Neutral` occupant 与表现 Prefab，不是敌人；本阶段没有 Tower decay、意图生成或行动。可以复用它验证 occupant identity/result/anchor，但不得把它当成敌人系统已实现的证据。
+
 这是 MIG-002 冻结的源行为，不是完整敌人系统。在 Godot 玩法波次明确敌人意图命令前，不得在 Unity 中自行发明敌人伤害、AI 或章节奖励。
 
 ## Godot 权威参考
