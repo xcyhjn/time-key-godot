@@ -101,6 +101,36 @@ namespace TimeKey.Tests.EditMode
         }
 
         [Test]
+        public void TryPlace_UnsupportedTypedEffectFailsBeforeOccupyingTimeline()
+        {
+            var card = new CardDefinition(
+                "recover",
+                3,
+                new[] { new CardEffect(CardEffectKind.Recover, 2) },
+                new[] { new HexCoord(0, 0) },
+                new[] { new TimelineCell(0, 0) });
+            var action = TimelineAction.FromCard(card, "target", new TimelineCell(0, 0));
+            var grid = new TimelineGrid();
+
+            var exception = Assert.Throws<UnsupportedCardEffectException>(() => grid.TryPlace(action));
+
+            Assert.That(exception.Kind, Is.EqualTo(CardEffectKind.Recover));
+            Assert.That(grid.OccupiedCellCount, Is.Zero);
+        }
+
+        [Test]
+        public void Constructor_RejectsDuplicateEffectHandlers()
+        {
+            var handlers = new ICardEffectHandler[]
+            {
+                new TestEffectHandler(CardEffectKind.Recover),
+                new TestEffectHandler(CardEffectKind.Recover)
+            };
+
+            Assert.Throws<System.ArgumentException>(() => new TimelineGrid(effectHandlers: handlers));
+        }
+
+        [Test]
         public void Resolve_ProducesFrozenFixtureSnapshot()
         {
             var snapshot = ResolveFrozenFixture();
@@ -188,6 +218,24 @@ namespace TimeKey.Tests.EditMode
                 new TimelineCell(x, y),
                 shape,
                 0);
+        }
+
+        private sealed class TestEffectHandler : ICardEffectHandler
+        {
+            public TestEffectHandler(CardEffectKind kind)
+            {
+                Kind = kind;
+            }
+
+            public CardEffectKind Kind { get; }
+
+            public void Apply(
+                CombatSliceState state,
+                TimelineAction action,
+                CardEffect effect,
+                System.Collections.Generic.ICollection<TileEffectResult> effectResults)
+            {
+            }
         }
     }
 }

@@ -12,8 +12,13 @@ namespace TimeKey.Domain
             new Dictionary<TimelineCell, TimelineAction>();
         private readonly HashSet<TimelineAction> _placedActions =
             new HashSet<TimelineAction>();
+        private readonly Dictionary<CardEffectKind, ICardEffectHandler> _effectHandlers =
+            new Dictionary<CardEffectKind, ICardEffectHandler>();
 
-        public TimelineGrid(int width = DefaultWidth, int height = DefaultHeight)
+        public TimelineGrid(
+            int width = DefaultWidth,
+            int height = DefaultHeight,
+            IReadOnlyList<ICardEffectHandler> effectHandlers = null)
         {
             if (width <= 0)
             {
@@ -27,6 +32,7 @@ namespace TimeKey.Domain
 
             Width = width;
             Height = height;
+            RegisterEffectHandlers(effectHandlers ?? CreateDefaultEffectHandlers());
         }
 
         public int Width { get; }
@@ -37,11 +43,13 @@ namespace TimeKey.Domain
 
         public bool CanPlace(TimelineAction action)
         {
+            EnsureEffectsSupported(action);
             return IsPlacementValid(action);
         }
 
         public bool TryPlace(TimelineAction action)
         {
+            EnsureEffectsSupported(action);
             if (!IsPlacementValid(action))
             {
                 return false;
@@ -120,7 +128,7 @@ namespace TimeKey.Domain
                 effectResults);
         }
 
-        private static void ApplyPlayerEffects(
+        private void ApplyPlayerEffects(
             CombatSliceState state,
             TimelineAction action,
             ICollection<TileEffectResult> effectResults)
@@ -128,29 +136,48 @@ namespace TimeKey.Domain
             for (var effectIndex = 0; effectIndex < action.Effects.Count; effectIndex++)
             {
                 var effect = action.Effects[effectIndex];
-                if (effect.Kind == CardEffectKind.Damage)
+                _effectHandlers[effect.Kind].Apply(state, action, effect, effectResults);
+            }
+        }
+
+        private void RegisterEffectHandlers(IReadOnlyList<ICardEffectHandler> handlers)
+        {
+            for (var index = 0; index < handlers.Count; index++)
+            {
+                var handler = handlers[index] ??
+                    throw new ArgumentException("Card effect handlers cannot contain null entries.", nameof(handlers));
+                if (_effectHandlers.ContainsKey(handler.Kind))
                 {
-                    state.ApplyDamage(action.TargetId, effect.Value);
-                    continue;
+                    throw new ArgumentException("Duplicate card effect handler: " + handler.Kind + ".", nameof(handlers));
                 }
 
-                if (effect.Kind != CardEffectKind.Elevation || !action.TargetCoord.HasValue)
-                {
-                    continue;
-                }
+                _effectHandlers.Add(handler.Kind, handler);
+            }
+        }
 
-                for (var rangeIndex = 0; rangeIndex < action.EffectRange.Count; rangeIndex++)
+        private void EnsureEffectsSupported(TimelineAction action)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < action.Effects.Count; index++)
+            {
+                if (!_effectHandlers.ContainsKey(action.Effects[index].Kind))
                 {
-                    var offset = action.EffectRange[rangeIndex];
-                    var coordinate = new HexCoord(
-                        action.TargetCoord.Value.Q + offset.Q,
-                        action.TargetCoord.Value.R + offset.R);
-                    if (state.Board.TryApplyElevation(coordinate, effect.Value, out var result))
-                    {
-                        effectResults.Add(result);
-                    }
+                    throw new UnsupportedCardEffectException(action.Effects[index].Kind);
                 }
             }
+        }
+
+        private static IReadOnlyList<ICardEffectHandler> CreateDefaultEffectHandlers()
+        {
+            return new ICardEffectHandler[]
+            {
+                new DamageCardEffectHandler(),
+                new ElevationCardEffectHandler()
+            };
         }
 
         private bool Contains(TimelineCell cell)

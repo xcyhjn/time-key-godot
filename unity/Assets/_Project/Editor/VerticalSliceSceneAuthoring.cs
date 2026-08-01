@@ -267,7 +267,7 @@ namespace TimeKey.Editor
 
             for (var index = 0; index < directories.Length; index++)
             {
-                Directory.CreateDirectory(Path.GetFullPath(Path.Combine(Application.dataPath, "..", directories[index])));
+                Directory.CreateDirectory(Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", directories[index])));
             }
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);

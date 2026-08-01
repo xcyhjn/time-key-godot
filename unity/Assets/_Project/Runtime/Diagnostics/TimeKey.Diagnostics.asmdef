@@ -1,0 +1,17 @@
+{
+  "name": "TimeKey.Diagnostics",
+  "rootNamespace": "TimeKey.Diagnostics",
+  "references": [
+    "TimeKey.Domain",
+    "TimeKey.Application"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

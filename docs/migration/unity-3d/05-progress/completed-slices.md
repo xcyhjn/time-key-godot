@@ -1,6 +1,6 @@
 # 已完成切片
 
-> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1 已完成
+> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1/R2 已完成
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：Slice Definition of Done
@@ -68,3 +68,14 @@
 - `BuildSceneGraph()` 仅保留验证/初始化兼容面；Controller 不再运行时创建稳定节点。
 - 对称事件绑定覆盖重复初始化和 disable/enable；动态棋盘、目标与 intent 不重复。
 - Unity EditMode `70/70`、PlayMode `26/26`、11 张刷新截图、Windows build 和 Player smoke 全部通过。
+
+## 解耦 R2：Application 与 Diagnostics
+
+完成日期：2026-08-01。
+
+- 新增无 Unity 引用的 Application/Diagnostics asmdef，依赖方向为 `Application -> Domain`、`Diagnostics -> Application/Domain`。
+- `CombatApplicationSession` 统一组织选卡、typed entity/tile target、preview、commit、cancel、resolve 和唯一初始 enemy intent。
+- `ICardCatalog`、`ICombatTraceSink`、不可变会话结果与 collecting/no-op sink 已冻结；diagnostics 异常不影响战斗快照。
+- Controller 原公共方法/属性保持，但选中、目标、时间轴和结算顺序已委托给 Application。
+- 未注册 Recover/Built/Poison/Clear 不再静默 no-op；失败在玩家 action 占格前返回并记录 trace。
+- Application/Diagnostics `14/14`、全量 EditMode `86/86`、PlayMode `26/26`、11 张刷新截图、Windows build 和 Player smoke 全部通过。

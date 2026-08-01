@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：解耦 R1 Scene/Prefab 已通过；准备进入 R2 Application
+> 状态：解耦 R2 Application/Diagnostics 已通过；准备进入 R3
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -19,11 +19,13 @@ Slice 01、Wave 02A 和 Wave 02B1 的既有契约继续成立。七张真实 fix
 
 R1 后，Camera/rig、双灯、地面、BoardRoot、TargetAnchor、EventSystem、Canvas/HUD、36 格 Timeline、CardHandHost 和 Preview 均在 Play 前存在；TimelineCell、CardView、草/土 HexBlock、HexColumn 与 TargetView 为保存的 Prefab。Controller 不再创建稳定节点，重复初始化与两轮 disable/enable 不复制棋盘、目标、监听或敌方 intent。
 
-R1 终验为 EditMode `70/70`、PlayMode `26/26`、11 张刷新截图、Windows build 和 Player smoke 全通过。下一门禁为 R2：新增纯 C# Application/Diagnostics，用兼容 facade 转接 Controller；R2 未完成前不得启动 R3 Presentation/Infrastructure 写入智能体。
+R2 新增纯 C# `TimeKey.Application`/`TimeKey.Diagnostics`。`CombatApplicationSession` 统一拥有选卡、entity/tile target、preview/commit/cancel/resolve、唯一 enemy intent 和结构化失败；Controller 保留旧公共面作为兼容 facade，已不再直接命令 `CardPlaySession` 或 `TimelineGrid.Resolve()`。
+
+R2 终验为 Application/Diagnostics `14/14`、全量 EditMode `86/86`、PlayMode `26/26`、11 张刷新截图、Windows build `Succeeded` 与 Player smoke 全通过。下一门禁为 R3：Agent B/C 在 R2 推送后以互斥路径实现 Presenter/Binding 与七卡 catalog/content，再由主智能体完成 Composition/Scene 接线并移除 `Presentation -> Infrastructure`。
 
 Git 状态：Wave 02B2A 功能检查点 `cdb09ab` 已于 2026-08-01 推送至 `origin/unity_7.31`，本状态账本随后的文档检查点也已推送。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 
-下一位接手 AI 应完整读取并执行 `00-bootstrap/NEXT_STAGE_DECOUPLING_PROMPT.md` 的“主 Prompt”；不得重跑已关闭的 Wave 00/01/02A/02B1/02B2A。`NEXT_STAGE_EFFECTS_B_PROMPT.md` 仅保留为本阶段按原要求生成的 02B2B 聚焦参考，不得绕过解耦门禁。
+当前仍执行 `00-bootstrap/NEXT_STAGE_DECOUPLING_PROMPT.md` 的“主 Prompt”；不得重跑已关闭的 Wave 00/01/02A/02B1/02B2A 或跳过 R3 进入剩余卡牌。
 
 ## 分支与工作区保护
 

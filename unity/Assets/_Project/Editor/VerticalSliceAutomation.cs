@@ -145,7 +145,7 @@ namespace TimeKey.Editor
                 }
             }
 
-            var buildDirectory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Builds", "Windows"));
+            var buildDirectory = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", "Builds", "Windows"));
             Directory.CreateDirectory(buildDirectory);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
@@ -160,7 +160,7 @@ namespace TimeKey.Editor
             }
 
             WriteSummary(evidenceDirectory, captures, report);
-            Debug.Log("TIMEKEY_DECOUPLING_R1_HARNESS_PASS");
+            Debug.Log("TIMEKEY_DECOUPLING_R2_HARNESS_PASS");
         }
 
         private static void ValidateScene(VerticalSliceController controller)
@@ -297,7 +297,7 @@ namespace TimeKey.Editor
             var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
             if (string.IsNullOrWhiteSpace(repositoryRoot))
             {
-                repositoryRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+                repositoryRoot = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", ".."));
             }
 
             if (!Directory.Exists(Path.Combine(repositoryRoot, "docs", "migration", "unity-3d")))
@@ -312,7 +312,7 @@ namespace TimeKey.Editor
                 "unity-3d",
                 "04-verification",
                 "evidence",
-                "unity-decoupling-r1");
+                "unity-decoupling-r2");
         }
 
         private static void WriteSummary(
@@ -325,6 +325,7 @@ namespace TimeKey.Editor
             builder.AppendLine("  \"status\": \"passed\",");
             builder.AppendLine("  \"scene\": \"SerializedEditableEarthquakeSlice\",");
             builder.AppendLine("  \"stableHierarchy\": \"serialized-before-play\",");
+            builder.AppendLine("  \"applicationBoundary\": \"CombatApplicationSession\",");
             builder.AppendLine("  \"savedPrefabs\": 6,");
             builder.AppendLine("  \"seed\": 731,");
             builder.AppendLine("  \"boardTiles\": 19,");

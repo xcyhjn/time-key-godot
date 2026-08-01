@@ -1,6 +1,6 @@
 # 多智能体所有权图
 
-> 状态：Wave 02B2A 五个 Agent 已交回；共享集成完成
+> 状态：解耦 R2 Agent A 已交回并通过门禁；R3 Agent B/C 等待 R2 检查点
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
@@ -56,3 +56,14 @@ Domain、Infrastructure、Presentation 的运行时代码和各自测试/报告�
 执行顺序固定为 `(Agent 01 || Agent 02) -> Gate A -> Agent 03 -> Gate B -> (Agent 04 || Agent 05) -> 主集成`。路径集合审查见 `agents/prompt-review-wave-02b2a.md`。并发只表示独占文件可同时编写；Unity/Godot/Blender 图形或 batchmode 仍不得并行启动。
 
 实际执行保持三波依赖和互斥路径；各 Agent 不提交、不推送、不修改共享 Controller/Scene/Harness。主智能体只在依赖 Gate 通过并交回所有权后做共享接线和串行 Unity 验证。五份独占报告位于 `agents/reports/wave-02b2a-agent-*.md`。
+
+## 解耦 R2/R3 所有权
+
+| 角色 | 独占路径 | 状态 |
+| --- | --- | --- |
+| Agent A / Application + Diagnostics | `Runtime/Application/**`、`Runtime/Diagnostics/**`、`Tests/EditMode/Application/**`、`Tests/EditMode/Diagnostics/**`、独占报告 | 已完成交回；正式 Unity filter `14/14` |
+| Agent B / Presenter + Binding | `Runtime/Presentation/Presenters/**`、`Bindings/**`、对应 PlayMode tests/报告 | R2 推送后启动 |
+| Agent C / Catalog + Content | `Runtime/Infrastructure/Cards/**`、`Effects/**`、对应 Infrastructure tests、`Data/Catalogs/**`/报告 | R2 推送后启动 |
+| 主智能体 | Controller、Scene/Prefab/Composition、asmdef、harness、共享 docs/evidence/Git | R2 集成门禁已通过；准备检查点 |
+
+Agent B 与 C 路径互斥，只能在 R2 commit/push 与 Application API 冻结后并行。它们不修改 Controller、Scene、Prefab 或 asmdef；主智能体在两者返回后串行集成。

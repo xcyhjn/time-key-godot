@@ -211,7 +211,7 @@ namespace TimeKey.Presentation.Terrain
                 return;
             }
 
-            if (Application.isPlaying)
+            if (UnityEngine.Application.isPlaying)
             {
                 if (value is GameObject gameObject)
                 {

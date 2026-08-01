@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Infrastructure;
 using TimeKey.Presentation.Cards;
@@ -56,19 +57,14 @@ namespace TimeKey.Presentation
 
         private readonly Dictionary<HexCoord, BoardTileView> _tiles = new Dictionary<HexCoord, BoardTileView>();
         private readonly Dictionary<HexCoord, HexTileColumn> _columns = new Dictionary<HexCoord, HexTileColumn>();
-        private readonly Dictionary<string, CardDefinition> _cards =
-            new Dictionary<string, CardDefinition>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> _cardSprites =
             new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private GameObject _generatedRoot;
         private CardDefinition _lightingCard;
         private CardDefinition _earthquakeCard;
-        private CardPlaySession _cardPlaySession;
+        private CombatApplicationSession _applicationSession;
         private CombatSliceState _state;
         private TimelineGrid _timeline;
-        private CardDefinition _selectedCard;
-        private string _selectedTargetId;
-        private TimelineCell? _playerCell;
         private ResolutionSnapshot _lastSnapshot;
         private Text _statusText;
         private Text _targetText;
@@ -110,7 +106,8 @@ namespace TimeKey.Presentation
 
         public CardHandHost CardHandHost => _cardHandHost;
 
-        public string SelectedCardId => _selectedCard == null ? null : _selectedCard.StableId;
+        public string SelectedCardId =>
+            _applicationSession == null ? null : _applicationSession.Current.SelectedStableId;
 
         public BoardRangePreview BoardRangePreview => _boardRangePreview;
 
@@ -122,8 +119,7 @@ namespace TimeKey.Presentation
             return _columns.TryGetValue(coordinate, out var column) ? column : null;
         }
 
-        public CardPlaySessionState? CardPlayState =>
-            _cardPlaySession == null ? (CardPlaySessionState?)null : _cardPlaySession.State;
+        public CardPlaySessionState? CardPlayState => GetCompatibilityCardPlayState();
 
         private void Awake()
         {
@@ -180,12 +176,12 @@ namespace TimeKey.Presentation
                 }
 
                 Debug.Log("TIMEKEY_PLAYER_SMOKE_PASS");
-                Application.Quit(0);
+                UnityEngine.Application.Quit(0);
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
-                Application.Quit(1);
+                UnityEngine.Application.Quit(1);
             }
         }
 
@@ -200,8 +196,6 @@ namespace TimeKey.Presentation
 
             _lightingCard = CardJsonAdapter.Parse(lightingFixture.text);
             _earthquakeCard = CardJsonAdapter.Parse(earthquakeFixture.text);
-            _cards.Add(_lightingCard.StableId, _lightingCard);
-            _cards.Add(_earthquakeCard.StableId, _earthquakeCard);
             _state = new CombatSliceState(TargetId, 10, FixtureSeed, new CombatBoardState());
             _timeline = new TimelineGrid();
 
@@ -214,8 +208,14 @@ namespace TimeKey.Presentation
             _resolveButton = resolveButton;
 
             BuildWorld();
+            var enemyIntent = CreateEnemyIntent();
+            _applicationSession = new CombatApplicationSession(
+                new ControllerCardCatalog(new[] { _lightingCard, _earthquakeCard }),
+                _state,
+                _timeline,
+                new[] { enemyIntent });
             BuildInterface();
-            PlaceEnemyIntent();
+            RenderEnemyIntent(enemyIntent);
             SetStatus("Select LIGHTING or EARTHQUAKE to schedule an action.");
             _initialized = true;
             BindViews();
@@ -224,46 +224,43 @@ namespace TimeKey.Presentation
         public bool SelectCard(string stableId)
         {
             EnsureBuilt();
-            if (!_cards.TryGetValue(stableId, out var card) ||
-                _playerCell.HasValue ||
-                _lastSnapshot != null)
+            var result = _applicationSession.SelectCard(stableId);
+            if (!result.Succeeded)
             {
                 return false;
             }
 
-            _selectedCard = card;
-            _selectedTargetId = null;
+            var card = _applicationSession.Current.SelectedCard;
             _boardRangePreview.Clear();
             _timelinePlacementPreview.Clear();
-            _cardPlaySession = new CardPlaySession(card);
             SetHandCardsActive(true);
             RefreshHand(card.StableId, CardHandInteractionState.Selected);
             BoardCamera.InputEnabled = false;
-            SetStatus(string.Equals(card.StableId, LightingCardId, StringComparison.Ordinal)
-                ? "LIGHTING selected. Click the red target."
-                : "EARTHQUAKE selected. Click a center hex.");
+            SetStatus(result.RequiredTargetKind == CombatTargetKind.Entity
+                ? card.StableId.ToUpperInvariant() + " selected. Click the red target."
+                : card.StableId.ToUpperInvariant() + " selected. Click a center hex.");
             return true;
         }
 
         public bool SelectTarget(string targetId)
         {
             EnsureBuilt();
-            if (_selectedCard == null ||
-                _cardPlaySession == null ||
-                !string.Equals(_selectedCard.StableId, LightingCardId, StringComparison.Ordinal) ||
-                !string.Equals(targetId, TargetId, StringComparison.Ordinal))
+            var current = _applicationSession.Current;
+            if (current.SelectedCard == null ||
+                string.IsNullOrWhiteSpace(targetId) ||
+                current.RequiredTargetKind != CombatTargetKind.Entity)
             {
                 return false;
             }
 
-            var transition = _cardPlaySession.SelectTarget(targetId, TargetCoordinate);
-            if (!transition.Succeeded)
+            var result = _applicationSession.SelectTarget(
+                CombatTarget.ForEntity(targetId, TargetCoordinate));
+            if (!result.Succeeded)
             {
                 return false;
             }
 
-            _selectedTargetId = targetId;
-            _boardRangePreview.Show(TargetCoordinate, _selectedCard.Range);
+            _boardRangePreview.Show(TargetCoordinate, current.SelectedCard.Range);
             _timelinePlacementPreview.Clear();
             _cardHandHost.SetInteractionState(CardHandInteractionState.Targeting);
             _targetText.text = string.Format("TARGET 01  |  HP {0} / 10  |  LOCKED", CurrentTargetHp);
@@ -274,20 +271,17 @@ namespace TimeKey.Presentation
         public bool CancelSelectedCard()
         {
             EnsureBuilt();
-            if (_cardPlaySession == null)
+            if (_applicationSession.Current.SelectedCard == null)
             {
                 return false;
             }
 
-            var transition = _cardPlaySession.Cancel();
-            if (!transition.Succeeded)
+            var result = _applicationSession.CancelCard();
+            if (!result.Succeeded)
             {
                 return false;
             }
 
-            _selectedCard = null;
-            _selectedTargetId = null;
-            _cardPlaySession = null;
             _boardRangePreview.Clear();
             _timelinePlacementPreview.Clear();
             RefreshHand(null, CardHandInteractionState.Idle);
@@ -305,8 +299,7 @@ namespace TimeKey.Presentation
                 return false;
             }
 
-            if (_selectedCard != null &&
-                string.Equals(_selectedCard.StableId, EarthquakeCardId, StringComparison.Ordinal))
+            if (_applicationSession.Current.RequiredTargetKind == CombatTargetKind.Tile)
             {
                 return SelectEarthquakeTarget(coordinate);
             }
@@ -325,23 +318,21 @@ namespace TimeKey.Presentation
         public bool SelectEarthquakeTarget(HexCoord coordinate)
         {
             EnsureBuilt();
-            if (_selectedCard == null ||
-                _cardPlaySession == null ||
-                !string.Equals(_selectedCard.StableId, EarthquakeCardId, StringComparison.Ordinal) ||
+            var current = _applicationSession.Current;
+            if (current.SelectedCard == null ||
+                current.RequiredTargetKind != CombatTargetKind.Tile ||
                 !_tiles.ContainsKey(coordinate))
             {
                 return false;
             }
 
-            var targetId = string.Format("hex-{0}-{1}", coordinate.Q, coordinate.R);
-            var transition = _cardPlaySession.SelectTarget(targetId, coordinate);
-            if (!transition.Succeeded)
+            var result = _applicationSession.SelectTarget(CombatTarget.ForTile(coordinate));
+            if (!result.Succeeded)
             {
                 return false;
             }
 
-            _selectedTargetId = targetId;
-            _boardRangePreview.Show(coordinate, _selectedCard.Range);
+            _boardRangePreview.Show(coordinate, current.SelectedCard.Range);
             _timelinePlacementPreview.Clear();
             _cardHandHost.SetInteractionState(CardHandInteractionState.Targeting);
             SetStatus("EARTHQUAKE center locked. Place its two-cell shape on the timeline.");
@@ -373,8 +364,9 @@ namespace TimeKey.Presentation
                 return false;
             }
 
-            if (_selectedCard != null &&
-                string.Equals(_selectedCard.StableId, LightingCardId, StringComparison.Ordinal))
+            var current = _applicationSession.Current;
+            if (current.SelectedCard != null &&
+                current.RequiredTargetKind == CombatTargetKind.Entity)
             {
                 WorldTargetView nearestTarget = null;
                 var nearestDistance = float.MaxValue;
@@ -391,9 +383,8 @@ namespace TimeKey.Presentation
                 return nearestTarget != null && SelectTarget(nearestTarget.TargetId);
             }
 
-            if (_cardPlaySession != null &&
-                (_selectedCard == null ||
-                 !string.Equals(_selectedCard.StableId, EarthquakeCardId, StringComparison.Ordinal)))
+            if (current.SelectedCard != null &&
+                current.RequiredTargetKind != CombatTargetKind.Tile)
             {
                 return false;
             }
@@ -465,76 +456,81 @@ namespace TimeKey.Presentation
         public bool TryPlaceSelected(int column, int row)
         {
             EnsureBuilt();
-            if (_selectedCard == null ||
-                _cardPlaySession == null ||
-                string.IsNullOrEmpty(_selectedTargetId) ||
-                _playerCell.HasValue)
+            var current = _applicationSession.Current;
+            if (current.SelectedCard == null ||
+                !current.Target.HasValue ||
+                current.Phase == CombatSessionPhase.Committed)
             {
                 return false;
             }
 
             var cell = new TimelineCell(column, row);
-            var preview = _cardPlaySession.PreviewTimeline(_timeline, cell);
-            _timelinePlacementPreview.Show(cell, _selectedCard.Shape, preview.IsPlacementValid);
+            var card = current.SelectedCard;
+            var preview = _applicationSession.PreviewTimeline(cell);
+            _timelinePlacementPreview.Show(cell, card.Shape, preview.IsPlacementValid);
             _cardHandHost.SetInteractionState(CardHandInteractionState.Scheduling);
-            if (!preview.IsPlacementValid)
+            if (!preview.Succeeded || !preview.IsPlacementValid)
             {
                 SetStatus("That timeline slot is occupied or outside the 12 x 3 grid.");
                 return false;
             }
 
-            var commit = _cardPlaySession.Commit(_timeline);
+            var commit = _applicationSession.CommitTimeline();
             if (!commit.Succeeded)
             {
-                SetStatus(_selectedCard.StableId + " could not be committed to the timeline.");
+                SetStatus(card.StableId + " could not be committed to the timeline.");
                 return false;
             }
 
-            _playerCell = cell;
             _boardRangePreview.Clear();
             _timelinePlacementPreview.Clear();
-            var label = string.Equals(_selectedCard.StableId, LightingCardId, StringComparison.Ordinal)
+            var label = string.Equals(card.StableId, LightingCardId, StringComparison.Ordinal)
                 ? "LIGHT"
                 : "QUAKE";
-            var color = string.Equals(_selectedCard.StableId, LightingCardId, StringComparison.Ordinal)
+            var color = string.Equals(card.StableId, LightingCardId, StringComparison.Ordinal)
                 ? new Color(0.16f, 0.74f, 0.82f, 1f)
                 : new Color(0.84f, 0.58f, 0.18f, 1f);
-            for (var index = 0; index < _selectedCard.Shape.Count; index++)
+            for (var index = 0; index < card.Shape.Count; index++)
             {
-                SetTimelineCell(cell + _selectedCard.Shape[index], label, color);
+                SetTimelineCell(cell + card.Shape[index], label, color);
             }
             _resolveButton.interactable = true;
             _cardHandHost.SetInteractionState(CardHandInteractionState.Disabled);
             SetHandCardsActive(false);
             BoardCamera.InputEnabled = true;
-            SetStatus(_selectedCard.StableId.ToUpperInvariant() + " placed. Resolve the timeline.");
+            SetStatus(card.StableId.ToUpperInvariant() + " placed. Resolve the timeline.");
             return true;
         }
 
         public bool PreviewTimelineSelected(int column, int row)
         {
             EnsureBuilt();
-            if (_selectedCard == null ||
-                _cardPlaySession == null ||
-                string.IsNullOrEmpty(_selectedTargetId) ||
-                _playerCell.HasValue)
+            var current = _applicationSession.Current;
+            if (current.SelectedCard == null ||
+                !current.Target.HasValue ||
+                current.Phase == CombatSessionPhase.Committed)
             {
                 return false;
             }
 
             var cell = new TimelineCell(column, row);
-            var transition = _cardPlaySession.PreviewTimeline(_timeline, cell);
-            _timelinePlacementPreview.Show(cell, _selectedCard.Shape, transition.IsPlacementValid);
+            var transition = _applicationSession.PreviewTimeline(cell);
+            _timelinePlacementPreview.Show(
+                cell,
+                current.SelectedCard.Shape,
+                transition.IsPlacementValid);
             _cardHandHost.SetInteractionState(CardHandInteractionState.Scheduling);
             SetStatus(transition.IsPlacementValid
-                ? "Timeline position is legal. Click to confirm " + _selectedCard.StableId.ToUpperInvariant() + "."
+                ? "Timeline position is legal. Click to confirm " + current.SelectedCard.StableId.ToUpperInvariant() + "."
                 : "Timeline position conflicts or falls outside the 12 x 3 grid.");
-            return transition.IsPlacementValid;
+            return transition.Succeeded && transition.IsPlacementValid;
         }
 
         public void ClearTimelinePreview()
         {
-            if (_timelinePlacementPreview != null && !_playerCell.HasValue)
+            if (_timelinePlacementPreview != null &&
+                (_applicationSession == null ||
+                 _applicationSession.Current.Phase != CombatSessionPhase.Committed))
             {
                 _timelinePlacementPreview.Clear();
             }
@@ -543,13 +539,20 @@ namespace TimeKey.Presentation
         public ResolutionSnapshot ResolveTimeline()
         {
             EnsureBuilt();
-            if (!_playerCell.HasValue)
+            if (_applicationSession.Current.Phase != CombatSessionPhase.Committed)
             {
                 throw new InvalidOperationException("Place the player action before resolving.");
             }
 
-            var resolvedCardId = _selectedCard.StableId;
-            _lastSnapshot = _timeline.Resolve(_state);
+            var result = _applicationSession.ResolveTimeline();
+            if (!result.Succeeded || result.Resolution == null)
+            {
+                throw new InvalidOperationException(
+                    "The committed player action could not be resolved: " + result.FailureReason);
+            }
+
+            var resolvedCardId = result.StableId;
+            _lastSnapshot = result.Resolution;
             _boardRangePreview.Clear();
             _timelinePlacementPreview.Clear();
             ApplyTileEffects(_lastSnapshot);
@@ -563,9 +566,6 @@ namespace TimeKey.Presentation
             }
 
             _resolveButton.interactable = false;
-            _selectedCard = null;
-            _selectedTargetId = null;
-            _cardPlaySession = null;
             BoardCamera.InputEnabled = true;
             SetStatus(string.Equals(resolvedCardId, LightingCardId, StringComparison.Ordinal)
                 ? "RESOLVED  |  LIGHTING: 10 -> 0 HP  |  ENEMY INTENT: PROCESSED"
@@ -684,8 +684,9 @@ namespace TimeKey.Presentation
 
         private void HandleCardCancelRequested(string stableId)
         {
-            if (_selectedCard != null &&
-                string.Equals(stableId, _selectedCard.StableId, StringComparison.Ordinal))
+            var selectedStableId = SelectedCardId;
+            if (selectedStableId != null &&
+                string.Equals(stableId, selectedStableId, StringComparison.Ordinal))
             {
                 CancelSelectedCard();
             }
@@ -693,8 +694,9 @@ namespace TimeKey.Presentation
 
         private void HandleCardDragChanged(string stableId, Vector2 pointerPosition, CardDragPhase phase)
         {
-            if (_selectedCard == null ||
-                !string.Equals(stableId, _selectedCard.StableId, StringComparison.Ordinal))
+            var selectedStableId = SelectedCardId;
+            if (selectedStableId == null ||
+                !string.Equals(stableId, selectedStableId, StringComparison.Ordinal))
             {
                 return;
             }
@@ -706,22 +708,21 @@ namespace TimeKey.Presentation
             }
         }
 
-        private void PlaceEnemyIntent()
+        private static TimelineAction CreateEnemyIntent()
         {
             var origin = new TimelineCell(2, 1);
-            var intent = new TimelineAction(
+            return new TimelineAction(
                 TimelineActorKind.Enemy,
                 "enemy-intent",
                 TargetId,
                 origin,
                 new[] { new TimelineCell(0, 0) },
                 0);
-            if (!_timeline.TryPlace(intent))
-            {
-                throw new InvalidOperationException("The frozen enemy intent could not be placed.");
-            }
+        }
 
-            SetTimelineCell(origin, "INTENT", new Color(0.78f, 0.27f, 0.25f, 1f));
+        private void RenderEnemyIntent(TimelineAction intent)
+        {
+            SetTimelineCell(intent.Origin, "INTENT", new Color(0.78f, 0.27f, 0.25f, 1f));
         }
 
         private void SetTimelineCell(TimelineCell cell, string label, Color color)
@@ -978,9 +979,33 @@ namespace TimeKey.Presentation
             }
         }
 
+        private CardPlaySessionState? GetCompatibilityCardPlayState()
+        {
+            if (_applicationSession == null ||
+                _applicationSession.Current.SelectedCard == null)
+            {
+                return null;
+            }
+
+            switch (_applicationSession.Current.Phase)
+            {
+                case CombatSessionPhase.CardSelected:
+                    return CardPlaySessionState.Idle;
+                case CombatSessionPhase.TargetSelected:
+                    return CardPlaySessionState.TargetSelected;
+                case CombatSessionPhase.TimelinePreview:
+                    return CardPlaySessionState.TimelinePreview;
+                case CombatSessionPhase.Committed:
+                    return CardPlaySessionState.Committed;
+                default:
+                    return null;
+            }
+        }
+
         private void OnDestroy()
         {
             UnbindViews();
+            _applicationSession?.Dispose();
             DestroyOwnedObject(_targetMaterial);
             DestroyOwnedObject(_lightingCardSprite);
             DestroyOwnedObject(_earthquakeCardSprite);
@@ -993,7 +1018,7 @@ namespace TimeKey.Presentation
                 return;
             }
 
-            if (Application.isPlaying)
+            if (UnityEngine.Application.isPlaying)
             {
                 Destroy(value);
             }
@@ -1014,6 +1039,35 @@ namespace TimeKey.Presentation
             }
 
             return false;
+        }
+
+        private sealed class ControllerCardCatalog : ICardCatalog
+        {
+            private readonly Dictionary<string, CardDefinition> _cardsById =
+                new Dictionary<string, CardDefinition>(StringComparer.Ordinal);
+
+            public ControllerCardCatalog(IReadOnlyList<CardDefinition> cards)
+            {
+                Cards = cards ?? throw new ArgumentNullException(nameof(cards));
+                for (var index = 0; index < cards.Count; index++)
+                {
+                    var card = cards[index] ??
+                        throw new ArgumentException("Catalog cards cannot contain null.", nameof(cards));
+                    if (!_cardsById.TryAdd(card.StableId, card))
+                    {
+                        throw new ArgumentException(
+                            "Duplicate card stable ID: " + card.StableId + ".",
+                            nameof(cards));
+                    }
+                }
+            }
+
+            public IReadOnlyList<CardDefinition> Cards { get; }
+
+            public bool TryGet(string stableId, out CardDefinition card)
+            {
+                return _cardsById.TryGetValue(stableId, out card);
+            }
         }
     }
 }

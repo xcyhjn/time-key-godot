@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="14" result="Passed" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.0530926">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="86" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.053093" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1060" name="TimeKey.Tests.EditMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.EditMode.dll" runstate="Runnable" testcasecount="51" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.047188" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="53320" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1061" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="51" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.046843" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1062" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="51" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.046723" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1063" name="EditMode" fullname="TimeKey.Tests.EditMode" runstate="Runnable" testcasecount="51" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.046612" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1067" name="Application" fullname="TimeKey.Tests.EditMode.Application" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.039979" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1047" name="CombatApplicationSessionTests" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.039140" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1055" name="CancelIsIdempotentUntilASelectionIsCommitted" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.CancelIsIdempotentUntilASelectionIsCommitted" methodname="CancelIsIdempotentUntilASelectionIsCommitted" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1333768624" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.020310" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1054" name="CommitDetectsConcurrentTimelineMutationWithoutAdditionalPlacement" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.CommitDetectsConcurrentTimelineMutationWithoutAdditionalPlacement" methodname="CommitDetectsConcurrentTimelineMutationWithoutAdditionalPlacement" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1594678017" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.001052" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1059" name="DisposeIsIdempotentAndFurtherCommandsFailWithoutMutation" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.DisposeIsIdempotentAndFurtherCommandsFailWithoutMutation" methodname="DisposeIsIdempotentAndFurtherCommandsFailWithoutMutation" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="877017001" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.000329" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1049" name="EarthquakePath_UsesTypedTileTargetAndRaisesSevenTilesByTwo" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.EarthquakePath_UsesTypedTileTargetAndRaisesSevenTilesByTwo" methodname="EarthquakePath_UsesTypedTileTargetAndRaisesSevenTilesByTwo" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="985678949" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.002321" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1050" name="InvalidCommandOrderReturnsStructuredFailuresWithoutMutation" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.InvalidCommandOrderReturnsStructuredFailuresWithoutMutation" methodname="InvalidCommandOrderReturnsStructuredFailuresWithoutMutation" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="708239584" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.000428" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1048" name="LightingPath_SelectsTargetsCommitsAndResolvesThroughApplication" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.LightingPath_SelectsTargetsCommitsAndResolvesThroughApplication" methodname="LightingPath_SelectsTargetsCommitsAndResolvesThroughApplication" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="188872744" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.001049" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1052" name="PreviewRequiresTargetAndInvalidOriginDoesNotOccupyTimeline" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.PreviewRequiresTargetAndInvalidOriginDoesNotOccupyTimeline" methodname="PreviewRequiresTargetAndInvalidOriginDoesNotOccupyTimeline" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="190669421" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.000367" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1057" name="RepeatedPreviewCommitAndResolveDoNotDuplicateMutation" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.RepeatedPreviewCommitAndResolveDoNotDuplicateMutation" methodname="RepeatedPreviewCommitAndResolveDoNotDuplicateMutation" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="2123693503" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.000379" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1053" name="SelectingSecondCardReplacesUncommittedSelectionWithoutPresentationEvents" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.SelectingSecondCardReplacesUncommittedSelectionWithoutPresentationEvents" methodname="SelectingSecondCardReplacesUncommittedSelectionWithoutPresentationEvents" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="911473630" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.000562" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1051" name="SelectTargetRejectsWrongKindUnknownEntityAndMissingTile" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.SelectTargetRejectsWrongKindUnknownEntityAndMissingTile" methodname="SelectTargetRejectsWrongKindUnknownEntityAndMissingTile" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1713452757" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.000339" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1058" name="TraceSinkCannotChangeGameplayResult" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.TraceSinkCannotChangeGameplayResult" methodname="TraceSinkCannotChangeGameplayResult" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="20167226" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.001991" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1056" name="UnsupportedEffectFailsExplicitlyBeforeOccupyingTimelineAndIsTraced" fullname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests.UnsupportedEffectFailsExplicitlyBeforeOccupyingTimelineAndIsTraced" methodname="UnsupportedEffectFailsExplicitlyBeforeOccupyingTimelineAndIsTraced" classname="TimeKey.Tests.EditMode.Application.CombatApplicationSessionTests" runstate="Runnable" seed="1549819424" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.000785" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1065" name="Diagnostics" fullname="TimeKey.Tests.EditMode.Diagnostics" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.005313" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1040" name="CollectingCombatTraceSinkTests" fullname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests" classname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.004924" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1042" name="ClearIsRepeatableAndRecordRejectsNull" fullname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests.ClearIsRepeatableAndRecordRejectsNull" methodname="ClearIsRepeatableAndRecordRejectsNull" classname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests" runstate="Runnable" seed="1272822204" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.004012" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1041" name="RecordPreservesInsertionOrder" fullname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests.RecordPreservesInsertionOrder" methodname="RecordPreservesInsertionOrder" classname="TimeKey.Tests.EditMode.Diagnostics.CollectingCombatTraceSinkTests" runstate="Runnable" seed="2143786007" result="Passed" start-time="2026-08-01 05:31:17Z" end-time="2026-08-01 05:31:17Z" duration="0.000268" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

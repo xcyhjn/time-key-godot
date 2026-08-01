@@ -78,7 +78,7 @@ namespace TimeKey.Tests.EditMode.Composition
         [Test]
         public void ControllerSource_DoesNotConstructStableSceneObjects()
         {
-            var path = Path.Combine(Application.dataPath, "_Project/Runtime/Presentation/VerticalSliceController.cs");
+            var path = Path.Combine(UnityEngine.Application.dataPath, "_Project/Runtime/Presentation/VerticalSliceController.cs");
             var source = File.ReadAllText(path);
             Assert.That(source, Does.Not.Contain("new GameObject"));
             Assert.That(source, Does.Not.Contain("GameObject.CreatePrimitive"));

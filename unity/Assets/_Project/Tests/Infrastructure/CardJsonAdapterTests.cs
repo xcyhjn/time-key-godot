@@ -319,7 +319,7 @@ namespace TimeKey.Tests.Infrastructure
         private static string ReadFixture(string stableId)
         {
             return File.ReadAllText(
-                Path.Combine(Application.dataPath, "_Project", "Content", "Cards", stableId + ".json"));
+                Path.Combine(UnityEngine.Application.dataPath, "_Project", "Content", "Cards", stableId + ".json"));
         }
 
         public sealed class CardExpectation

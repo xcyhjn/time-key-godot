@@ -2,7 +2,8 @@
   "name": "TimeKey.Infrastructure",
   "rootNamespace": "TimeKey.Infrastructure",
   "references": [
-    "TimeKey.Domain"
+    "TimeKey.Domain",
+    "TimeKey.Application"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

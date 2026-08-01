@@ -3,6 +3,8 @@
   "rootNamespace": "TimeKey.Tests.EditMode",
   "references": [
     "TimeKey.Domain",
+    "TimeKey.Application",
+    "TimeKey.Diagnostics",
     "TimeKey.Presentation"
   ],
   "includePlatforms": [

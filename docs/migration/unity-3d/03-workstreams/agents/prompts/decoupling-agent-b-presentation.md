@@ -10,11 +10,16 @@
 - `03-workstreams/agents/reports/decoupling-scene-prefab-audit.md`
 - `03-workstreams/agents/reports/decoupling-domain-application-audit.md`
 - `04-verification/inherited-verification-ledger.md`
+- `04-verification/command-catalog.md`
 - R1 Scene bindings 与 R2 Application public API
 
 ## 使用规范
 
-遵循 `codebase-migrate`、`architecture-review` 与 `Verification & Quality Assurance`；保持组件职责单一，不复制 Controller 规则。
+遵循 `codebase-migrate` 与 `Verification & Quality Assurance`；只消费落盘审计，不启动完整 `architecture-review` 工作流。保持组件职责单一，不复制 Controller 规则。
+
+## 启动门禁
+
+你不是仓库中唯一工作者。仅在 Agent A 已返回、主智能体明确宣布 R2 Gate 已测试/提交/推送且 Application API 冻结，并确认 Presentation/PlayMode asmdef 已引用 Application 后启动。否则立即停止并回报。
 
 ## 独占可写路径
 
@@ -26,7 +31,7 @@
 
 ## 禁止路径
 
-不得修改 Controller、既有 Cards/Targeting/Terrain 组件、Application、Domain、Infrastructure、Scene、Prefab、asmdef、harness、共享文档、用户保护清单或其他智能体路径。不得运行 Unity、暂存、提交、推送或切分支。
+不得修改 Controller、既有 Cards/Targeting/Terrain 组件、Application、Domain、Infrastructure、Scene、Prefab、asmdef、harness、共享文档、用户保护清单或其他智能体路径。不得运行 Unity，不得 stash/stage/commit/push/切分支，不得 revert、覆盖或清理他人与未知改动；发现自身路径重叠时立即停止并回报。
 
 ## 冻结契约
 
@@ -50,7 +55,15 @@
 
 - 双次 bind 只有一次响应，unbind 后无响应。
 - lighting 与 earthquake 的表现状态无需 stable ID switch。
-- 组件能由 Scene 序列化引用接线。
+- 组件公开明确的可序列化依赖且不使用 `GameObject.Find`/service locator；真实 Scene/Prefab 接线、Inspector 检查与视觉证明由主智能体完成。
+
+## 测试与证据责任
+
+Agent 不运行 Unity、不截图。主智能体收回所有权后运行 PlayMode filter `TimeKey.Tests.PlayMode.Presenters;TimeKey.Tests.PlayMode.Bindings`，XML 写入 `04-verification/evidence/decoupling-r3/agent-b-playmode-results.xml`，门禁为 total=passed 且 failed=0。主智能体接线后负责 1280x720、1920x1080、2560x1080、四个 yaw 和 earthquake 前后截图。
+
+## 立即停止并回报
+
+R2 未推送/API 未冻结；必须修改禁止路径或 asmdef；需要自行接 Scene/Prefab 或运行 Unity；契约与真实代码冲突；自身路径有并发修改。完成报告后明确所有权已交回。
 
 ## 回报格式
 

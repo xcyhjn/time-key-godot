@@ -23,7 +23,7 @@
 - 逻辑坐标：flat-top axial `(q, r)`。
 - Unity 地面：XZ 平面；Y 轴表示高度。
 - 世界映射：`x = 1.5 * radius * q`，`z = sqrt(3) * radius * (r + q / 2)`，`y = elevation * elevationStep`。
-- 首切片 `radius = 1`、`elevationStep = 0.35`，一个 axial 邻接距离就是一个逻辑格。
+- 已冻结切片 `radius = 1`、`elevationStep = 0.32`，一个 axial 邻接距离就是一个逻辑格。
 - 相机为正交斜视，向世界原点观察；世界模型不承担卡牌文字与时间轴信息。
 
 ## 数据语义

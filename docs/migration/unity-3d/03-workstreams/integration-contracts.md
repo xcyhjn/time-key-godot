@@ -1,6 +1,6 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：Wave 01/02A/02B1 已冻结；Wave 02B2A 已实现并验证
+> 状态：Wave 01/02A/02B1/02B2A 已冻结；解耦 R2 已实现并验证
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
@@ -160,3 +160,23 @@ HexTileColumn -> LayerCount/Blocks/TopBounds/OccupantAnchor/Changed
 - `HexTileColumn` 每个逻辑层创建独立 FBX visual、renderer 与 collider，层间 local Y 严格为 `0.32`；`TopBounds` 和 `OccupantAnchor` 从真实顶层 bounds 重算。
 - 集成控制器只消费 Domain 结果更新表现；一层变三层时七个有效柱各新增两块，顶面与占位锚点均上移 `0.64`，缺失坐标不创建幽灵格。
 - 冻结证据为 EditMode `67/67`、PlayMode `25/25`、Windows build `Succeeded`、Player marker `TIMEKEY_PLAYER_SMOKE_PASS`，详见 `04-verification/evidence/unity-slice-02b2a/verification-summary.md`。
+
+## 解耦 R2 Application 契约
+
+```text
+CombatApplicationSession(ICardCatalog, CombatSliceState, TimelineGrid, initialActions?, ICombatTraceSink?)
+SelectCard(stableId) -> CombatCommandResult
+SelectTarget(CombatTarget) -> CombatCommandResult
+PreviewTimeline(TimelineCell) -> CombatCommandResult
+CommitTimeline() -> CombatCommandResult
+CancelCard() -> CombatCommandResult
+ResolveTimeline() -> CombatCommandResult + ResolutionSnapshot
+Current -> CombatSessionView
+```
+
+- `CombatTarget` 只有 Entity 与 Tile；Controller 的旧 `SelectTarget(string)`/`SelectEarthquakeTarget(HexCoord)` 是兼容映射。
+- Application 拥有 selected card、target、timeline origin、phase 与 commit/resolve 顺序；Presentation 不得直接命令 `CardPlaySession`。
+- 初始 actions 全量预检后只放置一次。当前固定 enemy intent 仍保留 MIG-002 无效果行为。
+- Recover/Built/Poison/Clear 在 handler/session 未支持时返回结构化失败，不静默 no-op。
+- `ICombatTraceSink` 异常不能改变快照；R3 在不改 port 消费方向的前提下扩展 effect before/after 字段。
+- R2 冻结证据为 Application/Diagnostics `14/14`、全量 EditMode `86/86`、PlayMode `26/26`、Windows build/Player smoke/11 张截图全通过。

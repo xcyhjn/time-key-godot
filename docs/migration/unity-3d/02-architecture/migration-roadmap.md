@@ -1,6 +1,6 @@
 # Unity 3D 迁移路线图
 
-> 状态：Wave 02B1 已完成；Wave 02B2A 待执行
+> 状态：Wave 02B2A 已完成；解耦 R1 已通过，R2 执行中
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：可行性报告、依赖矩阵、风险登记、共享契约
@@ -17,7 +17,7 @@
 | 04 内容与体验 | 教程、音频、VFX、中文字体、资产 | 授权清单完成 | 视觉/音频对照、性能预算 |
 | 05 发布加固 | 存档升级、平台、构建与回归 | 目标平台冻结 | 发布构建、回归矩阵 |
 
-Wave 00、Wave 01、Wave 02A 与 Wave 02B1 已关闭。下一个实施单元是 02B2A：先冻结七卡 schema，再用 `earthquake +2` 验证真实 `0.32` 堆叠、范围、两格时间轴和多卡 UI；其后分批完成普通实体效果与即时 clear。扩展敌方意图前仍需保留 MIG-002 的源行为。
+Wave 00、Wave 01、Wave 02A、Wave 02B1 与 Wave 02B2A 已关闭。七卡 typed schema、`front_image`、`lighting` 与 `earthquake +2` 的真实 `0.32` 堆叠、范围、两格时间轴和多卡 UI 均已验证。当前实施单元是解耦 R2/R3：在继续其余卡牌效果前冻结 Application、Presentation、Infrastructure 与 Diagnostics 边界。扩展敌方意图前仍需保留 MIG-002 的源行为。
 
 ## Wave 01 依赖顺序
 

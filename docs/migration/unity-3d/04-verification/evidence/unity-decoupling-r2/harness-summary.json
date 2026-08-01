@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "scene": "SerializedEditableEarthquakeSlice",
+  "stableHierarchy": "serialized-before-play",
+  "applicationBoundary": "CombatApplicationSession",
+  "savedPrefabs": 6,
+  "seed": 731,
+  "boardTiles": 19,
+  "cameraYawEvidence": [0, 90, 180, 270],
+  "cardArt": ["lighting", "earthquake"],
+  "cardInteraction": "select-hex-range-two-cell-preview-commit",
+  "earthquakeRangeResults": 7,
+  "layerDelta": 2,
+  "layerSpacing": 0.32,
+  "topDelta": 0.64,
+  "targetHpAfter": 10,
+  "enemyIntentResolved": true,
+  "screenshots": [
+    {"file": "two-card-hand-1280x720.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "two-card-hand-2560x1080.png", "width": 2560, "height": 1080, "luminanceRange": 0.985, "sampledOpaquePixels": 10720},
+    {"file": "earthquake-selected-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.982, "sampledOpaquePixels": 8040},
+    {"file": "earthquake-range-yaw-000-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.985, "sampledOpaquePixels": 8040},
+    {"file": "earthquake-range-yaw-090-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.982, "sampledOpaquePixels": 8040},
+    {"file": "earthquake-range-yaw-180-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.990, "sampledOpaquePixels": 8040},
+    {"file": "earthquake-range-yaw-270-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.986, "sampledOpaquePixels": 8040},
+    {"file": "earthquake-timeline-invalid-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.982, "sampledOpaquePixels": 8040},
+    {"file": "earthquake-timeline-valid-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.982, "sampledOpaquePixels": 8040},
+    {"file": "earthquake-before-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.981, "sampledOpaquePixels": 8040},
+    {"file": "earthquake-after-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.973, "sampledOpaquePixels": 8040}
+  ],
+  "buildResult": "Succeeded",
+  "buildBytes": 206690380
+}

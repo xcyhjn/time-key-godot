@@ -22,3 +22,6 @@
 | MIG-013 | 固定 19 格验证棋盘上，目标 `(1,0)` 的 `lighting` 第三个范围 offset 落到不存在的 `(3,0)` | 集成截图只显示两个真实范围格；若误生成第三格会制造幽灵地块 | `BoardRangePreview.MissingCoordinates` 明确报告 `(3,0)`，不创建对象；完整地图/多卡波次继续按真实棋盘边界验证 |
 | MIG-014 | 原卡面图片本身包含烘焙的棋盘格角部，且原素材授权仍未闭合 | Unity 不能通过导入设置恢复不存在的 alpha；公开发布仍有素材合规风险 | Wave 02B1 保持原文件字节与可观察外观，不擅自修图；Wave 04 统一处理授权和美术修订决策 |
 | MIG-015 | Unity `JsonUtility` 会静默强制转换异构 `value`，不能可靠区分 number/string/array | 七卡 schema 可能接受错误类型或丢失 clear mask | 已用 Unity 官方 `com.unity.nuget.newtonsoft-json 3.2.2` 做结构化 token 类型校验，决定记录在 ADR-0003；不使用 regex 或 fixture 改写 |
+| MIG-016 | R2 Controller 仍解析两张 fixture、加载 Resources 卡图并按两卡刷新 hand | 新增第三张卡仍需修改共享 Controller，`Presentation -> Infrastructure` 临时依赖仍存在 | R3 Agent C 实现七卡 catalog/front-image 边界，主智能体在 Composition 接线后移除临时依赖 |
+| MIG-017 | 冻结 `CombatTraceEntry` 已记录命令/phase/card/target/timeline/failure，但尚无 effect kind 与 before/after | 结算故障仍需同时检查 snapshot | R3 扩展结构化 effect trace 与可关闭 Unity sink，并保持 sink 中立性测试 |
+| MIG-018 | Unity 只有无效果的固定 enemy intent marker | 无法真实提供“添加敌人”流程 | 保留 MIG-002 权威行为；`06-maintenance/add-enemy.md` 明确标记尚不支持，不在解耦阶段发明 AI/伤害 |
