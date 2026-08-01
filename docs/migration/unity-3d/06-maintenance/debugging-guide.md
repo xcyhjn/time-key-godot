@@ -1,6 +1,6 @@
 # 局内战斗调试指南
 
-> 状态：适用于 Remaining Cards Gate C
+> 状态：适用于 Remaining Cards Gate D
 
 ## 调用链
 
@@ -44,5 +44,7 @@ Composition 入口是 `Runtime/Composition/CombatCompositionRoot.cs`。它创建
 - Clear 颜色/marker 残留：确认 `ClearTimelinePreview.Clear()` 在 cancel/commit/普通预览切换时运行，并检查 `TimelineCellView` 的 `hasDefaultAppearance/defaultText/defaultColor` 已由 Gate C authoring 保存。整 action 只清一格时应回到 Domain removed snapshot，不能在 View 层补 identity 规则。
 
 运行命令与证据规则见 `testing-and-evidence.md`。调试修复后先跑对应 filter，再跑全量 EditMode/PlayMode；渲染或场景接线变化还必须重跑 harness、build、Player 并人工开图。
+
+Gate D 的一次全量 PlayMode 暴露了可复用的 Scene 夹具问题：当 Binding 增加必需 Presenter 时，保存 Scene 和所有 PlayMode test rig 都必须同步补序列化引用。当前该夹具已修正并以 full PlayMode `38/38` 验证；完整证据见 `04-verification/evidence/remaining-cards-gate-d/`。
 
 回滚时按 Application、Infrastructure、Presentation/Composition 的职责边界撤销单一目的改动；不要用重建 Scene 掩盖丢失引用，也不要回退用户未提交文件。

@@ -2,7 +2,7 @@
 
 > 状态：当前只有敌方意图占位契约，尚不支持可执行敌人
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-02
 
 ## 先明确当前能力
 
@@ -37,6 +37,8 @@ Godot 战斗实体使用 `scene/in_scene/tile.gd` 的 landform 契约，包含 `
 5. 最后增加 Domain/EditMode、Application/EditMode、Prefab/PlayMode 和实际渲染证据。
 
 只有以上运行态、意图、结算结果、Prefab 和测试均存在时，才能将此指南升级为“添加一个敌人”的操作教程。
+
+下一阶段入口是 `../00-bootstrap/NEXT_STAGE_TURN_LIFECYCLE_PROMPT.md`。02B3 将首次冻结并实现回合阶段、意图生成/显示/Resolve 重判、Tower 行动与 Poison tick；Gate C 能清除 enemy marker 仍只证明 action identity，不代表敌人系统完成。
 
 ## Inspector 与视觉验收
 

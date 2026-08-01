@@ -1,6 +1,6 @@
 # Scene 与 Prefab 维护指南
 
-> 状态：Remaining Cards Gate C 已验证
+> 状态：Remaining Cards Gate D 已验证
 > 入口场景：`unity/Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`
 
 ## 可编辑边界
@@ -29,6 +29,8 @@
 4. 运行 Scene asset EditMode、全量 PlayMode 和 harness；布局或表现变化必须重拍三视口与相关交互截图。
 
 可复制验证命令见 `testing-and-evidence.md`。最小结构测试位于 `unity/Assets/_Project/Tests/EditMode/Composition/CombatSceneAssetTests.cs`，生命周期和集成测试位于 `Tests/PlayMode/`。
+
+Gate D 已在保存 Scene/八个 Prefab 的最终态通过 full EditMode `152/152`、full PlayMode `38/38`、harness/build/Player，并逐图检查三视口和 Tower/Poison 四 yaw；证据见 `04-verification/evidence/remaining-cards-gate-d/`。
 
 ## 常见故障与回滚
 

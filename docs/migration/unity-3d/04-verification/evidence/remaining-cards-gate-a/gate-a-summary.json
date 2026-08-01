@@ -4,9 +4,9 @@
   "targetHpBefore": 10,
   "targetHpAfter": 100,
   "screenshots": [
-    {"file": "recover-selected.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
-    {"file": "recover-targeted.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
-    {"file": "recover-timeline-valid.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
+    {"file": "recover-selected.png", "width": 1280, "height": 720, "luminanceRange": 0.982, "sampledOpaquePixels": 3600},
+    {"file": "recover-targeted.png", "width": 1280, "height": 720, "luminanceRange": 0.982, "sampledOpaquePixels": 3600},
+    {"file": "recover-timeline-valid.png", "width": 1280, "height": 720, "luminanceRange": 0.982, "sampledOpaquePixels": 3600},
     {"file": "recover-before-resolve.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600},
     {"file": "recover-after-resolve.png", "width": 1280, "height": 720, "luminanceRange": 0.958, "sampledOpaquePixels": 3600}
   ]

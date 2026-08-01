@@ -1,8 +1,8 @@
 # 已完成切片
 
-> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1/R2/R3 已完成
+> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1、Wave 02B2A、解耦 R1/R2/R3 与 Wave 02B2B/02B2C 已完成
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-02
 > 证据来源：Slice Definition of Done
 
 ## Wave 00：迁移评估基线
@@ -90,3 +90,14 @@
 - Controller 不再解析 JSON、调用 Resources、持有 36 格 Timeline Inspector 列表或按 stable ID 决定视觉；场景 Inspector 引用完整且可编辑。
 - trace 新增 effect kind 与 before/after，Unity sink 可关闭；sink 失败不改变战斗结算结果。
 - 全量 EditMode `92/92`、PlayMode `31/31`，Windows build `Succeeded`、`206747014` bytes，Player smoke 退出码 0；14 张三视口/四向/时间轴/前后实际渲染证据人工通过。
+
+## Wave 02B2B/02B2C：剩余五卡
+
+完成日期：2026-08-02。
+
+- Recover 沿普通公共路径在 Resolve 重判 runtime ID + `HexCoord`，把目标 10 HP 恢复并钳制到 100；满血、消失和不同 ID 替换保持无副作用。
+- Built 在 Resolve 时对空 tile 创建 Neutral Tower occupant（HP/MaxHP 100）；Tower 使用保存的 billboard Prefab，本阶段不提前实现 decay。
+- Poison 对存活且支持状态的 occupant 每次累加 2，并产生不可变 before/after；保存的 PoisonStatus Prefab 显示原图标与整数层数，本阶段不提前实现 tick。
+- Wind 2×2、Tornado 12×1 使用独立 Clear session；越界拒绝、空清成功，命中后按 action identity 去重并完整移除玩家或敌方 action。
+- Application 以交互模式通用路由 ordinary/clear；`VerticalSliceController` 没有 Recover 等 stable-ID 分支。Scene 现保存八个 Prefab 和五个 Presenter 的完整 Inspector 接线。
+- Gate A/B/C 小门禁均关闭；Gate D 刷新 full EditMode `152/152`、full PlayMode `38/38`、54 张实际 PNG、Windows build `Succeeded`（`207171486` bytes）和 Player smoke 退出码 0。

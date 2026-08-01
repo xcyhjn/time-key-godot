@@ -1,6 +1,6 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：Wave 01/02A/02B1/02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate A/B/C 已冻结并验证
+> 状态：Wave 01/02A/02B1/02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate D 已冻结并验证
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
@@ -202,9 +202,9 @@ CombatCompositionRoot
 
 R3 冻结证据为 full EditMode `92/92`、full PlayMode `31/31`、Windows build `Succeeded`、Player marker `TIMEKEY_PLAYER_SMOKE_PASS` 和 14 张人工检查截图，详见 `04-verification/evidence/unity-decoupling-r3/verification-summary.md`。
 
-## Remaining Cards Gate 0 冻结契约
+## Remaining Cards 总契约
 
-> 状态：2026-08-02 Gate A Recover、Gate B Built/Poison 与 Gate C Clear 全部通过
+> 状态：2026-08-02 Gate A Recover、Gate B Built/Poison、Gate C Clear 与 Gate D 终验全部通过
 
 ```text
 ordinary: CardDefinition -> CombatApplicationSession -> CardPlaySession
@@ -230,4 +230,4 @@ Gate B 已以全量 EditMode `130/130`、Scene PlayMode `3/3`、定向 authoring
 
 Gate C 已以全量 EditMode `152/152`、Scene/Presentation PlayMode `4/4`、定向 authoring 和 9 张实际渲染图验收。`ClearTimelinePreview` 使用红 `!`、蓝 `○`、绿 `HIT` 三态冗余；取消恢复原 action，Wind 完整移除敌方 action，Tornado 空清保留未命中的 action。
 
-Gate 0 最小冒烟为 EditMode `24/24`、PlayMode `10/10`，0 失败。旧 R3 build/Player/未受影响视觉先继承；修改对应运行程序集/Scene 后在 Gate D 全量刷新。
+Gate 0 最小冒烟为 EditMode `24/24`、PlayMode `10/10`，0 失败。Gate D 已在最终集成态刷新 full EditMode `152/152`、full PlayMode `38/38`、54 张 PNG、Windows build `Succeeded`（`207171486` bytes）和 Player smoke（退出码 0、marker 存在）；结构化证据和逐图结论位于 `../04-verification/evidence/remaining-cards-gate-d/`。

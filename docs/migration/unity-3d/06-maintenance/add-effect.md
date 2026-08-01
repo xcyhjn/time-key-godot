@@ -27,3 +27,5 @@ Trace 的 `resolve-effect` 条目应包含 kind、before、after。逻辑错误�
 Inspector 只应新增真实需要的 Prefab/Presenter 引用，不把 handler 做成场景对象。回滚按 adapter、Domain handler、Application target policy、registration、测试/表现的单一切片撤销；不得留下已注册但无实现的效果。
 
 Clear 三态表现的已验证约定是：空格天蓝 `○`、命中绿色 `HIT`、越界红色 `!`；颜色外必须保留 marker/边框冗余。`TimelineCellView` 默认文字/颜色由 Scene authoring 显式保存，Clear/Cancel 后恢复，不依赖 `Awake/OnEnable` 执行顺序。
+
+当前五个普通 handler 与一个独立 Clear session 已在 full EditMode `152/152`、full PlayMode `38/38`、build/Player 和 54 张 PNG 中共同回归；最终证据见 `04-verification/evidence/remaining-cards-gate-d/`，架构决策见 `02-architecture/adr/0007-occupant-effects-and-independent-clear-session.md`。

@@ -1,9 +1,11 @@
 # Unity 目标架构
 
-> 状态：首切片共享契约已冻结
+> 状态：首切片历史基线；当前架构以 `combat-modular-architecture.md` 为准
 > 负责人：主智能体
 > 最后验证日期：2026-07-31
 > 证据来源：可行性评估、Godot composition root、Unity 6000.4.10f1 本机包
+
+本文保留 2026-07-31 首切片尚未建立 Application/Composition 分层时的决策背景，不应作为当前依赖图。Remaining Cards Gate D 的现行程序集、组合根、五 Presenter、occupant/Clear 边界与八个 Prefab 统一记录在 `combat-modular-architecture.md` 和 ADR-0007。
 
 ## 决策摘要
 

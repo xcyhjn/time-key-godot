@@ -1,6 +1,6 @@
 # 测试与证据指南
 
-> 状态：Remaining Cards Gate C 已通过，Gate D 最终门禁待执行
+> 状态：Remaining Cards Gate D 最终门禁已通过
 > Unity：6000.4.10f1
 
 ## 分层门禁
@@ -23,7 +23,7 @@
 $UnityEditor = 'C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe'
 $UnityProjectAlias = 'D:\timekey-unity-731'
 $RepositoryRoot = (Get-Location).Path
-$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\unity-decoupling-r3'
+$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\remaining-cards-gate-d'
 $env:ALLUSERSPROFILE = $env:ProgramData
 $env:TIMEKEY_REPOSITORY_ROOT = $RepositoryRoot
 
@@ -40,12 +40,12 @@ $Process = Start-Process $UnityEditor -ArgumentList $Arguments -Wait -PassThru -
 if ($Process.ExitCode -ne 0) { throw "Harness failed: $($Process.ExitCode)" }
 
 $Player = Join-Path $UnityProjectAlias 'Builds\Windows\TimeKeySlice.exe'
-$PlayerLog = Join-Path $UnityProjectAlias 'player-startup.log'
+$PlayerLog = Join-Path $EvidenceDirectory 'player-smoke.log'
 $Process = Start-Process $Player -ArgumentList @('-batchmode','-timekeySmokeQuit','-logFile',$PlayerLog) -Wait -PassThru -WindowStyle Hidden
 if ($Process.ExitCode -ne 0 -or -not (Select-String $PlayerLog 'TIMEKEY_PLAYER_SMOKE_PASS' -Quiet)) { throw 'Player smoke failed' }
 ```
 
-Unity 退出码不足以证明测试执行；还要解析 XML 根 `test-run`，确认 `total=passed`、`failed=0` 且 `total>0`。Gate C 当前结果为 EditMode `152/152`、Clear Scene/Presentation PlayMode `4/4`；完整 PlayMode、build 与 Player 必须在 Gate D 最终刷新。
+Unity 退出码不足以证明测试执行；还要解析 XML 根 `test-run`，确认 `total=passed`、`failed=0` 且 `total>0`。Gate D 最终结果为 full EditMode `152/152`、full PlayMode `38/38`；Windows build `Succeeded`、`207171486` bytes，Player 退出码 0 且 smoke marker 存在。
 
 ## 视觉与继承
 
@@ -56,3 +56,5 @@ Unity 退出码不足以证明测试执行；还要解析 XML 根 `test-run`，�
 Godot 基线、原卡面哈希和未受本阶段修改影响的契约可按 `04-verification/inherited-verification-ledger.md` 继承。修改某模块后只继承未被覆盖的证据，并在最终集成态刷新所有受影响门禁。
 
 原始 `.log` 由证据目录 `.gitignore` 排除；只提交 XML、JSON、PNG 和人工总结。失败先分类为编译、纯逻辑、生命周期、Scene 接线、资源、渲染或 build/Player，再修复受影响层并跑全量终验。回滚使用单一目的提交，不使用破坏性 Git 命令。
+
+Gate D 共提交 54 张 PNG，覆盖三视口七卡、lighting/earthquake 四 yaw、Tower/Poison 四 yaw 和 Wind/Tornado 三态/清除残留；这些图已逐张人工打开。最终结构化结果与视觉结论见 `04-verification/evidence/remaining-cards-gate-d/verification-summary.md`。

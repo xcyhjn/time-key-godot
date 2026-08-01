@@ -1,8 +1,8 @@
 # Git 提交与推送状态
 
-> 状态：解耦 R3 实现与文档检查点已推送，本地与远端同步
+> 状态：Remaining Cards Gate C 已推送；Gate D 待本检查点提交
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-02
 > 证据来源：`git status`、`git log`、后续 push 输出
 
 | 检查点 | 本地提交 | 推送 | 范围 |
@@ -17,5 +17,9 @@
 | 解耦 R2 Application/Diagnostics | `f11fb77` | 2026-08-01 已推送至 `origin/unity_7.31`，推送后 `0/0` | Application session、typed target、handler fail-fast、trace sink、Controller facade、EditMode `86/86`、PlayMode `26/26`、11 张截图、build 与 Player smoke；保护清单全部排除 |
 | 解耦 R3 Composition/Presentation/Content | `0b02791` | 2026-08-01 在多次 443 reset/timeout 后重试成功，已推送至 `origin/unity_7.31` | Composition root、四 Presenter + Binding、七卡 catalog/front_image、effect registry、结构化 trace、Scene 接线、EditMode `92/92`、PlayMode `31/31`、14 张截图、build 与 Player smoke |
 | 解耦 R3 维护与验收文档 | `7a72414` | 2026-08-01 与上项一起推送成功 | 架构/ADR、集成契约、继承账本、parity/test/command、进度账本、九份维护指南和 R3 人工验证总结 |
+| Remaining Cards Gate 0 | `83d0e1d` | 2026-08-02 已推送至 `origin/unity_7.31` | 冻结五卡语义、所有权、保护清单与自动化矩阵 |
+| Remaining Cards Gate A | `c8501ef` | 2026-08-02 已推送至 `origin/unity_7.31` | Recover 公共 handler/session、全量 `107/107`、Scene PlayMode `1/1` 与 5 张 PNG |
+| Remaining Cards Gate B | `3ad237d` | 2026-08-02 已推送至 `origin/unity_7.31` | Built/Poison、occupant state/result、Tower/Poison Prefab、全量 `130/130`、PlayMode `3/3` 与 8 张 PNG |
+| Remaining Cards Gate C | `4fdcbb0` | 2026-08-02 已推送至 `origin/unity_7.31`；推送后 `0/0` | 独立 Clear session、Wind/Tornado、三态 UI、全量 `152/152`、PlayMode `4/4` 与 9 张 PNG |
 
 用户原有四个未提交文件、两个未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均未进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。最终状态提交推送后以 `git rev-list --left-right --count HEAD...origin/unity_7.31 = 0/0` 为同步门禁。

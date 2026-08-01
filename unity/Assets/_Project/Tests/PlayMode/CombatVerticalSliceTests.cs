@@ -346,11 +346,13 @@ namespace TimeKey.Tests.PlayMode
                 button = PointerEventData.InputButton.Left
             });
 
-            Assert.That(controller.SelectedCardId, Is.EqualTo(VerticalSliceController.EarthquakeCardId));
-            Assert.That(host.SelectedStableId, Is.EqualTo(VerticalSliceController.EarthquakeCardId));
+            Assert.That(controller.SelectedCardId, Is.EqualTo("poison"));
+            Assert.That(host.SelectedStableId, Is.EqualTo("poison"));
             Assert.That(host.GetCard(VerticalSliceController.LightingCardId).InteractionState,
                 Is.EqualTo(CardHandInteractionState.Idle));
             Assert.That(host.GetCard(VerticalSliceController.EarthquakeCardId).InteractionState,
+                Is.EqualTo(CardHandInteractionState.Idle));
+            Assert.That(host.GetCard("poison").InteractionState,
                 Is.EqualTo(CardHandInteractionState.Selected));
         }
 

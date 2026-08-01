@@ -1,6 +1,6 @@
 # Godot / Unity 等价矩阵
 
-> 状态：Remaining Cards Gate A/B/C 已验证
+> 状态：Remaining Cards Gate D 已验证
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：Godot 实跑截图/日志、玩法等价契约、Unity 全量测试、构建、Player smoke 与实际截图
@@ -14,7 +14,7 @@
 | 卡牌数据 | `lighting.json`，稳定 ID `lighting` | 原样 fixture，SHA-256 相同 | 等价 | hash + EditMode XML |
 | 七卡 schema | 七份 JSON 使用 number/string 异构 effect value，并由 `front_image` 指向原图 | 七份 fixture 解析为 Damage/Elevation/Recover/Built/Poison/Clear typed effect；原文件名映射保留 | 等价 | `wave-02b2a-integration/editmode-results.xml` + ADR-0003 |
 | 卡牌素材 | `lighting.png` 与 `behide.png` 原卡面/牌背 | 原文件逐字节复制；运行时保持 `1135×1590` 卡面比例 | 等价 | `evidence/wave-02b-card-art-agent/manifest.md` + PlayMode |
-| 七张卡面 | 七张 JSON 的 `front_image` 指向对应原卡面 | `CardContentCatalog` 从七份 fixture 建立有序内容目录，并按 `Art/Battle/Cards/<file stem>` 加载七张原卡面 | 等价 | `evidence/unity-decoupling-r3/seven-card-hand-*.png` + EditMode |
+| 七张卡面 | 七张 JSON 的 `front_image` 指向对应原卡面 | `CardContentCatalog` 从七份 fixture 建立有序内容目录，并按 `Art/Battle/Cards/<file stem>` 加载七张原卡面 | 等价 | `evidence/remaining-cards-gate-d/seven-card-hand-*.png` + EditMode |
 | 手牌状态 | 底部卡牌 idle/hover/selected；右键取消 | 七卡完整进入 hand 并进入 ordinary/clear 正确交互模式；取消恢复预览、action 与镜头输入 | 等价 | Gate A/B/C PNG + PlayMode |
 | 交互顺序 | 选卡→世界目标→时间轴格 | 相同语义，可用点击/公共控制器路径完成 | 等价 | PlayMode XML + 截图 |
 | 世界范围预览 | `effect_range` axial offset 投影到地图 | 相同 offset 投影到 3D 实体格；四向镜头不改变坐标集合，缺失格不生成幽灵格 | 等价 | `target-range-yaw-*.png` + PlayMode |
@@ -22,16 +22,16 @@
 | 时间轴 | 12×3，按列再按行 | 相同，冲突/边界受测 | 等价 | EditMode XML |
 | 雷击效果 | damage 100 | 10 HP 目标钳制为 0 | 等价 | snapshot 测试 + resolved PNG |
 | 地震效果 | 目标中心与六邻格 `elevation +2`；Godot 层高间隔为 `0.32` | 七个有效柱各新增两个独立 mesh/renderer/collider block，顶面与 occupant anchor 上移 `0.64` | 等价 | `evidence/unity-decoupling-r3/earthquake-before-1920x1080.png`、`earthquake-after-1920x1080.png` + PlayMode |
-| Recover | `+100`，Resolve 重查当前 occupant，钳制 MaxHP | 稳定 ID+HexCoord 选择与 Resolve 重判；HP=0 可恢复，满血/消失/替换 no-op，10→100 并输出 typed before/after | 等价 | `evidence/remaining-cards-gate-a/editmode-results.xml`、`playmode-results.xml`、5 张 PNG |
-| Built/Tower | 空地创建 Middle Tower，HP100；同结束回合 decay 属于下一波 | 空 tile 选择与 Resolve 重判，创建 Neutral Tower HP100；原图 billboard Prefab、无 collider；本阶段不 decay | 等价 | `evidence/remaining-cards-gate-b/editmode-results.xml`、`playmode-results.xml`、Tower PNG |
-| Poison | 活体 +2，无上限累加；回合开始 tick 属于下一波 | 活体+status 重判，checked `0→2→4` typed snapshot；原 poison icon+整数层数；本阶段不 tick | 等价 | `evidence/remaining-cards-gate-b/editmode-results.xml`、Poison PNG |
-| Wind/Tornado clear | 无地图目标；2x2/12x1 mask；空清；任一格命中整 action 删除 | 独立 clear session；边界先验、identity 去重、玩家/敌人无过滤；红 `!`/蓝 `○`/绿 `HIT` 三态，取消恢复与完整 UI 清除 | 等价 | `evidence/remaining-cards-gate-c/editmode-results.xml`、`playmode-results.xml`、9 张 PNG |
-| 场景与组合边界 | Godot 场景保存稳定节点，脚本在运行时组织玩法 | Unity 稳定层级与六个 Prefab 可在 Inspector 编辑；`CombatCompositionRoot` 只在组合层装配 session、catalog、presenter 与 trace sink | 允许差异 | `evidence/unity-decoupling-r3/harness-summary.json` + Scene/Prefab EditMode |
-| 表现层输入与刷新 | Godot 节点信号驱动卡牌、范围、时间轴和 HUD | `CombatPresentationBinding` 统一订阅输入，四个 Presenter 只消费 Application view/result；Controller 不再加载 JSON/Resources 或按 stable ID 分支 | 允许差异 | `evidence/unity-decoupling-r3/editmode-results.xml` + PlayMode |
+| Recover | `+100`，Resolve 重查当前 occupant，钳制 MaxHP | 稳定 ID+HexCoord 选择与 Resolve 重判；HP=0 可恢复，满血/消失/替换 no-op，10→100 并输出 typed before/after | 等价 | `evidence/remaining-cards-gate-d/recover-*.png` + full XML |
+| Built/Tower | 空地创建 Middle Tower，HP100；同结束回合 decay 属于下一波 | 空 tile 选择与 Resolve 重判，创建 Neutral Tower HP100；原图 billboard Prefab、无 collider；本阶段不 decay | 等价 | `evidence/remaining-cards-gate-d/tower-*.png` + full XML |
+| Poison | 活体 +2，无上限累加；回合开始 tick 属于下一波 | 活体+status 重判，checked `0→2→4` typed snapshot；原 poison icon+整数层数；本阶段不 tick | 等价 | `evidence/remaining-cards-gate-d/poison-*.png` + full XML |
+| Wind/Tornado clear | 无地图目标；2x2/12x1 mask；空清；任一格命中整 action 删除 | 独立 clear session；边界先验、identity 去重、玩家/敌人无过滤；红 `!`/蓝 `○`/绿 `HIT` 三态，取消恢复与完整 UI 清除 | 等价 | `evidence/remaining-cards-gate-d/{wind,tornado}-*.png` + full XML |
+| 场景与组合边界 | Godot 场景保存稳定节点，脚本在运行时组织玩法 | Unity 稳定层级与八个 Prefab 可在 Inspector 编辑；`CombatCompositionRoot` 只在组合层装配 session、catalog、presenter 与 trace sink | 允许差异 | `evidence/remaining-cards-gate-d/harness-summary.json` + Scene/Prefab EditMode |
+| 表现层输入与刷新 | Godot 节点信号驱动卡牌、范围、时间轴和 HUD | `CombatPresentationBinding` 统一订阅输入，五个 Presenter 只消费 Application view/result；Controller 不再加载 JSON/Resources 或按 stable ID 分支 | 允许差异 | `evidence/remaining-cards-gate-d/editmode-results.xml` + PlayMode |
 | 结构化诊断 | Godot 以运行日志与截图定位结算 | trace 包含 phase、card、target、timeline、effect kind 与 before/after；Unity sink 可关闭且 sink 异常不改变战斗结果 | 允许差异 | `evidence/unity-decoupling-r3/editmode-results.xml` |
 | 敌人意图 | 可见占位；当前命令解析为空，建筑在时间轴后行动 | 固定意图可见，并在玩家 action 后记录“已处理”，不新增伤害 | 允许差异 | contract + snapshot 测试 |
 | 回合变化 | 空结束回合 1/8→2/8，时间币变化 | 非首切片目标 | 未实现 | `battle-turn-2.png` |
 | 胜负/奖励/返回 | 可进入奖励与局外返回路径 | 非首切片目标 | 未实现 | source map |
-| 视觉 | 2D 像素/UI；1920 基线且 1280 菜单可读 | Blender 低多边形地块 + 原建筑 billboard + uGUI；1280/1920/2560 七卡、四向范围和结算前后均可读 | 允许差异 | `evidence/unity-decoupling-r3/` 的 14 张 PNG + 3 张 Blender PNG |
+| 视觉 | 2D 像素/UI；1920 基线且 1280 菜单可读 | Blender 低多边形地块 + 原建筑 billboard + uGUI；1280/1920/2560 七卡、四向范围/Tower/Poison 与七卡结算前后均可读 | 允许差异 | `evidence/remaining-cards-gate-d/` 的 54 张 PNG + 人工总结 |
 
-判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1、Wave 02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate A/B/C 已关闭。Tower decay、Poison tick 与敌方/建筑行动留给 02B3，牌库/回合资源/胜负留给 02B4，局外保持原状。
+判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1、Wave 02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate D 已关闭。下一阶段为 02B3：固定回合生命周期、Tower decay、Poison tick 与敌方/建筑行动；牌库/回合资源/胜负留给 02B4，局外保持原状。

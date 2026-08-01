@@ -1,7 +1,7 @@
 # Unity 局内战斗模块架构
 
-> 状态：R3 已实现并通过验证
-> 最后验证日期：2026-08-01
+> 状态：Remaining Cards Gate D 已实现并通过验证
+> 最后验证日期：2026-08-02
 
 ## 依赖方向
 
@@ -42,11 +42,11 @@ serialized card TextAssets
 
 ```text
 CardHandHost / TimelineCellView / resolve Button
-  -> four narrow Presenters
+  -> five narrow Presenters
   -> CombatPresentationBinding events
   -> VerticalSliceController compatibility facade and Unity hit testing
   -> CombatApplicationSession commands
-  -> CardPlaySession + TimelineGrid + ICardEffectHandler
+  -> CardPlaySession 或 TimelineClearSession + TimelineGrid + ICardEffectHandler
   -> CombatCommandResult / ResolutionSnapshot / CombatSessionView
   -> CombatPresentationBinding.Refresh
   -> four Presenters update serialized Views
@@ -54,14 +54,15 @@ CardHandHost / TimelineCellView / resolve Button
 
 `CombatApplicationSession` 是选卡、typed target、timeline origin、commit/resolve phase 的用例状态所有者。`TimelineGrid` 是占格、结算顺序和已注册 `ICardEffectHandler` 的权威来源。`VerticalSliceController` 仍保留兼容 facade、Unity 射线检测、棋盘 mesh/collider 同步与镜头协调，但不解析 JSON、不加载卡图，也不拥有应用会话的创建或销毁。
 
-`unity/Assets/_Project/Runtime/Presentation/Bindings/CombatPresentationBinding.cs` 统一对 Controller 暴露输入事件，并把同一个 `CombatSessionView` 分发给四个窄 Presenter：
+`unity/Assets/_Project/Runtime/Presentation/Bindings/CombatPresentationBinding.cs` 统一对 Controller 暴露输入事件，并把同一个 `CombatSessionView` 分发给五个窄 Presenter：
 
 | Presenter | Inspector 依赖 | 职责 |
 | --- | --- | --- |
 | `CardHandPresenter` | `CardHandHost` | 构建卡牌 ViewModel、同步选中态和交互 phase、转发选择/取消/拖拽 |
 | `BoardRangePresenter` | `BoardRangePreview` | 根据 typed tile target 和卡牌 range 显示或清除范围 |
-| `TimelinePresenter` | `TimelinePlacementPreview`、序列化 `TimelineCellView` 列表 | 注册时间轴格、预览合法性、渲染已提交 action、对称解绑输入 |
+| `TimelinePresenter` | `TimelinePlacementPreview`、`ClearTimelinePreview`、序列化 `TimelineCellView` 列表 | 注册时间轴格、渲染普通 action，并显示 Clear 越界 `!`、空格 `○`、命中 `HIT` 三态 |
 | `CombatHudPresenter` | 状态文本、目标文本、Resolve 按钮 | 显示会话 phase/目标状态、控制 Resolve 可用性并转发命令 |
+| `CombatOccupantPresenter` | creation→Prefab 表、Tower/PoisonStatus Prefab、Scene Camera | 只按 occupant snapshot/result 在真实 `OccupantAnchor` 创建或刷新建筑、生命与状态表现 |
 
 `Bind()`/`Unbind()` 均可重复调用，不复制监听；`CombatPresentationBinding` 不解析内容，也不重算 Domain 规则。
 
@@ -76,7 +77,7 @@ front_image: "tower_card.png"
 
 因此普通新增卡牌由 JSON、同名原图和 Scene 中的 `TextAsset` 引用驱动，不允许在 Controller 中按 stable ID 增加玩法或图片分支。
 
-`unity/Assets/_Project/Runtime/Infrastructure/Effects/CardEffectRegistrationCatalog.cs` 是内容可用性登记表。`CreateVerticalSlice()` 当前登记 `Damage` 和 `Elevation`，组合根用 `Supports(CardDefinition)` 决定卡面是否可交互。它不是效果执行器；真正执行由 `TimelineGrid` 中按 `CardEffectKind` 注册的 `ICardEffectHandler` 完成。未登记效果仍可被 catalog 解析并显示，但保持不可交互；缺少 Domain handler 的 action 在占格前以 `UnsupportedCardEffectException` 失败。
+`unity/Assets/_Project/Runtime/Infrastructure/Effects/CardEffectRegistrationCatalog.cs` 是内容可用性登记表。`CreateVerticalSlice()` 当前登记 `Damage`、`Elevation`、`Recover`、`Built`、`Poison` 和 `Clear`；其中前五种由普通 handler 在 Resolve 执行，`Clear` 只用于进入独立 `TimelineClearSession`。登记表不是效果执行器；真正执行仍由 Domain handler 或 clear session 完成，缺失实现会在改变时间轴前显式失败。
 
 ## 结构化诊断
 
@@ -88,11 +89,11 @@ Application 端口 `unity/Assets/_Project/Runtime/Application/Ports/ICombatTrace
 
 | 模块 | 拥有 | 不得拥有 |
 | --- | --- | --- |
-| Domain | 格坐标、卡牌 typed schema、时间轴合法性、效果处理器、战斗快照 | Unity 类型、资源路径、UI、Scene 生命周期 |
-| Application | 命令顺序、typed target、会话 phase、ports、结构化结果与 trace entry | JSON/`Resources`、Prefab、表现规则 |
+| Domain | 格坐标、卡牌 typed schema、时间轴合法性、效果处理器、occupant 状态、clear mask 与战斗快照 | Unity 类型、资源路径、UI、Scene 生命周期 |
+| Application | 命令顺序、typed target、`CombatInteractionMode`、普通/clear 会话 phase、ports、结构化结果与 trace entry | JSON/`Resources`、Prefab、表现规则 |
 | Infrastructure | JSON adapter、`CardContentCatalog`、原图资源路径映射、效果支持登记 | 玩法结果、View、Scene 生命周期 |
 | Diagnostics | no-op/collecting trace sink | Unity 日志、改变命令结果 |
-| Presentation | 输入映射、四个 Presenter、Binding、相机与世界/UI 同步 | JSON 解析、stable ID 玩法分支、资源定位、占格规则 |
+| Presentation | 输入映射、五个 Presenter、Binding、相机与世界/UI 同步 | JSON 解析、stable ID 玩法分支、资源定位、占格规则 |
 | Composition | Inspector 引用、对象图创建、Unity trace sink、session/Sprite 生命周期 | Domain 规则、卡牌专用 Controller 分支 |
 
 ## 扩展约束
@@ -101,5 +102,13 @@ Application 端口 `unity/Assets/_Project/Runtime/Application/Ports/ICombatTrace
 - 新效果：扩展 typed schema/adapter、Domain `ICardEffectHandler` 和 Application 目标策略，再加入 `CardEffectRegistrationCatalog`；Presenter 只消费结果。
 - 新表现：优先扩展窄 Presenter 或新增 Binding 输出，不让 Application 引用 Unity。
 - 新基础设施：实现 Application/Domain 定义的端口，由 Composition 注入；禁止内层模块反向引用。
+
+## Remaining Cards 领域边界
+
+`CombatOccupantState` 以 runtime ID 与 `HexCoord` 共同标识目标，并保存 attitude、creation、HP/MaxHP、PoisonStacks 和能力字段；Unity 对象从不作为领域 identity。Recover/Built/Poison handler 复用公共 `CardEffectResultBuffer`，在 Resolve 重新查询目标并产出不可变 occupant before/after，Presenter 只消费这些结果。Tower 以 Neutral、HP100 创建，Poison 每次直接累加 2；Tower decay 与 Poison tick 刻意留给 02B3。
+
+`CombatApplicationSession` 通过 `CombatInteractionMode.OrdinaryTimeline` 与 `TimelineClear` 区分流程。Wind/Tornado 的 Clear 只从 typed `ClearMask` 取得范围，经 `TimelineClearSession` 调用 `TimelineGrid.PreviewClear/TryClear`；它不创建普通 action，空清合法，任一格命中后按 action identity 去重并完整移除。对应决策见 `adr/0007-occupant-effects-and-independent-clear-session.md`。
+
+保存资产总数现为八个 Prefab：TimelineCell、CardView、两种 HexBlock、HexColumn、TargetView、Tower 和 PoisonStatus。Gate D 全量证据位于 `../04-verification/evidence/remaining-cards-gate-d/`。
 
 R3 后仍保留的刻意边界是 `VerticalSliceController` 的 Unity 世界表现 facade。后续拆分只能在保留现有 Scene/Prefab 序列化引用、typed session 行为和渲染证据的前提下进行。

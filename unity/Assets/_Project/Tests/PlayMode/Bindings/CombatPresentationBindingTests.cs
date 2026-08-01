@@ -129,11 +129,15 @@ namespace TimeKey.Tests.PlayMode.Bindings
             SetField(hudPresenter, "targetText", targetText);
             SetField(hudPresenter, "resolveButton", resolveButton);
 
+            var occupantPresenter = CreateChild(root, "CombatOccupantPresenter")
+                .AddComponent<CombatOccupantPresenter>();
+
             var binding = root.AddComponent<CombatPresentationBinding>();
             SetField(binding, "cardHandPresenter", cardPresenter);
             SetField(binding, "boardRangePresenter", rangePresenter);
             SetField(binding, "timelinePresenter", timelinePresenter);
             SetField(binding, "hudPresenter", hudPresenter);
+            SetField(binding, "occupantPresenter", occupantPresenter);
 
             root.SetActive(true);
             return new BindingRig(

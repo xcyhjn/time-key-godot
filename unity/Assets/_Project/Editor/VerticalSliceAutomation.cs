@@ -53,7 +53,7 @@ namespace TimeKey.Editor
             controller.BuildSceneGraph();
             ValidateScene(controller, composition);
 
-            var evidenceDirectory = GetEvidenceDirectory();
+            var evidenceDirectory = GetRemainingCardsGateDEvidenceDirectory();
             Directory.CreateDirectory(evidenceDirectory);
             var captures = new List<CaptureStats>();
 
@@ -75,11 +75,45 @@ namespace TimeKey.Editor
             }
 
             captures.Add(Capture(controller, evidenceDirectory, "lighting-targeted-1920x1080.png", 1920, 1080));
-            if (!controller.CancelSelectedCard())
+            foreach (var yaw in new[] { 0, 90, 180, 270 })
             {
-                throw new InvalidOperationException("The lighting selection could not be cancelled.");
+                controller.SetBoardView(yaw);
+                captures.Add(Capture(
+                    controller,
+                    evidenceDirectory,
+                    string.Format("lighting-targeted-yaw-{0:000}-1920x1080.png", yaw),
+                    1920,
+                    1080));
             }
 
+            controller.SetBoardView(32f);
+            if (!controller.PreviewTimelineSelected(0, 0))
+            {
+                throw new InvalidOperationException("The lighting timeline preview was not legal.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "lighting-timeline-valid-1920x1080.png",
+                1920,
+                1080));
+            if (!controller.TryPlaceSelected(0, 0))
+            {
+                throw new InvalidOperationException("The lighting action could not be committed.");
+            }
+
+            captures.Add(Capture(controller, evidenceDirectory, "lighting-before-1920x1080.png", 1920, 1080));
+            var lightingSnapshot = controller.ResolveTimeline();
+            if (lightingSnapshot.TargetHpAfter != 0 || !lightingSnapshot.EnemyIntentResolved)
+            {
+                throw new InvalidOperationException("Lighting did not resolve 10 HP to 0 HP with the enemy intent.");
+            }
+
+            captures.Add(Capture(controller, evidenceDirectory, "lighting-after-1920x1080.png", 1920, 1080));
+
+            controller = OpenInitializedSlice();
+            controller.SetBoardView(32f);
             var center = new HexCoord(0, 0);
             var centerTopBefore = controller.GetTileColumn(center).TopBounds.max.y;
             var targetYBefore = controller.TargetWorldPosition.y;
@@ -173,6 +207,8 @@ namespace TimeKey.Editor
                 }
             }
 
+            CaptureRemainingCardsFinalYawEvidence(evidenceDirectory, captures);
+
             var buildDirectory = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", "Builds", "Windows"));
             Directory.CreateDirectory(buildDirectory);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
@@ -187,8 +223,14 @@ namespace TimeKey.Editor
                 throw new InvalidOperationException("Windows Player build failed: " + report.summary.result);
             }
 
+            CaptureRemainingCardsGateA();
+            CaptureRemainingCardsGateB();
+            CaptureRemainingCardsGateC();
+            MergeEvidenceCaptures(GetRemainingCardsGateAEvidenceDirectory(), evidenceDirectory, captures);
+            MergeEvidenceCaptures(GetRemainingCardsGateBEvidenceDirectory(), evidenceDirectory, captures);
+            MergeEvidenceCaptures(GetRemainingCardsGateCEvidenceDirectory(), evidenceDirectory, captures);
             WriteSummary(evidenceDirectory, captures, report);
-            Debug.Log("TIMEKEY_DECOUPLING_R3_HARNESS_PASS");
+            Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_D_HARNESS_PASS");
         }
 
         [MenuItem("Time Key/Capture Remaining Cards Gate A")]
@@ -378,6 +420,12 @@ namespace TimeKey.Editor
             }
 
             captures.Add(Capture(windController, evidenceDirectory, "wind-clear-invalid.png", 1280, 720));
+            if (!windController.PreviewTimelineSelected(0, 0))
+            {
+                throw new InvalidOperationException("The Wind empty clear preview was not legal.");
+            }
+
+            captures.Add(Capture(windController, evidenceDirectory, "wind-clear-empty.png", 1280, 720));
             if (!windController.PreviewTimelineSelected(1, 0))
             {
                 throw new InvalidOperationException("The Wind clear hit preview was not legal.");
@@ -443,6 +491,23 @@ namespace TimeKey.Editor
             }
 
             captures.Add(Capture(tornadoController, evidenceDirectory, "tornado-after-empty-clear.png", 1280, 720));
+
+            tornadoController = OpenInitializedSlice();
+            tornadoController.SetBoardView(32f);
+            if (!tornadoController.SelectCard("tornado") ||
+                !tornadoController.PreviewTimelineSelected(0, 1))
+            {
+                throw new InvalidOperationException("The Tornado hit clear preview was not legal.");
+            }
+
+            captures.Add(Capture(tornadoController, evidenceDirectory, "tornado-clear-hit.png", 1280, 720));
+            if (!tornadoController.TryPlaceSelected(0, 1) ||
+                tornadoController.TimelineOccupiedCellCount != 0)
+            {
+                throw new InvalidOperationException("Tornado did not remove the complete enemy action.");
+            }
+
+            captures.Add(Capture(tornadoController, evidenceDirectory, "tornado-after-clear.png", 1280, 720));
             WriteRemainingCardsGateCSummary(evidenceDirectory, captures);
             Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_C_CAPTURE_PASS");
         }
@@ -467,6 +532,99 @@ namespace TimeKey.Editor
             controller.BuildSceneGraph();
             ValidateScene(controller, composition);
             return controller;
+        }
+
+        private static void CaptureRemainingCardsFinalYawEvidence(
+            string evidenceDirectory,
+            ICollection<CaptureStats> captures)
+        {
+            var towerController = OpenInitializedSlice();
+            var towerCoordinate = new HexCoord(0, 0);
+            if (!towerController.SelectCard("tower") ||
+                !towerController.SelectEarthquakeTarget(towerCoordinate) ||
+                !towerController.PreviewTimelineSelected(4, 0) ||
+                !towerController.TryPlaceSelected(4, 0))
+            {
+                throw new InvalidOperationException("The final Tower interaction path could not be arranged.");
+            }
+
+            var towerSnapshot = towerController.ResolveTimeline();
+            if (towerSnapshot.OccupantEffectResults.Count != 1 ||
+                towerSnapshot.OccupantEffectResults[0].After == null)
+            {
+                throw new InvalidOperationException("The final Tower interaction path did not create an occupant.");
+            }
+
+            var towerObject = GameObject.Find(
+                "Occupant-" + towerSnapshot.OccupantEffectResults[0].After.RuntimeId);
+            var towerColumn = towerController.GetTileColumn(towerCoordinate);
+            if (towerObject == null || towerObject.transform.parent != towerColumn.OccupantAnchor)
+            {
+                throw new InvalidOperationException("The final Tower view is not attached to its occupant anchor.");
+            }
+
+            CaptureSelectableYawSeries(
+                towerController,
+                towerCoordinate,
+                "tower-after-resolve",
+                evidenceDirectory,
+                captures);
+
+            var poisonController = OpenInitializedSlice();
+            if (!poisonController.SelectCard("poison") ||
+                !poisonController.SelectTarget(VerticalSliceController.TargetId) ||
+                !poisonController.PreviewTimelineSelected(4, 0) ||
+                !poisonController.TryPlaceSelected(4, 0))
+            {
+                throw new InvalidOperationException("The final Poison interaction path could not be arranged.");
+            }
+
+            var poisonSnapshot = poisonController.ResolveTimeline();
+            var poisonStatus = GameObject.Find("PoisonStatus-" + VerticalSliceController.TargetId);
+            if (poisonSnapshot.OccupantEffectResults.Count != 1 ||
+                poisonSnapshot.OccupantEffectResults[0].After.PoisonStacks != 2 ||
+                poisonStatus == null)
+            {
+                throw new InvalidOperationException("The final Poison interaction path did not render two stacks.");
+            }
+
+            CaptureSelectableYawSeries(
+                poisonController,
+                new HexCoord(1, 0),
+                "poison-after-resolve",
+                evidenceDirectory,
+                captures);
+        }
+
+        private static void CaptureSelectableYawSeries(
+            VerticalSliceController controller,
+            HexCoord coordinate,
+            string filePrefix,
+            string evidenceDirectory,
+            ICollection<CaptureStats> captures)
+        {
+            foreach (var yaw in new[] { 0, 90, 180, 270 })
+            {
+                controller.SetBoardView(yaw);
+                Physics.SyncTransforms();
+                var bounds = controller.GetTileColumn(coordinate).TopBounds;
+                var screenPoint = controller.SceneCamera.WorldToScreenPoint(
+                    new Vector3(bounds.center.x, bounds.max.y - 0.02f, bounds.center.z));
+                if (!controller.TrySelectWorldAtScreenPoint(screenPoint) ||
+                    !controller.SelectedTile.HasValue ||
+                    controller.SelectedTile.Value != coordinate)
+                {
+                    throw new InvalidOperationException(
+                        filePrefix + " tile selection failed at yaw " + yaw + ".");
+                }
+
+                captures.Add(Capture(
+                    controller,
+                    evidenceDirectory,
+                    string.Format("{0}-yaw-{1:000}-1920x1080.png", filePrefix, yaw),
+                    1920,
+                    1080));
+            }
         }
 
         private static void ValidateScene(
@@ -614,7 +772,42 @@ namespace TimeKey.Editor
             return new CaptureStats(string.Empty, width, height, maximum - minimum, opaque);
         }
 
-        private static string GetEvidenceDirectory()
+        private static void MergeEvidenceCaptures(
+            string sourceDirectory,
+            string destinationDirectory,
+            ICollection<CaptureStats> captures)
+        {
+            var files = Directory.GetFiles(sourceDirectory, "*.png", SearchOption.TopDirectoryOnly);
+            Array.Sort(files, StringComparer.Ordinal);
+            for (var index = 0; index < files.Length; index++)
+            {
+                var fileName = Path.GetFileName(files[index]);
+                var bytes = File.ReadAllBytes(files[index]);
+                var texture = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                try
+                {
+                    if (!texture.LoadImage(bytes))
+                    {
+                        throw new InvalidOperationException(fileName + " could not be loaded for final evidence.");
+                    }
+
+                    var stats = Measure(texture, texture.width, texture.height);
+                    File.WriteAllBytes(Path.Combine(destinationDirectory, fileName), bytes);
+                    captures.Add(new CaptureStats(
+                        fileName,
+                        texture.width,
+                        texture.height,
+                        stats.LuminanceRange,
+                        stats.SampledOpaquePixels));
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(texture);
+                }
+            }
+        }
+
+        private static string GetRemainingCardsGateDEvidenceDirectory()
         {
             var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
             if (string.IsNullOrWhiteSpace(repositoryRoot))
@@ -634,7 +827,7 @@ namespace TimeKey.Editor
                 "unity-3d",
                 "04-verification",
                 "evidence",
-                "unity-decoupling-r3");
+                "remaining-cards-gate-d");
         }
 
         private static string GetRemainingCardsGateAEvidenceDirectory()
@@ -738,9 +931,11 @@ namespace TimeKey.Editor
             builder.AppendLine("{");
             builder.AppendLine("  \"status\": \"passed\",");
             builder.AppendLine("  \"windMaskCells\": 4,");
+            builder.AppendLine("  \"windEmptyClearLegal\": true,");
             builder.AppendLine("  \"windRemovedActions\": 1,");
             builder.AppendLine("  \"tornadoMaskCells\": 12,");
-            builder.AppendLine("  \"tornadoRemovedActions\": 0,");
+            builder.AppendLine("  \"tornadoEmptyClearRemovedActions\": 0,");
+            builder.AppendLine("  \"tornadoHitClearRemovedActions\": 1,");
             builder.AppendLine("  \"screenshots\": [");
             for (var index = 0; index < captures.Count; index++)
             {
@@ -759,23 +954,29 @@ namespace TimeKey.Editor
             var builder = new StringBuilder();
             builder.AppendLine("{");
             builder.AppendLine("  \"status\": \"passed\",");
-            builder.AppendLine("  \"scene\": \"DecoupledSevenCardVerticalSlice\",");
+            builder.AppendLine("  \"scene\": \"RemainingCardsSevenCardVerticalSlice\",");
             builder.AppendLine("  \"stableHierarchy\": \"serialized-before-play\",");
             builder.AppendLine("  \"applicationBoundary\": \"CombatApplicationSession\",");
             builder.AppendLine("  \"compositionRoot\": \"CombatCompositionRoot\",");
             builder.AppendLine("  \"catalogCards\": 7,");
-            builder.AppendLine("  \"savedPrefabs\": 6,");
+            builder.AppendLine("  \"savedPrefabs\": 8,");
             builder.AppendLine("  \"seed\": 731,");
             builder.AppendLine("  \"boardTiles\": 19,");
             builder.AppendLine("  \"cameraYawEvidence\": [0, 90, 180, 270],");
             builder.AppendLine("  \"cardArt\": [\"earthquake\", \"lighting\", \"poison\", \"recover\", \"tornado\", \"tower\", \"wind\"],");
-            builder.AppendLine("  \"cardInteraction\": \"select-hex-range-two-cell-preview-commit\",");
+            builder.AppendLine("  \"cardInteractions\": [\"ordinary-timeline\", \"occupant-effect\", \"timeline-clear\"],");
+            builder.AppendLine("  \"remainingCardsEvidence\": [\"remaining-cards-gate-a\", \"remaining-cards-gate-b\", \"remaining-cards-gate-c\"],");
+            builder.AppendLine("  \"lighting\": {\"hpBefore\": 10, \"hpAfter\": 0, \"enemyIntentResolved\": true},");
+            builder.AppendLine("  \"earthquake\": {\"rangeResults\": 7, \"layerDelta\": 2, \"topDelta\": 0.64},");
+            builder.AppendLine("  \"recover\": {\"hpBefore\": 10, \"hpAfter\": 100},");
+            builder.AppendLine("  \"tower\": {\"created\": 1, \"hp\": 100, \"coordinate\": \"0,0\"},");
+            builder.AppendLine("  \"poison\": {\"stacksBefore\": 0, \"stacksAfter\": 2},");
+            builder.AppendLine("  \"wind\": {\"maskCells\": 4, \"removedActions\": 1},");
+            builder.AppendLine("  \"tornado\": {\"maskCells\": 12, \"emptyRemovedActions\": 0, \"hitRemovedActions\": 1},");
             builder.AppendLine("  \"earthquakeRangeResults\": 7,");
             builder.AppendLine("  \"layerDelta\": 2,");
             builder.AppendLine("  \"layerSpacing\": 0.32,");
             builder.AppendLine("  \"topDelta\": 0.64,");
-            builder.AppendLine("  \"targetHpAfter\": 10,");
-            builder.AppendLine("  \"enemyIntentResolved\": true,");
             builder.AppendLine("  \"screenshots\": [");
             for (var index = 0; index < captures.Count; index++)
             {

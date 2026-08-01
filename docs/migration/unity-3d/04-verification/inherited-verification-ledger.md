@@ -120,3 +120,7 @@ Built/Poison 触及 Domain/Application、Infrastructure registration、occupant 
 ## Remaining Cards Gate C 刷新记录
 
 Clear 触及 TimelineGrid/Application、effect registration、Timeline Presenter/Cell、Binding/Controller、Scene Inspector 与 Editor harness，因此这些边界已经以全量 EditMode `152/152`、Scene/Presentation PlayMode `4/4`、定向 authoring 和 9 张 1280x720 图刷新。普通 Timeline valid/invalid 在同一全量 EditMode 与 Presentation 回归中保持通过；Terrain/Camera、occupant Prefab、卡图和七卡布局未改。Gate D 仍必须在最终集成态重跑完整 PlayMode、Windows build、Player smoke 与三视口，不能用 Gate C 的局部图替代。
+
+## Remaining Cards Gate D 最终刷新
+
+最终集成态已经覆盖所有受影响边界，不再以 R3 build/Player 或 Gate A/B/C 局部图作为完成证据：full EditMode `152/152`、full PlayMode `38/38`，均 0 失败、0 跳过；harness 以七卡公共路径生成 54 张 PNG，Windows build `Succeeded`、`207171486` bytes；实际 Player 退出码 0 且日志包含 `TIMEKEY_PLAYER_SMOKE_PASS`。人工检查覆盖三视口 hand、lighting/earthquake 四 yaw、Tower/Poison 四 yaw、普通 Timeline 前后和 Wind/Tornado 三态/取消/清除残留。当前仅继续继承未受影响的 Godot 权威基线、源素材哈希和历史切片记录；Unity 当前态以 `evidence/remaining-cards-gate-d/` 为唯一最终证据。
