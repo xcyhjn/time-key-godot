@@ -231,3 +231,32 @@ Gate B 已以全量 EditMode `130/130`、Scene PlayMode `3/3`、定向 authoring
 Gate C 已以全量 EditMode `152/152`、Scene/Presentation PlayMode `4/4`、定向 authoring 和 9 张实际渲染图验收。`ClearTimelinePreview` 使用红 `!`、蓝 `○`、绿 `HIT` 三态冗余；取消恢复原 action，Wind 完整移除敌方 action，Tornado 空清保留未命中的 action。
 
 Gate 0 最小冒烟为 EditMode `24/24`、PlayMode `10/10`，0 失败。Gate D 已在最终集成态刷新 full EditMode `152/152`、full PlayMode `38/38`、54 张 PNG、Windows build `Succeeded`（`207171486` bytes）和 Player smoke（退出码 0、marker 存在）；结构化证据和逐图结论位于 `../04-verification/evidence/remaining-cards-gate-d/`。
+
+## Turn Lifecycle Gate 0 冻结契约
+
+> 状态：2026-08-02 Gate 0 完成；Gate A 可以按已审查 Prompt 实施
+
+```text
+InitialStart:
+  ProcessingTurnStartStatuses -> Reserved02B4NoOp -> RefreshingEnemyIntents
+  -> PlayerReady/InputUnlocked
+
+EndTurn:
+  EndTurnRequested/InputLocked -> ResolvingTimeline
+  -> RunningBuildingBehaviors -> ClearingTimeline
+  -> ProcessingTurnStartStatuses -> Reserved02B4NoOp
+  -> RefreshingEnemyIntents -> PlayerReady/InputUnlocked
+```
+
+- `TurnLifecyclePhase` 与现有卡牌交互 `CombatSessionPhase` 分离；生命周期运行期间所有卡牌、地图、Timeline 和结束回合输入统一锁定，完成或结构化失败后恢复到确定状态。
+- Timeline 结算顺序固定为 `x=0..11` 外层、`y=0..2` 内层。多格 action 以稳定 `ActionId` 去重，玩家和敌人 action 使用同一网格、同一排序与同一身份规则。
+- `ActionId` 由生命周期序列号和确定性 ordinal 生成，不得复用卡牌 ID、敌人 ID、坐标、对象引用或显示文本。preview、commit、resolve、clear 与所有表现映射必须保留同一 ID。
+- 不可变 action snapshot 至少包含：`ActionId`、actor、priority、source runtime ID/coord、target runtime ID/coord、card/effect ID、display payload、origin、shape、occupied cells、validity/reason 与 resolve state。
+- 表现层只消费 Application snapshot/View，不解析规则、不从 Label/颜色/Prefab 实例反推 identity，也不直接读取或修改 Domain collection。
+- 当前 Godot 敌方 source command 为空；Unity 必须返回明确的 `UnsupportedSourceCommand`，不得伪造伤害。意图优先级默认 `0`、中心祭坛 `999`；高优先级先执行，同优先级使用显式 seed，最多保留 5 个。
+- Tower 每次建筑阶段执行同一 decay 规则：`100->50`，下一次 `50->0` 后以 `Remove` 死亡语义原子清理 occupant 与地图占用。
+- Poison 回合开始阶段严格三遍：先冻结旧状态，再聚合传播，最后旧 source 按 `ceil(MaxHP*0.1*entryStacks)` 受伤并衰减 1 层；本轮新感染不伤害、不衰减。
+- generic enemy 继续使用 `RemainBroken`；Tower 与 typed Radar underling 使用 `Remove`。任一阶段必须先完成全量先验校验再写状态，任意失败不得遗留半清 timeline、半更新 occupant 或陈旧 UI mapping。
+- 交互优先级冻结为：`resolving/disabled > card targeting > scheduling/drag/clear > idle hover > none`。取消、清除、失败和对象移除均以 `ActionId` 原子清理卡牌、敌人、Timeline、地图之间的双向映射。
+
+Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/reports/turn-lifecycle-*.md`；所有权互斥 Prompt 已由主智能体审查通过，结论见 `agents/prompt-review-turn-lifecycle.md`。

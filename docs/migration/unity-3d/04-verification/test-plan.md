@@ -151,3 +151,16 @@ Gate B 已完成 Built/Poison 矩阵：全量 EditMode `130/130`、Scene PlayMod
 Gate C 已完成 Clear 矩阵：全量 EditMode `152/152`、Scene/Presentation PlayMode `4/4`、定向 Scene authoring 与 9 张人工检查截图全部通过。Wind 2×2 命中完整移除敌方 action，Tornado 12×1 合法空清，越界/取消无副作用。
 
 Gate D 已完成最终矩阵：full EditMode `152/152`、full PlayMode `38/38`，harness 逐卡验证 lighting、earthquake、Recover、Tower、Poison、Wind、Tornado 并生成 54 张 PNG；Windows build `Succeeded`，Player 退出码 0 且 marker 存在。三视口和四 yaw 已逐图人工检查，最终完成判定以 `evidence/remaining-cards-gate-d/verification-summary.md` 为准。
+
+## Turn Lifecycle Gate 0 / Gate A 矩阵
+
+Gate 0 接手冒烟已实跑：`CombatApplicationSessionTests` EditMode `25/25`、`CombatVerticalSliceTests` PlayMode `15/15`，0 失败；两份现有脏 `ProjectSettings` 的哈希在运行前后保持不变。前置简体中文证据继续继承 `161/161` EditMode、`38/38` PlayMode、8 张 PNG、Windows build 与 Player smoke，但任何受本阶段修改影响的证据必须重跑。
+
+- Runner phase：首次启动仅执行 status/no-op/intent 尾段；结束回合严格执行七个阶段；阶段历史、输入锁与最终 ready 状态可观测。
+- Re-entry/failure：运行中重复请求显式失败；每个 port 的结构化失败停止后续阶段，已冻结 snapshot 不变，状态不得停在半完成阶段。
+- Timeline order：12×3 按 x 后 y；多格 action 只 resolve 一次；同格或同 action 的顺序不依赖引用地址或字典枚举。
+- Action identity：同一 preview/commit/resolve/clear action 保持同一 ID；跨生命周期序列不碰撞；玩家/敌人共用 identity 类型与 snapshot schema。
+- Snapshot：字段完整、集合只读、防御性复制；Presentation 不能通过 Domain collection、Label、颜色或 Prefab 实例取得规则或身份。
+- Compatibility：既有普通卡、Recover/Built/Poison/Clear Application 测试全部回归；`CombatSessionPhase` 和 lifecycle phase 不混用；Controller 不新增效果或敌种分支。
+- Gate A 集成门槛：定向 EditMode 全通过后再运行 full EditMode 与现有 full PlayMode。Gate A 不改变渲染时可继承前置视觉证据；一旦改 Scene/Prefab/UI，必须生成本阶段实际截图并逐张检查。
+- 后续视觉门禁：1280×720、1920×1080、2560×1080 覆盖卡牌选中/响应式缩放、卡牌详情、玩家 action 框、敌人意图框，以及卡牌/敌人/Timeline/地图的双向 hover/select 高亮；不得裁切、重叠、漂移或依赖颜色作为唯一信号。

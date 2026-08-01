@@ -83,3 +83,19 @@ Agent B 与 C 的冻结路径保持互斥，并且都不修改 Controller、Scen
 路径审查位于 `agents/prompt-review-remaining-cards.md`。Agent A 运行期间主智能体不修改其独占路径；B1/B2 只新增互斥文件；C1 完成后才开放 C2。所有 Agent 都不是仓库唯一工作者，不得回退、stash、暂存、commit 或 push。
 
 Gate D 的文档与 harness 两个只读审计智能体均已完成返回；它们没有写工作区。Scene、Prefab、代码、测试、证据、维护文档与 Git 所有权现已全部回收，当前无运行中的写入 Agent。B2 鉴权失败后由主智能体接管、C2 在 C1 交回后串行接管的历史保持不变。
+
+## Turn Lifecycle Gate 0 所有权
+
+| 波次 | 角色 | 独占路径摘要 | 启动条件 | 当前状态 |
+| --- | --- | --- | --- | --- |
+| Gate 0 | 三个只读审计 | 各自 `agents/reports/turn-lifecycle-*.md` | 当前工作区与主 Prompt 冻结 | 已完成返回；无代码写入 |
+| Gate A | Agent A / 生命周期 Runner | 新增 lifecycle/identity/snapshot 文件、新增对应 EditMode tests、独占报告 | Prompt review PASS | 可启动；不得修改既有共享文件 |
+| Gate B | Agent B1 / Enemy intent Domain | 新增 intent Domain/Application 文件与独占 tests/report | Gate A snapshot API 冻结 | 待启动 |
+| Gate B | Agent B2 / Intent Presentation | `Presentation/Intent/**`、对应 Prefab/PlayMode tests/report | B1 返回 | 待启动 |
+| Gate C | Agent C1 / Building + Poison processors | 新增 processors 与独占 EditMode tests/report | Gate A runner API 冻结 | 待启动 |
+| Gate C | Agent C2 / Lifecycle Presentation | `Presentation/TurnLifecycle/**`、对应 Prefab/PlayMode tests/report | C1 返回 | 待启动 |
+| 全程 | 主智能体 / 集成 | 所有既有共享代码、Controller、Binding、Composition、Scene、asmdef、Editor harness、共享文档、最终 evidence 与 Git | 每波交回 | 独占 |
+
+详细文件白名单以 `agents/prompts/turn-lifecycle-agent-*.md` 为准。五份写入 Prompt 通过交集审查：A、B1、B2、C1、C2 不共享可写文件；Agent 不得暂存、提交、推送、切分支、运行 Unity 或覆盖其他工作者改动。任何新增共享依赖先写独占报告并交回主智能体处理。
+
+执行顺序固定为 `Gate A -> (Gate B1 || Gate C1) -> (Gate B2 || Gate C2) -> 主集成`。Unity Editor、PlayMode、harness、build 与 Player smoke 始终由主智能体串行执行，避免工程锁与证据污染。

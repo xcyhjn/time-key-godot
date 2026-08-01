@@ -35,3 +35,19 @@
 | 视觉 | 2D 像素/UI；1920 基线且 1280 菜单可读 | Blender 低多边形地块 + 原建筑 billboard + uGUI；1280/1920/2560 七卡、四向范围/Tower/Poison 与七卡结算前后均可读 | 允许差异 | `evidence/remaining-cards-gate-d/` 的 54 张 PNG + 人工总结 |
 
 判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1、Wave 02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate D 已关闭。下一阶段为 02B3：固定回合生命周期、Tower decay、Poison tick 与敌方/建筑行动；牌库/回合资源/胜负留给 02B4，局外保持原状。
+
+## Turn Lifecycle Gate 0 冻结
+
+| 行为 | Godot 基线 | Unity Gate 0 状态 | 判定 | Gate A/后续验收 |
+| --- | --- | --- | --- | --- |
+| 回合阶段 | 结束回合后 timeline、建筑、清理、状态、02B4 no-op、意图刷新顺序固定 | 契约已冻结，Runner 待 Gate A 接入 | 待验证 | phase history + input lock + full regression |
+| 首次启动 | 只运行 status/no-op/intent 尾段后解锁 | 契约已冻结 | 待验证 | 不得执行 timeline/build/turn advance |
+| Action identity | 卡牌、敌人、Timeline、地图共享同一 action 身份 | 当前缺稳定 ActionId/source snapshot | 未实现 | preview 到 clear 全链同 ID，双向映射 |
+| Timeline 排序 | 12×3 按列后按行，多格 action 去重 | 当前一次性 resolve/clear，需拆阶段 | 待验证 | x 后 y、玩家/敌人统一、失败原子性 |
+| 敌人命令 | 当前 source command 为空，只显示意图 | 固定占位意图存在，尚无结构化 unsupported | 待验证 | `UnsupportedSourceCommand`，不得伪造伤害 |
+| Tower 生命周期 | 同结束回合 100→50；下次 50→0 后 Remove | 尚未实现 decay | 未实现 | 两回合、占用原子清理、表现同步 |
+| Poison tick | 旧状态三遍：传播聚合、旧 source 伤害、旧 source 衰减 | 尚未实现 tick | 未实现 | 新感染本轮不伤害/不衰减，顺序无关 |
+| 死亡策略 | generic enemy RemainBroken；Tower/Radar underling Remove | generic enemy 已保持破损；typed remove 待实现 | 待验证 | Domain 结果和地图占用一致 |
+| 交互框与映射 | 卡牌详情、玩家 action、敌人意图及地图/Timeline 联动 | 现有 card/timeline cell 基础表现，无统一映射 | 未实现 | 三视口实际截图 + PlayMode 双向高亮/清理 |
+
+本节是 02B3 的 Gate 0 冻结状态，不覆盖上表已经关闭的前置功能。实现状态只允许在相应 Gate 的代码、自动化与实际渲染证据全部通过后更新。
