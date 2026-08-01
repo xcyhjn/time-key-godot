@@ -1,6 +1,6 @@
 # Git 提交与推送状态
 
-> 状态：Remaining Cards Gate D 已推送，本地与远端同步
+> 状态：简体中文汉化已完成本地检查点；GitHub 443 暂时阻塞推送
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：`git status`、`git log`、后续 push 输出
@@ -22,5 +22,6 @@
 | Remaining Cards Gate B | `3ad237d` | 2026-08-02 已推送至 `origin/unity_7.31` | Built/Poison、occupant state/result、Tower/Poison Prefab、全量 `130/130`、PlayMode `3/3` 与 8 张 PNG |
 | Remaining Cards Gate C | `4fdcbb0` | 2026-08-02 已推送至 `origin/unity_7.31`；推送后 `0/0` | 独立 Clear session、Wind/Tornado、三态 UI、全量 `152/152`、PlayMode `4/4` 与 9 张 PNG |
 | Remaining Cards Gate D | `0ff4c30` | 2026-08-02 前四次 HTTPS reset/443 无法连接，第五次重试成功推送至 `origin/unity_7.31` | full EditMode `152/152`、full PlayMode `38/38`、七卡终验 harness、54 张 PNG、Windows build/Player smoke、架构/维护文档与 02B3 Prompt |
+| Unity 战斗切片简体中文 | `93d6b0d` | 2026-08-02 五次 HTTPS reset/443 建连失败；本地 `ahead 1`，待网络恢复后推送 | 集中式中文文案、Silver 字体/署名、Scene/Prefab、EditMode `161/161`、PlayMode `38/38`、8 张 PNG、Windows build/Player smoke 与维护文档 |
 
 用户原有四个未提交文件、两个未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均未进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。最终状态提交推送后以 `git rev-list --left-right --count HEAD...origin/unity_7.31 = 0/0` 为同步门禁。
