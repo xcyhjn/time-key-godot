@@ -1,6 +1,6 @@
 # 已完成切片
 
-> 状态：Wave 00、Slice 01、Wave 02A、Wave 02B1、Wave 02B2A、解耦 R1/R2/R3 与 Wave 02B2B/02B2C 已完成
+> 状态：截至 Wave 02B3 Gate D 已完成
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：Slice Definition of Done
@@ -110,3 +110,14 @@
 - Scene 默认文本和 TimelineCell Prefab 使用 Silver；字体署名、CC BY 4.0 及 10 万美元预算/收入门槛已记录。
 - EditMode `161/161`、PlayMode `38/38`，汉化 Harness 生成 8 张 PNG，Windows build `Succeeded`（`210916374` bytes），Player smoke 退出码 0。
 - 1280×720、1920×1080、2560×1080 与雷击/台风关键状态逐图检查通过，无方框字、裁切、重叠或宽屏错位。
+
+## Wave 02B3：回合生命周期与战斗交互表现
+
+完成日期：2026-08-02。
+
+- 单一 Application runner 固定 Timeline→building→clear→Poison/status→02B4 hook→intent refresh。
+- 确定性 enemy intent 使用 source/target/shape/effect 最终重判；空 command 明确 no-effect。
+- Tower 创建周期 100→50、下一周期 Remove；Poison 三 pass 与新感染隔离、死亡事务通过。
+- action identity 贯通卡牌、玩家/敌人 frame、地图 range 和详情框双向 hover。
+- 七卡响应式状态、两个保存 UI Prefab、Scene host、Silver Text/TextMesh 完成。
+- Full EditMode `236/236`、graphical PlayMode `53/53`、12 张人工检查 PNG、Windows build 与 actual Player smoke 通过。

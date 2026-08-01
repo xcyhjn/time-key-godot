@@ -1,6 +1,6 @@
 # Godot / Unity 等价矩阵
 
-> 状态：Remaining Cards Gate D 已验证
+> 状态：Wave 02B3 Gate D 已验证
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：Godot 实跑截图/日志、玩法等价契约、Unity 全量测试、构建、Player smoke 与实际截图
@@ -26,7 +26,7 @@
 | Built/Tower | 空地创建 Middle Tower，HP100；同结束回合 decay 属于下一波 | 空 tile 选择与 Resolve 重判，创建 Neutral Tower HP100；原图 billboard Prefab、无 collider；本阶段不 decay | 等价 | `evidence/remaining-cards-gate-d/tower-*.png` + full XML |
 | Poison | 活体 +2，无上限累加；回合开始 tick 属于下一波 | 活体+status 重判，checked `0→2→4` typed snapshot；原 poison icon+整数层数；本阶段不 tick | 等价 | `evidence/remaining-cards-gate-d/poison-*.png` + full XML |
 | Wind/Tornado clear | 无地图目标；2x2/12x1 mask；空清；任一格命中整 action 删除 | 独立 clear session；边界先验、identity 去重、玩家/敌人无过滤；红 `!`/蓝 `○`/绿 `HIT` 三态，取消恢复与完整 UI 清除 | 等价 | `evidence/remaining-cards-gate-d/{wind,tornado}-*.png` + full XML |
-| 场景与组合边界 | Godot 场景保存稳定节点，脚本在运行时组织玩法 | Unity 稳定层级与八个 Prefab 可在 Inspector 编辑；`CombatCompositionRoot` 只在组合层装配 session、catalog、presenter 与 trace sink | 允许差异 | `evidence/remaining-cards-gate-d/harness-summary.json` + Scene/Prefab EditMode |
+| 场景与组合边界 | Godot 场景保存稳定节点，脚本在运行时组织玩法 | Unity 稳定层级与十个 Prefab 可在 Inspector 编辑；`CombatCompositionRoot` 只在组合层装配 session、catalog、presenter 与 trace sink | 允许差异 | turn-lifecycle Gate D + Scene/Prefab EditMode |
 | 表现层输入与刷新 | Godot 节点信号驱动卡牌、范围、时间轴和 HUD | `CombatPresentationBinding` 统一订阅输入，五个 Presenter 只消费 Application view/result；Controller 不再加载 JSON/Resources 或按 stable ID 分支 | 允许差异 | `evidence/remaining-cards-gate-d/editmode-results.xml` + PlayMode |
 | 结构化诊断 | Godot 以运行日志与截图定位结算 | trace 包含 phase、card、target、timeline、effect kind 与 before/after；Unity sink 可关闭且 sink 异常不改变战斗结果 | 允许差异 | `evidence/unity-decoupling-r3/editmode-results.xml` |
 | 敌人意图 | 可见占位；当前命令解析为空，建筑在时间轴后行动 | 固定意图可见，并在玩家 action 后记录“已处理”，不新增伤害 | 允许差异 | contract + snapshot 测试 |
@@ -53,3 +53,14 @@
 本节是 02B3 的 Gate 0 冻结状态，不覆盖上表已经关闭的前置功能。实现状态只允许在相应 Gate 的代码、自动化与实际渲染证据全部通过后更新。
 
 Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、ActionId 去重、preview/commit/resolve/clear 传播和不可变 presentation snapshot 已通过 full EditMode `183/183` 与 full PlayMode `38/38`。因现有战斗入口尚未把 Tower/Poison/intent processor 接到 Runner，回合阶段、敌方命令和状态行为的矩阵判定仍保持“待验证/未实现”；卡牌/敌人/Timeline/地图的可见双向映射也必须等待 Gate B 实际渲染证据。
+
+## Wave 02B3 最终补充
+
+| 行为 | Godot 可观察语义 | Unity 当前实现 | 判定 | 证据 |
+| --- | --- | --- | --- | --- |
+| 回合阶段 | Timeline→building→clear→status→intent | 单一 runner 严格同序，02B4 hook 当前 no-op | 等价 | coordinator tests + Gate D JSON |
+| Enemy intent | priority/shape/target；空 command | 显式 seed、最多 5、最终重判；`UnsupportedSourceCommand` no-effect | 等价并显式化 | intent `23/23` + Gate B PNG |
+| Tower | 创建当回合与后续 building 自损 | HP100→50，同下一周期 50→0 Remove | 等价 | Gate D 四 yaw/removed PNG |
+| Poison | 全图传播、快照伤害、衰减 | 三 pass；新感染本周期不受伤 | 等价 | processor tests + Gate D summary |
+| 行动映射 | 卡牌/时间轴/地图意图共享数据 | 同一 action identity snapshot 双向 hover | 等价 | Gate B mapping PNG + PlayMode |
+| 中文与字体 | 玩家可见中文 | 全要素简体中文，Silver Font/Material | 等价 | asset tests + Gate B/D PNG |

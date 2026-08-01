@@ -109,6 +109,12 @@ Application 端口 `unity/Assets/_Project/Runtime/Application/Ports/ICombatTrace
 
 `CombatApplicationSession` 通过 `CombatInteractionMode.OrdinaryTimeline` 与 `TimelineClear` 区分流程。Wind/Tornado 的 Clear 只从 typed `ClearMask` 取得范围，经 `TimelineClearSession` 调用 `TimelineGrid.PreviewClear/TryClear`；它不创建普通 action，空清合法，任一格命中后按 action identity 去重并完整移除。对应决策见 `adr/0007-occupant-effects-and-independent-clear-session.md`。
 
-保存资产总数现为八个 Prefab：TimelineCell、CardView、两种 HexBlock、HexColumn、TargetView、Tower 和 PoisonStatus。Gate D 全量证据位于 `../04-verification/evidence/remaining-cards-gate-d/`。
+保存资产总数现为十个 Prefab：TimelineCell、CardView、两种 HexBlock、HexColumn、TargetView、Tower、PoisonStatus、CardEffectFrame 和 TimelineActionFrame。Remaining Cards 历史证据位于 `../04-verification/evidence/remaining-cards-gate-d/`，当前完成判定使用 turn-lifecycle Gate D。
 
 R3 后仍保留的刻意边界是 `VerticalSliceController` 的 Unity 世界表现 facade。后续拆分只能在保留现有 Scene/Prefab 序列化引用、typed session 行为和渲染证据的前提下进行。
+
+## Wave 02B3 统一生命周期与行动表现
+
+`CombatTurnLifecycleCoordinator` 现在是唯一回合编排入口：Timeline action-by-action resolve 后执行 building snapshot，再清 Timeline，然后执行 Poison 三 pass、02B4 no-op hook 和 enemy intent refresh。`CombatSliceState` 实现原子 occupant store；Tower、Poison 与死亡均输出 typed lifecycle change，Presentation 不直接修改 Domain。
+
+玩家 action 和 enemy intent 共享 action identity/presentation snapshot。`TimelinePresenter` 只维护 identity 到 `TimelineActionFrame` 的映射；`CombatInteractionOverlayPresenter`、`CardEffectFrame` 和 `BoardRangePresenter` 消费同一 display payload/source/target/range。两个 UI Prefab 和稳定 host 已保存到 Scene，动态对象只从 Prefab 创建。完整决策见 ADR 0008。

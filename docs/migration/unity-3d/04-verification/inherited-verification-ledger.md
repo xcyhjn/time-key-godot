@@ -124,3 +124,9 @@ Clear 触及 TimelineGrid/Application、effect registration、Timeline Presenter
 ## Remaining Cards Gate D 最终刷新
 
 最终集成态已经覆盖所有受影响边界，不再以 R3 build/Player 或 Gate A/B/C 局部图作为完成证据：full EditMode `152/152`、full PlayMode `38/38`，均 0 失败、0 跳过；harness 以七卡公共路径生成 54 张 PNG，Windows build `Succeeded`、`207171486` bytes；实际 Player 退出码 0 且日志包含 `TIMEKEY_PLAYER_SMOKE_PASS`。人工检查覆盖三视口 hand、lighting/earthquake 四 yaw、Tower/Poison 四 yaw、普通 Timeline 前后和 Wind/Tornado 三态/取消/清除残留。当前仅继续继承未受影响的 Godot 权威基线、源素材哈希和历史切片记录；Unity 当前态以 `evidence/remaining-cards-gate-d/` 为唯一最终证据。
+
+## Wave 02B3 Gate D 刷新账本
+
+02B3 触及 Application、Timeline、occupant、Scene/Prefab 和 Presentation，因此不继承这些边界的旧 Unity 测试/视觉/build。最终刷新为 EditMode `236/236`、graphical PlayMode `53/53`、12 张阶段 PNG、build `211055434` bytes 和 actual Player marker。继续继承未修改的 Godot 源语义、卡牌/字体素材哈希、Remaining Cards 普通效果与 Clear 行为；Silver 汉化内容在新 Scene/Prefab 截图和 asset tests 中再次验证。
+
+结构化证据：`evidence/turn-lifecycle-gate-d/turn-lifecycle-full-*.xml`、Gate B/D JSON 与两份 `verification-summary.md`。

@@ -1,6 +1,6 @@
 # Git 提交与推送状态
 
-> 状态：Turn Lifecycle Gate A 已完成本地检查点；GitHub HTTPS reset 暂时阻塞推送
+> 状态：Turn Lifecycle 实现检查点已推送；交付文档检查点待本次提交
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：`git status`、`git log`、后续 push 输出
@@ -28,3 +28,9 @@
 | Turn Lifecycle Gate A | `108ff54` | 2026-08-02 push 时 `curl 55 Recv failure: Connection was reset`；当前本地 `ahead 4` | lifecycle runner、ActionId、不可变 snapshot、共享 Timeline/Application 接线、EditMode `183/183`、PlayMode `38/38` |
 
 用户原有四个未提交文件、两个未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均未进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。最终状态提交推送后以 `git rev-list --left-right --count HEAD...origin/unity_7.31 = 0/0` 为同步门禁。
+
+## Wave 02B3 推送
+
+- Gate B-D 实现：`e70988c`，2026-08-02 已推送至 `origin/unity_7.31`；范围为 lifecycle coordinator、intent、Tower/Poison/death、action identity/UI Prefab、Scene、full `236/236 + 53/53` 与 build/Player harness。
+
+本阶段实际保护清单扩大为 Godot 四文件、dirty 本阶段 Prompt、dirty migration roadmap、5 张历史 targeting PNG、两个 ProjectSettings 和 3 个来源不明 Prompt；均未进入 `e70988c`。

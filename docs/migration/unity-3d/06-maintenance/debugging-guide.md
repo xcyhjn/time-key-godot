@@ -1,6 +1,6 @@
 # 局内战斗调试指南
 
-> 状态：适用于 Remaining Cards Gate D
+> 状态：适用于 Wave 02B3 Gate D
 
 ## 调用链
 
@@ -48,3 +48,11 @@ Composition 入口是 `Runtime/Composition/CombatCompositionRoot.cs`。它创建
 Gate D 的一次全量 PlayMode 暴露了可复用的 Scene 夹具问题：当 Binding 增加必需 Presenter 时，保存 Scene 和所有 PlayMode test rig 都必须同步补序列化引用。当前该夹具已修正并以 full PlayMode `38/38` 验证；完整证据见 `04-verification/evidence/remaining-cards-gate-d/`。
 
 回滚时按 Application、Infrastructure、Presentation/Composition 的职责边界撤销单一目的改动；不要用重建 Scene 掩盖丢失引用，也不要回退用户未提交文件。
+
+## Lifecycle 与 identity 排错
+
+先看 `CombatTurnLifecycleCoordinator.LastResult` 的 phase history、sequence 和 current action identity。重复 Tower/Poison 通常表示同一 sequence 被再次推进；残留 frame 通常表示 removal/clearing 没按 identity 或 source runtime ID 送达 Binding。
+
+enemy intent 先检查 source catalog snapshot，再检查 scheduler seed/priority/shape，最后看 resolver 的 invalid reason 或 `UnsupportedSourceCommand`。地图与 Timeline 结果不同表示 Presentation 没消费同一 snapshot，不能在某一侧补算目标。
+
+Tower/Poison 数值正确但 View 错误时检查 `LifecycleOccupantChangeResult`、Presenter 的 sequence/phase 幂等键、Prefab runtime ID 和 status anchor。world TextMesh 不可见时同时检查 Silver Font 与 MeshRenderer material。最终复现命令和截图入口见 `testing-and-evidence.md`。

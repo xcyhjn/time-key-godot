@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "continuousLifecycles": 2,
+  "towerCreatedHp": 100,
+  "towerSameCycleHp": 50,
+  "towerNextCycleRemoved": true,
+  "poisonAppliedStacks": 2,
+  "newInfectionStacks": 1,
+  "newInfectionDamagedSameCycle": false,
+  "unsupportedEnemyEffectApplied": false,
+  "yawEvidence": [0, 90, 180, 270],
+  "font": "Silver",
+  "screenshots": [
+    {"file": "cycle-1-committed-tower-poison-intent-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.985, "sampledOpaquePixels": 8040},
+    {"file": "cycle-1-tower-hp50-poison1-yaw-0.png", "width": 1920, "height": 1080, "luminanceRange": 0.989, "sampledOpaquePixels": 8040},
+    {"file": "cycle-1-tower-hp50-poison1-yaw-90.png", "width": 1920, "height": 1080, "luminanceRange": 0.986, "sampledOpaquePixels": 8040},
+    {"file": "cycle-1-tower-hp50-poison1-yaw-180.png", "width": 1920, "height": 1080, "luminanceRange": 0.989, "sampledOpaquePixels": 8040},
+    {"file": "cycle-1-tower-hp50-poison1-yaw-270.png", "width": 1920, "height": 1080, "luminanceRange": 0.989, "sampledOpaquePixels": 8040},
+    {"file": "cycle-2-tower-removed-and-intent-cleared-1920x1080.png", "width": 1920, "height": 1080, "luminanceRange": 0.989, "sampledOpaquePixels": 8040}
+  ]
+}

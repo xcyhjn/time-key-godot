@@ -1,6 +1,6 @@
 # Unity 3D 迁移总待办
 
-> 状态：Wave 02B2A 已完成；下一阶段为局内可维护性与解耦
+> 状态：Wave 02B3 已完成；下一阶段为 Wave 02B4 牌库与正式战斗流程
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：迁移路线图、风险登记、首切片验收契约
@@ -48,3 +48,14 @@
 - [ ] Wave 03：暂停；局外地图和流程保持 Godot 现状。
 - [ ] Wave 04：教程、中文字体、音频、VFX 和授权资产。
 - [ ] Wave 05：平台冻结、性能预算、存档升级和发布构建。
+
+## Wave 02B3：回合生命周期与交互表现
+
+- [x] 单一 phase runner 与 input lock/unlock。
+- [x] 确定性 enemy intent、执行前重判和 unsupported no-effect。
+- [x] action identity 驱动 card/timeline/map/tooltip 双向映射。
+- [x] 响应式七卡、效果详情框、玩家/敌人行动框保存 Prefab。
+- [x] Tower 100→50→Remove、Poison 三 pass 与原子死亡同步。
+- [x] EditMode `236/236`、PlayMode `53/53`、build/Player/视觉/Git Gate D。
+
+Wave 02B4 按 `00-bootstrap/NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md` 实现 deck/discard/draw/shuffle、时间币、正式 turn advance、胜负和奖励入口，不重写 02B3 lifecycle。

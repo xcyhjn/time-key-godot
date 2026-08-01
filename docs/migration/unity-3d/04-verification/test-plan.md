@@ -1,6 +1,6 @@
 # Unity 战斗切片与解耦阶段测试计划
 
-> 状态：Remaining Cards Gate D 已通过
+> 状态：Wave 02B3 Gate D 已通过
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
@@ -165,4 +165,14 @@ Gate 0 接手冒烟已实跑：`CombatApplicationSessionTests` EditMode `25/25`�
 - Gate A 集成门槛：定向 EditMode 全通过后再运行 full EditMode 与现有 full PlayMode。Gate A 不改变渲染时可继承前置视觉证据；一旦改 Scene/Prefab/UI，必须生成本阶段实际截图并逐张检查。
 - 后续视觉门禁：1280×720、1920×1080、2560×1080 覆盖卡牌选中/响应式缩放、卡牌详情、玩家 action 框、敌人意图框，以及卡牌/敌人/Timeline/地图的双向 hover/select 高亮；不得裁切、重叠、漂移或依赖颜色作为唯一信号。
 
-Gate A 已完成：定向 EditMode `85/85`、full EditMode `183/183`、full PlayMode `38/38`，0 失败、0 跳过。新增测试覆盖 20 个纯 lifecycle/snapshot case、preview/commit identity、重复 ActionId 原子拒绝、Timeline plan 投影以及 Resolution/Clear snapshot identity；结构化证据位于 `evidence/turn-lifecycle-gate-a/`。Gate B/C 视觉与玩法项仍保持待执行。
+Gate A 历史结果为定向 EditMode `85/85`、full EditMode `183/183`、full PlayMode `38/38`，0 失败、0 跳过。新增测试覆盖 20 个纯 lifecycle/snapshot case、preview/commit identity、重复 ActionId 原子拒绝、Timeline plan 投影以及 Resolution/Clear snapshot identity；结构化证据位于 `evidence/turn-lifecycle-gate-a/`。Gate B/C 已在下方 Gate D 全量结果中关闭。
+
+## Wave 02B3 Gate D 结果
+
+- Full EditMode：`236/236`，覆盖 runner、intent seed/priority/revalidation、Tower、Poison、death policy、atomic store、session integration、Scene/Prefab 与 Silver Font/Material。
+- Full graphical PlayMode：`53/53`，覆盖七卡响应状态、action frame identity、详情框、map/timeline 双向映射、lifecycle Presenter 幂等和 removal cleanup。
+- Build：StandaloneWindows64 Development，`Succeeded`，`211055434` bytes，Silver attribution 已复制。
+- Player：`-batchmode -nographics -timekeySmokeQuit`，exit 0，marker `TIMEKEY_PLAYER_SMOKE_PASS`。
+- 视觉：Gate B 六张、Gate D 六张 PNG 已逐图检查；像素存在性不替代人工结论。
+
+证据入口为 `evidence/turn-lifecycle-gate-b/verification-summary.md` 与 `evidence/turn-lifecycle-gate-d/verification-summary.md`。

@@ -1,6 +1,6 @@
 # 多智能体所有权图
 
-> 状态：Remaining Cards Gate D 全部所有权已交回并完成集成
+> 状态：Wave 02B3 Gate D 全部所有权已交回并完成集成
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
@@ -101,3 +101,16 @@ Gate D 的文档与 harness 两个只读审计智能体均已完成返回；它�
 执行顺序固定为 `Gate A -> (Gate B1 || Gate C1) -> (Gate B2 || Gate C2) -> 主集成`。Unity Editor、PlayMode、harness、build 与 Player smoke 始终由主智能体串行执行，避免工程锁与证据污染。
 
 Gate A 实际执行保持互斥：Agent A 只新增 Prompt 白名单内文件，主智能体只修改既有 Timeline/CardPlay/Application 共享文件。Agent 交回后主智能体独占运行 Unity 定向与全量测试并回收全部 Gate A 路径；当前没有 Gate A 写入智能体。
+
+## Wave 02B3 所有权回收
+
+| Agent | 独占交付 | 最终状态 |
+| --- | --- | --- |
+| A runner | 新 lifecycle Domain/Application 与 EditMode | 已完成并交回 |
+| B intent domain | `Domain/Application/Intents` 与专属 tests/report | 已完成，`23/23` |
+| B presentation tests | `PlayMode/Actions`、`Tooltips` 专属 tests | 已完成，`6/6` |
+| C processors | building/status/death 与专属 tests/report | 已完成，`25/25` |
+| C presentation | occupant lifecycle Presenter tests/report | 已完成，`9/9` |
+| 主智能体 | 共享 session/composition/controller/Scene/Prefab/asmdef/harness/docs/Git | 已完成并回收全部路径 |
+
+所有 Agent 均未切分支、stash、stage、commit 或 push；当前无活跃写入所有者。

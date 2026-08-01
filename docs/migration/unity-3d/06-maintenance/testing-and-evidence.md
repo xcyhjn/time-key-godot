@@ -1,6 +1,6 @@
 # 测试与证据指南
 
-> 状态：Remaining Cards Gate D 最终门禁已通过
+> 状态：Wave 02B3 Gate D 最终门禁已通过
 > Unity：6000.4.10f1
 
 ## 分层门禁
@@ -10,7 +10,7 @@
 | Domain/EditMode | `unity/Assets/_Project/Tests/EditMode/**` | 坐标、时间轴、效果、快照、确定性与失败无副作用 |
 | Application/EditMode | `Tests/EditMode/Application/**`、`Diagnostics/**` | 命令顺序、typed target、取消、幂等和 trace 中立性 |
 | Infrastructure/EditMode | `Tests/Infrastructure/**` | 七卡 JSON、typed token、catalog、`front_image` 定位和效果注册 |
-| Scene/EditMode | `Tests/EditMode/Composition/CombatSceneAssetTests.cs` | Play 前层级、Inspector 引用、八个 Prefab 与 Clear preview 接线 |
+| Scene/EditMode | `Tests/EditMode/Composition/CombatSceneAssetTests.cs` | Play 前层级、Inspector 引用、十个 Prefab、Silver Font/Material 与 action layer 接线 |
 | Presentation/PlayMode | `Tests/PlayMode/**` | Binding 生命周期、卡手、范围、普通/Clear Timeline、地形和四向选择 |
 | Editor harness | `TimeKey.Editor.VerticalSliceAutomation.BuildValidateAndCapture` | 实际渲染、公共交互路径、像素检查与 Windows build |
 | Player smoke | `TimeKeySlice.exe -timekeySmokeQuit` | 构建产物端到端路径和退出码 |
@@ -58,3 +58,17 @@ Godot 基线、原卡面哈希和未受本阶段修改影响的契约可按 `04-
 原始 `.log` 由证据目录 `.gitignore` 排除；只提交 XML、JSON、PNG 和人工总结。失败先分类为编译、纯逻辑、生命周期、Scene 接线、资源、渲染或 build/Player，再修复受影响层并跑全量终验。回滚使用单一目的提交，不使用破坏性 Git 命令。
 
 Gate D 共提交 54 张 PNG，覆盖三视口七卡、lighting/earthquake 四 yaw、Tower/Poison 四 yaw 和 Wind/Tornado 三态/清除残留；这些图已逐张人工打开。最终结构化结果与视觉结论见 `04-verification/evidence/remaining-cards-gate-d/verification-summary.md`。
+
+## Wave 02B3 命令与结果
+
+Test Runner 命令不要与 `-quit` 同用；Unity 6 会在生成 XML 前退出。EditMode 可加 `-nographics`，PlayMode 视觉回归必须保留图形设备。最终解析结果为 EditMode `236/236`、PlayMode `53/53`。
+
+阶段 harness 入口：
+
+```text
+TimeKey.Editor.VerticalSliceAutomation.CaptureTurnLifecycleGateB
+TimeKey.Editor.VerticalSliceAutomation.CaptureTurnLifecycleGateD
+TimeKey.Editor.VerticalSliceAutomation.BuildTurnLifecycleGateD
+```
+
+Player 使用 `TimeKeySlice.exe -batchmode -nographics -timekeySmokeQuit -logFile <path>`，同时要求 exit 0 与 `TIMEKEY_PLAYER_SMOKE_PASS`。证据目录保存 XML/JSON/PNG/人工总结；Unity 日志仍不提交。Silver TextMesh 资产测试必须同时断言 Font 和 sharedMaterial。

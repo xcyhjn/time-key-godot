@@ -1,6 +1,6 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：Wave 01/02A/02B1/02B2A、解耦 R1/R2/R3 与 Remaining Cards Gate D 已冻结并验证
+> 状态：截至 Wave 02B3 Gate D 已冻结并验证
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
@@ -270,3 +270,14 @@ Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/r
 - 不可变 presentation snapshot 已冻结完整字段和 typed validity/reason/resolve state；Gate B 只能增加 catalog 投影与 View，不能改变身份或玩法规则。
 
 验证为定向 EditMode `85/85`、全量 EditMode `183/183`、全量 PlayMode `38/38`，详见 `../04-verification/evidence/turn-lifecycle-gate-a/verification-summary.md`。Gate A 未修改 Scene/Prefab/Presentation，前置汉化视觉、build 与 Player smoke 证据按未受影响边界继承。
+
+## Wave 02B3 最终共享契约
+
+- phase 只能按 ADR 0008 的固定顺序前进，02B4 只能使用已命名 hook。
+- `TimelineActionIdentity` 是 preview/commit/resolve/clear/presentation 的唯一 action 键；stable card ID、格子或 View 都不能替代它。
+- enemy intent 候选使用显式 seed、priority 和最多五个结果；执行前重判完整 source/target/shape/effect。空 command 返回 `UnsupportedSourceCommand` no-effect。
+- `CombatSliceState.TryApply` 先全量预检再提交 occupant change；runtime ID 与 coord 必须同时匹配。
+- building 与 Poison 都消费稳定快照。Tower 创建周期 100→50、下一周期 50→0 Remove；Poison 新感染与本周期伤害快照隔离。
+- `CardEffectFrame`/`TimelineActionFrame` 来自保存 Prefab，所有玩家可见文字与 world TextMesh 使用 Silver Font/Material。
+
+最终验证为 full EditMode `236/236`、graphical PlayMode `53/53`、Windows build `Succeeded`（`211055434` bytes）和 actual Player smoke exit 0。

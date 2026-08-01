@@ -29,3 +29,9 @@ Inspector 只应新增真实需要的 Prefab/Presenter 引用，不把 handler �
 Clear 三态表现的已验证约定是：空格天蓝 `○`、命中绿色 `HIT`、越界红色 `!`；颜色外必须保留 marker/边框冗余。`TimelineCellView` 默认文字/颜色由 Scene authoring 显式保存，Clear/Cancel 后恢复，不依赖 `Awake/OnEnable` 执行顺序。
 
 当前五个普通 handler 与一个独立 Clear session 已在 full EditMode `152/152`、full PlayMode `38/38`、build/Player 和 54 张 PNG 中共同回归；最终证据见 `04-verification/evidence/remaining-cards-gate-d/`，架构决策见 `02-architecture/adr/0007-occupant-effects-and-independent-clear-session.md`。
+
+## 回合型效果
+
+需要在回合阶段执行的效果不能放回卡牌 Resolve handler 或 Presenter。building behavior 登记到 `RunningBuildingBehaviors`；全局状态登记到 `ProcessingTurnStartStatuses`；enemy typed effect 由 intent handler 在 `ResolvingTimeline` 执行。三者都复用 `CombatTurnLifecycleCoordinator`，不得创建第二个计时器。
+
+每个 handler 消费稳定 occupant snapshot，输出 typed before/after/removal result。死亡按 `LifecycleDeathPolicyResolver`，变更通过 `ILifecycleOccupantStore.TryApply` 原子提交。新增显示文案通过 `IActionDisplayCatalog`，frame/tooltip 只消费 snapshot。参考 ADR 0008 和 Tower/Poison 专属测试。

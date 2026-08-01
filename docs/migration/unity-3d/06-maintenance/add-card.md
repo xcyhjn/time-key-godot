@@ -34,3 +34,9 @@ Clear 卡必须只有一个 typed `CardEffectKind.Clear`，mask 只来自 `effec
 `tower.json` 与 `poison.json` 进一步证明同一内容目录可驱动 tile/entity 两种目标策略和多格 shape；卡面仍来自原 `front_image`，Controller 不按 stable ID 决定效果。需要世界表现时通过序列化 occupant creation→Prefab 表和 snapshot 状态接入，不把资源路径写进 JSON handler。
 
 `wind.json` 与 `tornado.json` 是同语义 Clear 卡样例：内容只提供 2×2/12×1 typed mask，均复用独立 session 和通用三态 Presenter；Wind 的空清/命中与 Tornado 的空清/命中都已验证，无 stable-ID Controller 分支。七卡最终全量证据见 `04-verification/evidence/remaining-cards-gate-d/`。
+
+## 02B3 显示与身份约束
+
+新增卡牌还必须由 `IActionDisplayCatalog` 提供中文标题、效果与放置描述；这些是 action presentation snapshot 的保存 payload。手牌 View 以后被弃置或销毁，已提交 frame 仍必须完整显示，不能反查当前 hand。
+
+外观只在 `CardView.prefab` 与 `CardHandHost` Inspector 调整。保持七卡在 1280x720 可选，并验证 hover/selected/targeting/scheduling/dragging/resolving 互斥恢复。所有文字继续使用 Silver；详情样式在 `CardEffectFrame.prefab`，不要在 stable ID 分支拼 tooltip。

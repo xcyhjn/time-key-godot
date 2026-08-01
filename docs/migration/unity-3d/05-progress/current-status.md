@@ -1,13 +1,13 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Wave 02B3 Gate A 已完成；Gate B 卡牌/时间轴表现与敌方意图进行中
+> 状态：Wave 02B3 Gate D 已完成并推送；下一阶段为 Wave 02B4
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
 
 ## 结论
 
-迁移结论保持 `CONDITIONAL GO`，总体难度 4/5。解耦 R1/R2/R3 与剩余五卡已关闭：稳定战斗层级保存为可编辑 Scene，八个实际 Prefab 可由 Inspector 调整，运行时职责已分到 Application、Presentation、Infrastructure、Diagnostics 与 Composition；局外 Godot 内容没有改动。
+迁移结论保持 `CONDITIONAL GO`，总体难度 4/5。解耦、剩余五卡与 02B3 已关闭：稳定战斗层级保存为可编辑 Scene，十个实际 Prefab 可由 Inspector 调整，运行时职责已分到 Domain、Application、Presentation、Infrastructure、Diagnostics 与 Composition；局外 Godot 内容没有改动。
 
 ## 当前切片
 
@@ -29,11 +29,11 @@ Gate D 终验为全量 EditMode `152/152`、PlayMode `38/38`，0 失败、0 跳�
 
 当前 Unity 战斗切片玩家可见文本已统一为简体中文，并使用 Silver 像素字体；stable ID、数据字段和开发者日志保持不变。刷新后的 EditMode 为 `161/161`、PlayMode 为 `38/38`，汉化 Harness 生成 8 张实际截图并成功构建 Windows Player（`210916374` bytes），Player smoke 退出码 0。三视口及雷击/台风关键状态已人工确认无缺字、裁切、重叠或宽屏错位，证据位于 `../04-verification/evidence/simplified-chinese-localization/`。
 
-Wave 02B3 Gate A 已新增纯 Domain `TurnLifecycleRunner`、稳定 `TimelineActionIdentity`、x 后 y `TimelineActionPlan` 与不可变 presentation snapshot。普通卡牌从 preview 到 commit、resolution 与 clear snapshot 使用同一 ID；Timeline 的重复检查、跨格去重和整组清除不再依赖对象引用。实际验证为定向 EditMode `85/85`、full EditMode `183/183`、full PlayMode `38/38`。Gate A 没有修改 Scene/Prefab/Presentation，前置汉化视觉、build 和 Player smoke 继续按未受影响边界继承；Gate B 将刷新 UI/Scene 与三视口证据。
+Wave 02B3 已在 Gate A identity/runner 基础上完成 B-D 集成：intent、UI/Scene、Tower/Poison/death 与最终 Player 路径均消费统一 snapshot/result。Gate A 的 `183/183 + 38/38` 只保留为历史局部门禁，当前完成判定使用 `236/236 + 53/53` 及 Gate D build/Player/视觉证据。
 
 Git 检查点与远端同步结果以 `push-status.md` 为唯一账本；本文件只记录已通过的功能和验收状态。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 
-`00-bootstrap/NEXT_STAGE_TURN_LIFECYCLE_PROMPT.md` 是当前唯一阶段规范；Gate 0 与 Gate A 已关闭，下一步按已审查的 B1/B2 Prompt 实施玩家 action 表现与真实敌人意图，不重跑已关闭的前置阶段。
+`00-bootstrap/NEXT_STAGE_TURN_LIFECYCLE_PROMPT.md` 的 Gate 0-D 已全部关闭。下一阶段规范为 `NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md`，只在新 Gate 0 重新确认本阶段 Gate D 后启动。
 
 ## 分支与工作区保护
 
@@ -44,3 +44,11 @@ Git 检查点与远端同步结果以 `push-status.md` 为唯一账本；本文�
 ## 用户决策
 
 当前实现没有产品或环境决策阻塞。用户已决定先完成局内战斗，局外保持原状。旧 Godot CFG 是否兼容、素材发布授权和最终平台在相关波次进入前再决策。
+
+## Wave 02B3 Gate D 完成态
+
+统一 lifecycle runner 已接入实际 session/composition。Timeline、Tower building、clear、Poison、新回合 hook 和 enemy intent refresh 按固定顺序执行；Tower 创建周期 HP100→50，下一周期移除；Poison 使用全图快照三 pass，新感染不会在同周期受伤。enemy 空 command 是中文可见的 `UnsupportedSourceCommand` no-effect。
+
+七卡在三视口保持可选，选中/hover/drag 响应式缩放；CardEffectFrame、玩家/敌人 TimelineActionFrame、地图 source/target/range 和 tooltip 通过同一 action identity snapshot 双向映射。Scene 保存稳定 host，动态 frame 只从 Prefab 创建。Tower HP 与 Poison 层数字体/材质均为 Silver。
+
+最终门禁为 EditMode `236/236`、graphical PlayMode `53/53`、Windows build `Succeeded`（`211055434` bytes）、Player exit 0/`TIMEKEY_PLAYER_SMOKE_PASS`。实现提交 `e70988c` 已推送至 `origin/unity_7.31`。02B4 入口为 `NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md`。

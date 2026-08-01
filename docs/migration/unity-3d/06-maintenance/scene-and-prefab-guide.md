@@ -1,13 +1,13 @@
 # Scene 与 Prefab 维护指南
 
-> 状态：Remaining Cards Gate D 已验证
+> 状态：Wave 02B3 Gate D 已验证
 > 入口场景：`unity/Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`
 
 ## 可编辑边界
 
 进入 Play 前，场景中应已存在相机 rig、Main Camera、双灯、地面、`BoardRoot`、`TargetAnchor`、EventSystem、Canvas/HUD、`Timeline`、`CardHandHost`、范围预览、普通时间轴预览和 Clear 三态预览组件。稳定对象不得由 `VerticalSliceController.BuildSceneGraph()` 重新创建。
 
-八个权威 Prefab 位于 `unity/Assets/_Project/Prefabs/Battle/`：`TimelineCell`、`CardView`、草地/裸土 `HexBlock`、`HexColumn`、`TargetView`、`Tower` 和 `PoisonStatus`。Prefab 的外观、碰撞体和稳定子层级在 Prefab Mode 修改；不要把实例改动留成未应用 override。Tower billboard 没有 collider；PoisonStatus 使用原图标与整数层数。
+十个权威 Prefab 位于 `unity/Assets/_Project/Prefabs/Battle/`：`TimelineCell`、`CardView`、草地/裸土 `HexBlock`、`HexColumn`、`TargetView`、`Tower`、`PoisonStatus`、`CardEffectFrame` 和 `TimelineActionFrame`。Prefab 的外观、碰撞体和稳定子层级在 Prefab Mode 修改；不要把实例改动留成未应用 override。Tower billboard 没有 collider；PoisonStatus 使用原图标与整数层数。
 
 只允许动态实例化运行数据决定的对象：19 个 fixture 六边形列及其高度块、七张手牌实例、目标/Tower occupant、状态 View、时间轴行动标记和一次性预览。地块必须从 Prefab 创建；每层有独立 mesh/renderer/collider，中心间距由 `HexTileColumn.BlockSpacing = 0.32` 约束。
 
@@ -30,7 +30,7 @@
 
 可复制验证命令见 `testing-and-evidence.md`。最小结构测试位于 `unity/Assets/_Project/Tests/EditMode/Composition/CombatSceneAssetTests.cs`，生命周期和集成测试位于 `Tests/PlayMode/`。
 
-Gate D 已在保存 Scene/八个 Prefab 的最终态通过 full EditMode `152/152`、full PlayMode `38/38`、harness/build/Player，并逐图检查三视口和 Tower/Poison 四 yaw；证据见 `04-verification/evidence/remaining-cards-gate-d/`。
+Remaining Cards Gate D 曾在保存 Scene/八个 Prefab 的状态通过 `152/152 + 38/38`；当前十 Prefab 状态已由 02B3 Gate D 的 `236/236 + 53/53`、harness/build/Player 和四 yaw 重新验证。
 
 ## 常见故障与回滚
 
@@ -40,3 +40,9 @@ Gate D 已在保存 Scene/八个 Prefab 的最终态通过 full EditMode `152/15
 - 卡牌在 1280 宽度遮住右侧 HUD：检查 `CardHandHost` 的底部左侧锚点、67% 宽度与 280 高度约束。
 
 回滚以单一 Scene/Prefab 检查点为单位，先恢复可验证的序列化引用，再重跑受影响门禁。不得覆盖 Godot 资源、用户脏文件或清理未知目录。
+
+## Wave 02B3 保存资产
+
+权威 Prefab 增加为十个：新增 `CardEffectFrame` 和 `TimelineActionFrame`；Tower 增加 Silver HP TextMesh，Poison 层数切换为 Silver Font/Material。Scene 在 Play 前保存 `EffectFrameHost`、`TimelineActionLayer` 及 Presenter 引用；只允许当前 action/intent frame 从 Prefab 动态实例化。
+
+常规样式调整直接使用 `06-maintenance/combat-interaction-presentation.md`，无需阅读代码。重跑完整 authoring 会产生无语义 YAML/材质/贴图 meta 漂移，执行后必须逐路径审查，只提交与本阶段资产相关的语义差异。
