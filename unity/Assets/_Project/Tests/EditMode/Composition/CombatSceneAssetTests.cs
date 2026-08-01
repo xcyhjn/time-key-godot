@@ -6,6 +6,7 @@ using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
@@ -14,12 +15,15 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace TimeKey.Tests.EditMode.Composition
 {
     public sealed class CombatSceneAssetTests
     {
         private const string ScenePath = "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity";
+        private const string ChineseFontPath =
+            "Assets/_Project/Resources/Fonts/Silver.ttf";
 
         [Test]
         public void SceneAsset_SerializesStableHierarchyAndAllControllerReferences()
@@ -125,6 +129,47 @@ namespace TimeKey.Tests.EditMode.Composition
         }
 
         [Test]
+        public void SceneAndTimelinePrefab_UseLicensedChineseFontAndLocalizedDefaults()
+        {
+            var font = AssetDatabase.LoadAssetAtPath<Font>(ChineseFontPath);
+            Assert.That(font, Is.Not.Null);
+
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var root = FindRoot(scene, "VerticalSliceRoot");
+            Assert.That(root, Is.Not.Null);
+            AssertLocalizedText(root.transform, "SliceCanvas/HUD/Header/Title", CombatChineseText.SceneTitle, font);
+            AssertLocalizedText(root.transform, "SliceCanvas/HUD/Header/Status", CombatChineseText.SelectCard, font);
+            AssertLocalizedText(
+                root.transform,
+                "SliceCanvas/HUD/DetailPanel/TargetStatus",
+                CombatChineseText.DefaultTargetStatus,
+                font);
+            AssertLocalizedText(
+                root.transform,
+                "SliceCanvas/HUD/DetailPanel/Intent",
+                CombatChineseText.EnemyIntentDetail,
+                font);
+            AssertLocalizedText(
+                root.transform,
+                "SliceCanvas/HUD/DetailPanel/Resolve/Label",
+                CombatChineseText.ResolveTimeline,
+                font);
+
+            var timelinePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Battle/UI/TimelineCell.prefab");
+            var timelineText = timelinePrefab.GetComponentInChildren<Text>(true);
+            Assert.That(timelineText, Is.Not.Null);
+            Assert.That(timelineText.font, Is.EqualTo(font));
+
+            const string requiredGlyphs =
+                "时之钥战斗棋盘目标生命敌方意图第格二行结算轴已选择清除牌请位置锁定有效点击确认范围超出无效行动放置取消完成更新推进结束无需地图预览命中移除个高塔中毒层块正持有未能入雷击地震台风恢复龙卷风未知卡·";
+            for (var index = 0; index < requiredGlyphs.Length; index++)
+            {
+                Assert.That(font.HasCharacter(requiredGlyphs[index]), Is.True, requiredGlyphs[index].ToString());
+            }
+        }
+
+        [Test]
         public void ControllerSource_DoesNotConstructStableSceneObjects()
         {
             var path = Path.Combine(UnityEngine.Application.dataPath, "_Project/Runtime/Presentation/VerticalSliceController.cs");
@@ -164,6 +209,16 @@ namespace TimeKey.Tests.EditMode.Composition
         private static void AssertPath(Transform root, string path)
         {
             Assert.That(root.Find(path), Is.Not.Null, path);
+        }
+
+        private static void AssertLocalizedText(Transform root, string path, string expected, Font font)
+        {
+            var target = root.Find(path);
+            Assert.That(target, Is.Not.Null, path);
+            var text = target.GetComponent<Text>();
+            Assert.That(text, Is.Not.Null, path);
+            Assert.That(text.text, Is.EqualTo(expected), path);
+            Assert.That(text.font, Is.EqualTo(font), path);
         }
 
         private static void AssertPrefab<T>(string path) where T : Component

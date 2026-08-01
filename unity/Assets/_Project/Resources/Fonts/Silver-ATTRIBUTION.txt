@@ -1,0 +1,12 @@
+Silver pixel font
+
+Author: Poppy Works / Wolfgang Wozniak
+Source: https://poppyworks.itch.io/silver
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+License URL: https://creativecommons.org/licenses/by/4.0/
+
+Attribution: "Silver font by Poppy Works / Wolfgang Wozniak, licensed under CC BY 4.0."
+
+The official source adds this condition: if the production budget exceeds
+USD 100,000 in total spend or earnings, contact hello@poppy.works to obtain
+a direct license. Recheck the current source terms before public release.

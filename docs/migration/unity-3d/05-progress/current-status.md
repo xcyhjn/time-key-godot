@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Remaining Cards Gate D 已完成；下一阶段为 Wave 02B3 回合生命周期
+> 状态：Remaining Cards Gate D 与当前 Unity 战斗切片简体中文汉化已完成；下一阶段为 Wave 02B3 回合生命周期
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -26,6 +26,8 @@ R3 已新增 `CardContentCatalog` 与 data-only effect registration catalog，�
 结构化 trace 现包含 effect kind 与 before/after；可关闭的 Unity sink 即使异常也不改变战斗 snapshot。六种 kind 均已登记：五个普通 handler 加一个独立 Clear session；新增未知效果仍会在改变状态前显式报告 unsupported，不会静默成功。
 
 Gate D 终验为全量 EditMode `152/152`、PlayMode `38/38`，0 失败、0 跳过；Harness 生成 54 张实际截图并成功构建 Windows Player，build 大小 `207171486` bytes；Player 退出码 0 且日志含 `TIMEKEY_PLAYER_SMOKE_PASS`。人工检查覆盖 1280×720、1920×1080、2560×1080 七卡 hand，lighting/earthquake 四向目标与范围，Tower/Poison 四向绑定，以及 Wind/Tornado 越界、空清、命中、取消和提交后的残留，没有发现关键裁切、遮挡、预览漂移或 occupant 错位。最终证据位于 `../04-verification/evidence/remaining-cards-gate-d/`。
+
+当前 Unity 战斗切片玩家可见文本已统一为简体中文，并使用 Silver 像素字体；stable ID、数据字段和开发者日志保持不变。刷新后的 EditMode 为 `161/161`、PlayMode 为 `38/38`，汉化 Harness 生成 8 张实际截图并成功构建 Windows Player（`210916374` bytes），Player smoke 退出码 0。三视口及雷击/台风关键状态已人工确认无缺字、裁切、重叠或宽屏错位，证据位于 `../04-verification/evidence/simplified-chinese-localization/`。
 
 Git 检查点与远端同步结果以 `push-status.md` 为唯一账本；本文件只记录已通过的功能和验收状态。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 

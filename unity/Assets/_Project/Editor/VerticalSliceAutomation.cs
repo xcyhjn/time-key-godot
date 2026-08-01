@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Targeting;
 using UnityEditor;
@@ -20,6 +21,84 @@ namespace TimeKey.Editor
     public static class VerticalSliceAutomation
     {
         private const string ScenePath = "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity";
+
+        [MenuItem("Time Key/Build Validate Capture Simplified Chinese")]
+        public static void BuildValidateCaptureSimplifiedChinese()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var evidenceDirectory = GetSimplifiedChineseEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var captures = new List<CaptureStats>();
+
+            var controller = OpenInitializedSlice();
+            controller.SetBoardView(32f);
+            controller.CardHandHost.ApplyVisualStateImmediate();
+            ValidateSimplifiedChinesePresentation(controller);
+            captures.Add(Capture(controller, evidenceDirectory, "initial-1280x720.png", 1280, 720));
+            captures.Add(Capture(controller, evidenceDirectory, "initial-1920x1080.png", 1920, 1080));
+            captures.Add(Capture(controller, evidenceDirectory, "initial-2560x1080.png", 2560, 1080));
+
+            if (!controller.SelectCard(VerticalSliceController.LightingCardId))
+            {
+                throw new InvalidOperationException("The lighting card could not be selected for localization evidence.");
+            }
+
+            controller.CardHandHost.ApplyVisualStateImmediate();
+            ValidateSimplifiedChinesePresentation(controller);
+            captures.Add(Capture(controller, evidenceDirectory, "lighting-selected-1280x720.png", 1280, 720));
+            if (!controller.SelectTarget(VerticalSliceController.TargetId))
+            {
+                throw new InvalidOperationException("The lighting target could not be selected for localization evidence.");
+            }
+
+            ValidateSimplifiedChinesePresentation(controller);
+            captures.Add(Capture(controller, evidenceDirectory, "lighting-targeted-1280x720.png", 1280, 720));
+            if (!controller.PreviewTimelineSelected(4, 0))
+            {
+                throw new InvalidOperationException("The lighting timeline preview could not be shown for localization evidence.");
+            }
+
+            ValidateSimplifiedChinesePresentation(controller);
+            captures.Add(Capture(controller, evidenceDirectory, "lighting-preview-1920x1080.png", 1920, 1080));
+            if (!controller.TryPlaceSelected(4, 0))
+            {
+                throw new InvalidOperationException("The lighting action could not be committed for localization evidence.");
+            }
+
+            controller.ResolveTimeline();
+            ValidateSimplifiedChinesePresentation(controller);
+            captures.Add(Capture(controller, evidenceDirectory, "lighting-resolved-1920x1080.png", 1920, 1080));
+
+            controller = OpenInitializedSlice();
+            controller.SetBoardView(32f);
+            if (!controller.SelectCard("wind") || !controller.PreviewTimelineSelected(1, 0))
+            {
+                throw new InvalidOperationException("The Wind clear preview could not be shown for localization evidence.");
+            }
+
+            controller.CardHandHost.ApplyVisualStateImmediate();
+            ValidateSimplifiedChinesePresentation(controller);
+            captures.Add(Capture(controller, evidenceDirectory, "wind-clear-hit-1280x720.png", 1280, 720));
+
+            var buildDirectory = Path.GetFullPath(
+                Path.Combine(UnityEngine.Application.dataPath, "..", "Builds", "Windows"));
+            Directory.CreateDirectory(buildDirectory);
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = Path.Combine(buildDirectory, "TimeKeySlice.exe"),
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.Development
+            });
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException("Windows Player localization build failed: " + report.summary.result);
+            }
+
+            CopySilverAttribution(buildDirectory);
+            WriteSimplifiedChineseSummary(evidenceDirectory, captures, report);
+            Debug.Log("TIMEKEY_SIMPLIFIED_CHINESE_HARNESS_PASS");
+        }
 
         [MenuItem("Time Key/Build, Validate and Capture Combat Board")]
         public static void BuildValidateAndCapture()
@@ -223,6 +302,7 @@ namespace TimeKey.Editor
                 throw new InvalidOperationException("Windows Player build failed: " + report.summary.result);
             }
 
+            CopySilverAttribution(buildDirectory);
             CaptureRemainingCardsGateA();
             CaptureRemainingCardsGateB();
             CaptureRemainingCardsGateC();
@@ -434,14 +514,15 @@ namespace TimeKey.Editor
             var clearPreview = UnityEngine.Object.FindFirstObjectByType<ClearTimelinePreview>();
             if (clearPreview == null ||
                 clearPreview.ActiveCoordinates.Count != 4 ||
-                GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText != "HIT")
+                GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText != CombatChineseText.ClearHit)
             {
                 throw new InvalidOperationException("The Wind preview did not expose its 2x2 occupied state.");
             }
 
             captures.Add(Capture(windController, evidenceDirectory, "wind-clear-hit.png", 1280, 720));
             if (!windController.CancelSelectedCard() ||
-                GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText != "INTENT")
+                GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText !=
+                CombatChineseText.EnemyIntentTimelineLabel)
             {
                 throw new InvalidOperationException("Cancelling Wind did not restore the original action view.");
             }
@@ -828,6 +909,98 @@ namespace TimeKey.Editor
                 "04-verification",
                 "evidence",
                 "remaining-cards-gate-d");
+        }
+
+        private static void CopySilverAttribution(string buildDirectory)
+        {
+            var source = Path.Combine(
+                UnityEngine.Application.dataPath,
+                "_Project",
+                "Resources",
+                "Fonts",
+                "Silver-ATTRIBUTION.txt");
+            if (!File.Exists(source))
+            {
+                throw new FileNotFoundException("Silver attribution is missing from the project.", source);
+            }
+
+            File.Copy(source, Path.Combine(buildDirectory, "Silver-ATTRIBUTION.txt"), true);
+        }
+
+        private static string GetSimplifiedChineseEvidenceDirectory()
+        {
+            var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
+            if (string.IsNullOrWhiteSpace(repositoryRoot))
+            {
+                repositoryRoot = Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "..", ".."));
+            }
+
+            if (!Directory.Exists(Path.Combine(repositoryRoot, "docs", "migration", "unity-3d")))
+            {
+                throw new DirectoryNotFoundException("TIMEKEY_REPOSITORY_ROOT does not contain migration docs.");
+            }
+
+            return Path.Combine(
+                repositoryRoot,
+                "docs",
+                "migration",
+                "unity-3d",
+                "04-verification",
+                "evidence",
+                "simplified-chinese-localization");
+        }
+
+        private static void ValidateSimplifiedChinesePresentation(VerticalSliceController controller)
+        {
+            var font = AssetDatabase.LoadAssetAtPath<Font>(VerticalSliceSceneAuthoring.ChineseFontAssetPath);
+            if (font == null)
+            {
+                throw new InvalidOperationException("Silver font is missing from the localization build.");
+            }
+
+            var texts = controller.SceneCanvas.GetComponentsInChildren<Text>(true);
+            for (var index = 0; index < texts.Length; index++)
+            {
+                var current = texts[index];
+                if (current.font != font)
+                {
+                    throw new InvalidOperationException(current.name + " is not using the Silver font.");
+                }
+
+                for (var characterIndex = 0; characterIndex < current.text.Length; characterIndex++)
+                {
+                    var character = current.text[characterIndex];
+                    if ((character >= 'A' && character <= 'Z') ||
+                        (character >= 'a' && character <= 'z'))
+                    {
+                        throw new InvalidOperationException(
+                            current.name + " still contains player-facing English: " + current.text);
+                    }
+                }
+            }
+        }
+
+        private static void WriteSimplifiedChineseSummary(
+            string directory,
+            IReadOnlyList<CaptureStats> captures,
+            BuildReport report)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"locale\": \"zh-CN\",");
+            builder.AppendLine("  \"font\": \"Silver\",");
+            builder.AppendLine("  \"playerFacingEnglishCount\": 0,");
+            builder.AppendLine("  \"screenshots\": [");
+            for (var index = 0; index < captures.Count; index++)
+            {
+                AppendCapture(builder, captures[index], index < captures.Count - 1);
+            }
+            builder.AppendLine("  ],");
+            builder.AppendLine("  \"buildResult\": \"" + report.summary.result + "\",");
+            builder.AppendLine("  \"buildBytes\": " + report.summary.totalSize);
+            builder.AppendLine("}");
+            File.WriteAllText(Path.Combine(directory, "localization-summary.json"), builder.ToString());
         }
 
         private static string GetRemainingCardsGateAEvidenceDirectory()

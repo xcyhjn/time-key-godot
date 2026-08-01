@@ -1,5 +1,6 @@
 using System;
 using TimeKey.Application;
+using TimeKey.Presentation.Localization;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -95,38 +96,38 @@ namespace TimeKey.Presentation.Presenters
                 case CombatSessionPhase.CardSelected:
                     if (state.InteractionMode == CombatInteractionMode.TimelineClear)
                     {
-                        return "CLEAR SELECTED  |  CHOOSE A TIMELINE POSITION";
+                        return CombatChineseText.ClearSelected;
                     }
 
-                    return "CARD SELECTED  |  CHOOSE A TARGET";
+                    return CombatChineseText.CardSelected;
                 case CombatSessionPhase.TargetSelected:
-                    return "TARGET LOCKED  |  CHOOSE A TIMELINE POSITION";
+                    return CombatChineseText.TargetLocked;
                 case CombatSessionPhase.TimelinePreview:
                     if (state.InteractionMode == CombatInteractionMode.TimelineClear)
                     {
                         return state.IsPlacementValid
-                            ? "CLEAR POSITION VALID  |  CLICK TO CONFIRM"
-                            : "CLEAR POSITION OUT OF BOUNDS";
+                            ? CombatChineseText.ClearPositionValid
+                            : CombatChineseText.ClearPositionOutOfBounds;
                     }
 
                     return state.IsPlacementValid
-                        ? "TIMELINE POSITION VALID  |  CLICK TO CONFIRM"
-                        : "TIMELINE POSITION INVALID";
+                        ? CombatChineseText.TimelinePositionValid
+                        : CombatChineseText.TimelinePositionInvalid;
                 case CombatSessionPhase.Committed:
-                    return "ACTION PLACED  |  RESOLVE THE TIMELINE";
+                    return CombatChineseText.ActionPlaced;
                 case CombatSessionPhase.Cancelled:
-                    return "CARD CANCELLED  |  SELECT A CARD";
+                    return CombatChineseText.CardCancelled;
                 case CombatSessionPhase.Resolved:
                     if (state.LastClearResult != null)
                     {
-                        return "CLEAR RESOLVED  |  TIMELINE UPDATED";
+                        return CombatChineseText.ClearResolved;
                     }
 
-                    return "RESOLVED  |  TIMELINE COMPLETE";
+                    return CombatChineseText.Resolved;
                 case CombatSessionPhase.Disposed:
-                    return "SESSION CLOSED";
+                    return CombatChineseText.SessionClosed;
                 default:
-                    return "SELECT A CARD";
+                    return CombatChineseText.SelectCard;
             }
         }
 
@@ -134,14 +135,14 @@ namespace TimeKey.Presentation.Presenters
         {
             if (state.LastClearResult != null)
             {
-                return "CLEAR  |  REMOVED " + state.LastClearResult.RemovedActions.Count;
+                return CombatChineseText.ClearRemoved(state.LastClearResult.RemovedActions.Count);
             }
 
             if (state.InteractionMode == CombatInteractionMode.TimelineClear)
             {
                 return state.ClearPreview == null
-                    ? "CLEAR  |  NO MAP TARGET"
-                    : "CLEAR  |  HITS " + state.ClearPreview.HitActions.Count;
+                    ? CombatChineseText.ClearNoMapTarget
+                    : CombatChineseText.ClearHits(state.ClearPreview.HitActions.Count);
             }
 
             if (state.LastResolution != null)
@@ -152,41 +153,37 @@ namespace TimeKey.Presentation.Presenters
                     var result = occupantResults[occupantResults.Count - 1];
                     if (result.After != null)
                     {
-                        var label = string.IsNullOrWhiteSpace(result.After.CreationId)
-                            ? result.After.RuntimeId
-                            : result.After.CreationId;
                         if (result.Before != null &&
                             result.After.PoisonStacks != result.Before.PoisonStacks)
                         {
-                            return label.ToUpperInvariant() +
-                                   "  |  POISON " +
-                                   result.After.PoisonStacks;
+                            return CombatChineseText.PoisonStatus(
+                                result.After.CreationId,
+                                result.After.RuntimeId,
+                                result.After.PoisonStacks);
                         }
 
                         if (result.After.SupportsHealth)
                         {
-                            return label.ToUpperInvariant() +
-                                   "  |  HP " +
-                                   result.After.Hp;
+                            return CombatChineseText.OccupantHealth(
+                                result.After.CreationId,
+                                result.After.RuntimeId,
+                                result.After.Hp);
                         }
                     }
                 }
 
-                return "TARGET  |  HP " + state.LastResolution.TargetHpAfter;
+                return CombatChineseText.TargetHealth(state.LastResolution.TargetHpAfter);
             }
 
             if (!state.Target.HasValue)
             {
-                return "NO TARGET";
+                return CombatChineseText.NoTarget;
             }
 
             var target = state.Target.Value;
             return target.Kind == CombatTargetKind.Entity
-                ? target.EntityId.ToUpperInvariant() + "  |  LOCKED"
-                : string.Format(
-                    "HEX {0},{1}  |  LOCKED",
-                    target.Coordinate.Q,
-                    target.Coordinate.R);
+                ? CombatChineseText.EntityLocked(target.EntityId)
+                : CombatChineseText.TileLocked(target.Coordinate);
         }
 
         private void HandleResolveRequested()

@@ -5,6 +5,7 @@ using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
@@ -316,7 +317,7 @@ namespace TimeKey.Presentation
 
             _selectedTile = tile;
             _selectedTile.SetSelected(true);
-            SetStatus(string.Format("HEX {0},{1} selected.", coordinate.Q, coordinate.R));
+            SetStatus(CombatChineseText.TileSelected(coordinate));
             return true;
         }
 
@@ -480,7 +481,7 @@ namespace TimeKey.Presentation
                 var clearCommit = _applicationSession.CommitClear();
                 if (!clearCommit.Succeeded || clearCommit.ClearResult == null)
                 {
-                    SetStatus(card.StableId + " could not clear the timeline.");
+                    SetStatus(CombatChineseText.ClearFailed(card.StableId));
                     return false;
                 }
 
@@ -506,7 +507,7 @@ namespace TimeKey.Presentation
             var commit = _applicationSession.CommitTimeline();
             if (!commit.Succeeded)
             {
-                SetStatus(card.StableId + " could not be committed to the timeline.");
+                SetStatus(CombatChineseText.CommitFailed(card.StableId));
                 return false;
             }
 
@@ -716,7 +717,7 @@ namespace TimeKey.Presentation
             if (phase == CardDragPhase.Started || phase == CardDragPhase.Moved)
             {
                 BoardCamera.InputEnabled = false;
-                SetStatus(stableId.ToUpperInvariant() + " held. Choose a target and timeline position.");
+                SetStatus(CombatChineseText.CardHeld(stableId));
             }
         }
 
@@ -725,7 +726,7 @@ namespace TimeKey.Presentation
             presentationBinding.RenderTimelineAction(
                 intent.Origin,
                 intent.Shape,
-                "INTENT",
+                CombatChineseText.EnemyIntentTimelineLabel,
                 new Color(0.78f, 0.27f, 0.25f, 1f));
         }
 
@@ -739,8 +740,7 @@ namespace TimeKey.Presentation
 
         private static string GetTimelineLabel(CardDefinition card)
         {
-            var label = card.StableId.ToUpperInvariant();
-            return label.Length <= 5 ? label : label.Substring(0, 5);
+            return CombatChineseText.GetTimelineLabel(card.StableId);
         }
 
         private void SetHandCardsActive(bool active)

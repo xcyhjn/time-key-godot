@@ -77,6 +77,8 @@
 | Remaining Cards Gate D harness/build | 七卡完整路径、54 张 PNG，Windows build `Succeeded`、`207171486` bytes | `evidence/remaining-cards-gate-d/harness-summary.json` |
 | Remaining Cards Gate D Player | 退出码 0，日志含 `TIMEKEY_PLAYER_SMOKE_PASS` | `evidence/remaining-cards-gate-d/player-smoke-summary.json` |
 | Remaining Cards Gate D 人工视觉 | 1280/1920/2560、lighting/earthquake 四 yaw、Tower/Poison 四 yaw、Clear 三态与残留检查均通过 | `evidence/remaining-cards-gate-d/verification-summary.md` |
+| 简体中文 EditMode / PlayMode | `161/161`、`38/38`，0 失败；集中式文案、Silver 字形、Scene/Prefab 与交互状态 | `evidence/simplified-chinese-localization/` |
+| 简体中文视觉 / build / Player | 8 张三视口与关键状态 PNG 人工通过；build `Succeeded`；Player exit 0 + smoke marker | `evidence/simplified-chinese-localization/verification-summary.md` |
 
 ## Wave 02B1 计划门禁
 

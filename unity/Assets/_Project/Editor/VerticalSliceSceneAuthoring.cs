@@ -7,6 +7,7 @@ using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
@@ -31,6 +32,8 @@ namespace TimeKey.Editor
         public const string TargetViewPrefabPath = "Assets/_Project/Prefabs/Battle/Targets/TargetView.prefab";
         public const string TowerPrefabPath = "Assets/_Project/Prefabs/Battle/Occupants/Tower.prefab";
         public const string PoisonStatusPrefabPath = "Assets/_Project/Prefabs/Battle/Status/PoisonStatus.prefab";
+        public const string ChineseFontAssetPath =
+            "Assets/_Project/Resources/Fonts/Silver.ttf";
 
         private const string TowerTexturePath =
             "Assets/_Project/Resources/Art/Battle/Occupants/tower.png";
@@ -196,7 +199,7 @@ namespace TimeKey.Editor
                 new Vector2(24f, -104f),
                 new Vector2(-24f, -24f),
                 new Color(0.06f, 0.08f, 0.09f, 1f));
-            CreateText(header, "Title", "TIME KEY  /  COMBAT BOARD", 28, TextAnchor.MiddleLeft,
+            CreateText(header, "Title", CombatChineseText.SceneTitle, 28, TextAnchor.MiddleLeft,
                 new Vector2(22f, 8f), new Vector2(-22f, -38f));
             var statusText = CreateText(header, "Status", string.Empty, 20, TextAnchor.MiddleLeft,
                 new Vector2(22f, 42f), new Vector2(-22f, -8f));
@@ -256,14 +259,14 @@ namespace TimeKey.Editor
                 new Vector2(-414f, 24f),
                 new Vector2(-24f, 224f),
                 new Color(0.08f, 0.10f, 0.11f, 0.96f));
-            var targetText = CreateText(detailPanel, "TargetStatus", "TARGET 01  |  HP 10 / 10", 20,
+            var targetText = CreateText(detailPanel, "TargetStatus", CombatChineseText.DefaultTargetStatus, 20,
                 TextAnchor.MiddleLeft, new Vector2(20f, 112f), new Vector2(-20f, -18f));
-            CreateText(detailPanel, "Intent", "ENEMY INTENT  /  SLOT 03-B", 18,
+            CreateText(detailPanel, "Intent", CombatChineseText.EnemyIntentDetail, 18,
                 TextAnchor.MiddleLeft, new Vector2(20f, 72f), new Vector2(-20f, -60f));
             var resolveButton = CreateButton(
                 detailPanel,
                 "Resolve",
-                "RESOLVE TIMELINE",
+                CombatChineseText.ResolveTimeline,
                 new Color(0.70f, 0.25f, 0.20f, 1f));
             SetRect(resolveButton.GetComponent<RectTransform>(), Vector2.zero, Vector2.zero,
                 new Vector2(20f, 18f), new Vector2(370f, 64f));
@@ -377,6 +380,61 @@ namespace TimeKey.Editor
             Debug.Log("TIMEKEY_REMAINING_CARDS_GATE_B_AUTHORING_PASS");
         }
 
+        [MenuItem("Time Key/Author Simplified Chinese Localization")]
+        public static void AuthorSimplifiedChineseLocalization()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var font = LoadChineseFont();
+
+            var prefabRoot = PrefabUtility.LoadPrefabContents(TimelineCellPrefabPath);
+            try
+            {
+                var timelineText = prefabRoot.GetComponentInChildren<Text>(true);
+                if (timelineText == null)
+                {
+                    throw new InvalidOperationException("TimelineCell Prefab is missing its Text component.");
+                }
+
+                timelineText.font = font;
+                EditorUtility.SetDirty(timelineText);
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, TimelineCellPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var root = scene.GetRootGameObjects().SingleOrDefault(value => value.name == "VerticalSliceRoot");
+            if (root == null)
+            {
+                throw new InvalidOperationException("VerticalSliceRoot is missing from " + ScenePath + ".");
+            }
+
+            SetLocalizedText(root.transform, "SliceCanvas/HUD/Header/Title", CombatChineseText.SceneTitle, font);
+            SetLocalizedText(root.transform, "SliceCanvas/HUD/Header/Status", CombatChineseText.SelectCard, font);
+            SetLocalizedText(
+                root.transform,
+                "SliceCanvas/HUD/DetailPanel/TargetStatus",
+                CombatChineseText.DefaultTargetStatus,
+                font);
+            SetLocalizedText(
+                root.transform,
+                "SliceCanvas/HUD/DetailPanel/Intent",
+                CombatChineseText.EnemyIntentDetail,
+                font);
+            SetLocalizedText(
+                root.transform,
+                "SliceCanvas/HUD/DetailPanel/Resolve/Label",
+                CombatChineseText.ResolveTimeline,
+                font);
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("TIMEKEY_SIMPLIFIED_CHINESE_AUTHORING_PASS");
+        }
+
         [MenuItem("Time Key/Author Remaining Cards Gate C Clear UI")]
         public static void AuthorRemainingCardsGateCClearUi()
         {
@@ -456,6 +514,35 @@ namespace TimeKey.Editor
             material.enableInstancing = true;
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static Font LoadChineseFont()
+        {
+            var font = AssetDatabase.LoadAssetAtPath<Font>(ChineseFontAssetPath);
+            if (font == null)
+            {
+                throw new InvalidOperationException("The licensed Simplified Chinese font is missing: " + ChineseFontAssetPath);
+            }
+
+            return font;
+        }
+
+        private static void SetLocalizedText(
+            Transform root,
+            string path,
+            string value,
+            Font font)
+        {
+            var target = root.Find(path);
+            var text = target == null ? null : target.GetComponent<Text>();
+            if (text == null)
+            {
+                throw new InvalidOperationException("Localized Text is missing from scene path: " + path);
+            }
+
+            text.text = value;
+            text.font = font;
+            EditorUtility.SetDirty(text);
         }
 
         private static Sprite LoadOrCreateSprite(string assetPath, string resourcePath)
@@ -955,7 +1042,7 @@ namespace TimeKey.Editor
             var textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
             textObject.transform.SetParent(parent, false);
             var text = textObject.GetComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = LoadChineseFont();
             text.fontSize = fontSize;
             text.alignment = alignment;
             text.color = new Color(0.92f, 0.94f, 0.90f, 1f);

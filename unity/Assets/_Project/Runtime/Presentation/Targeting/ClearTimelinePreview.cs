@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TimeKey.Domain;
+using TimeKey.Presentation.Localization;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -80,7 +81,7 @@ namespace TimeKey.Presentation.Targeting
                         ConfigureOutline(outline, new Vector2(2f, 2f));
                         break;
                     case TimelineClearCellState.Occupied:
-                        cellView.SetPreviewContent("HIT", OccupiedColor);
+                        cellView.SetPreviewContent(CombatChineseText.ClearHit, OccupiedColor);
                         ConfigureOutline(outline, new Vector2(4f, 4f));
                         break;
                     case TimelineClearCellState.OutOfBounds:

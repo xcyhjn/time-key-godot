@@ -101,3 +101,12 @@
 - Wind 2×2、Tornado 12×1 使用独立 Clear session；越界拒绝、空清成功，命中后按 action identity 去重并完整移除玩家或敌方 action。
 - Application 以交互模式通用路由 ordinary/clear；`VerticalSliceController` 没有 Recover 等 stable-ID 分支。Scene 现保存八个 Prefab 和五个 Presenter 的完整 Inspector 接线。
 - Gate A/B/C 小门禁均关闭；Gate D 刷新 full EditMode `152/152`、full PlayMode `38/38`、54 张实际 PNG、Windows build `Succeeded`（`207171486` bytes）和 Player smoke 退出码 0。
+
+## 当前 Unity 战斗切片：简体中文
+
+完成日期：2026-08-02。
+
+- 集中式中文目录覆盖 HUD、目标、生命/中毒、时间轴、清除和七张卡牌显示名，内部 stable ID 与数据契约未改。
+- Scene 默认文本和 TimelineCell Prefab 使用 Silver；字体署名、CC BY 4.0 及 10 万美元预算/收入门槛已记录。
+- EditMode `161/161`、PlayMode `38/38`，汉化 Harness 生成 8 张 PNG，Windows build `Succeeded`（`210916374` bytes），Player smoke 退出码 0。
+- 1280×720、1920×1080、2560×1080 与雷击/台风关键状态逐图检查通过，无方框字、裁切、重叠或宽屏错位。

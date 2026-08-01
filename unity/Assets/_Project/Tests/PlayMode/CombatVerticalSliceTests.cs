@@ -4,6 +4,7 @@ using NUnit.Framework;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
@@ -197,7 +198,7 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(towerObject.GetComponentsInChildren<Collider>(true), Is.Empty);
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
-                Is.EqualTo("TOWER  |  HP 100"));
+                Is.EqualTo("高塔 | 生命 100"));
         }
 
         [UnityTest]
@@ -228,7 +229,7 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(icon.texture.height, Is.EqualTo(160));
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
-                Is.EqualTo("TARGET-01  |  POISON 2"));
+                Is.EqualTo("目标 01 | 中毒 2 层"));
         }
 
         [UnityTest]
@@ -243,9 +244,9 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(controller.PreviewTimelineSelected(1, 0), Is.True);
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
-                Is.EqualTo("CLEAR  |  HITS 1"));
+                Is.EqualTo(CombatChineseText.ClearHits(1)));
             Assert.That(GameObject.Find("Slot-2-1").GetComponent<TimelineCellView>().DisplayText,
-                Is.EqualTo("HIT"));
+                Is.EqualTo(CombatChineseText.ClearHit));
 
             Assert.That(controller.TryPlaceSelected(1, 0), Is.True);
 
@@ -254,7 +255,7 @@ namespace TimeKey.Tests.PlayMode
                 Is.EqualTo("03"));
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
-                Is.EqualTo("CLEAR  |  REMOVED 1"));
+                Is.EqualTo(CombatChineseText.ClearRemoved(1)));
             Assert.That(GameObject.Find("Resolve").GetComponent<Button>().interactable, Is.False);
         }
 
@@ -272,7 +273,7 @@ namespace TimeKey.Tests.PlayMode
                 Is.EqualTo("!"));
             Assert.That(
                 GameObject.Find("Status").GetComponent<Text>().text,
-                Is.EqualTo("CLEAR POSITION OUT OF BOUNDS"));
+                Is.EqualTo(CombatChineseText.ClearPositionOutOfBounds));
 
             Assert.That(controller.PreviewTimelineSelected(0, 0), Is.True);
             Assert.That(clearPreview.ActiveCoordinates.Count, Is.EqualTo(12));
@@ -281,7 +282,7 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(1));
             Assert.That(
                 GameObject.Find("TargetStatus").GetComponent<Text>().text,
-                Is.EqualTo("CLEAR  |  REMOVED 0"));
+                Is.EqualTo(CombatChineseText.ClearRemoved(0)));
         }
 
         [UnityTest]

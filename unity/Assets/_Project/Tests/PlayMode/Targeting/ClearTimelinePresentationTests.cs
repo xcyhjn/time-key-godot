@@ -6,6 +6,7 @@ using NUnit.Framework;
 using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Presentation;
+using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Tests.PlayMode.Bindings;
@@ -46,7 +47,7 @@ namespace TimeKey.Tests.PlayMode.Targeting
             rig.Presenter.RenderAction(
                 action.Origin,
                 action.Shape,
-                "INTENT",
+                CombatChineseText.EnemyIntentTimelineLabel,
                 new Color(0.78f, 0.27f, 0.25f, 1f));
 
             var wind = CreateClearCard("wind", CreateRectangle(2, 2));
@@ -58,8 +59,8 @@ namespace TimeKey.Tests.PlayMode.Targeting
             Assert.That(session.PreviewClear(new TimelineCell(0, 0)).Succeeded, Is.True);
 
             rig.Presenter.Refresh(session.Current);
-            Assert.That(rig.Cells[new TimelineCell(0, 0)].DisplayText, Is.EqualTo("HIT"));
-            Assert.That(rig.Cells[new TimelineCell(1, 0)].DisplayText, Is.EqualTo("HIT"));
+            Assert.That(rig.Cells[new TimelineCell(0, 0)].DisplayText, Is.EqualTo(CombatChineseText.ClearHit));
+            Assert.That(rig.Cells[new TimelineCell(1, 0)].DisplayText, Is.EqualTo(CombatChineseText.ClearHit));
             Assert.That(rig.Cells[new TimelineCell(0, 1)].DisplayText, Is.EqualTo("○"));
             Assert.That(
                 rig.Cells[new TimelineCell(0, 0)].Graphic.GetComponent<Outline>().effectDistance,
@@ -74,7 +75,9 @@ namespace TimeKey.Tests.PlayMode.Targeting
             rig.Presenter.Refresh(session.Current);
             rig.Presenter.ClearPreview();
             rig.Presenter.ClearPreview();
-            Assert.That(rig.Cells[new TimelineCell(0, 0)].DisplayText, Is.EqualTo("INTENT"));
+            Assert.That(
+                rig.Cells[new TimelineCell(0, 0)].DisplayText,
+                Is.EqualTo(CombatChineseText.EnemyIntentTimelineLabel));
             Assert.That(rig.Cells[new TimelineCell(0, 1)].DisplayText, Is.EqualTo("01"));
             Assert.That(
                 rig.Cells[new TimelineCell(0, 0)].Graphic.GetComponents<Outline>().Length,
@@ -103,7 +106,7 @@ namespace TimeKey.Tests.PlayMode.Targeting
             rig.Presenter.RenderAction(
                 action.Origin,
                 action.Shape,
-                "LIGHT",
+                CombatChineseText.GetTimelineLabel("lighting"),
                 new Color(0.16f, 0.74f, 0.82f, 1f));
 
             var tornado = CreateClearCard("tornado", CreateRectangle(12, 1));
@@ -115,7 +118,7 @@ namespace TimeKey.Tests.PlayMode.Targeting
             Assert.That(session.PreviewClear(new TimelineCell(0, 0)).Succeeded, Is.True);
             rig.Presenter.Refresh(session.Current);
             Assert.That(rig.ClearPreview.ActiveCoordinates.Count, Is.EqualTo(12));
-            Assert.That(rig.Cells[new TimelineCell(4, 0)].DisplayText, Is.EqualTo("HIT"));
+            Assert.That(rig.Cells[new TimelineCell(4, 0)].DisplayText, Is.EqualTo(CombatChineseText.ClearHit));
 
             var commit = session.CommitClear();
             Assert.That(commit.Succeeded, Is.True);

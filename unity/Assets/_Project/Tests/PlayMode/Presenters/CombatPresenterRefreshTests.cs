@@ -81,8 +81,8 @@ namespace TimeKey.Tests.PlayMode.Presenters
                 rig.Binding.Refresh(session.Current);
 
                 Assert.That(rig.ResolveButton.interactable, Is.False);
-                StringAssert.Contains("HP 0", rig.TargetText.text);
-                StringAssert.Contains("RESOLVED", rig.StatusText.text);
+                StringAssert.Contains("生命 0", rig.TargetText.text);
+                Assert.That(rig.StatusText.text, Is.EqualTo("结算完成 | 时间轴已推进"));
             }
             finally
             {
