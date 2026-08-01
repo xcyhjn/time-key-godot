@@ -1,6 +1,6 @@
 # Git 提交与推送状态
 
-> 状态：Turn Lifecycle 实现检查点已推送；交付文档检查点待本次提交
+> 状态：Wave 02B3 实现与交付文档均已推送
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：`git status`、`git log`、后续 push 输出
@@ -32,5 +32,8 @@
 ## Wave 02B3 推送
 
 - Gate B-D 实现：`e70988c`，2026-08-02 已推送至 `origin/unity_7.31`；范围为 lifecycle coordinator、intent、Tower/Poison/death、action identity/UI Prefab、Scene、full `236/236 + 53/53` 与 build/Player harness。
+- Gate D 文档与证据：`cf82430`，2026-08-02 已推送至 `origin/unity_7.31`；范围为 ADR、维护/状态账本、Gate B/D XML/JSON/PNG/人工总结和 02B4 Prompt。
+
+`e70988c` 的推送把远端从 `053a6ef` 推进到该实现提交，因此先前受 reset 阻塞的汉化、Gate 0/A 和状态祖先提交也已全部到达远端；历史失败记录保留，不改写。`cf82430` 推送后 `git rev-list --left-right --count HEAD...origin/unity_7.31` 为 `0/0`。
 
 本阶段实际保护清单扩大为 Godot 四文件、dirty 本阶段 Prompt、dirty migration roadmap、5 张历史 targeting PNG、两个 ProjectSettings 和 3 个来源不明 Prompt；均未进入 `e70988c`。
