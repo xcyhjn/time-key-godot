@@ -1,6 +1,6 @@
 # Git 提交与推送状态
 
-> 状态：简体中文汉化已完成本地检查点；GitHub 443 暂时阻塞推送
+> 状态：Turn Lifecycle Gate A 已完成本地检查点；GitHub HTTPS reset 暂时阻塞推送
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：`git status`、`git log`、后续 push 输出
@@ -23,5 +23,8 @@
 | Remaining Cards Gate C | `4fdcbb0` | 2026-08-02 已推送至 `origin/unity_7.31`；推送后 `0/0` | 独立 Clear session、Wind/Tornado、三态 UI、全量 `152/152`、PlayMode `4/4` 与 9 张 PNG |
 | Remaining Cards Gate D | `0ff4c30` | 2026-08-02 前四次 HTTPS reset/443 无法连接，第五次重试成功推送至 `origin/unity_7.31` | full EditMode `152/152`、full PlayMode `38/38`、七卡终验 harness、54 张 PNG、Windows build/Player smoke、架构/维护文档与 02B3 Prompt |
 | Unity 战斗切片简体中文 | `93d6b0d` | 2026-08-02 五次 HTTPS reset/443 建连失败；本地 `ahead 1`，待网络恢复后推送 | 集中式中文文案、Silver 字体/署名、Scene/Prefab、EditMode `161/161`、PlayMode `38/38`、8 张 PNG、Windows build/Player smoke 与维护文档 |
+| 简体中文交付文档 | `4c25b9a` | 与上项同受 HTTPS reset 阻塞 | 汉化验证总结、维护账本和交付状态 |
+| Turn Lifecycle Gate 0 | `cc98d68` | 2026-08-02 push 时 `curl 28 Recv failure: Connection was reset`；远端未前进 | 源语义/架构/交互审计、五份互斥 Agent Prompt、共享契约与测试矩阵 |
+| Turn Lifecycle Gate A | `108ff54` | 2026-08-02 push 时 `curl 55 Recv failure: Connection was reset`；当前本地 `ahead 4` | lifecycle runner、ActionId、不可变 snapshot、共享 Timeline/Application 接线、EditMode `183/183`、PlayMode `38/38` |
 
 用户原有四个未提交文件、两个未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均未进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。最终状态提交推送后以 `git rev-list --left-right --count HEAD...origin/unity_7.31 = 0/0` 为同步门禁。
