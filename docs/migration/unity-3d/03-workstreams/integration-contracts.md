@@ -201,3 +201,27 @@ CombatCompositionRoot
 - 最终依赖中 `Presentation` 不引用 `Infrastructure`，`Domain` 与 `Application` 均为 `noEngineReferences=true`，asmdef 图无环。
 
 R3 冻结证据为 full EditMode `92/92`、full PlayMode `31/31`、Windows build `Succeeded`、Player marker `TIMEKEY_PLAYER_SMOKE_PASS` 和 14 张人工检查截图，详见 `04-verification/evidence/unity-decoupling-r3/verification-summary.md`。
+
+## Remaining Cards Gate 0 冻结契约
+
+> 状态：2026-08-01 三路只读审计与最小冒烟通过；实现按 Gate A/B/C 推进
+
+```text
+ordinary: CardDefinition -> CombatApplicationSession -> CardPlaySession
+          -> TimelineGrid -> ICardEffectHandler -> typed ResolutionSnapshot
+
+clear:    CardDefinition.ClearMask -> TimelineClearSession
+          -> TimelineGrid PreviewClear/TryClear -> removed action snapshots
+```
+
+- Recover/Built/Poison 共用纯 Domain occupant：稳定 runtime ID、HexCoord、kind/creation、attitude、HP/MaxHP、PoisonStacks 与能力标志。表现对象不是 identity。
+- 普通 handler 使用统一 result buffer；`ResolutionSnapshot.EffectResults` 保持 earthquake 兼容，并新增 occupant before/after 结果。Recover/Built/Poison 的表现只能消费该结果。
+- 目标选择与 Resolve 都调用 typed 规则：Recover 为存在且 `HP<MaxHP` 的生命 occupant；Built 为存在且空的 tile；Poison 为存在、存活且支持状态的 occupant。Resolve 按稳定坐标/ID重判。
+- Built 本阶段只支持 `creation=tower,value=1`；未知 creation/value 在时间轴占格前显式失败。Tower 为 Neutral/Middle、HP100，不自损。
+- Poison 每次直接累加 2 且无游戏上限；本阶段不 tick。
+- Clear 只使用 typed `ClearMask`，不创建 TimelineAction、不占格。合法性只看 12x3 边界；空清成功；按 `TimelineAction` identity 去重，任一格命中移除完整 action，玩家/敌人不做过滤。
+- Application 显式区分 OrdinaryTimeline 与 TimelineClear；Controller 只允许按交互模式做通用路由，禁止 stable-ID/effect 大 switch。
+- Tower 使用原 `tower.png` billboard Prefab；Poison 使用原 `poison_icon.png` + 层数 Prefab；二者挂真实 `OccupantAnchor`，逻辑不存于 Prefab。
+- Gate A 架构验收：`recover` 完整链不得修改 `VerticalSliceController.cs`。
+
+Gate 0 最小冒烟为 EditMode `24/24`、PlayMode `10/10`，0 失败。旧 R3 build/Player/未受影响视觉先继承；修改对应运行程序集/Scene 后在 Gate D 全量刷新。

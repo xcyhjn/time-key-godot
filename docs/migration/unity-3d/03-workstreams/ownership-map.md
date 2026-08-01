@@ -67,3 +67,17 @@ Domain、Infrastructure、Presentation 的运行时代码和各自测试/报告�
 | 主智能体 | Controller、Scene/Prefab/Composition、asmdef、harness、共享 docs/evidence/Git | 已完成 R3 组装、终验、证据与检查点 |
 
 Agent B 与 C 的冻结路径保持互斥，并且都不修改 Controller、Scene、Prefab 或 asmdef。Agent B 已交回独占实现；Agent C 未作为并行写入者启动，其所有权等价范围由主智能体在无并发冲突时串行实现。最终另有只读 Domain/Application 审计、Scene/Prefab 审计、扩展文档审计和集成复核；报告位于 `agents/reports/decoupling-*.md`。所有权现已全部交回主智能体。
+
+## Remaining Cards 实际所有权
+
+| 波次 | 角色 | 独占路径摘要 | 启动条件 | 状态 |
+| --- | --- | --- | --- | --- |
+| Gate 0 | 三个只读审计 | 各自 `agents/reports/remaining-cards-*.md` | 前置解耦关闭 | 已完成交回 |
+| Gate A | Agent A Recover | 共享 occupant/result、Recover handler、TimelineGrid、Application 与对应 EditMode tests | Prompt review PASS | 已派发 |
+| Gate B | Agent B1 Built | 新 Built handler/test/report | Gate A 交回 | 待启动，可与 B2 并行 |
+| Gate B | Agent B2 Poison | 新 Poison handler/test/report | Gate A 交回 | 待启动，可与 B1 并行 |
+| Gate C | Agent C1 Clear Domain | TimelineGrid clear API、clear session、Application 与 EditMode tests | Gate B 集成 | 待启动 |
+| Gate C | Agent C2 Clear Presentation | Timeline preview/presenter/cell 与对应 PlayMode tests | C1 契约冻结 | 待启动 |
+| 全程 | 主智能体 | Controller/Binding/Composition/Infrastructure registry、Scene/Prefab/资产、Editor、asmdef、共享文档/证据/Git | 每波交回 | 进行中 |
+
+路径审查位于 `agents/prompt-review-remaining-cards.md`。Agent A 运行期间主智能体不修改其独占路径；B1/B2 只新增互斥文件；C1 完成后才开放 C2。所有 Agent 都不是仓库唯一工作者，不得回退、stash、暂存、commit 或 push。

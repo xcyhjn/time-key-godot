@@ -115,3 +115,15 @@
 - 构建：Windows build `Succeeded`，大小 `206747014` bytes；Player 退出码 0 且 smoke marker 存在。
 
 R3 结构化证据位于 `evidence/unity-decoupling-r3/`。旧切片结果保留为历史证据，最终完成判定以本节全量门禁为准。
+
+## Remaining Cards Gate 0 与自动化矩阵
+
+接手最小冒烟已实跑：Application + earthquake + Scene EditMode `24/24`，`CombatVerticalSliceTests` PlayMode `10/10`，均 0 失败。结果在 Unity `Temp` 中由脚本解析后被下一次启动清理，只作为 Gate 0 门禁；最终证据必须写入新的可提交 evidence 目录。
+
+- Recover：合法/满血/HP0、范围缺失、ID/coord 重判、消失/变满 no-op、MaxHP 钳制、shape 边界、before/after、失败纯度、Controller 零 diff。
+- Built：空地、选择占用、Resolve 前占用、未知 creation/value fail-fast、value 创建上限、Tower HP/attitude/coord、本阶段无 decay。
+- Poison：活体、空格/死亡/无状态能力、0->2->4、快照副本、重判、本阶段无传播/伤害/衰减。
+- Clear：Wind 2x2、Tornado 12x1、边界/空清、多格 action identity 去重、完整移除、玩家/敌人、取消/重复调用、普通放置回归。
+- Catalog/Hand：七 ID/原图/配置顺序、同一 CardView Prefab、单选/右键/drag、重复 Build 无复制；三视口检查中间卡 selected/drag 风险。
+- Scene/Prefab：Play 前稳定对象存在；Tower/Poison/CardView/TimelineCell 来自 Prefab；Inspector 引用完整且运行时不覆盖布局。
+- 最终：full EditMode、full PlayMode、harness、Windows build、Player smoke；1280x720、1920x1080、2560x1080 与 yaw 0/90/180/270 人工开图。

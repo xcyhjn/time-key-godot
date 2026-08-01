@@ -92,3 +92,19 @@ R3 已完成并使 Presentation、Infrastructure、Composition、资源映射与
 | 人工视觉 | 三视口七卡、四向范围、valid/invalid 时间轴、lighting 与 earthquake 前后逐张检查 | 通过 |
 
 最终仍可继承的旧证据只剩未受 Unity 解耦影响的 Godot 权威基线、源素材哈希与历史切片记录。当前 Unity 完成态一律以 R3 全量 XML、harness JSON、Player 日志和 14 张实际渲染 PNG 为准。
+
+## Remaining Cards 接手记录
+
+2026-08-01 接手时 `HEAD` 与 `origin/unity_7.31` 同步在 `da00914`，前置所有权全部交回；无 Unity Editor 写入进程后运行最小冒烟，EditMode `24/24`、PlayMode `10/10`，0 失败。三份只读审计确认五卡 JSON/卡图哈希、Godot 语义、扩展接口与 Tower/Poison 真源无冲突。
+
+| R3 证据 | 本阶段开始时 | 继承条件 |
+| --- | --- | --- |
+| 七卡 typed schema 与五张卡图哈希 | 可继承 | fixture、adapter、原图未改 |
+| 3D 棋盘、镜头、0.32 层高、四 yaw | 可继承 | Terrain/Camera/Controller/Scene 未改；Gate B/C 后按受影响面复查 |
+| `lighting` / `earthquake` Domain | 可继承为回归基线 | handler/result/state 变更后必须刷新完整测试 |
+| Scene/Prefab 可编辑性 | 当前可继承 | 新增 Tower/Poison Prefab 和 Scene 引用后必须刷新 Scene tests/视觉 |
+| R3 Windows build / Player smoke | Gate A 修改运行程序集前仅作接手基线 | Gate D 必须从最终集成态重建并重跑 |
+| R3 七卡 idle 三视口 | 风险参考 | CardHand 未改前可继承；中间卡 selected/drag 仍须补拍 |
+| R3 Timeline 普通 valid/invalid | 普通路径回归基线 | Clear preview/Timeline Presenter 改动后必须刷新 |
+
+本阶段最终不能用 R3 build/Player 或旧 idle 截图证明新 Recover/Tower/Poison/Clear；只继承未受改动影响的源证据和历史契约。
