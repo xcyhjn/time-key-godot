@@ -1,6 +1,6 @@
 # 已完成切片
 
-> 状态：截至 Wave 02B4 Gate D 已完成
+> 状态：截至 Combat Shell Gate A 已完成
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：Slice Definition of Done
@@ -132,3 +132,13 @@
 - 最大生命 10% 胜利谓词、胜负互斥、输入锁、一次奖励入口/领取和 typed return boundary 完成。
 - BattleFlow HUD/结算 Prefab、动态 5 手牌、简体中文与 Silver 完成；18 张三视口/终局 PNG 逐图通过。
 - Full EditMode `300/300`、Direct3D12 PlayMode `61/61`、Windows build `Succeeded`（`211133001` bytes）和 actual Player smoke exit 0。
+
+## Combat Shell Gate A：Bootstrap 与无视觉多场景往返
+
+完成日期：2026-08-02。
+
+- Unity-free typed SceneFlow、Combat launch/outcome 与局外一次消费状态完成。
+- 六 Scene Build Settings、Bootstrap 唯一持久服务和五内容 Scene entry 完成。
+- Combat 自有 EventSystem 已移除，内容根改为 bind-before-enable；旧测试迁移到测试专用 EventSystem。
+- 成功链、Busy/幂等/conflict/stale、五类失败回滚、取消与真实 additive Victory/Defeat 往返通过。
+- Full EditMode `320/320`、Direct3D12 PlayMode `62/62`、Windows build `211736305` bytes、actual Player exit 0。

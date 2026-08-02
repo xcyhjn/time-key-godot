@@ -338,3 +338,11 @@ Bootstrap (persistent, Build index 0)
 - 同 sequence + 同 fingerprint 幂等；同 sequence + 不同请求冲突；stale 与 Busy typed fail。异步回调以 generation 拒绝取消后的陈旧写入。
 - load/activate/bind/first-frame/unload 失败均在遮罩下回滚目标、恢复来源 camera/content/focus，最后揭罩并解锁。
 - Bootstrap 唯一拥有 EventSystem、TransitionCanvas 与 AudioRoot；内容 Scene 不得保留副本。该约定由 ADR 0010 明确取代 ADR 0004 中 Combat Scene 自有 EventSystem 的历史点。
+
+### Gate A 实现态
+
+- `SceneFlowCoordinator` 已实现 sequence/fingerprint 幂等、conflict/stale/Busy、完整成功 phase、typed failure 与 rollback/unlock；Application 继续 `noEngineReferences=true`。
+- `CombatLaunchPayload` 防御性复制 deck，并覆盖 run/room/character/chapter/round/time/battle identity；`CombatOutcome` 保留原 launch identity 与 02B4 return，Victory reward guard 已测试。
+- `OutOfBattleShellState` 按 outcome correlation 一次消费；同 payload 重放幂等，不同 payload 冲突，胜利房间只结算一次。
+- Unity runtime 使用真实 additive `LoadSceneAsync`/activation/unload。取消 pending load 时先在遮罩下允许激活再卸载，避免遗留 90% operation；source unload 开始后完成原子提交。
+- 六 Scene build、唯一持久对象、Combat bind-before-enable 与真实往返已由 EditMode `320/320`、Direct3D12 PlayMode `62/62`、build/Player 验证。

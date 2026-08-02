@@ -1,0 +1,12 @@
+{
+  "gate": "Combat Shell Gate A",
+  "unityVersion": "6000.4.10f1",
+  "target": "StandaloneWindows64",
+  "options": "Development",
+  "result": "Succeeded",
+  "sceneCount": 6,
+  "totalSizeBytes": 211736305,
+  "executableBytes": 667648,
+  "executableSha256": "8B85CC34BECB9A5E63DC14325C0266CF01CDAF798F5F35638FC01C0BE0CE7878",
+  "output": "%TEMP%/timekey-combat-shell-gate-a/TimeKey.exe"
+}

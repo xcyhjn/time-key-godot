@@ -149,3 +149,7 @@ Clear 触及 TimelineGrid/Application、effect registration、Timeline Presenter
 | 02B4 18 张截图 | 只证明既有 Combat 规则与表现 | TopHUD/background/入场/SceneFlow 修改后相应视觉必须刷新 |
 
 本次在 Godot 4.6.2/Vulkan/NVIDIA 上实际刷新 960x540 主菜单 idle、外景地图、士兵确认、地图收拢过渡和战斗首个可渲染帧。GameOver 直接加载仅得到灰屏，证明其依赖完整 defeat 状态，不能作为失败视觉证据；hover 因 Computer Use API 不支持 pointer move 未刷新。两项均列入后续真实 Unity/Godot 流程核验。
+
+## Combat Shell Gate A 刷新
+
+Bootstrap、Build Settings、Combat Scene activation、EventSystem 所有权与历史 PlayMode fixture 已改变，因此 02B4 Scene/build/Player 证据在这些边界失效并完成刷新：full EditMode `320/320`、Direct3D12 PlayMode `62/62`、六 Scene Development build `211736305` bytes、actual Player exit 0/marker 一次。02B3/02B4 的战斗规则、lifecycle、卡图/字体和现有视觉未被重写并在完整回归中保持通过；正式 shell 视觉、动画和多视口证据仍必须在 Gate B-E 刷新。

@@ -1,6 +1,6 @@
 # 模块所有权与修改检查表
 
-> 状态：Wave 02B4 Gate D 冻结
+> 状态：Combat Shell Gate A 冻结
 
 | 程序集 | 拥有 | 公开变化点 | 允许依赖 | 禁止依赖 |
 | --- | --- | --- | --- | --- |
@@ -32,3 +32,10 @@
 真实场景入口为 `CombatVerticalSlice.unity`，主要组装类为 `CombatCompositionRoot`，兼容 facade 为 `VerticalSliceController`。新增敌人与章节桥接尚未实现，分别遵循 `add-enemy.md` 与 `chapter-boundary.md` 的停止边界。
 
 依赖或职责发生长期变化时先更新架构文档和 ADR。回滚只撤销对应模块的单一目的检查点；不得用 asmdef 反向引用来绕过编译错误。
+
+## SceneFlow 所有权
+
+- `TimeKey.Application/SceneFlow` 拥有 Unity-free request/phase/failure/result、launch/outcome/shell state 与 coordinator；禁止 Scene 名称、Unity object 和静态 singleton。
+- `TimeKey.Composition/SceneFlow` 拥有 Bootstrap、route catalog、Unity additive effects、content entry、input/transition gate、state store 与参数化 Player smoke。
+- Bootstrap Scene 唯一拥有 EventSystem、AudioRoot、TransitionCanvas；内容 Scene 只拥有本地 camera/content/entry。
+- 正式 Scene、Build Settings、asmdef 与既有 Combat 接线始终由主集成所有；局部 Agent 不得直接修改。

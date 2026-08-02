@@ -218,3 +218,5 @@ Gate C 已通过 Scene EditMode `4/4`、BattleFlow integration `3/3`、回归 `1
 - 回归：迁移历史 direct-load fixture 后重跑完整 EditMode/graphical PlayMode；Gate A 不以 fake-only 或 headless scene load 代替真实 additive lifecycle。
 
 Gate 0 的 960x540 Godot 图形刷新和三份审计位于 `evidence/combat-shell-gate-0/`；hover、弹层、Victory/Defeat/return 和三视口只列为后续视觉清单，不冒充已验证。
+
+Gate A 已通过：full EditMode `320/320`、full Direct3D12 PlayMode `62/62`、六 Scene Windows Development build `211736305` bytes、actual Player exit 0/marker 一次/异常 0。真实 additive 测试覆盖 Victory 返回与 Defeat -> GameOver -> MainMenu；Scene 结构断言 Bootstrap 持久对象各一、内容 Scene 无副本。证据位于 `evidence/combat-shell-gate-a/verification-summary.md`。

@@ -139,9 +139,11 @@ Gate C/D 中 Agent D 只写独占 Presentation/Prefab/tests/report，主智能�
 | Gate | 角色 | 独占路径摘要 | 当前状态 |
 | --- | --- | --- | --- |
 | Gate 0 | source/visual 与 scene architecture 两个只读 Agent | 只读审计结果；不写工作区 | 已完成返回；均为 PASS WITH CONCERNS，无硬阻塞 |
-| Gate A | Agent A / SceneFlow | 仅新增 `Application/SceneFlow/**`、`Composition/SceneFlow/**`、对应 EditMode/PlayMode tests 与自己的报告 | Prompt review PASS；待立即执行 |
+| Gate A | Agent A / SceneFlow 白名单 | 仅新增 `Application/SceneFlow/**`、`Composition/SceneFlow/**`、对应 EditMode/PlayMode tests 与自己的报告 | 两个只读 Agent 返回后由主智能体按白名单串行完成并回收；`320/320 + 62/62` |
 | Gate B | Agent B / Combat Shell | 仅新增 `Presentation/CombatShell/**`、局部 Prefab/Material/tests/report | Prompt 已审查；Gate A 后启动 |
 | Gate C | Agent C / Menu/Transition | 仅新增 `Presentation/GameStart/MainMenu/TransitionVisuals/**`、Shell Prefab/Animation/tests/report | Prompt 已审查；Gate B 后启动 |
 | 全程 | 主智能体 | 所有既有文件、正式 Scene、Build Settings、asmdef、route/payload 接线、Editor harness、共享 docs/evidence/Git | 独占 |
 
 三份实现白名单无交集，详见 `agents/prompt-review-combat-shell.md`。任何 Agent 都不得运行 Unity/Godot、修改共享 Scene/Build Settings、暂存或提交；主智能体在每个 Agent 返回后回收路径并串行验证。
+
+Gate A 实际未启动并行写入 Agent；主智能体独占 SceneFlow 白名单和全部共享文件完成实现、Scene authoring、Unity 验证、build/Player 与 Git。Agent B/C 路径未写入，继续保持 Gate B/C 的独占所有权。

@@ -1,7 +1,7 @@
 # Scene 与 Prefab 维护指南
 
-> 状态：Wave 02B4 Gate D 已验证
-> 入口场景：`unity/Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity`
+> 状态：Combat Shell Gate A 已验证
+> 入口场景：`unity/Assets/_Project/Scenes/Shell/Bootstrap.unity`
 
 ## 可编辑边界
 
@@ -52,3 +52,9 @@
 ## Wave 02B4 保存资产
 
 新增 `BattleFlowPanel` 后权威 Prefab 总数为十一个。Scene 在 Play 前保存牌区/回合资源 HUD、Settlement 层、奖励按钮、输入锁引用及 `battleFlowPresenter` 接线；动态 hand 只从 `CardView` Prefab 创建。所有新增 uGUI Text 均使用 Silver，世界 TextMesh 仍要求 Font/Material 成对。
+
+## Combat Shell Gate A Scene
+
+Build 顺序固定为 Bootstrap、GameStart、MainMenu、OutOfBattleShell、CombatVerticalSlice、GameOver。Bootstrap 保存唯一 EventSystem/AudioRoot/TransitionCanvas/SceneFlow；每个内容 Scene 保存恰好一个 `SceneContentEntry`。Combat Scene 的 `VerticalSliceRoot` 默认 inactive，entry 绑定 typed payload 后才启用；不得把 EventSystem 重新加回 Combat。
+
+Gate A 的四个 Shell 内容 Scene 是无视觉壳，Gate C/D 会在同一 entry/content root 结构上补正式 Prefab 和 Presenter。重新 authoring 会覆盖这些壳及 Combat entry，执行后必须重跑 Scene asset tests 和完整 PlayMode。

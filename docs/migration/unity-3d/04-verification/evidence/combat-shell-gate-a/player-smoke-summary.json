@@ -1,0 +1,19 @@
+{
+  "gate": "Combat Shell Gate A",
+  "exitCode": 0,
+  "marker": "TIMEKEY_COMBAT_SHELL_GATE_A_PLAYER_SMOKE_PASS",
+  "markerCount": 1,
+  "exceptionCount": 0,
+  "renderer": "Direct3D 12",
+  "window": "960x540",
+  "route": [
+    "Bootstrap",
+    "GameStart",
+    "MainMenu",
+    "OutOfBattleShell",
+    "Combat",
+    "OutOfBattleShell"
+  ],
+  "typedBoundary": "CombatLaunchPayload -> claimed Victory CombatOutcome",
+  "logSha256": "89602C3531777CBFA3DECF703CEC050843405B17B8D0F638E64DDCE6C69D8A20"
+}

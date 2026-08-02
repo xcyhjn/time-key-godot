@@ -1,6 +1,6 @@
 # 局内战斗调试指南
 
-> 状态：适用于 Wave 02B4 Gate D
+> 状态：适用于 Combat Shell Gate A
 
 ## 调用链
 
@@ -65,3 +65,11 @@ Tower/Poison 数值正确但 View 错误时检查 `LifecycleOccupantChangeResult
 同 stable ID 卡牌消失或合并时，检查 `CardInstanceId -> CardViewModel.ViewId`，不要把内容 ID 当 View key。重复 sequence 必须返回原结果或 typed conflict，不能再次弃手、发币或推进。抽牌不守恒时逐步核对 before/after counts 与 moved instance IDs；只有 deck 空且 discard 非空时允许一次回洗。
 
 胜利阈值只看 `BattleVictoryRule(currentHp, maximumHp)`；不要回退到绝对 HP 或 UI 文本。终局后仍能选卡时检查 `BattleFlow.IsInputLocked`、Presenter 的交互控件列表和 Session `Resolved` phase。最终 Player smoke 覆盖这条链，原始值见 `player-smoke-summary.json`。
+
+## SceneFlow 排错
+
+先看 request sequence/correlation/fingerprint、`CurrentPhase` 与 result 的 failed phase/history。相同 sequence 同 fingerprint 应返回原结果；不同 fingerprint 必须 `SequenceConflict`，旧 sequence 为 `Stale`，Busy 不排队。
+
+卡在 90% 通常表示 pending additive load 未允许 activation；回滚必须在遮罩下激活后卸载。黑屏但任务完成时检查目标 entry 的 camera 已启用、至少跨过一个 `Time.frameCount`、source camera 在 cover 后禁用。重复 EventSystem/Audio/Transition 直接检查 Scene asset 门禁，不能在运行时发现后销毁。
+
+Player smoke 必须可见运行；隐藏窗口会因 `runInBackground=false` 暂停。marker 后非零退出时检查是否在 Task continuation 内立即 Quit；当前 smoke 由后续 LateUpdate 延迟两帧退出。

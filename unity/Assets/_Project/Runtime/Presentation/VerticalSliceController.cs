@@ -36,7 +36,6 @@ namespace TimeKey.Presentation
         [SerializeField] private Transform boardRoot = null;
         [SerializeField] private Transform dynamicRoot = null;
         [SerializeField] private Transform targetAnchor = null;
-        [SerializeField] private EventSystem sceneEventSystem = null;
         [SerializeField] private Canvas sceneCanvas = null;
         [SerializeField] private RectTransform hudRoot = null;
         [SerializeField] private RectTransform timelineRoot = null;
@@ -1045,7 +1044,6 @@ namespace TimeKey.Presentation
             RequireReference(boardRoot, nameof(boardRoot));
             RequireReference(dynamicRoot, nameof(dynamicRoot));
             RequireReference(targetAnchor, nameof(targetAnchor));
-            RequireReference(sceneEventSystem, nameof(sceneEventSystem));
             RequireReference(sceneCanvas, nameof(sceneCanvas));
             RequireReference(hudRoot, nameof(hudRoot));
             RequireReference(timelineRoot, nameof(timelineRoot));

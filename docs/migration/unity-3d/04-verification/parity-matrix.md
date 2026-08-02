@@ -78,10 +78,10 @@ Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、Act
 
 | 行为 | Godot 可观察语义 | Unity Gate 0 状态 | 判定 | 后续验收 |
 | --- | --- | --- | --- | --- |
-| Bootstrap/场景流 | 节点树切换并使用全局 pending payload/outcome | typed additive ADR 已冻结，尚无 Unity Bootstrap/SceneFlow | 未实现 | Gate A 真实往返与失败恢复 |
+| Bootstrap/场景流 | 节点树切换并使用全局 pending payload/outcome | Unity-free typed coordinator + Bootstrap additive runtime；成功/回滚/幂等已实现 | 允许差异 | Gate A `320/320 + 62/62`、build/Player |
 | 启动/主菜单 | 约 3 秒三字启动；中央时钟、六按钮、弹层与 Iris | 源体验与时长已冻结，Unity Presentation 尚未实现 | 待验证 | Gate C 三视口、pointer/keyboard/focus |
 | 局外壳 | 顶部 HUD、悬挂时钟、六边形地图、士兵确认 | 最小 typed shell 契约已冻结，Scene 尚未实现 | 未实现 | Gate D room identity 与完整 roundtrip |
 | 战斗入场 | 地图波纹 -> HUD/生命/时间轴 -> 手牌解锁 | 阶段和时长已冻结，Unity 入场未实现 | 待验证 | Gate B/E 实际动画/黑屏/输入锁 |
 | 胜利/失败 | Victory 横幅后奖励返回；Defeat 进入 GameOver | 02B4 typed outcome/return 可继承；跨 Scene 适配未实现 | 允许差异 | Gate D/E reward once、Defeat no reward、return |
-| 持久所有权 | Godot autoload 管理全局服务 | Unity ADR 冻结 Bootstrap 唯一 EventSystem/Audio/Transition | 待验证 | Gate A Scene 结构和三轮往返 |
+| 持久所有权 | Godot autoload 管理全局服务 | Bootstrap 唯一 SceneFlow/EventSystem/Audio/Transition；内容 Scene 无副本 | 等价并显式化 | Gate A Scene 结构和多轮往返 |
 | 中文与字体 | Godot ark-pixel | Unity 继续全要素简体中文与 Silver Font/Material | 允许差异 | 每 Gate asset tests + 实际截图 |

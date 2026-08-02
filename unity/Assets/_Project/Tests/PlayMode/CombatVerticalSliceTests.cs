@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using TimeKey.Application.SceneFlow;
+using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Cards;
@@ -498,6 +500,41 @@ namespace TimeKey.Tests.PlayMode
         {
             SceneManager.LoadScene("CombatVerticalSlice", LoadSceneMode.Single);
             yield return null;
+            var entry = UnityEngine.Object.FindFirstObjectByType<SceneContentEntry>(
+                FindObjectsInactive.Include);
+            Assert.That(entry, Is.Not.Null);
+            entry.Bind(DirectLaunch("playmode-direct"));
+            if (EventSystem.current == null)
+            {
+                var eventSystem = new GameObject(
+                    "PlayModeTestEventSystem",
+                    typeof(EventSystem),
+                    typeof(StandaloneInputModule));
+                SceneManager.MoveGameObjectToScene(eventSystem, SceneManager.GetActiveScene());
+            }
+
+            yield return null;
+        }
+
+        private static CombatLaunchPayload DirectLaunch(string identity)
+        {
+            return new CombatLaunchPayload(
+                identity + "-launch",
+                identity + "-run",
+                VerticalSliceController.FixtureSeed,
+                1,
+                1,
+                1,
+                identity + "-room",
+                identity + "-character",
+                0,
+                "combat-vertical-slice",
+                VerticalSliceController.FixtureSeed,
+                new[]
+                {
+                    "lighting", "earthquake", "recover", "built", "poison",
+                    "wind", "tornado", "lighting", "recover", "built", "poison", "wind"
+                });
         }
 
         private static VerticalSliceController GetController()

@@ -1,6 +1,6 @@
 # 测试与证据指南
 
-> 状态：Wave 02B4 Gate D 最终门禁已通过
+> 状态：Combat Shell Gate A 最终门禁已通过
 > Unity：6000.4.10f1
 
 ## 分层门禁
@@ -83,3 +83,9 @@ TimeKey.Editor.VerticalSliceAutomation.BuildDeckBattleFlowGateD
 ```
 
 最终只提交 `editmode-final.xml`、`playmode-final.xml`、18 张 PNG、三个 JSON、`visual-review.md` 与 `verification-summary.md`。Player marker 前必须断言 `7/5/0 -> 2/5/5 -> 7/5/0`、phase/timecoins、确定性回洗、card-instance/action identity 分离、Victory 输入锁、相反 outcome conflict 与 typed return；项目程序集 SHA-256 记录在 `player-smoke-summary.json`。
+
+## Combat Shell Gate A
+
+Scene author/build 入口为 `TimeKey.Editor.CombatShellGateAAutomation.AuthorGateA` 与 `.BuildGateA`。Unity 必须通过 `D:/timekey-unity-731` ASCII junction 启动，避免 Unicode project path 的 Package Manager `path undefined`；该 junction 指向真实 `unity/`，不是副本。
+
+最终提交 `editmode-final.xml`、`playmode-final.xml`、build/player 两个 JSON 和 verification summary；raw logs 与失败/超时诊断不提交。Player 以可见 960x540 窗口和 `-timekeyCombatShellSmoke` 启动，因为隐藏窗口在 `runInBackground=false` 时会暂停 player-loop。要求 exit 0、marker 一次、异常 0。

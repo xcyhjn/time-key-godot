@@ -1,11 +1,14 @@
 using System.Collections;
 using NUnit.Framework;
+using TimeKey.Application.SceneFlow;
+using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain;
 using TimeKey.Domain.BattleFlow;
 using TimeKey.Presentation;
 using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.Cards;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -140,6 +143,36 @@ namespace TimeKey.Tests.PlayMode.BattleFlow
         private static IEnumerator LoadSlice()
         {
             SceneManager.LoadScene("CombatVerticalSlice", LoadSceneMode.Single);
+            yield return null;
+            var entry = UnityEngine.Object.FindFirstObjectByType<SceneContentEntry>(
+                FindObjectsInactive.Include);
+            Assert.That(entry, Is.Not.Null);
+            entry.Bind(new CombatLaunchPayload(
+                "battle-flow-direct-launch",
+                "battle-flow-direct-run",
+                VerticalSliceController.FixtureSeed,
+                1,
+                1,
+                1,
+                "battle-flow-direct-room",
+                "battle-flow-direct-character",
+                0,
+                "combat-vertical-slice",
+                VerticalSliceController.FixtureSeed,
+                new[]
+                {
+                    "lighting", "earthquake", "recover", "built", "poison",
+                    "wind", "tornado", "lighting", "recover", "built", "poison", "wind"
+                }));
+            if (EventSystem.current == null)
+            {
+                var eventSystem = new GameObject(
+                    "PlayModeTestEventSystem",
+                    typeof(EventSystem),
+                    typeof(StandaloneInputModule));
+                SceneManager.MoveGameObjectToScene(eventSystem, SceneManager.GetActiveScene());
+            }
+
             yield return null;
         }
 

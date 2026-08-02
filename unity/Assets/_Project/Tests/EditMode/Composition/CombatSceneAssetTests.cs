@@ -41,7 +41,6 @@ namespace TimeKey.Tests.EditMode.Composition
             AssertPath(root.transform, "World/CombatBoardRoot");
             AssertPath(root.transform, "World/CombatBoardRoot/TargetAnchor");
             AssertPath(root.transform, "World/CombatBoardRoot/BoardRangePreview");
-            AssertPath(root.transform, "EventSystem");
             AssertPath(root.transform, "SliceCanvas/HUD/Header");
             AssertPath(root.transform, "SliceCanvas/HUD/Timeline");
             AssertPath(root.transform, "SliceCanvas/HUD/Timeline/ActionLayer");
@@ -56,7 +55,7 @@ namespace TimeKey.Tests.EditMode.Composition
             var requiredReferences = new[]
             {
                 "sceneCamera", "boardCamera", "keyLight", "fillLight", "battlefieldGround",
-                "boardRoot", "dynamicRoot", "targetAnchor", "sceneEventSystem", "sceneCanvas",
+                "boardRoot", "dynamicRoot", "targetAnchor", "sceneCanvas",
                 "hudRoot", "timelineRoot", "statusText", "targetText", "resolveButton",
                 "cardHandHost", "boardRangePreview", "timelinePlacementPreview", "presentationBinding", "hexColumnPrefab",
                 "grassBlockPrefab", "dirtBlockPrefab", "targetViewPrefab"
