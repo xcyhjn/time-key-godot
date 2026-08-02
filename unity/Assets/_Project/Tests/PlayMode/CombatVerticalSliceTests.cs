@@ -85,6 +85,7 @@ namespace TimeKey.Tests.PlayMode
         {
             yield return LoadSlice();
             var controller = GetController();
+            AdvanceToSecondHand(controller);
             Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
 
             foreach (var yaw in new[] { 0f, 90f, 180f, 270f })
@@ -137,6 +138,7 @@ namespace TimeKey.Tests.PlayMode
         {
             yield return LoadSlice();
             var controller = GetController();
+            AdvanceToSecondHand(controller);
 
             Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
             Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
@@ -146,7 +148,7 @@ namespace TimeKey.Tests.PlayMode
 
             Assert.That(controller.CurrentTargetHp, Is.Zero);
             Assert.That(controller.EnemyIntentResolved, Is.False);
-            Assert.That(snapshot.TargetHpBefore, Is.EqualTo(10));
+            Assert.That(snapshot.TargetHpBefore, Is.EqualTo(100));
             Assert.That(snapshot.TargetHpAfter, Is.Zero);
             Assert.That(snapshot.ResolutionOrder.Select(item => item.CardId),
                 Is.EqualTo(new[] { "lighting", "enemy-intent" }));
@@ -178,6 +180,7 @@ namespace TimeKey.Tests.PlayMode
             yield return LoadSlice();
             var controller = GetController();
             var coordinate = new HexCoord(0, 0);
+            AdvanceToSecondHand(controller);
 
             Assert.That(controller.SelectCard("tower"), Is.True);
             Assert.That(controller.SelectEarthquakeTarget(coordinate), Is.True);
@@ -264,31 +267,14 @@ namespace TimeKey.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Tornado_PublicScenePathShowsOutOfBoundsThenCompletesLegalEmptyClear()
+        public IEnumerator Tornado_IsExcludedFromFrozenStarterDeck()
         {
             yield return LoadSlice();
             var controller = GetController();
-            var clearPreview = Object.FindFirstObjectByType<ClearTimelinePreview>();
-            var intentRow = controller.TimelineActions.Single().OccupiedCells[0].Y;
-            var emptyRow = (intentRow + 1) % TimelineGrid.DefaultHeight;
 
-            Assert.That(controller.SelectCard("tornado"), Is.True);
-            Assert.That(controller.PreviewTimelineSelected(1, 0), Is.False);
-            Assert.That(clearPreview.IsInBounds, Is.False);
-            Assert.That(GameObject.Find("Slot-1-0").GetComponent<TimelineCellView>().DisplayText,
-                Is.EqualTo("!"));
-            Assert.That(
-                GameObject.Find("Status").GetComponent<Text>().text,
-                Is.EqualTo(CombatChineseText.ClearPositionOutOfBounds));
-
-            Assert.That(controller.PreviewTimelineSelected(0, emptyRow), Is.True);
-            Assert.That(clearPreview.ActiveCoordinates.Count, Is.EqualTo(12));
-            Assert.That(controller.TryPlaceSelected(0, emptyRow), Is.True);
-
-            Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2));
-            Assert.That(
-                GameObject.Find("TargetStatus").GetComponent<Text>().text,
-                Is.EqualTo(CombatChineseText.ClearRemoved(0)));
+            Assert.That(controller.SelectCard("tornado"), Is.False);
+            Assert.That(controller.CardHandHost.Cards.All(card => card.StableId != "tornado"),
+                Is.True);
         }
 
         [UnityTest]
@@ -303,7 +289,7 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(controller.BoardCamera.InputEnabled, Is.True);
             Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.False);
 
-            Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
+            Assert.That(controller.SelectCard("poison"), Is.True);
             Assert.That(controller.CardHand.InteractionState, Is.EqualTo(CardHandInteractionState.Selected));
             Assert.That(controller.CardPlayState, Is.EqualTo(CardPlaySessionState.Idle));
             Assert.That(controller.BoardCamera.InputEnabled, Is.False);
@@ -319,19 +305,20 @@ namespace TimeKey.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator SevenCardHand_UsesFrontImagesAndRegisteredEffectsControlInteraction()
+        public IEnumerator InitialFiveCardHand_UsesFrozenInstancesAndRegisteredArtwork()
         {
             yield return LoadSlice();
             var controller = GetController();
             var host = controller.CardHandHost;
 
             Assert.That(host, Is.Not.Null);
-            Assert.That(host.CardCount, Is.EqualTo(7));
+            Assert.That(host.CardCount, Is.EqualTo(5));
             Assert.That(host.Cards.Select(card => card.StableId),
                 Is.EqualTo(new[]
                 {
-                    "earthquake", "lighting", "poison", "recover", "tornado", "tower", "wind"
+                    "poison", "poison", "recover", "wind", "wind"
                 }));
+            Assert.That(host.Cards.Select(card => card.ViewId).Distinct().Count(), Is.EqualTo(5));
             foreach (var card in host.Cards)
             {
                 Assert.That(card.Artwork.sprite, Is.Not.Null, card.StableId);
@@ -340,26 +327,22 @@ namespace TimeKey.Tests.PlayMode
                 Assert.That(card.Artwork.preserveAspect, Is.True);
             }
 
-            host.GetCard(VerticalSliceController.LightingCardId).OnPointerClick(new PointerEventData(EventSystem.current)
+            var poisonCards = host.Cards.Where(card => card.StableId == "poison").ToArray();
+            poisonCards[0].OnPointerClick(new PointerEventData(EventSystem.current)
             {
                 button = PointerEventData.InputButton.Left
             });
-            host.GetCard(VerticalSliceController.EarthquakeCardId).OnPointerClick(new PointerEventData(EventSystem.current)
-            {
-                button = PointerEventData.InputButton.Left
-            });
-            host.GetCard("poison").OnPointerClick(new PointerEventData(EventSystem.current)
+            poisonCards[1].OnPointerClick(new PointerEventData(EventSystem.current)
             {
                 button = PointerEventData.InputButton.Left
             });
 
             Assert.That(controller.SelectedCardId, Is.EqualTo("poison"));
             Assert.That(host.SelectedStableId, Is.EqualTo("poison"));
-            Assert.That(host.GetCard(VerticalSliceController.LightingCardId).InteractionState,
+            Assert.That(host.SelectedViewId, Is.EqualTo(poisonCards[1].ViewId));
+            Assert.That(poisonCards[0].InteractionState,
                 Is.EqualTo(CardHandInteractionState.Idle));
-            Assert.That(host.GetCard(VerticalSliceController.EarthquakeCardId).InteractionState,
-                Is.EqualTo(CardHandInteractionState.Idle));
-            Assert.That(host.GetCard("poison").InteractionState,
+            Assert.That(poisonCards[1].InteractionState,
                 Is.EqualTo(CardHandInteractionState.Selected));
         }
 
@@ -368,6 +351,7 @@ namespace TimeKey.Tests.PlayMode
         {
             yield return LoadSlice();
             var controller = GetController();
+            AdvanceToSecondHand(controller);
             var center = new HexCoord(0, 0);
             var range = new[]
             {
@@ -446,6 +430,7 @@ namespace TimeKey.Tests.PlayMode
         {
             yield return LoadSlice();
             var controller = GetController();
+            AdvanceToSecondHand(controller);
 
             Assert.That(controller.TimelineOccupiedCellCount, Is.EqualTo(2), "Enemy intent is the only initial action.");
             Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
@@ -522,6 +507,16 @@ namespace TimeKey.Tests.PlayMode
             var controller = root.GetComponent<VerticalSliceController>();
             Assert.That(controller, Is.Not.Null);
             return controller;
+        }
+
+        private static void AdvanceToSecondHand(VerticalSliceController controller)
+        {
+            Assert.That(controller.SelectCard("recover"), Is.True);
+            Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
+            Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
+            Assert.That(controller.ResolveTimeline(), Is.Not.Null);
+            Assert.That(controller.BattleFlow.Phase, Is.EqualTo(2));
+            Assert.That(controller.BattleFlow.Hand, Has.Count.EqualTo(5));
         }
     }
 }

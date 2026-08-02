@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="13" result="Passed" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:38Z" duration="7.0737132">
+  <test-suite type="TestSuite" id="1088" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:38Z" duration="7.073713" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1072" name="TimeKey.Tests.PlayMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.PlayMode.dll" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:38Z" duration="7.067098" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="34528" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1073" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:38Z" duration="7.066499" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1074" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:38Z" duration="7.066244" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1075" name="PlayMode" fullname="TimeKey.Tests.PlayMode" runstate="Runnable" testcasecount="57" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:38Z" duration="7.066033" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1084" name="BattleFlow" fullname="TimeKey.Tests.PlayMode.BattleFlow" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.124073" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1063" name="BattleFlowPresenterTests" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.123250" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1065" name="Apply_IsIdempotentLocksInputAndRequestsRewardOnlyOnce" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests.Apply_IsIdempotentLocksInputAndRequestsRewardOnlyOnce" methodname="Apply_IsIdempotentLocksInputAndRequestsRewardOnlyOnce" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" seed="419145469" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.094514" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1064" name="Apply_RefreshesDeckRoundAndTimecoinsInChineseWithSilver" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests.Apply_RefreshesDeckRoundAndTimecoinsInChineseWithSilver" methodname="Apply_RefreshesDeckRoundAndTimecoinsInChineseWithSilver" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" seed="673464227" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.003367" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1066" name="Apply_VictoryAndDefeatRemainMutuallyExclusive" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests.Apply_VictoryAndDefeatRemainMutuallyExclusive" methodname="Apply_VictoryAndDefeatRemainMutuallyExclusive" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" seed="12977808" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.002269" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1067" name="SavedActionFrame_SurvivesHandViewDestruction" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests.SavedActionFrame_SurvivesHandViewDestruction" methodname="SavedActionFrame_SurvivesHandViewDestruction" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" seed="1647832154" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.014637" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1082" name="Cards" fullname="TimeKey.Tests.PlayMode.Cards" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:38Z" duration="6.940280" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1048" name="CardHandHostTests" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:32Z" duration="0.739410" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1049" name="Build_MapsOrderedIdsAndIsIdempotent" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.Build_MapsOrderedIdsAndIsIdempotent" methodname="Build_MapsOrderedIdsAndIsIdempotent" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="295365595" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.405641" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1052" name="DisabledHost_ConsumesPointersWithoutSelection" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.DisabledHost_ConsumesPointersWithoutSelection" methodname="DisabledHost_ConsumesPointersWithoutSelection" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="237193227" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.008359" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1051" name="DragEvents_BelongToOriginatingCardAndRestoreParent" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.DragEvents_BelongToOriginatingCardAndRestoreParent" methodname="DragEvents_BelongToOriginatingCardAndRestoreParent" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="315184979" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:31Z" duration="0.011296" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1053" name="RenderedTwoCardStates_FitThreeViewportsAndWriteEvidence" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.RenderedTwoCardStates_FitThreeViewportsAndWriteEvidence" methodname="RenderedTwoCardStates_FitThreeViewportsAndWriteEvidence" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="690006361" result="Passed" start-time="2026-08-02 06:22:31Z" end-time="2026-08-02 06:22:32Z" duration="0.304461" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1050" name="SelectingSecondCard_CancelsFirstAndRestoresBothPoses" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.SelectingSecondCard_CancelsFirstAndRestoresBothPoses" methodname="SelectingSecondCard_CancelsFirstAndRestoresBothPoses" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="1237626291" result="Passed" start-time="2026-08-02 06:22:32Z" end-time="2026-08-02 06:22:32Z" duration="0.007988" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1054" name="CardHandViewTests" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-02 06:22:32Z" end-time="2026-08-02 06:22:38Z" duration="6.200219" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1056" name="Drag_EmitsPhasesConsumesInputAndRestoresPose" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.Drag_EmitsPhasesConsumesInputAndRestoresPose" methodname="Drag_EmitsPhasesConsumesInputAndRestoresPose" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="2110578553" result="Passed" start-time="2026-08-02 06:22:32Z" end-time="2026-08-02 06:22:32Z" duration="0.358931" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1055" name="HoverSelectAndCancel_AreStableAndEmitOnce" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.HoverSelectAndCancel_AreStableAndEmitOnce" methodname="HoverSelectAndCancel_AreStableAndEmitOnce" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="316745336" result="Passed" start-time="2026-08-02 06:22:32Z" end-time="2026-08-02 06:22:33Z" duration="0.856798" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1058" name="RenderedStates_FitThreeViewportsAndHaveDistinctCardPixels" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.RenderedStates_FitThreeViewportsAndHaveDistinctCardPixels" methodname="RenderedStates_FitThreeViewportsAndHaveDistinctCardPixels" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="750251257" result="Passed" start-time="2026-08-02 06:22:33Z" end-time="2026-08-02 06:22:38Z" duration="4.966345" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1057" name="RepeatedBuild_DoesNotDuplicateHierarchyOrEventsAndStillBlocksPointers" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.RepeatedBuild_DoesNotDuplicateHierarchyOrEventsAndStillBlocksPointers" methodname="RepeatedBuild_DoesNotDuplicateHierarchyOrEventsAndStillBlocksPointers" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="864581215" result="Passed" start-time="2026-08-02 06:22:38Z" end-time="2026-08-02 06:22:38Z" duration="0.016444" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -6,6 +6,7 @@ using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Actions;
+using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Localization;
@@ -32,6 +33,8 @@ namespace TimeKey.Editor
             "Assets/_Project/Prefabs/Battle/UI/CardEffectFrame.prefab";
         public const string TimelineActionFramePrefabPath =
             "Assets/_Project/Prefabs/Battle/UI/TimelineActionFrame.prefab";
+        public const string BattleFlowPanelPrefabPath =
+            "Assets/_Project/Prefabs/Battle/BattleFlow/BattleFlowPanel.prefab";
         public const string GrassBlockPrefabPath = "Assets/_Project/Prefabs/Battle/Terrain/HexBlockGrass.prefab";
         public const string DirtBlockPrefabPath = "Assets/_Project/Prefabs/Battle/Terrain/HexBlockDirt.prefab";
         public const string HexColumnPrefabPath = "Assets/_Project/Prefabs/Battle/Terrain/HexColumn.prefab";
@@ -111,6 +114,13 @@ namespace TimeKey.Editor
                 AssetDatabase.LoadAssetAtPath<GameObject>(CardEffectFramePrefabPath);
             var timelineActionFramePrefab =
                 AssetDatabase.LoadAssetAtPath<GameObject>(TimelineActionFramePrefabPath);
+            var battleFlowPanelPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(BattleFlowPanelPrefabPath);
+            if (battleFlowPanelPrefab == null)
+            {
+                throw new InvalidOperationException(
+                    "BattleFlowPanel Prefab is missing from the production asset path.");
+            }
 
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             var root = scene.GetRootGameObjects().SingleOrDefault(value => value.name == "VerticalSliceRoot");
@@ -216,6 +226,21 @@ namespace TimeKey.Editor
             var statusText = CreateText(header, "Status", CombatChineseText.SelectCard, 20, TextAnchor.MiddleLeft,
                 new Vector2(22f, 42f), new Vector2(-22f, -8f));
 
+            var battleFlowObject = (GameObject)PrefabUtility.InstantiatePrefab(
+                battleFlowPanelPrefab,
+                scene);
+            battleFlowObject.name = "BattleFlowPanel";
+            battleFlowObject.transform.SetParent(hudRoot, false);
+            var battleFlowRect = battleFlowObject.GetComponent<RectTransform>();
+            Stretch(battleFlowRect);
+            ConfigureBattleFlowLayout(battleFlowObject.transform);
+            var battleFlowPresenter = battleFlowObject.GetComponent<BattleFlowPresenter>();
+            if (battleFlowPresenter == null)
+            {
+                throw new InvalidOperationException(
+                    "BattleFlowPanel Prefab is missing BattleFlowPresenter.");
+            }
+
             var timelineRoot = CreatePanel(
                 hudRoot,
                 "Timeline",
@@ -306,6 +331,11 @@ namespace TimeKey.Editor
 
             var hudPresenter = detailPanel.gameObject.AddComponent<CombatHudPresenter>();
             ConfigureHudPresenter(hudPresenter, statusText, targetText, resolveButton);
+            ConfigureBattleFlowPresenter(
+                battleFlowPresenter,
+                timelineCells,
+                resolveButton);
+            battleFlowRect.SetAsLastSibling();
             ConfigureTimelinePresenter(
                 timelinePresenter,
                 timelinePreview,
@@ -321,7 +351,8 @@ namespace TimeKey.Editor
                 timelinePresenter,
                 hudPresenter,
                 occupantPresenter,
-                interactionOverlayPresenter);
+                interactionOverlayPresenter,
+                battleFlowPresenter);
 
             ConfigureController(
                 controller,
@@ -1047,7 +1078,8 @@ namespace TimeKey.Editor
             TimelinePresenter timelinePresenter,
             CombatHudPresenter hudPresenter,
             CombatOccupantPresenter occupantPresenter,
-            CombatInteractionOverlayPresenter interactionOverlayPresenter)
+            CombatInteractionOverlayPresenter interactionOverlayPresenter,
+            BattleFlowPresenter battleFlowPresenter)
         {
             var serialized = new SerializedObject(binding);
             SetReference(serialized, "cardHandPresenter", cardHandPresenter);
@@ -1056,7 +1088,54 @@ namespace TimeKey.Editor
             SetReference(serialized, "hudPresenter", hudPresenter);
             SetReference(serialized, "occupantPresenter", occupantPresenter);
             SetReference(serialized, "interactionOverlayPresenter", interactionOverlayPresenter);
+            SetReference(serialized, "battleFlowPresenter", battleFlowPresenter);
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureBattleFlowPresenter(
+            BattleFlowPresenter presenter,
+            IReadOnlyList<TimelineCellView> timelineCells,
+            Button resolveButton)
+        {
+            var serialized = new SerializedObject(presenter);
+            var controls = serialized.FindProperty("combatInputControls");
+            controls.arraySize = timelineCells.Count + 1;
+            for (var index = 0; index < timelineCells.Count; index++)
+            {
+                controls.GetArrayElementAtIndex(index).objectReferenceValue =
+                    timelineCells[index].GetComponent<Button>();
+            }
+
+            controls.GetArrayElementAtIndex(timelineCells.Count).objectReferenceValue =
+                resolveButton;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(presenter);
+        }
+
+        private static void ConfigureBattleFlowLayout(Transform battleFlowRoot)
+        {
+            SetTopRight(battleFlowRoot, "DrawPileCount", new Vector2(-430f, -26f));
+            SetTopRight(battleFlowRoot, "HandCount", new Vector2(-314f, -26f));
+            SetTopRight(battleFlowRoot, "DiscardPileCount", new Vector2(-198f, -26f));
+            SetTopRight(battleFlowRoot, "RoundLabel", new Vector2(-356f, -62f));
+            SetTopRight(battleFlowRoot, "TimecoinsLabel", new Vector2(-160f, -62f));
+        }
+
+        private static void SetTopRight(
+            Transform root,
+            string childName,
+            Vector2 anchoredPosition)
+        {
+            var child = root.Find(childName) as RectTransform;
+            if (child == null)
+            {
+                throw new InvalidOperationException(
+                    "BattleFlowPanel is missing " + childName + ".");
+            }
+
+            child.anchorMin = Vector2.one;
+            child.anchorMax = Vector2.one;
+            child.anchoredPosition = anchoredPosition;
         }
 
         private static void ConfigureOccupantPresenter(

@@ -21,7 +21,7 @@ namespace TimeKey.Presentation.Cards
         private readonly List<CardHandView> _cards = new List<CardHandView>();
         private readonly Dictionary<string, CardHandView> _cardsById =
             new Dictionary<string, CardHandView>(StringComparer.Ordinal);
-        private string _selectedStableId;
+        private string _selectedViewId;
 
         public event Action<string> CardSelected;
 
@@ -33,7 +33,12 @@ namespace TimeKey.Presentation.Cards
 
         public IReadOnlyList<CardHandView> Cards => _cards;
 
-        public string SelectedStableId => _selectedStableId;
+        public string SelectedStableId =>
+            _selectedViewId != null && _cardsById.TryGetValue(_selectedViewId, out var selected)
+                ? selected.StableId
+                : null;
+
+        public string SelectedViewId => _selectedViewId;
 
         public int CardCount => _cards.Count;
 
@@ -53,15 +58,15 @@ namespace TimeKey.Presentation.Cards
             {
                 var model = viewModels[index] ??
                     throw new ArgumentException("Card view models cannot contain null entries.", nameof(viewModels));
-                if (!requestedIds.Add(model.StableId))
+                if (!requestedIds.Add(model.ViewId))
                 {
-                    throw new ArgumentException("Card stable IDs must be unique.", nameof(viewModels));
+                    throw new ArgumentException("Card view IDs must be unique.", nameof(viewModels));
                 }
 
-                if (!_cardsById.TryGetValue(model.StableId, out var view))
+                if (!_cardsById.TryGetValue(model.ViewId, out var view))
                 {
-                    view = CreateCardView(model.StableId);
-                    _cardsById.Add(model.StableId, view);
+                    view = CreateCardView(model.ViewId);
+                    _cardsById.Add(model.ViewId, view);
                 }
 
                 orderedCards.Add(view);
@@ -69,35 +74,50 @@ namespace TimeKey.Presentation.Cards
                 var isSelected = index == selectedIndex;
                 view.Build(isSelected == model.IsSelected
                     ? model
-                    : new CardViewModel(model.StableId, model.Artwork, isSelected, model.IsInteractable));
+                    : new CardViewModel(
+                        model.ViewId,
+                        model.StableId,
+                        model.Artwork,
+                        isSelected,
+                        model.IsInteractable,
+                        model.DisplayName,
+                        model.EffectDescription,
+                        model.PlacementDescription));
                 view.transform.SetParent(cardContainer, false);
                 view.transform.SetSiblingIndex(index);
             }
 
             for (var index = _cards.Count - 1; index >= 0; index--)
             {
-                if (requestedIds.Contains(_cards[index].StableId))
+                if (requestedIds.Contains(_cards[index].ViewId))
                 {
                     continue;
                 }
 
                 var stale = _cards[index];
                 _cards.RemoveAt(index);
-                _cardsById.Remove(stale.StableId);
+                _cardsById.Remove(stale.ViewId);
                 if (stale != null)
                 {
-                    Destroy(stale.gameObject);
+                    if (UnityEngine.Application.isPlaying)
+                    {
+                        Destroy(stale.gameObject);
+                    }
+                    else
+                    {
+                        DestroyImmediate(stale.gameObject);
+                    }
                 }
             }
 
             _cards.Clear();
             _cards.AddRange(orderedCards);
 
-            _selectedStableId = selectedIndex >= 0 && selectedIndex < viewModels.Count
-                ? viewModels[selectedIndex].StableId
+            _selectedViewId = selectedIndex >= 0 && selectedIndex < viewModels.Count
+                ? viewModels[selectedIndex].ViewId
                 : null;
             LayoutCards();
-            if (_selectedStableId != null && _cardsById.TryGetValue(_selectedStableId, out var selected))
+            if (_selectedViewId != null && _cardsById.TryGetValue(_selectedViewId, out var selected))
             {
                 selected.transform.SetAsLastSibling();
             }
@@ -110,12 +130,25 @@ namespace TimeKey.Presentation.Cards
                 return null;
             }
 
-            return _cardsById.TryGetValue(stableId, out var view) ? view : null;
+            if (_cardsById.TryGetValue(stableId, out var view))
+            {
+                return view;
+            }
+
+            for (var index = 0; index < _cards.Count; index++)
+            {
+                if (string.Equals(_cards[index].StableId, stableId, StringComparison.Ordinal))
+                {
+                    return _cards[index];
+                }
+            }
+
+            return null;
         }
 
         public bool RequestCancelSelectedCard()
         {
-            if (_selectedStableId == null || !_cardsById.TryGetValue(_selectedStableId, out var selected))
+            if (_selectedViewId == null || !_cardsById.TryGetValue(_selectedViewId, out var selected))
             {
                 return false;
             }
@@ -127,7 +160,7 @@ namespace TimeKey.Presentation.Cards
         {
             foreach (var card in _cards)
             {
-                card.SetInteractionState(card.StableId == _selectedStableId && state != CardHandInteractionState.Idle
+                card.SetInteractionState(card.ViewId == _selectedViewId && state != CardHandInteractionState.Idle
                     ? state
                     : state == CardHandInteractionState.Disabled
                         ? CardHandInteractionState.Disabled
@@ -145,9 +178,12 @@ namespace TimeKey.Presentation.Cards
 
         public void HighlightCard(string stableId, bool highlighted)
         {
-            if (stableId != null && _cardsById.TryGetValue(stableId, out var card))
+            for (var index = 0; index < _cards.Count; index++)
             {
-                card.SetMappedHighlight(highlighted);
+                if (string.Equals(_cards[index].StableId, stableId, StringComparison.Ordinal))
+                {
+                    _cards[index].SetMappedHighlight(highlighted);
+                }
             }
         }
 
@@ -218,14 +254,14 @@ namespace TimeKey.Presentation.Cards
 
         private void HandleCardSelected(string stableId)
         {
-            if (_selectedStableId != null &&
-                _selectedStableId != stableId &&
-                _cardsById.TryGetValue(_selectedStableId, out var previous))
+            if (_selectedViewId != null &&
+                _selectedViewId != stableId &&
+                _cardsById.TryGetValue(_selectedViewId, out var previous))
             {
                 previous.RequestCancelSelectedCard();
             }
 
-            _selectedStableId = stableId;
+            _selectedViewId = stableId;
             LayoutCards();
             if (_cardsById.TryGetValue(stableId, out var selected))
             {
@@ -237,9 +273,9 @@ namespace TimeKey.Presentation.Cards
 
         private void HandleCardCancelRequested(string stableId)
         {
-            if (string.Equals(_selectedStableId, stableId, StringComparison.Ordinal))
+            if (string.Equals(_selectedViewId, stableId, StringComparison.Ordinal))
             {
-                _selectedStableId = null;
+                _selectedViewId = null;
                 LayoutCards();
             }
 
@@ -269,7 +305,7 @@ namespace TimeKey.Presentation.Cards
                 width = Screen.width;
             }
 
-            var reserve = _selectedStableId == null ? 0f : selectedReservedExtent * 2f;
+            var reserve = _selectedViewId == null ? 0f : selectedReservedExtent * 2f;
             var spacing = _cards.Count <= 1
                 ? 0f
                 : Mathf.Clamp(
@@ -277,9 +313,9 @@ namespace TimeKey.Presentation.Cards
                     minimumSpacing,
                     maximumSpacing);
             var center = (_cards.Count - 1) * 0.5f;
-            var selectedIndex = _selectedStableId == null
+            var selectedIndex = _selectedViewId == null
                 ? -1
-                : _cards.FindIndex(card => card.StableId == _selectedStableId);
+                : _cards.FindIndex(card => card.ViewId == _selectedViewId);
             for (var index = 0; index < _cards.Count; index++)
             {
                 var cardRect = (RectTransform)_cards[index].transform;

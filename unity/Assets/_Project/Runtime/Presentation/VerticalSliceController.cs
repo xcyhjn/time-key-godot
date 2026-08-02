@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TimeKey.Application;
+using TimeKey.Application.BattleFlow;
 using TimeKey.Domain;
+using TimeKey.Domain.BattleFlow;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Localization;
@@ -66,12 +68,12 @@ namespace TimeKey.Presentation
         private GameObject _targetObject;
         private Material _targetMaterial;
         private BoardTileView _selectedTile;
-        private CardHandView _cardHandView;
         private CardHandHost _cardHandHost;
         private BoardRangePreview _boardRangePreview;
         private TimelinePlacementPreview _timelinePlacementPreview;
         private bool _initialized;
         private bool _viewsBound;
+        private long _settlementCommandSequence = 1;
 
         public int CurrentTargetHp => _state == null ? 0 : _state.TargetHp;
 
@@ -100,12 +102,34 @@ namespace TimeKey.Presentation
 
         public BoardOrbitCameraController BoardCamera => boardCamera;
 
-        public CardHandView CardHand => _cardHandView;
+        public CardHandView CardHand
+        {
+            get
+            {
+                if (_cardHandHost == null)
+                {
+                    return null;
+                }
+
+                var selected = _cardHandHost.GetCard(_cardHandHost.SelectedViewId);
+                return selected != null
+                    ? selected
+                    : _cardHandHost.Cards.Count > 0
+                        ? _cardHandHost.Cards[0]
+                        : null;
+            }
+        }
 
         public CardHandHost CardHandHost => _cardHandHost;
 
         public string SelectedCardId =>
             _applicationSession == null ? null : _applicationSession.Current.SelectedStableId;
+
+        public BattleFlowPresentationSnapshot BattleFlow =>
+            _applicationSession == null ? null : _applicationSession.BattleFlowCurrent;
+
+        public BattleFlowHookResult LastBattleFlowResult =>
+            _applicationSession == null ? null : _applicationSession.LastBattleFlowResult;
 
         public BoardRangePreview BoardRangePreview => _boardRangePreview;
 
@@ -168,13 +192,129 @@ namespace TimeKey.Presentation
 
             try
             {
-                var arranged = SelectCard(LightingCardId) &&
+                if (BattleFlow == null ||
+                    BattleFlow.Era != 1 ||
+                    BattleFlow.Phase != 1 ||
+                    BattleFlow.Timecoins != 0 ||
+                    BattleFlow.DrawPile.Count != 7 ||
+                    BattleFlow.Hand.Count != 5 ||
+                    BattleFlow.DiscardPile.Count != 0)
+                {
+                    throw new InvalidOperationException(
+                        "The Player smoke path did not start from the frozen deck and round state.");
+                }
+
+                var firstTurn = SelectCard("recover") &&
                     SelectTarget(TargetId) &&
                     TryPlaceSelected(0, 0);
+                if (!firstTurn || TimelineOccupiedCellCount != 5 || ResolveTimeline() == null)
+                {
+                    throw new InvalidOperationException(
+                        "The Player smoke path could not advance to the second frozen hand.");
+                }
+
+                if (BattleFlow.Phase != 2 ||
+                    BattleFlow.Timecoins != 31 ||
+                    BattleFlow.DrawPile.Count != 2 ||
+                    BattleFlow.Hand.Count != 5 ||
+                    BattleFlow.DiscardPile.Count != 5 ||
+                    LastBattleFlowResult == null ||
+                    LastBattleFlowResult.DrawResult == null ||
+                    LastBattleFlowResult.DrawResult.Shuffle.Occurred)
+                {
+                    throw new InvalidOperationException(
+                        "The Player smoke path did not complete the first formal turn exactly once.");
+                }
+
+                var arranged = SelectCard(LightingCardId) &&
+                    SelectTarget(TargetId);
+                var committedInstanceId = SelectedCardViewId;
+                arranged = arranged && TryPlaceSelected(0, 0);
+                var actionSnapshotSurvived = false;
+                for (var index = 0; index < TimelineActions.Count; index++)
+                {
+                    var action = TimelineActions[index];
+                    if (action.ActorKind == TimelineActorKind.Player &&
+                        string.Equals(
+                            action.CardStableId,
+                            LightingCardId,
+                            StringComparison.Ordinal) &&
+                        action.Display != null &&
+                        !string.IsNullOrWhiteSpace(action.Display.Title))
+                    {
+                        actionSnapshotSurvived = true;
+                        break;
+                    }
+                }
+
+                var committedInstanceLeftHand = true;
+                for (var index = 0; index < BattleFlow.Hand.Count; index++)
+                {
+                    if (string.Equals(
+                            BattleFlow.Hand[index].InstanceId.ToString(),
+                            committedInstanceId,
+                            StringComparison.Ordinal))
+                    {
+                        committedInstanceLeftHand = false;
+                        break;
+                    }
+                }
+
+                if (!arranged ||
+                    string.IsNullOrWhiteSpace(committedInstanceId) ||
+                    !committedInstanceLeftHand ||
+                    !actionSnapshotSurvived ||
+                    TimelineOccupiedCellCount != 3 ||
+                    BattleFlow.Hand.Count != 4 ||
+                    BattleFlow.DiscardPile.Count != 6)
+                {
+                    throw new InvalidOperationException(
+                        "The Player smoke path did not preserve action display identity after the card instance left hand.");
+                }
+
                 var snapshot = arranged ? ResolveTimeline() : null;
-                if (snapshot == null || snapshot.TargetHpAfter != 0 || snapshot.EnemyIntentResolved)
+                if (snapshot == null ||
+                    snapshot.TargetHpAfter != 0 ||
+                    snapshot.EnemyIntentResolved ||
+                    BattleFlow.Phase != 3 ||
+                    BattleFlow.Timecoins != 64 ||
+                    BattleFlow.DrawPile.Count != 7 ||
+                    BattleFlow.Hand.Count != 5 ||
+                    BattleFlow.DiscardPile.Count != 0 ||
+                    LastBattleFlowResult == null ||
+                    LastBattleFlowResult.DrawResult == null ||
+                    !LastBattleFlowResult.DrawResult.Shuffle.Occurred ||
+                    BattleFlow.Settlement.Outcome != BattleOutcome.VictorySettlement ||
+                    !BattleFlow.IsInputLocked ||
+                    BattleFlow.Settlement.RewardEntry == null)
                 {
                     throw new InvalidOperationException("The Player smoke path did not satisfy the frozen slice contract.");
+                }
+
+                var oppositeOutcome = ResolveBattleOutcome(BattleOutcome.Defeat);
+                if (oppositeOutcome.Succeeded ||
+                    oppositeOutcome.Failure != BattleSettlementFailure.OutcomeConflict)
+                {
+                    throw new InvalidOperationException(
+                        "The Player smoke path did not reject the opposite terminal outcome.");
+                }
+
+                var boundary = CreateBattleReturnBoundary();
+                if (!boundary.Succeeded ||
+                    boundary.Payload.Outcome != BattleOutcome.VictorySettlement ||
+                    boundary.Payload.Completion != BattleReturnCompletion.VictoryCompleted ||
+                    boundary.Payload.Era != 1 ||
+                    boundary.Payload.Phase != 3 ||
+                    boundary.Payload.Timecoins != 64 ||
+                    boundary.Payload.DeckStableIds.Count != 12 ||
+                    !string.Equals(
+                        boundary.Payload.BattleTag,
+                        "combat-vertical-slice",
+                        StringComparison.Ordinal) ||
+                    boundary.Payload.BattleSeed != FixtureSeed)
+                {
+                    throw new InvalidOperationException(
+                        "The Player smoke path did not produce the typed battle return boundary.");
                 }
 
                 Debug.Log("TIMEKEY_PLAYER_SMOKE_PASS");
@@ -296,6 +436,22 @@ namespace TimeKey.Presentation
             BoardCamera.InputEnabled = true;
             RefreshPresentation();
             return true;
+        }
+
+        public BattleSettlementResult ResolveBattleOutcome(BattleOutcome outcome)
+        {
+            EnsureBuilt();
+            var result = _applicationSession.TryResolveBattleOutcome(
+                checked(_settlementCommandSequence++),
+                outcome);
+            RefreshPresentation();
+            return result;
+        }
+
+        public BattleReturnResult CreateBattleReturnBoundary()
+        {
+            EnsureBuilt();
+            return _applicationSession.TryCreateBattleReturnBoundary();
         }
 
         public bool SelectTile(HexCoord coordinate)
@@ -661,7 +817,6 @@ namespace TimeKey.Presentation
 
         private void BuildInterface()
         {
-            _cardHandView = _cardHandHost.GetCard(LightingCardId);
         }
 
         private void CreateTile(HexCoord coordinate, int elevation)
@@ -706,9 +861,9 @@ namespace TimeKey.Presentation
 
         private void HandleCardCancelRequested(string stableId)
         {
-            var selectedStableId = SelectedCardId;
-            if (selectedStableId != null &&
-                string.Equals(stableId, selectedStableId, StringComparison.Ordinal))
+            var selectedViewId = SelectedCardViewId;
+            if (selectedViewId != null &&
+                string.Equals(stableId, selectedViewId, StringComparison.Ordinal))
             {
                 CancelSelectedCard();
             }
@@ -716,9 +871,9 @@ namespace TimeKey.Presentation
 
         private void HandleCardDragChanged(string stableId, Vector2 pointerPosition, CardDragPhase phase)
         {
-            var selectedStableId = SelectedCardId;
-            if (selectedStableId == null ||
-                !string.Equals(stableId, selectedStableId, StringComparison.Ordinal))
+            var selectedViewId = SelectedCardViewId;
+            if (selectedViewId == null ||
+                !string.Equals(stableId, selectedViewId, StringComparison.Ordinal))
             {
                 return;
             }
@@ -726,7 +881,7 @@ namespace TimeKey.Presentation
             if (phase == CardDragPhase.Started || phase == CardDragPhase.Moved)
             {
                 BoardCamera.InputEnabled = false;
-                SetStatus(CombatChineseText.CardHeld(stableId));
+                SetStatus(CombatChineseText.CardHeld(SelectedCardId));
             }
         }
 
@@ -795,6 +950,7 @@ namespace TimeKey.Presentation
             presentationBinding.TimelinePreviewRequested += HandleTimelinePointerEntered;
             presentationBinding.TimelinePreviewCleared += HandleTimelinePointerExited;
             presentationBinding.ResolveRequested += HandleResolveClicked;
+            presentationBinding.BattleRewardRequested += HandleBattleRewardRequested;
 
             _viewsBound = true;
         }
@@ -813,6 +969,7 @@ namespace TimeKey.Presentation
             presentationBinding.TimelinePreviewRequested -= HandleTimelinePointerEntered;
             presentationBinding.TimelinePreviewCleared -= HandleTimelinePointerExited;
             presentationBinding.ResolveRequested -= HandleResolveClicked;
+            presentationBinding.BattleRewardRequested -= HandleBattleRewardRequested;
             presentationBinding.Unbind();
 
             _viewsBound = false;
@@ -841,6 +998,41 @@ namespace TimeKey.Presentation
         private void HandleResolveClicked()
         {
             ResolveTimeline();
+        }
+
+        private void HandleBattleRewardRequested(BattleRewardEntry rewardEntry)
+        {
+            var currentReward = BattleFlow == null
+                ? null
+                : BattleFlow.Settlement.RewardEntry;
+            if (currentReward == null || rewardEntry == null ||
+                !string.Equals(
+                    currentReward.EntryStableId,
+                    rewardEntry.EntryStableId,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _applicationSession.TryClaimBattleReward(
+                checked(_settlementCommandSequence++));
+            RefreshPresentation();
+        }
+
+        private string SelectedCardViewId
+        {
+            get
+            {
+                if (_applicationSession == null)
+                {
+                    return null;
+                }
+
+                var current = _applicationSession.Current;
+                return current.SelectedCardInstanceId.HasValue
+                    ? current.SelectedCardInstanceId.Value.ToString()
+                    : current.SelectedStableId;
+            }
         }
 
         private void ValidateSerializedReferences()

@@ -85,6 +85,51 @@ namespace TimeKey.Tests.PlayMode.Cards
         }
 
         [UnityTest]
+        public IEnumerator DuplicateStableIds_KeepDistinctViewsAndEmitInstanceIdentity()
+        {
+            BuildRig();
+            var models = new[]
+            {
+                new CardViewModel(
+                    "battle/poison/0",
+                    "poison",
+                    _lightingSprite,
+                    false,
+                    true,
+                    "中毒",
+                    "施加中毒",
+                    "放置到时间轴"),
+                new CardViewModel(
+                    "battle/poison/1",
+                    "poison",
+                    _lightingSprite,
+                    false,
+                    true,
+                    "中毒",
+                    "施加中毒",
+                    "放置到时间轴")
+            };
+            _host.Build(models);
+            yield return null;
+
+            Assert.That(_host.CardCount, Is.EqualTo(2));
+            Assert.That(_host.Cards[0].StableId, Is.EqualTo("poison"));
+            Assert.That(_host.Cards[1].StableId, Is.EqualTo("poison"));
+            Assert.That(_host.Cards[0].ViewId, Is.EqualTo("battle/poison/0"));
+            Assert.That(_host.Cards[1].ViewId, Is.EqualTo("battle/poison/1"));
+            Assert.That(_host.GetCard("poison"), Is.SameAs(_host.Cards[0]));
+            Assert.That(_host.GetCard("battle/poison/1"), Is.SameAs(_host.Cards[1]));
+
+            string selectedViewId = null;
+            _host.CardSelected += value => selectedViewId = value;
+            _host.Cards[1].OnPointerClick(Pointer(PointerEventData.InputButton.Left));
+
+            Assert.That(selectedViewId, Is.EqualTo("battle/poison/1"));
+            Assert.That(_host.SelectedViewId, Is.EqualTo("battle/poison/1"));
+            Assert.That(_host.SelectedStableId, Is.EqualTo("poison"));
+        }
+
+        [UnityTest]
         public IEnumerator SelectingSecondCard_CancelsFirstAndRestoresBothPoses()
         {
             BuildRig();

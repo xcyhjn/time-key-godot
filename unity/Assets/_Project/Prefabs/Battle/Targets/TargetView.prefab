@@ -61,6 +61,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Occupants.CombatOccupantView
   statusAnchor: {fileID: 2768596808335453408}
+  healthLabel: {fileID: 0}
 --- !u!1 &2483074787887056243
 GameObject:
   m_ObjectHideFlags: 0

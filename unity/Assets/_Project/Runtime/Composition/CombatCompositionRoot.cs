@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using TimeKey.Application;
+using TimeKey.Application.BattleFlow;
 using TimeKey.Domain;
+using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Deck;
 using TimeKey.Domain.Intents;
 using TimeKey.Infrastructure.Cards;
 using TimeKey.Infrastructure.Effects;
@@ -60,13 +63,26 @@ namespace TimeKey.Composition
                 VerticalSliceController.FixtureSeed,
                 board);
             var timeline = new TimelineGrid();
+            var battleFlow = new BattleFlowNextTurnHook(
+                DeckState.CreateStarter(
+                    VerticalSliceController.FixtureSeed,
+                    "combat-vertical-slice"),
+                new BattleRoundLedger(),
+                new BattleSettlementState(
+                    "combat-vertical-slice",
+                    VerticalSliceController.FixtureSeed,
+                    new BattleRewardEntry(
+                        "combat-vertical-slice/acquire-card",
+                        BattleRewardKind.Acquire,
+                        "获得卡牌")));
             _session = new CombatApplicationSession(
                 catalog,
                 state,
                 timeline,
                 traceSink: traceSink,
                 actionDisplayCatalog: CombatChineseActionDisplayCatalog.Instance,
-                enemyIntentSourceCatalog: VerticalSliceEnemyIntentSourceCatalog.Instance);
+                enemyIntentSourceCatalog: VerticalSliceEnemyIntentSourceCatalog.Instance,
+                battleFlow: battleFlow);
             controller.Initialize(
                 _session,
                 state,

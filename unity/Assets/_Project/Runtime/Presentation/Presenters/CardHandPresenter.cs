@@ -76,12 +76,23 @@ namespace TimeKey.Presentation.Presenters
             }
 
             ValidateDependencies();
-            BuildCards(state.SelectedStableId);
+            BuildCards(state);
             cardHand.SetInteractionState(ToInteractionState(state.Phase));
             cardHand.ApplyVisualStateImmediate();
         }
 
-        private void BuildCards(string selectedStableId)
+        private void BuildCards(CombatSessionView state)
+        {
+            if (state != null && state.BattleFlow != null)
+            {
+                BuildBattleFlowCards(state);
+                return;
+            }
+
+            BuildCatalogCards(state == null ? null : state.SelectedStableId);
+        }
+
+        private void BuildCatalogCards(string selectedStableId)
         {
             var models = new List<CardViewModel>(_cards.Count);
             for (var index = 0; index < _cards.Count; index++)
@@ -95,6 +106,38 @@ namespace TimeKey.Presentation.Presenters
                     card.DisplayName,
                     card.EffectDescription,
                     card.PlacementDescription));
+            }
+
+            cardHand.Build(models);
+        }
+
+        private void BuildBattleFlowCards(CombatSessionView state)
+        {
+            var hand = state.BattleFlow.Hand;
+            var selectedId = state.SelectedCardInstanceId.HasValue
+                ? state.SelectedCardInstanceId.Value.ToString()
+                : null;
+            var models = new List<CardViewModel>(hand.Count);
+            for (var index = 0; index < hand.Count; index++)
+            {
+                var instance = hand[index];
+                var template = GetCard(instance.StableId);
+                if (template == null)
+                {
+                    throw new InvalidOperationException(
+                        "The hand references an unknown card: " + instance.StableId + ".");
+                }
+
+                var viewId = instance.InstanceId.ToString();
+                models.Add(new CardViewModel(
+                    viewId,
+                    template.StableId,
+                    template.Artwork,
+                    string.Equals(viewId, selectedId, StringComparison.Ordinal),
+                    template.IsInteractable && !state.BattleFlow.IsInputLocked,
+                    template.DisplayName,
+                    template.EffectDescription,
+                    template.PlacementDescription));
             }
 
             cardHand.Build(models);

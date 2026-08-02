@@ -26,7 +26,7 @@ namespace TimeKey.Presentation.Cards
     public sealed class CardViewModel
     {
         public CardViewModel(string stableId, Sprite artwork, bool isSelected, bool isInteractable)
-            : this(stableId, artwork, isSelected, isInteractable, stableId, string.Empty, string.Empty)
+            : this(stableId, stableId, artwork, isSelected, isInteractable, stableId, string.Empty, string.Empty)
         {
         }
 
@@ -38,12 +38,39 @@ namespace TimeKey.Presentation.Cards
             string displayName,
             string effectDescription,
             string placementDescription)
+            : this(
+                stableId,
+                stableId,
+                artwork,
+                isSelected,
+                isInteractable,
+                displayName,
+                effectDescription,
+                placementDescription)
         {
+        }
+
+        public CardViewModel(
+            string viewId,
+            string stableId,
+            Sprite artwork,
+            bool isSelected,
+            bool isInteractable,
+            string displayName,
+            string effectDescription,
+            string placementDescription)
+        {
+            if (string.IsNullOrWhiteSpace(viewId))
+            {
+                throw new ArgumentException("A stable card view ID is required.", nameof(viewId));
+            }
+
             if (string.IsNullOrWhiteSpace(stableId))
             {
                 throw new ArgumentException("A stable card ID is required.", nameof(stableId));
             }
 
+            ViewId = viewId;
             StableId = stableId;
             Artwork = artwork != null
                 ? artwork
@@ -56,6 +83,8 @@ namespace TimeKey.Presentation.Cards
         }
 
         public string StableId { get; }
+
+        public string ViewId { get; }
 
         public Sprite Artwork { get; }
 
@@ -120,6 +149,8 @@ namespace TimeKey.Presentation.Cards
         public event Action<CardViewModel, bool> CardHovered;
 
         public string StableId => _viewModel == null ? null : _viewModel.StableId;
+
+        public string ViewId => _viewModel == null ? null : _viewModel.ViewId;
 
         public CardHandInteractionState InteractionState { get; private set; }
 
@@ -200,15 +231,15 @@ namespace TimeKey.Presentation.Cards
                 return false;
             }
 
-            var stableId = _viewModel.StableId;
+            var viewId = _viewModel.ViewId;
             if (_isDragging)
             {
-                CardDragChanged?.Invoke(stableId, _lastDragScreenPosition, CardDragPhase.Cancelled);
+                CardDragChanged?.Invoke(viewId, _lastDragScreenPosition, CardDragPhase.Cancelled);
                 RestoreAfterDrag();
             }
 
             SetInteractionState(CardHandInteractionState.Idle);
-            CardCancelRequested?.Invoke(stableId);
+            CardCancelRequested?.Invoke(viewId);
             return true;
         }
 
@@ -278,7 +309,7 @@ namespace TimeKey.Presentation.Cards
             }
 
             SetInteractionState(CardHandInteractionState.Selected);
-            CardSelected?.Invoke(_viewModel.StableId);
+            CardSelected?.Invoke(_viewModel.ViewId);
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -303,7 +334,7 @@ namespace TimeKey.Presentation.Cards
             }
 
             MoveDragVisual(eventData);
-            CardDragChanged?.Invoke(_viewModel.StableId, eventData.position, CardDragPhase.Started);
+            CardDragChanged?.Invoke(_viewModel.ViewId, eventData.position, CardDragPhase.Started);
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -316,7 +347,7 @@ namespace TimeKey.Presentation.Cards
 
             _lastDragScreenPosition = eventData.position;
             MoveDragVisual(eventData);
-            CardDragChanged?.Invoke(_viewModel.StableId, eventData.position, CardDragPhase.Moved);
+            CardDragChanged?.Invoke(_viewModel.ViewId, eventData.position, CardDragPhase.Moved);
         }
 
         public void OnEndDrag(PointerEventData eventData)
@@ -328,7 +359,7 @@ namespace TimeKey.Presentation.Cards
             }
 
             _lastDragScreenPosition = eventData.position;
-            CardDragChanged?.Invoke(_viewModel.StableId, eventData.position, CardDragPhase.Ended);
+            CardDragChanged?.Invoke(_viewModel.ViewId, eventData.position, CardDragPhase.Ended);
             RestoreAfterDrag();
             SetInteractionState(_stateBeforeDrag);
         }

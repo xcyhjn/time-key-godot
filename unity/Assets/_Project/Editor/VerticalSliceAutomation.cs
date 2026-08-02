@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Composition;
 using TimeKey.Domain;
+using TimeKey.Domain.BattleFlow;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Actions;
+using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
@@ -26,6 +28,183 @@ namespace TimeKey.Editor
     public static class VerticalSliceAutomation
     {
         private const string ScenePath = "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity";
+
+        [MenuItem("Time Key/Capture Deck Battle Flow Gate D")]
+        public static void CaptureDeckBattleFlowGateD()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var evidenceDirectory = GetDeckBattleFlowGateDEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var captures = new List<CaptureStats>();
+
+            var controller = OpenInitializedSlice();
+            controller.SetBoardView(32f);
+            ValidateSimplifiedChinesePresentation(controller);
+            ValidateBattleFlow(
+                controller,
+                expectedPhase: 1,
+                expectedDraw: 7,
+                expectedHand: 5,
+                expectedDiscard: 0);
+            CaptureResponsive(controller, evidenceDirectory, "initial-empty-discard", captures);
+
+            var firstOccupied = PlayRecoverRound(controller);
+            ValidateBattleFlow(
+                controller,
+                expectedPhase: 2,
+                expectedDraw: 2,
+                expectedHand: 5,
+                expectedDiscard: 5);
+            if (controller.BattleFlow.Timecoins != 36 - firstOccupied)
+            {
+                throw new InvalidOperationException("The first formal turn awarded incorrect timecoins.");
+            }
+
+            CaptureResponsive(controller, evidenceDirectory, "round-2-draw-discard", captures);
+
+            if (!controller.SelectCard(VerticalSliceController.EarthquakeCardId) ||
+                !controller.SelectEarthquakeTarget(new HexCoord(0, 0)) ||
+                !controller.PreviewTimelineSelected(0, 0) ||
+                !controller.TryPlaceSelected(0, 0))
+            {
+                throw new InvalidOperationException(
+                    "The second-round Earthquake action could not be committed.");
+            }
+
+            if (UnityEngine.Object.FindObjectsByType<TimelineActionFrame>(
+                    FindObjectsInactive.Exclude).Length < 2)
+            {
+                throw new InvalidOperationException(
+                    "The committed action frame did not survive removal of its hand View.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "round-2-committed-action-frame-1920x1080.png",
+                1920,
+                1080));
+            var secondOccupied = controller.TimelineOccupiedCellCount;
+            controller.ResolveTimeline();
+            ValidateBattleFlow(
+                controller,
+                expectedPhase: 3,
+                expectedDraw: 7,
+                expectedHand: 5,
+                expectedDiscard: 0);
+            if (controller.LastBattleFlowResult == null ||
+                controller.LastBattleFlowResult.DrawResult == null ||
+                !controller.LastBattleFlowResult.DrawResult.Shuffle.Occurred ||
+                controller.BattleFlow.Timecoins !=
+                    (36 - firstOccupied) + (36 - secondOccupied))
+            {
+                throw new InvalidOperationException(
+                    "The second formal turn did not recycle the empty draw pile deterministically.");
+            }
+
+            CaptureResponsive(controller, evidenceDirectory, "round-3-post-shuffle-empty-discard", captures);
+
+            controller = OpenInitializedSlice();
+            controller.SetBoardView(32f);
+            PlayRecoverRound(controller);
+            if (!controller.SelectCard(VerticalSliceController.LightingCardId) ||
+                !controller.SelectTarget(VerticalSliceController.TargetId) ||
+                !controller.TryPlaceSelected(0, 0))
+            {
+                throw new InvalidOperationException("The Victory action could not be committed.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "victory-committed-action-frame-1920x1080.png",
+                1920,
+                1080));
+            controller.ResolveTimeline();
+            if (!controller.BattleFlow.IsInputLocked ||
+                controller.BattleFlow.Settlement.Outcome != BattleOutcome.VictorySettlement)
+            {
+                throw new InvalidOperationException("Victory did not settle and lock combat input.");
+            }
+
+            CaptureResponsive(controller, evidenceDirectory, "victory-reward-entry", captures);
+            var settlement = UnityEngine.Object.FindAnyObjectByType<BattleSettlementPresenter>();
+            if (settlement == null || !settlement.IsRewardVisible)
+            {
+                throw new InvalidOperationException("The typed Victory reward entry is not visible.");
+            }
+
+            settlement.GetComponentInChildren<Button>(true).onClick.Invoke();
+            if (!controller.BattleFlow.Settlement.IsRewardClaimed ||
+                !controller.CreateBattleReturnBoundary().Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "The Victory reward or typed return boundary did not complete.");
+            }
+
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                "victory-reward-claimed-1920x1080.png",
+                1920,
+                1080));
+
+            controller = OpenInitializedSlice();
+            controller.SetBoardView(32f);
+            var defeat = controller.ResolveBattleOutcome(BattleOutcome.Defeat);
+            if (!defeat.Succeeded || !controller.BattleFlow.IsInputLocked ||
+                controller.BattleFlow.Settlement.RewardEntry != null ||
+                !controller.CreateBattleReturnBoundary().Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "Defeat did not lock input without creating a reward.");
+            }
+
+            CaptureResponsive(controller, evidenceDirectory, "defeat-no-reward", captures);
+            WriteDeckBattleFlowGateDSummary(evidenceDirectory, captures);
+            Debug.Log("TIMEKEY_DECK_BATTLE_FLOW_GATE_D_CAPTURE_PASS");
+        }
+
+        [MenuItem("Time Key/Build Deck Battle Flow Gate D")]
+        public static void BuildDeckBattleFlowGateD()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var evidenceDirectory = GetDeckBattleFlowGateDEvidenceDirectory();
+            Directory.CreateDirectory(evidenceDirectory);
+            var buildDirectory = Path.GetFullPath(
+                Path.Combine(UnityEngine.Application.dataPath, "..", "Builds", "Windows"));
+            Directory.CreateDirectory(buildDirectory);
+            var playerPath = Path.Combine(buildDirectory, "TimeKeySlice.exe");
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = playerPath,
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.Development
+            });
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "Deck battle flow Windows Player build failed: " + report.summary.result);
+            }
+
+            CopySilverAttribution(buildDirectory);
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"target\": \"StandaloneWindows64\",");
+            builder.AppendLine("  \"developmentBuild\": true,");
+            builder.AppendLine("  \"font\": \"Silver\",");
+            builder.AppendLine("  \"buildResult\": \"" + report.summary.result + "\",");
+            builder.AppendLine("  \"buildBytes\": " + report.summary.totalSize + ",");
+            builder.AppendLine(
+                "  \"playerPath\": \"" + playerPath.Replace("\\", "\\\\") + "\"");
+            builder.AppendLine("}");
+            File.WriteAllText(
+                Path.Combine(evidenceDirectory, "build-summary.json"),
+                builder.ToString());
+            Debug.Log("TIMEKEY_DECK_BATTLE_FLOW_GATE_D_BUILD_PASS");
+        }
 
         [MenuItem("Time Key/Build Validate Capture Simplified Chinese")]
         public static void BuildValidateCaptureSimplifiedChinese()
@@ -982,6 +1161,70 @@ namespace TimeKey.Editor
             return controller;
         }
 
+        private static int PlayRecoverRound(VerticalSliceController controller)
+        {
+            if (!controller.SelectCard("recover") ||
+                !controller.SelectTarget(VerticalSliceController.TargetId) ||
+                !controller.TryPlaceSelected(0, 0))
+            {
+                throw new InvalidOperationException("The Recover round could not be committed.");
+            }
+
+            var occupiedCells = controller.TimelineOccupiedCellCount;
+            controller.ResolveTimeline();
+            return occupiedCells;
+        }
+
+        private static void ValidateBattleFlow(
+            VerticalSliceController controller,
+            int expectedPhase,
+            int expectedDraw,
+            int expectedHand,
+            int expectedDiscard)
+        {
+            var snapshot = controller.BattleFlow;
+            if (snapshot == null || snapshot.Era != 1 || snapshot.Phase != expectedPhase ||
+                snapshot.DrawPile.Count != expectedDraw ||
+                snapshot.Hand.Count != expectedHand ||
+                snapshot.DiscardPile.Count != expectedDiscard)
+            {
+                throw new InvalidOperationException(
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "Battle-flow snapshot mismatch: phase={0}, draw={1}, hand={2}, discard={3}.",
+                        snapshot == null ? -1 : snapshot.Phase,
+                        snapshot == null ? -1 : snapshot.DrawPile.Count,
+                        snapshot == null ? -1 : snapshot.Hand.Count,
+                        snapshot == null ? -1 : snapshot.DiscardPile.Count));
+            }
+        }
+
+        private static void CaptureResponsive(
+            VerticalSliceController controller,
+            string evidenceDirectory,
+            string prefix,
+            ICollection<CaptureStats> captures)
+        {
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                prefix + "-1280x720.png",
+                1280,
+                720));
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                prefix + "-1920x1080.png",
+                1920,
+                1080));
+            captures.Add(Capture(
+                controller,
+                evidenceDirectory,
+                prefix + "-2560x1080.png",
+                2560,
+                1080));
+        }
+
         private static void CaptureRemainingCardsFinalYawEvidence(
             string evidenceDirectory,
             ICollection<CaptureStats> captures)
@@ -1117,11 +1360,12 @@ namespace TimeKey.Editor
             }
 
             if (controller.CardHandHost == null ||
-                controller.CardHandHost.CardCount != 7 ||
+                controller.CardHandHost.CardCount != 5 ||
                 controller.CardHand == null ||
                 composition.CardCount != 7)
             {
-                throw new InvalidOperationException("The seven-card hand or composition catalog is incomplete.");
+                throw new InvalidOperationException(
+                    "The five-card formal hand or seven-card content catalog is incomplete.");
             }
 
             foreach (var card in controller.CardHandHost.Cards)
@@ -1276,6 +1520,31 @@ namespace TimeKey.Editor
                 "04-verification",
                 "evidence",
                 "remaining-cards-gate-d");
+        }
+
+        private static string GetDeckBattleFlowGateDEvidenceDirectory()
+        {
+            var repositoryRoot = Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
+            if (string.IsNullOrWhiteSpace(repositoryRoot))
+            {
+                repositoryRoot = Path.GetFullPath(
+                    Path.Combine(UnityEngine.Application.dataPath, "..", ".."));
+            }
+
+            if (!Directory.Exists(Path.Combine(repositoryRoot, "docs", "migration", "unity-3d")))
+            {
+                throw new DirectoryNotFoundException(
+                    "TIMEKEY_REPOSITORY_ROOT does not contain migration docs.");
+            }
+
+            return Path.Combine(
+                repositoryRoot,
+                "docs",
+                "migration",
+                "unity-3d",
+                "04-verification",
+                "evidence",
+                "deck-battle-flow-gate-d");
         }
 
         private static void CopySilverAttribution(string buildDirectory)
@@ -1642,6 +1911,40 @@ namespace TimeKey.Editor
             builder.AppendLine("  \"buildBytes\": " + report.summary.totalSize);
             builder.AppendLine("}");
             File.WriteAllText(Path.Combine(directory, "harness-summary.json"), builder.ToString());
+        }
+
+        private static void WriteDeckBattleFlowGateDSummary(
+            string directory,
+            IReadOnlyList<CaptureStats> captures)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine("  \"status\": \"passed\",");
+            builder.AppendLine("  \"seed\": 731,");
+            builder.AppendLine("  \"starterDeckCount\": 12,");
+            builder.AppendLine("  \"formalDrawCount\": 5,");
+            builder.AppendLine("  \"responsiveViewports\": [\"1280x720\", \"1920x1080\", \"2560x1080\"],");
+            builder.AppendLine("  \"multiTurnAdvance\": true,");
+            builder.AppendLine("  \"drawPileExhaustedAndRecycled\": true,");
+            builder.AppendLine("  \"emptyDiscardVisible\": true,");
+            builder.AppendLine("  \"deterministicShuffleObserved\": true,");
+            builder.AppendLine("  \"timecoinsUpdatedByDomain\": true,");
+            builder.AppendLine("  \"committedActionFrameSurvivedHandRemoval\": true,");
+            builder.AppendLine("  \"victoryRewardClaimedOnce\": true,");
+            builder.AppendLine("  \"defeatRewardEntryAbsent\": true,");
+            builder.AppendLine("  \"typedReturnBoundary\": true,");
+            builder.AppendLine("  \"font\": \"Silver\",");
+            builder.AppendLine("  \"screenshots\": [");
+            for (var index = 0; index < captures.Count; index++)
+            {
+                AppendCapture(builder, captures[index], index < captures.Count - 1);
+            }
+
+            builder.AppendLine("  ]");
+            builder.AppendLine("}");
+            File.WriteAllText(
+                Path.Combine(directory, "visual-summary.json"),
+                builder.ToString());
         }
 
         private static void AppendCapture(StringBuilder builder, CaptureStats stats, bool trailingComma)

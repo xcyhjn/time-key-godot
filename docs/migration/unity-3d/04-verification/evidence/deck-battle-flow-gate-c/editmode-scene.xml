@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.4303831">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="293" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.430383" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1298" name="TimeKey.Tests.EditMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.EditMode.dll" runstate="Runnable" testcasecount="252" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.424206" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="32660" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1299" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="252" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.422939" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1300" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="252" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.421231" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1301" name="EditMode" fullname="TimeKey.Tests.EditMode" runstate="Runnable" testcasecount="252" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.420325" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1312" name="Composition" fullname="TimeKey.Tests.EditMode.Composition" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.417548" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1201" name="CombatSceneAssetTests" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.416666" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1205" name="ControllerSource_DoesNotConstructStableSceneObjects" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests.ControllerSource_DoesNotConstructStableSceneObjects" methodname="ControllerSource_DoesNotConstructStableSceneObjects" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" seed="1019409312" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:42Z" duration="0.009807" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1203" name="ProductionPrefabs_AreSavedAssetsWithExpectedComponents" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests.ProductionPrefabs_AreSavedAssetsWithExpectedComponents" methodname="ProductionPrefabs_AreSavedAssetsWithExpectedComponents" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" seed="933978368" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:42Z" duration="0.042660" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1204" name="SceneAndTimelinePrefab_UseLicensedChineseFontAndLocalizedDefaults" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests.SceneAndTimelinePrefab_UseLicensedChineseFontAndLocalizedDefaults" methodname="SceneAndTimelinePrefab_UseLicensedChineseFontAndLocalizedDefaults" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" seed="167327639" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:42Z" duration="0.206386" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1202" name="SceneAsset_SerializesStableHierarchyAndAllControllerReferences" fullname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests.SceneAsset_SerializesStableHierarchyAndAllControllerReferences" methodname="SceneAsset_SerializesStableHierarchyAndAllControllerReferences" classname="TimeKey.Tests.EditMode.Composition.CombatSceneAssetTests" runstate="Runnable" seed="1561953962" result="Passed" start-time="2026-08-02 06:24:42Z" end-time="2026-08-02 06:24:43Z" duration="0.148915" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

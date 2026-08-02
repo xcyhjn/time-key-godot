@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Domain;
+using TimeKey.Domain.BattleFlow;
+using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
@@ -20,6 +22,7 @@ namespace TimeKey.Presentation.Bindings
         [SerializeField] private CombatHudPresenter hudPresenter = null;
         [SerializeField] private CombatOccupantPresenter occupantPresenter = null;
         [SerializeField] private CombatInteractionOverlayPresenter interactionOverlayPresenter = null;
+        [SerializeField] private BattleFlowPresenter battleFlowPresenter = null;
 
         private bool _isBound;
         private CombatSessionView _currentState;
@@ -31,6 +34,7 @@ namespace TimeKey.Presentation.Bindings
         public event Action<TimelineCell> TimelinePreviewRequested;
         public event Action TimelinePreviewCleared;
         public event Action ResolveRequested;
+        public event Action<BattleRewardEntry> BattleRewardRequested;
 
         public bool IsBound => _isBound;
 
@@ -66,6 +70,11 @@ namespace TimeKey.Presentation.Bindings
             timelinePresenter.ActionHovered += HandleActionHovered;
             hudPresenter.ResolveRequested += HandleResolveRequested;
             occupantPresenter.OccupantRemoved += HandleOccupantRemoved;
+            if (battleFlowPresenter != null)
+            {
+                battleFlowPresenter.SettlementPresenter.RewardRequested +=
+                    HandleBattleRewardRequested;
+            }
             _isBound = true;
         }
 
@@ -86,6 +95,11 @@ namespace TimeKey.Presentation.Bindings
             timelinePresenter.ActionHovered -= HandleActionHovered;
             hudPresenter.ResolveRequested -= HandleResolveRequested;
             occupantPresenter.OccupantRemoved -= HandleOccupantRemoved;
+            if (battleFlowPresenter != null)
+            {
+                battleFlowPresenter.SettlementPresenter.RewardRequested -=
+                    HandleBattleRewardRequested;
+            }
 
             cardHandPresenter.Unbind();
             timelinePresenter.Unbind();
@@ -106,6 +120,10 @@ namespace TimeKey.Presentation.Bindings
             boardRangePresenter.Refresh(state);
             timelinePresenter.Refresh(state);
             hudPresenter.Refresh(state);
+            if (battleFlowPresenter != null && state.BattleFlow != null)
+            {
+                battleFlowPresenter.Apply(state.BattleFlow);
+            }
             RestorePersistentDetail();
         }
 
@@ -218,6 +236,11 @@ namespace TimeKey.Presentation.Bindings
         private void HandleCardSelected(string stableId)
         {
             CardSelected?.Invoke(stableId);
+        }
+
+        private void HandleBattleRewardRequested(BattleRewardEntry rewardEntry)
+        {
+            BattleRewardRequested?.Invoke(rewardEntry);
         }
 
         private void HandleCardCancelled(string stableId)

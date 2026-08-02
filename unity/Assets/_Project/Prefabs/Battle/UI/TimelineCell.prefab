@@ -233,3 +233,6 @@ MonoBehaviour:
   row: 0
   button: {fileID: 334717455700794732}
   label: {fileID: 2677124769848106369}
+  hasDefaultAppearance: 0
+  defaultColor: {r: 1, g: 1, b: 1, a: 1}
+  defaultText:

@@ -11,6 +11,7 @@ namespace TimeKey.Domain
             new Dictionary<string, CombatOccupantState>(StringComparer.Ordinal);
         private readonly Dictionary<HexCoord, CombatOccupantState> _occupantsByCoordinate =
             new Dictionary<HexCoord, CombatOccupantState>();
+        private readonly int _targetMaxHp;
 
         public CombatSliceState(string targetId, int targetHp, int seed, int turn = 1)
             : this(targetId, targetHp, seed, new CombatBoardState(), turn)
@@ -69,6 +70,11 @@ namespace TimeKey.Domain
                         nameof(occupants));
                 }
             }
+
+            _targetMaxHp = _occupantsById.TryGetValue(TargetId, out var target) &&
+                           target.SupportsHealth
+                ? target.MaxHp
+                : 0;
         }
 
         public string TargetId { get; }
@@ -82,6 +88,8 @@ namespace TimeKey.Domain
                     : 0;
             }
         }
+
+        public int TargetMaxHp => _targetMaxHp;
 
         public int Seed { get; }
 

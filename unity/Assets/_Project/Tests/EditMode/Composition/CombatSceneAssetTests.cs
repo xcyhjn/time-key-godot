@@ -5,6 +5,7 @@ using TimeKey.Composition;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Actions;
+using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.Bindings;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.Localization;
@@ -47,6 +48,7 @@ namespace TimeKey.Tests.EditMode.Composition
             AssertPath(root.transform, "SliceCanvas/HUD/CardHandHost");
             AssertPath(root.transform, "SliceCanvas/HUD/EffectFrameHost");
             AssertPath(root.transform, "SliceCanvas/HUD/DetailPanel");
+            AssertPath(root.transform, "SliceCanvas/HUD/BattleFlowPanel");
 
             var controller = root.GetComponent<VerticalSliceController>();
             Assert.That(controller, Is.Not.Null);
@@ -80,10 +82,13 @@ namespace TimeKey.Tests.EditMode.Composition
             Assert.That(root.GetComponentInChildren<CombatHudPresenter>(true), Is.Not.Null);
             Assert.That(root.GetComponentInChildren<CombatOccupantPresenter>(true), Is.Not.Null);
             Assert.That(root.GetComponentInChildren<CombatInteractionOverlayPresenter>(true), Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<BattleFlowPresenter>(true), Is.Not.Null);
+            Assert.That(root.GetComponentInChildren<BattleSettlementPresenter>(true), Is.Not.Null);
 
             var bindingSerialized = new SerializedObject(binding);
             AssertReference(bindingSerialized, "occupantPresenter");
             AssertReference(bindingSerialized, "interactionOverlayPresenter");
+            AssertReference(bindingSerialized, "battleFlowPresenter");
 
             var compositionSerialized = new SerializedObject(composition);
             AssertReference(compositionSerialized, "controller");
@@ -128,6 +133,8 @@ namespace TimeKey.Tests.EditMode.Composition
             AssertPrefab<PoisonStatusView>("Assets/_Project/Prefabs/Battle/Status/PoisonStatus.prefab");
             AssertPrefab<CardEffectFrame>("Assets/_Project/Prefabs/Battle/UI/CardEffectFrame.prefab");
             AssertPrefab<TimelineActionFrame>("Assets/_Project/Prefabs/Battle/UI/TimelineActionFrame.prefab");
+            AssertPrefab<BattleFlowPresenter>(
+                "Assets/_Project/Prefabs/Battle/BattleFlow/BattleFlowPanel.prefab");
 
             var tower = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/_Project/Prefabs/Battle/Occupants/Tower.prefab");
@@ -181,6 +188,13 @@ namespace TimeKey.Tests.EditMode.Composition
             }
 
             foreach (var text in actionFrame.GetComponentsInChildren<Text>(true))
+            {
+                Assert.That(text.font, Is.EqualTo(font), text.name);
+            }
+
+            var battleFlowPanel = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Battle/BattleFlow/BattleFlowPanel.prefab");
+            foreach (var text in battleFlowPanel.GetComponentsInChildren<Text>(true))
             {
                 Assert.That(text.font, Is.EqualTo(font), text.name);
             }

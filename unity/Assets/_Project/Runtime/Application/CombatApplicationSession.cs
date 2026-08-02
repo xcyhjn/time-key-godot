@@ -648,6 +648,19 @@ namespace TimeKey.Application
             _phase = _turnLifecycle == null
                 ? CombatSessionPhase.Resolved
                 : CombatSessionPhase.Idle;
+            if (_battleFlow != null &&
+                BattleVictoryRule.IsSatisfied(_state.TargetHp, _state.TargetMaxHp))
+            {
+                var settlementSequence = _turnLifecycle.LastLifecycleResult.Sequence;
+                var settlement = _battleFlow.TryResolveOutcome(
+                    settlementSequence,
+                    BattleOutcome.VictorySettlement);
+                if (settlement.Succeeded)
+                {
+                    _phase = CombatSessionPhase.Resolved;
+                }
+            }
+
             RecordResolutionEffects(resolvedCard, stableId, target, origin, _lastResolution);
             return Success(
                 "resolve-timeline",
