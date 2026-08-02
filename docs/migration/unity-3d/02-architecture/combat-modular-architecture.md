@@ -1,6 +1,6 @@
 # Unity 局内战斗模块架构
 
-> 状态：Remaining Cards Gate D 已实现并通过验证
+> 状态：Wave 02B4 Gate D 已实现并通过验证
 > 最后验证日期：2026-08-02
 
 ## 依赖方向
@@ -109,12 +109,20 @@ Application 端口 `unity/Assets/_Project/Runtime/Application/Ports/ICombatTrace
 
 `CombatApplicationSession` 通过 `CombatInteractionMode.OrdinaryTimeline` 与 `TimelineClear` 区分流程。Wind/Tornado 的 Clear 只从 typed `ClearMask` 取得范围，经 `TimelineClearSession` 调用 `TimelineGrid.PreviewClear/TryClear`；它不创建普通 action，空清合法，任一格命中后按 action identity 去重并完整移除。对应决策见 `adr/0007-occupant-effects-and-independent-clear-session.md`。
 
-保存资产总数现为十个 Prefab：TimelineCell、CardView、两种 HexBlock、HexColumn、TargetView、Tower、PoisonStatus、CardEffectFrame 和 TimelineActionFrame。Remaining Cards 历史证据位于 `../04-verification/evidence/remaining-cards-gate-d/`，当前完成判定使用 turn-lifecycle Gate D。
+保存资产总数现为十一个 Prefab：TimelineCell、CardView、两种 HexBlock、HexColumn、TargetView、Tower、PoisonStatus、CardEffectFrame、TimelineActionFrame 和 BattleFlowPanel。Remaining Cards 与 02B3 为历史证据，当前完成判定使用 deck-battle-flow Gate D。
 
 R3 后仍保留的刻意边界是 `VerticalSliceController` 的 Unity 世界表现 facade。后续拆分只能在保留现有 Scene/Prefab 序列化引用、typed session 行为和渲染证据的前提下进行。
 
 ## Wave 02B3 统一生命周期与行动表现
 
-`CombatTurnLifecycleCoordinator` 现在是唯一回合编排入口：Timeline action-by-action resolve 后执行 building snapshot，再清 Timeline，然后执行 Poison 三 pass、02B4 no-op hook 和 enemy intent refresh。`CombatSliceState` 实现原子 occupant store；Tower、Poison 与死亡均输出 typed lifecycle change，Presentation 不直接修改 Domain。
+`CombatTurnLifecycleCoordinator` 现在是唯一回合编排入口：Timeline action-by-action resolve 后执行 building snapshot，再清 Timeline，然后执行 Poison 三 pass、`BattleFlowNextTurnHook` 和 enemy intent refresh。hook 只消费 EndTurn 开始冻结的 occupancy/hand/action snapshots，并按弃手、时间币、phase/Era、必要回洗、抽 5 的固定顺序执行。`CombatSliceState` 实现原子 occupant store；Tower、Poison 与死亡均输出 typed lifecycle change，Presentation 不直接修改 Domain。
 
 玩家 action 和 enemy intent 共享 action identity/presentation snapshot。`TimelinePresenter` 只维护 identity 到 `TimelineActionFrame` 的映射；`CombatInteractionOverlayPresenter`、`CardEffectFrame` 和 `BoardRangePresenter` 消费同一 display payload/source/target/range。两个 UI Prefab 和稳定 host 已保存到 Scene，动态对象只从 Prefab 创建。完整决策见 ADR 0008。
+
+## Wave 02B4 牌区与终局边界
+
+`DeckState` 拥有 deck/hand/discard 和确定性随机状态，`BattleRoundLedger` 拥有 Era/phase/timecoins，`BattleSettlementState` 拥有互斥 outcome、一次奖励与 typed return。`CombatApplicationSession` 只编排这些聚合，不允许 Presenter、Scene 或 View 改写结果。自动胜利使用纯 Domain `BattleVictoryRule` 的最大生命 10% 谓词。
+
+三种身份严格分离：stable card ID 表示内容，`CardInstanceId` 表示在三堆间移动的实体卡，`TimelineActionIdentity` 表示 preview/commit/resolve/clear/display 的行动。`CardHandPresenter` 以 instance ID 构建动态 View；卡离手后 action frame 继续消费保存的 display snapshot。
+
+`BattleFlowPanel` 与 Scene 中的稳定 Presenter/输入锁引用在 Play 前存在。BattleFlow/Settlement Presenter 只渲染 immutable snapshot，全部新增 uGUI Text 使用 Silver。完整决策见 ADR 0009，最终证据见 `../04-verification/evidence/deck-battle-flow-gate-d/`。

@@ -1,6 +1,6 @@
 # 已完成切片
 
-> 状态：截至 Wave 02B3 Gate D 已完成
+> 状态：截至 Wave 02B4 Gate D 已完成
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：Slice Definition of Done
@@ -121,3 +121,14 @@
 - action identity 贯通卡牌、玩家/敌人 frame、地图 range 和详情框双向 hover。
 - 七卡响应式状态、两个保存 UI Prefab、Scene host、Silver Text/TextMesh 完成。
 - Full EditMode `236/236`、graphical PlayMode `53/53`、12 张人工检查 PNG、Windows build 与 actual Player smoke 通过。
+
+## Wave 02B4：牌库、正式回合与终局
+
+完成日期：2026-08-02。
+
+- 12 张 starter deck 使用固定 seed 与唯一 `CardInstanceId`；稳定卡 ID、实体卡 ID、action identity 保持分离。
+- 正式抽弃/回洗路径为 `7/5/0 -> 2/5/5 -> 7/5/0`，phase `1 -> 2 -> 3`，时间币 `0 -> 31 -> 64`。
+- 02B3 runner 顺序未重写；battle-flow transaction 只占用保留 hook，并消费 EndTurn 开始时冻结的 occupancy/hand/action snapshots。
+- 最大生命 10% 胜利谓词、胜负互斥、输入锁、一次奖励入口/领取和 typed return boundary 完成。
+- BattleFlow HUD/结算 Prefab、动态 5 手牌、简体中文与 Silver 完成；18 张三视口/终局 PNG 逐图通过。
+- Full EditMode `300/300`、Direct3D12 PlayMode `61/61`、Windows build `Succeeded`（`211133001` bytes）和 actual Player smoke exit 0。

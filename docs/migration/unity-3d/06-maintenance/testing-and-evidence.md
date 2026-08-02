@@ -1,17 +1,17 @@
 # 测试与证据指南
 
-> 状态：Wave 02B3 Gate D 最终门禁已通过
+> 状态：Wave 02B4 Gate D 最终门禁已通过
 > Unity：6000.4.10f1
 
 ## 分层门禁
 
 | 层 | 真实入口 | 证明内容 |
 | --- | --- | --- |
-| Domain/EditMode | `unity/Assets/_Project/Tests/EditMode/**` | 坐标、时间轴、效果、快照、确定性与失败无副作用 |
-| Application/EditMode | `Tests/EditMode/Application/**`、`Diagnostics/**` | 命令顺序、typed target、取消、幂等和 trace 中立性 |
+| Domain/EditMode | `unity/Assets/_Project/Tests/EditMode/**` | 坐标、时间轴、牌区、回合资源、终局、效果、快照、确定性与失败无副作用 |
+| Application/EditMode | `Tests/EditMode/Application/**`、`Diagnostics/**` | 命令顺序、typed target、battle-flow hook、typed return、幂等和 trace 中立性 |
 | Infrastructure/EditMode | `Tests/Infrastructure/**` | 七卡 JSON、typed token、catalog、`front_image` 定位和效果注册 |
-| Scene/EditMode | `Tests/EditMode/Composition/CombatSceneAssetTests.cs` | Play 前层级、Inspector 引用、十个 Prefab、Silver Font/Material 与 action layer 接线 |
-| Presentation/PlayMode | `Tests/PlayMode/**` | Binding 生命周期、卡手、范围、普通/Clear Timeline、地形和四向选择 |
+| Scene/EditMode | `Tests/EditMode/Composition/CombatSceneAssetTests.cs` | Play 前层级、Inspector 引用、十一个 Prefab、Silver Font/Material、action 与 BattleFlow 接线 |
+| Presentation/PlayMode | `Tests/PlayMode/**` | Binding 生命周期、动态实体手牌、BattleFlow/settlement、范围、Timeline、地形和四向选择 |
 | Editor harness | `TimeKey.Editor.VerticalSliceAutomation.BuildValidateAndCapture` | 实际渲染、公共交互路径、像素检查与 Windows build |
 | Player smoke | `TimeKeySlice.exe -timekeySmokeQuit` | 构建产物端到端路径和退出码 |
 
@@ -23,7 +23,7 @@
 $UnityEditor = 'C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe'
 $UnityProjectAlias = 'D:\timekey-unity-731'
 $RepositoryRoot = (Get-Location).Path
-$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\remaining-cards-gate-d'
+$EvidenceDirectory = Join-Path $RepositoryRoot 'docs\migration\unity-3d\04-verification\evidence\deck-battle-flow-gate-d'
 $env:ALLUSERSPROFILE = $env:ProgramData
 $env:TIMEKEY_REPOSITORY_ROOT = $RepositoryRoot
 
@@ -35,7 +35,7 @@ $Arguments = @('-projectPath',$UnityProjectAlias,'-batchmode','-runTests','-test
 $Process = Start-Process $UnityEditor -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
 if ($Process.ExitCode -ne 0) { throw "PlayMode failed: $($Process.ExitCode)" }
 
-$Arguments = @('-projectPath',$UnityProjectAlias,'-batchmode','-executeMethod','TimeKey.Editor.VerticalSliceAutomation.BuildValidateAndCapture','-quit','-logFile',(Join-Path $EvidenceDirectory 'harness.log'))
+$Arguments = @('-projectPath',$UnityProjectAlias,'-batchmode','-executeMethod','TimeKey.Editor.VerticalSliceAutomation.CaptureDeckBattleFlowGateD','-quit','-logFile',(Join-Path $EvidenceDirectory 'capture.log'))
 $Process = Start-Process $UnityEditor -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
 if ($Process.ExitCode -ne 0) { throw "Harness failed: $($Process.ExitCode)" }
 
@@ -45,7 +45,7 @@ $Process = Start-Process $Player -ArgumentList @('-batchmode','-timekeySmokeQuit
 if ($Process.ExitCode -ne 0 -or -not (Select-String $PlayerLog 'TIMEKEY_PLAYER_SMOKE_PASS' -Quiet)) { throw 'Player smoke failed' }
 ```
 
-Unity 退出码不足以证明测试执行；还要解析 XML 根 `test-run`，确认 `total=passed`、`failed=0` 且 `total>0`。Gate D 最终结果为 full EditMode `152/152`、full PlayMode `38/38`；Windows build `Succeeded`、`207171486` bytes，Player 退出码 0 且 smoke marker 存在。
+Unity 退出码不足以证明测试执行；还要解析 XML 根 `test-run`，确认 `total=passed`、`failed=0` 且 `total>0`。02B4 Gate D 最终结果为 full EditMode `300/300`、Direct3D12 PlayMode `61/61`；Windows build `Succeeded`、`211133001` bytes，Player 退出码 0 且 smoke marker 恰好一次。
 
 ## 视觉与继承
 
@@ -72,3 +72,14 @@ TimeKey.Editor.VerticalSliceAutomation.BuildTurnLifecycleGateD
 ```
 
 Player 使用 `TimeKeySlice.exe -batchmode -nographics -timekeySmokeQuit -logFile <path>`，同时要求 exit 0 与 `TIMEKEY_PLAYER_SMOKE_PASS`。证据目录保存 XML/JSON/PNG/人工总结；Unity 日志仍不提交。Silver TextMesh 资产测试必须同时断言 Font 和 sharedMaterial。
+
+## Wave 02B4 命令与结果
+
+阶段 harness/build 入口：
+
+```text
+TimeKey.Editor.VerticalSliceAutomation.CaptureDeckBattleFlowGateD
+TimeKey.Editor.VerticalSliceAutomation.BuildDeckBattleFlowGateD
+```
+
+最终只提交 `editmode-final.xml`、`playmode-final.xml`、18 张 PNG、三个 JSON、`visual-review.md` 与 `verification-summary.md`。Player marker 前必须断言 `7/5/0 -> 2/5/5 -> 7/5/0`、phase/timecoins、确定性回洗、card-instance/action identity 分离、Victory 输入锁、相反 outcome conflict 与 typed return；项目程序集 SHA-256 记录在 `player-smoke-summary.json`。

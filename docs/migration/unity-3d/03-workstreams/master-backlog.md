@@ -1,8 +1,8 @@
 # Unity 3D 迁移总待办
 
-> 状态：Wave 02B3 已完成；下一阶段为 Wave 02B4 牌库与正式战斗流程
+> 状态：Wave 02B4 已完成；下一阶段为 Combat Shell 与 Scene Flow
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-02
 > 证据来源：迁移路线图、风险登记、首切片验收契约
 
 ## Wave 00：评估
@@ -32,7 +32,7 @@
 - [x] Wave 02A：每层 `0.32` 的真实六边形 mesh/collider 堆叠。
 - [x] Wave 02A：Blender 草地/裸土 FBX、可复现源文件、几何检查和 Unity 集成。
 - [x] Wave 02A：原 `center_altar.png` 世界 billboard，四向可见且可选。
-- [ ] Wave 02B：完整卡牌效果、敌方/建筑行动、胜负与奖励入口。
+- [x] Wave 02B：完整卡牌效果、敌方/建筑行动、胜负与奖励入口。
 - [x] Wave 02B1：原 `lighting.png`/牌背接入，底部卡牌 idle/hover/selected/cancel 状态。
 - [x] Wave 02B1：非变异时间轴 `CanPlace`、CardPlaySession 与 EditMode 失败路径。
 - [x] Wave 02B1：3D `effect_range` 投影、单格时间轴 valid/invalid 预览与镜头输入互斥。
@@ -40,11 +40,11 @@
 - [x] Wave 02B2A：七卡异构 schema、七张原卡面与真实 fixture 解析。
 - [x] Wave 02B2A：两卡手牌、`earthquake +2` 半径 1 范围、两格时间轴 shape 与真实 `0.32` 两层增量闭环。
 - [x] Wave 02B2A：升高后 mesh/renderer/collider/top bounds/occupant anchor 同步，四向仍可选择。
-- [ ] Wave 02B2A 后置门禁：把稳定 Camera/Canvas/HUD/Timeline/CardHand/Board 结构保存为可维护 Scene/Prefab，并冻结效果扩展接口与继承证据账本。
-- [ ] Wave 02B2B：recover/poison/built 领域效果与最小局内表现；塔行动仍不接入。
-- [ ] Wave 02B2C：wind/tornado 即时 clear 会话、完整 action 移除和专用时间轴预览。
-- [ ] Wave 02B3：敌方/建筑行动、意图优先级/重判、塔自损与 poison 回合开始状态。
-- [ ] Wave 02B4：抽弃牌、回合、时间币、胜负和局内奖励入口。
+- [x] Wave 02B2A 后置门禁：把稳定 Camera/Canvas/HUD/Timeline/CardHand/Board 结构保存为可维护 Scene/Prefab，并冻结效果扩展接口与继承证据账本。
+- [x] Wave 02B2B：recover/poison/built 领域效果与最小局内表现。
+- [x] Wave 02B2C：wind/tornado 即时 clear 会话、完整 action 移除和专用时间轴预览。
+- [x] Wave 02B3：敌方/建筑行动、意图优先级/重判、塔自损与 poison 回合开始状态。
+- [x] Wave 02B4：抽弃牌、回合、时间币、胜负和局内奖励入口。
 - [ ] Wave 03：暂停；局外地图和流程保持 Godot 现状。
 - [ ] Wave 04：教程、中文字体、音频、VFX 和授权资产。
 - [ ] Wave 05：平台冻结、性能预算、存档升级和发布构建。
@@ -58,4 +58,12 @@
 - [x] Tower 100→50→Remove、Poison 三 pass 与原子死亡同步。
 - [x] EditMode `236/236`、PlayMode `53/53`、build/Player/视觉/Git Gate D。
 
-Wave 02B4 按 `00-bootstrap/NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md` 实现 deck/discard/draw/shuffle、时间币、正式 turn advance、胜负和奖励入口，不重写 02B3 lifecycle。
+## Wave 02B4：牌库与正式战斗流程
+
+- [x] 12 张 starter deck、唯一 CardInstanceId、固定 seed 与确定性回洗。
+- [x] `7/5/0 -> 2/5/5 -> 7/5/0` 正式抽弃牌与 phase `1 -> 2 -> 3`。
+- [x] 按 pre-clear occupied cells 结算时间币，实际路径 `0 -> 31 -> 64`。
+- [x] Victory/Defeat 互斥、10% 胜利阈值、输入锁、一次奖励入口和 typed return boundary。
+- [x] Full EditMode `300/300`、graphical PlayMode `61/61`、18 张 PNG、Windows build 与 actual Player smoke。
+
+下一阶段按 `00-bootstrap/NEXT_STAGE_COMBAT_SHELL_AND_SCENE_FLOW_PROMPT.md` 继续；不得重写本阶段的 deck、lifecycle、typed outcome/return、Silver 或 Scene/Prefab 契约。

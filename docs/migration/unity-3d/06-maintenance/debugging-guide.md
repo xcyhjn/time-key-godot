@@ -1,6 +1,6 @@
 # 局内战斗调试指南
 
-> 状态：适用于 Wave 02B3 Gate D
+> 状态：适用于 Wave 02B4 Gate D
 
 ## 调用链
 
@@ -12,7 +12,8 @@ CardHandHost / TimelineCell / world raycast
   -> CombatApplicationSession
   -> CardPlaySession 或 TimelineClearSession + TimelineGrid + registered Domain handlers
   -> CombatCommandResult / CombatSessionView / ResolutionSnapshot / TimelineClearResult
-  -> presenters refresh HUD, range, timeline, world columns and occupant/status views
+  -> CombatTurnLifecycleCoordinator -> BattleFlowNextTurnHook
+  -> presenters refresh hand, BattleFlow/Settlement HUD, range, timeline, world and occupant/status views
   -> optional ICombatTraceSink
 ```
 
@@ -31,6 +32,8 @@ Composition 入口是 `Runtime/Composition/CombatCompositionRoot.cs`。它创建
 - Tower/Poison：先看 `OccupantEffectResults` 的 runtime ID、coordinate、creation/HP/stacks before/after，再看 `CombatOccupantPresenter` 的 anchor、Prefab registration 和 status View；不要从 GameObject 反推规则状态。
 - Wind/Tornado：先看 `InteractionMode`、`ClearPreview.Cells/HitActions` 与 `ClearResult.RemovedActions`，再看 `ClearTimelinePreview` marker 和 `TimelinePresenter.ApplyClearResult()`；不得从 label 反推占用。
 - 资源错误：`CardJsonAdapter.Parse`、`CardContentCatalog`、`CardContentEntry.ArtworkResourcePath` 和 Composition 的 `Resources.Load<Sprite>`。
+- 牌区/回合错误：先看 EndTurn 冻结的 occupancy/hand/action snapshots，再看 `LastBattleFlowResult` 的 discard/timecoin/advance/shuffle/draw；不要在 clear 后重算占格。
+- 终局错误：看 `BattleSettlementResult` 的 sequence、outcome 和 failure。相反结果应为 `OutcomeConflict`；奖励与 return 只通过 typed command，不直接改 Presenter。
 
 ## 常见故障
 
@@ -56,3 +59,9 @@ Gate D 的一次全量 PlayMode 暴露了可复用的 Scene 夹具问题：当 B
 enemy intent 先检查 source catalog snapshot，再检查 scheduler seed/priority/shape，最后看 resolver 的 invalid reason 或 `UnsupportedSourceCommand`。地图与 Timeline 结果不同表示 Presentation 没消费同一 snapshot，不能在某一侧补算目标。
 
 Tower/Poison 数值正确但 View 错误时检查 `LifecycleOccupantChangeResult`、Presenter 的 sequence/phase 幂等键、Prefab runtime ID 和 status anchor。world TextMesh 不可见时同时检查 Silver Font 与 MeshRenderer material。最终复现命令和截图入口见 `testing-and-evidence.md`。
+
+## Deck/BattleFlow 排错
+
+同 stable ID 卡牌消失或合并时，检查 `CardInstanceId -> CardViewModel.ViewId`，不要把内容 ID 当 View key。重复 sequence 必须返回原结果或 typed conflict，不能再次弃手、发币或推进。抽牌不守恒时逐步核对 before/after counts 与 moved instance IDs；只有 deck 空且 discard 非空时允许一次回洗。
+
+胜利阈值只看 `BattleVictoryRule(currentHp, maximumHp)`；不要回退到绝对 HP 或 UI 文本。终局后仍能选卡时检查 `BattleFlow.IsInputLocked`、Presenter 的交互控件列表和 Session `Resolved` phase。最终 Player smoke 覆盖这条链，原始值见 `player-smoke-summary.json`。

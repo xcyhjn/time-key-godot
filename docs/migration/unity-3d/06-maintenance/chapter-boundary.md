@@ -1,12 +1,12 @@
 # 章节与局内边界
 
-> 状态：Godot 局外继续权威；Unity 桥接未实现
+> 状态：Unity typed battle return boundary 已实现；跨引擎 Scene bridge 未实现
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-02
 
 ## 责任边界
 
-Unity 只负责一场局内战斗。地图揭示、房间上下文、奖励消费、章节进度与 active room 清理仍由 Godot 拥有。本阶段不添加 Unity `SceneManager` 章节服务，不迁移局外流程，也不改变 Godot 权威 payload 语义。
+Unity 只负责一场局内战斗。02B4 已在纯 Domain/Application 边界生成 typed battle return，包含 outcome、Era/phase/timecoins、deck snapshot、battle tag 与 seed；这不是跨引擎桥接。地图揭示、房间上下文、完整奖励消费、章节进度与 active room 清理仍由 Godot 拥有。本阶段不添加 Unity `SceneManager` 章节服务，也不改变 Godot 权威 payload 语义。
 
 ## 当前权威入口
 
@@ -16,7 +16,7 @@ Unity 只负责一场局内战斗。地图揭示、房间上下文、奖励消�
 
 ## 未来 Unity 桥接的最小修改面
 
-桥接实施前必须先冻结带版本的纯数据 DTO，再在 Composition/Infrastructure 边界进行转换。Unity Domain、Application 和 Presentation 不得解析 Godot 场景字符串，Godot 也不得依赖 Unity `GameObject`、Prefab 或 asmdef 类型。
+桥接实施时以 02B4 的 `BattleReturnPayload` 为 Unity 内部权威结果，再冻结带版本的跨引擎纯数据 DTO，并只在 Composition/Infrastructure 边界转换。Unity Domain、Application 和 Presentation 不得解析 Godot 场景字符串，Godot 也不得依赖 Unity `GameObject`、Prefab 或 asmdef 类型。
 
 一次完整桥接只包含：
 
@@ -27,7 +27,7 @@ Unity 只负责一场局内战斗。地图揭示、房间上下文、奖励消�
 
 ## 验证与调试
 
-当前没有 Unity 桥接资产或 Inspector 引用可编辑，也没有独立的跨引擎自动化测试；不得将此文档当作“桥接已完成”的证据。修改边界前至少执行：
+当前有 Unity typed return 的 Domain/Application/Player 测试，但没有跨引擎桥接资产、Inspector 引用或独立自动化；不得把 `player-smoke-summary.json` 当作“局外桥接已完成”的证据。修改边界前至少执行：
 
 ```powershell
 & 'D:\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe' --path . --editor --headless --quit --verbose
@@ -40,4 +40,4 @@ Unity 只负责一场局内战斗。地图揭示、房间上下文、奖励消�
 
 ## 回滚
 
-桥接仍未实现，当前回滚方式是保留 Godot 现有 parser/builder/controller 不变。未来变更必须以单一目的提交加入桥接；回滚时移除新增适配层和接线，不覆盖 Godot 存档、用户资源或原 payload 处理。
+跨引擎 bridge 仍未实现，当前回滚方式是保留 Godot 现有 parser/builder/controller 与 Unity typed return 不变。未来变更必须以单一目的提交加入桥接；回滚时移除新增适配层和接线，不覆盖 Godot 存档、用户资源或原 payload 处理。

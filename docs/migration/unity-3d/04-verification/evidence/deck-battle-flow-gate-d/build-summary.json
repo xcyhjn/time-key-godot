@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "target": "StandaloneWindows64",
+  "developmentBuild": true,
+  "font": "Silver",
+  "buildResult": "Succeeded",
+  "buildBytes": 211133001,
+  "playerPath": "D:\\timekey-unity-731\\Builds\\Windows\\TimeKeySlice.exe"
+}

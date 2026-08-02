@@ -9,13 +9,15 @@
 - 时间轴上的敌方意图、卡牌行动与清除命中标记；
 - Scene 默认文本、TimelineCell Prefab 动态文本字体；
 - 七张当前卡牌的显示名和既有中文卡面美术。
+- 牌库/手牌/弃牌、纪元/阶段、时间币、胜负、奖励和领取状态。
 
 当前切片没有对白、配音、字幕、设置页、教程页或商店界面，因此没有对应的本地化资产。Godot 局外流程不在本阶段范围内。
 
 ## 文案来源
 
-玩家可见的运行时文案集中在
-`unity/Assets/_Project/Runtime/Presentation/Localization/CombatChineseText.cs`。
+玩家可见的通用战斗文案集中在
+`unity/Assets/_Project/Runtime/Presentation/Localization/CombatChineseText.cs`，牌区、资源、胜负与奖励文案集中在
+`unity/Assets/_Project/Runtime/Presentation/BattleFlow/BattleFlowChineseText.cs`。
 Scene/Prefab 的默认文本由
 `Time Key/Author Simplified Chinese Localization` 编辑器命令从同一目录写入。
 
@@ -39,6 +41,9 @@ Scene/Prefab 的默认文本由
 | timeline | 时间轴 | 行动排布区域 |
 | clear | 清除 | 移除完整时间轴行动 |
 | hit | 命中 | 清除预览覆盖已有行动 |
+| draw/hand/discard | 牌库/手牌/弃牌 | BattleFlow 三个牌区 |
+| era/phase/timecoins | 纪元/阶段/时间币 | 正式回合资源 |
+| victory/defeat | 胜利/失败 | 互斥终局状态 |
 
 ## 字体与许可
 
@@ -50,8 +55,9 @@ Godot 现有 ARK Pixel 字体的授权仍未确认，因此本阶段没有复制
 
 ## 维护规则
 
-1. 新增玩家可见文案时，先在 `CombatChineseText` 中定义，再由 Presenter/Controller 引用。
+1. 新增玩家可见文案时，通用战斗文本放在 `CombatChineseText`，牌区/资源/终局文本放在 `BattleFlowChineseText`，再由 Presenter 引用。
 2. 新卡牌必须补齐 `GetCardName` 和 `GetTimelineLabel` 的测试用例，不允许在界面回退显示 stable ID。
 3. 新 Scene 或 UI Prefab 必须使用 Silver 字体；发布前复核项目预算门槛和署名展示位置。
 4. 验收至少包含 EditMode、PlayMode、Windows Build、Player smoke，以及 1280x720、1920x1080、2560x1080 的实际截图检查。
 5. 截图证据写入 `docs/migration/unity-3d/04-verification/evidence/simplified-chinese-localization/`，不覆盖历史 Gate 证据。
+6. 修改 `BattleFlowPanel` 时同时检查所有 uGUI Text 的 Silver 引用，以及 Victory/Defeat/claimed 三种状态在三视口中无 tofu、裁切或重叠。

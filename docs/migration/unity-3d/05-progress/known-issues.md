@@ -25,5 +25,6 @@
 | MIG-016 | R2 Controller 曾解析两张 fixture、加载 Resources 卡图并按两卡刷新 hand | 已解决：共享 Controller 不再是新增普通卡的路由点，`Presentation -> Infrastructure` 临时依赖已移除 | R3 由 `CardContentCatalog`/effect registry 提供七卡内容边界，`CombatCompositionRoot` 统一装配；扩展测试已通过 |
 | MIG-017 | R2 trace 曾缺少 effect kind 与 before/after | 已解决：结算日志可直接定位 effect 与值变化 | R3 已扩展 `CombatTraceEntry` 并加入可关闭 Unity sink；sink 中立性与 before/after 测试已通过 |
 | MIG-018 | Unity 曾只有无效果的固定 enemy intent marker | 已解决固定 marker 与跨层映射问题；仍无新增敌人内容 | 02B3 已替换为确定性 source catalog/application service、frame/tooltip/map 映射和 lifecycle refresh；新增敌人按 `06-maintenance/add-enemy.md` 登记 |
+| MIG-019 | 02B4 自动化截图中选中卡抬升会局部遮住相邻卡上缘 | 视觉密度略高，但关键标题/效果与点击边界仍可读，未发生容器或视口裁切 | 作为非阻塞视觉观察保留；后续修改 CardHandHost 布局时必须重拍三视口并逐图复核 |
 
-Tower decay、Poison 传播/伤害/减层和 action identity 映射已在 02B3 关闭。当前没有阻塞 02B4 的产品或环境问题；MIG-002 只限制“无权威 command 时不得发明敌人伤害”。
+Tower decay、Poison 传播/伤害/减层、action identity 映射和 02B4 牌库/资源/终局均已关闭。当前没有阻塞 Combat Shell 与 Scene Flow 的产品或环境问题；MIG-002 仍只限制“无权威 command 时不得发明敌人伤害”。02B4 视觉仅保留选中卡局部遮挡相邻卡上缘的非阻塞观察，关键文案和交互边界仍可读。

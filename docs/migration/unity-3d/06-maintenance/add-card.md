@@ -8,6 +8,7 @@
 2. 把原卡面放入 `unity/Assets/_Project/Resources/Art/Battle/Cards/`。`front_image` 使用真实文件名；`CardContentEntry` 会定位到 `Art/Battle/Cards/<file stem>`，禁止按 stable ID 猜测。
 3. 通过 Scene authoring 重建 `CombatCompositionRoot` 的 `TextAsset` 列表，或在 Inspector 明确添加新 JSON。`CardContentCatalog` 接受任意非空、stable ID 唯一的列表并保留顺序。
 4. 确认卡牌的每个 `CardEffectKind` 已被 `CardEffectRegistrationCatalog` 支持。未注册效果会让卡牌保留在目录中但命令显式失败，不会静默 no-op。
+5. 明确决定新卡是否进入 starter deck。内容目录的 stable ID 必须唯一，但 starter deck 可以重复引用同一 stable ID；每张实体卡仍必须获得唯一 `CardInstanceId`，并增加固定 seed、三堆守恒和回洗测试。
 
 普通新卡不应修改 `VerticalSliceController`。需要新效果时按 `add-effect.md` 扩展；Clear 不得伪装成普通 `TimelineAction`。
 
@@ -39,4 +40,8 @@ Clear 卡必须只有一个 typed `CardEffectKind.Clear`，mask 只来自 `effec
 
 新增卡牌还必须由 `IActionDisplayCatalog` 提供中文标题、效果与放置描述；这些是 action presentation snapshot 的保存 payload。手牌 View 以后被弃置或销毁，已提交 frame 仍必须完整显示，不能反查当前 hand。
 
-外观只在 `CardView.prefab` 与 `CardHandHost` Inspector 调整。保持七卡在 1280x720 可选，并验证 hover/selected/targeting/scheduling/dragging/resolving 互斥恢复。所有文字继续使用 Silver；详情样式在 `CardEffectFrame.prefab`，不要在 stable ID 分支拼 tooltip。
+外观只在 `CardView.prefab` 与 `CardHandHost` Inspector 调整。保持正式抽出的 5 手牌在 1280x720 可选，并验证 hover/selected/targeting/scheduling/dragging/resolving 互斥恢复。所有文字继续使用 Silver；详情样式在 `CardEffectFrame.prefab`，不要在 stable ID 分支拼 tooltip。
+
+## 02B4 牌区约束
+
+新增卡牌不应改变 deck top 方向、hand limit 7、正式 draw request 5 或 EndTurn hook 顺序。若 starter deck 列表变化，必须更新 12 张输入契约、typed return 的 deck snapshot、Player smoke 和三视口手牌证据；仅加入内容目录但不加入 starter deck 时，不得让 BattleFlow hand 自动出现该卡。

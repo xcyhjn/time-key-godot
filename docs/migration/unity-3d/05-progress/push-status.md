@@ -1,6 +1,6 @@
 # Git 提交与推送状态
 
-> 状态：Wave 02B3 实现与交付文档均已推送
+> 状态：Wave 02B4 Gate C 本地检查点已建立；GitHub 443 连接恢复后继续推送
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：`git status`、`git log`、后续 push 输出
@@ -26,6 +26,10 @@
 | 简体中文交付文档 | `4c25b9a` | 与上项同受 HTTPS reset 阻塞 | 汉化验证总结、维护账本和交付状态 |
 | Turn Lifecycle Gate 0 | `cc98d68` | 2026-08-02 push 时 `curl 28 Recv failure: Connection was reset`；远端未前进 | 源语义/架构/交互审计、五份互斥 Agent Prompt、共享契约与测试矩阵 |
 | Turn Lifecycle Gate A | `108ff54` | 2026-08-02 push 时 `curl 55 Recv failure: Connection was reset`；当前本地 `ahead 4` | lifecycle runner、ActionId、不可变 snapshot、共享 Timeline/Application 接线、EditMode `183/183`、PlayMode `38/38` |
+| Deck & Battle Flow Gate 0 | `41743fd` | 2026-08-02 已推送至 `origin/unity_7.31` | 02B4 来源语义、ADR 0009、所有权 Prompt、共享契约与 Gate 0 保护清单 |
+| Deck & Battle Flow Gate A | `239e878` | 2026-08-02 已推送至 `origin/unity_7.31` | Deck/BattleFlow Domain、固定 seed、时间币、终局/奖励/return 与 EditMode `280/280` |
+| Deck & Battle Flow Gate B | `2e6f101` | 2026-08-02 已推送至 `origin/unity_7.31` | Application hook、正式手牌实例身份、lifecycle 集成与 `293/293 + 53/53` |
+| Deck & Battle Flow Gate C | `1a98db0` | 2026-08-02 两次 push 均因 GitHub 443 reset/无法连接失败；本地待推送 | BattleFlow Presentation/Prefab/Scene、动态手牌、10% 胜利规则、Gate C 测试与增强 Player smoke |
 
 用户原有四个未提交文件、两个未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均未进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。最终状态提交推送后以 `git rev-list --left-right --count HEAD...origin/unity_7.31 = 0/0` 为同步门禁。
 

@@ -130,3 +130,9 @@ Clear 触及 TimelineGrid/Application、effect registration、Timeline Presenter
 02B3 触及 Application、Timeline、occupant、Scene/Prefab 和 Presentation，因此不继承这些边界的旧 Unity 测试/视觉/build。最终刷新为 EditMode `236/236`、graphical PlayMode `53/53`、12 张阶段 PNG、build `211055434` bytes 和 actual Player marker。继续继承未修改的 Godot 源语义、卡牌/字体素材哈希、Remaining Cards 普通效果与 Clear 行为；Silver 汉化内容在新 Scene/Prefab 截图和 asset tests 中再次验证。
 
 结构化证据：`evidence/turn-lifecycle-gate-d/turn-lifecycle-full-*.xml`、Gate B/D JSON 与两份 `verification-summary.md`。
+
+## Wave 02B4 Gate D 刷新账本
+
+02B4 触及 Deck/BattleFlow Domain、Application hook、CardHand/Binding/Controller、Scene/Prefab、终局 UI 与 Player 路径，因此这些边界不继承 02B3 的 Unity build、Player 或截图。最终刷新为 full EditMode `300/300`、Direct3D12 PlayMode `61/61`、18 张人工复核 PNG、Windows build `Succeeded`（`211133001` bytes）和 actual Player exit 0/marker 一次。继续继承未修改的 Godot 源语义、原卡图/字体哈希、3D 棋盘/镜头/高度与 02B3 lifecycle 固定顺序；后继 Combat Shell 可继承 02B4 的 typed outcome/return、顶部 UI、Silver 与 battle-flow hook，触及 SceneFlow/Bootstrap/转场后必须刷新对应 Scene、视觉、build 和 Player 证据。
+
+结构化入口：`evidence/deck-battle-flow-gate-d/verification-summary.md`、`editmode-final.xml`、`playmode-final.xml`、`visual-summary.json`、`build-summary.json` 与 `player-smoke-summary.json`。

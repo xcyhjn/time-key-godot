@@ -1,6 +1,6 @@
 # 多智能体所有权图
 
-> 状态：Wave 02B3 Gate D 全部所有权已交回并完成集成
+> 状态：Wave 02B4 Gate D 全部所有权已交回并完成集成
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
@@ -123,11 +123,13 @@ Gate A 实际执行保持互斥：Agent A 只新增 Prompt 白名单内文件，
 | Gate A | Agent A / Deck Domain | 新 `Runtime/Domain/Deck/**`、`Tests/EditMode/Deck/**`、报告 | 已完成并交回；独占 `12/12`，Unity Gate A 纳入 `44/44` |
 | Gate A | Agent B / Round + Outcome Domain | 新 `Runtime/Domain/BattleFlow/**`、`Tests/EditMode/BattleFlow/**`、报告 | 已完成并交回；独占 `32/32`，Unity Gate A 纳入 `44/44` |
 | Gate B | Agent C / Application hook | 新 `Runtime/Application/BattleFlow/**`、对应 tests/report | 已完成并交回；定向 `10/10`，主集成 `60/60`，full EditMode `293/293` |
-| Gate C | Agent D / Presentation | 新 `Presentation/BattleFlow/**`、新 BattleFlow Prefab/tests/report | 等待 Gate B API |
-| 全程 | 主智能体 | 所有既有/共享代码、Controller、Composition、Binding、Scene、asmdef、Editor、证据、维护文档和 Git | 独占 |
+| Gate C | Agent D / Presentation | 新 `Presentation/BattleFlow/**`、新 BattleFlow Prefab/tests/report | 已完成并交回；主智能体已集成 Scene/Binding/Composition |
+| 全程 | 主智能体 | 所有既有/共享代码、Controller、Composition、Binding、Scene、asmdef、Editor、证据、维护文档和 Git | Gate D 已完成并回收全部路径 |
 
 路径白名单见 `agents/prompts/deck-battle-flow-agent-*.md`，交集审查见 `agents/prompt-review-deck-battle-flow.md`。执行顺序为 `Agent 0 -> (A || B) -> C -> D -> 主集成`；任何时刻仅主智能体可串行启动 Unity。
 
 Gate A 实际保持互斥：Agent A/B 只新增各自 Domain/test/report，均未运行 Unity 或 Git。主智能体在两者交回后完成定向 EditMode `44/44` 与完整 EditMode `280/280`，并回收 Gate A 全部路径。
 
 Gate B 初稿保持 Agent C 新目录所有权；主智能体审查后补齐 frozen hand identity/atomic discard，并独占修改既有 Coordinator、Session 与共享测试。Agent C 未运行 Unity 或 Git；主智能体串行完成 Application `10/10`、集成 `60/60`、full EditMode `293/293` 与 graphical PlayMode `53/53`，现已回收 Gate B 全部路径。
+
+Gate C/D 中 Agent D 只写独占 Presentation/Prefab/tests/report，主智能体负责共享 Scene、Binding、Composition、Controller、harness、终验与 Git。最终 full EditMode `300/300`、graphical PlayMode `61/61`，18 张 PNG、Windows build 和 actual Player smoke 均通过；所有 02B4 所有权现已交回。

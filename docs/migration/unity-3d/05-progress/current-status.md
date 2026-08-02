@@ -1,13 +1,13 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Wave 02B3 Gate D 已完成并推送；下一阶段为 Wave 02B4
+> 状态：Wave 02B4 Gate D 验证已通过；检查点与推送待记录
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
 
 ## 结论
 
-迁移结论保持 `CONDITIONAL GO`，总体难度 4/5。解耦、剩余五卡与 02B3 已关闭：稳定战斗层级保存为可编辑 Scene，十个实际 Prefab 可由 Inspector 调整，运行时职责已分到 Domain、Application、Presentation、Infrastructure、Diagnostics 与 Composition；局外 Godot 内容没有改动。
+迁移结论保持 `CONDITIONAL GO`，总体难度 4/5。解耦、剩余五卡、02B3 与 02B4 已关闭：稳定战斗层级保存为可编辑 Scene，十一个实际 Prefab 可由 Inspector 调整，运行时职责已分到 Domain、Application、Presentation、Infrastructure、Diagnostics 与 Composition；局外 Godot 内容没有改动。
 
 ## 当前切片
 
@@ -29,11 +29,11 @@ Gate D 终验为全量 EditMode `152/152`、PlayMode `38/38`，0 失败、0 跳�
 
 当前 Unity 战斗切片玩家可见文本已统一为简体中文，并使用 Silver 像素字体；stable ID、数据字段和开发者日志保持不变。刷新后的 EditMode 为 `161/161`、PlayMode 为 `38/38`，汉化 Harness 生成 8 张实际截图并成功构建 Windows Player（`210916374` bytes），Player smoke 退出码 0。三视口及雷击/台风关键状态已人工确认无缺字、裁切、重叠或宽屏错位，证据位于 `../04-verification/evidence/simplified-chinese-localization/`。
 
-Wave 02B3 已在 Gate A identity/runner 基础上完成 B-D 集成：intent、UI/Scene、Tower/Poison/death 与最终 Player 路径均消费统一 snapshot/result。Gate A 的 `183/183 + 38/38` 只保留为历史局部门禁，当前完成判定使用 `236/236 + 53/53` 及 Gate D build/Player/视觉证据。
+Wave 02B3 已在 Gate A identity/runner 基础上完成 B-D 集成；02B4 只通过保留 hook 加入牌区、回合资源和终局。当前完成判定使用 `300/300 + 61/61` 及 02B4 Gate D build/Player/视觉证据，早期结果只保留为历史局部门禁。
 
 Git 检查点与远端同步结果以 `push-status.md` 为唯一账本；本文件只记录已通过的功能和验收状态。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 
-`00-bootstrap/NEXT_STAGE_TURN_LIFECYCLE_PROMPT.md` 的 Gate 0-D 已全部关闭。下一阶段规范为 `NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md`，只在新 Gate 0 重新确认本阶段 Gate D 后启动。
+`00-bootstrap/NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md` 的 Gate 0-D 已全部关闭。下一阶段规范为 `NEXT_STAGE_COMBAT_SHELL_AND_SCENE_FLOW_PROMPT.md`，先核验 02B3/02B4 Gate D 再启动。
 
 ## 分支与工作区保护
 
@@ -52,3 +52,11 @@ Git 检查点与远端同步结果以 `push-status.md` 为唯一账本；本文�
 七卡在三视口保持可选，选中/hover/drag 响应式缩放；CardEffectFrame、玩家/敌人 TimelineActionFrame、地图 source/target/range 和 tooltip 通过同一 action identity snapshot 双向映射。Scene 保存稳定 host，动态 frame 只从 Prefab 创建。Tower HP 与 Poison 层数字体/材质均为 Silver。
 
 最终门禁为 EditMode `236/236`、graphical PlayMode `53/53`、Windows build `Succeeded`（`211055434` bytes）、Player exit 0/`TIMEKEY_PLAYER_SMOKE_PASS`。实现提交 `e70988c` 已推送至 `origin/unity_7.31`。02B4 入口为 `NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md`。
+
+## Wave 02B4 Gate D 完成态
+
+12 张 starter deck 以固定 seed 731 建立唯一 `CardInstanceId`，正式手牌与三堆守恒路径为 `7/5/0 -> 2/5/5 -> 7/5/0`。EndTurn 只使用 pre-clear occupancy/hand/action snapshots，在既有 lifecycle hook 内依次弃手、结算时间币、推进 phase/Era、必要回洗并抽 5；实际 phase 为 `1 -> 2 -> 3`、时间币为 `0 -> 31 -> 64`。
+
+胜利条件为最大生命 10% 的纯 Domain 规则。Victory/Defeat 互斥，终局锁输入，胜利产生一次 reward entry/claim；typed return 携带 12 张 deck snapshot、Era/phase/timecoins、battle tag 与 seed。动态实体卡离手后，既有 action frame 仍使用独立 action identity/display snapshot。
+
+最终门禁为 EditMode `300/300`、Direct3D12 PlayMode `61/61`、18 张逐图复核 PNG、Windows build `Succeeded`（`211133001` bytes）和 actual Player exit 0/marker 一次。证据入口为 `../04-verification/evidence/deck-battle-flow-gate-d/verification-summary.md`。

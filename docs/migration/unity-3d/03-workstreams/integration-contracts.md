@@ -1,6 +1,6 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：截至 Wave 02B3 Gate D 已冻结并验证
+> 状态：截至 Wave 02B4 Gate D 已冻结并验证
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
@@ -238,13 +238,13 @@ Gate 0 最小冒烟为 EditMode `24/24`、PlayMode `10/10`，0 失败。Gate D �
 
 ```text
 InitialStart:
-  ProcessingTurnStartStatuses -> Reserved02B4NoOp -> RefreshingEnemyIntents
+  ProcessingTurnStartStatuses -> BattleFlowNextTurnHook -> RefreshingEnemyIntents
   -> PlayerReady/InputUnlocked
 
 EndTurn:
   EndTurnRequested/InputLocked -> ResolvingTimeline
   -> RunningBuildingBehaviors -> ClearingTimeline
-  -> ProcessingTurnStartStatuses -> Reserved02B4NoOp
+  -> ProcessingTurnStartStatuses -> BattleFlowNextTurnHook
   -> RefreshingEnemyIntents -> PlayerReady/InputUnlocked
 ```
 
@@ -273,7 +273,7 @@ Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/r
 
 ## Wave 02B3 最终共享契约
 
-- phase 只能按 ADR 0008 的固定顺序前进，02B4 只能使用已命名 hook。
+- phase 只能按 ADR 0008 的固定顺序前进；02B4 已只通过命名的 `BattleFlowNextTurnHook` 接入。
 - `TimelineActionIdentity` 是 preview/commit/resolve/clear/presentation 的唯一 action 键；stable card ID、格子或 View 都不能替代它。
 - enemy intent 候选使用显式 seed、priority 和最多五个结果；执行前重判完整 source/target/shape/effect。空 command 返回 `UnsupportedSourceCommand` no-effect。
 - `CombatSliceState.TryApply` 先全量预检再提交 occupant change；runtime ID 与 coord 必须同时匹配。
@@ -314,3 +314,11 @@ Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/r
 - `CombatApplicationSession` 正式手牌选择支持 card-instance identity；提交 action 后实体卡立即进入 discard，结束回合只弃 remaining hand。旧 stable-ID 入口保留为兼容路径。
 - outcome、reward claim 与 return payload 只通过 battle-flow typed boundary；Victory/Defeat 后 Session 转为 `Resolved` 并拒绝后续 action。
 - Gate B 验证为 Application `10/10`、集成 `60/60`、full EditMode `293/293`、full graphical PlayMode `53/53`；证据位于 `../04-verification/evidence/deck-battle-flow-gate-b/`。
+
+### Wave 02B4 Gate C/D 最终冻结
+
+- `BattleFlowPresenter` 只投影 deck/hand/discard、Era/phase、timecoins 与输入锁；`BattleSettlementPresenter` 只消费 authoritative settlement/reward snapshot。
+- `CardHandPresenter` 以 `CardInstanceId` 创建动态实体卡 View，同 stable ID 的重复卡不会合并；提交后的 action frame 继续使用独立 `TimelineActionIdentity` 与 immutable display payload。
+- Scene 在 Play 前保存 `BattleFlowPanel`、Presenter、结算按钮和终局输入锁引用；新增稳定 UI 来自保存 Prefab，全部简体中文使用 Silver。
+- 自动胜利只调用纯 Domain `BattleVictoryRule`：`maximumHp > 0` 且 `currentHp * 10 <= maximumHp`。绝对 HP 常量、UI 文本或 View 不得决定 outcome。
+- Gate D 验证为 full EditMode `300/300`、Direct3D12 PlayMode `61/61`、18 张人工复核 PNG、Windows build `Succeeded`（`211133001` bytes）和 actual Player exit 0；最终证据位于 `../04-verification/evidence/deck-battle-flow-gate-d/`。
