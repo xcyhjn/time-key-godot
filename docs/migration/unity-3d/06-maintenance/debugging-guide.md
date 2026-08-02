@@ -73,3 +73,5 @@ Tower/Poison 数值正确但 View 错误时检查 `LifecycleOccupantChangeResult
 卡在 90% 通常表示 pending additive load 未允许 activation；回滚必须在遮罩下激活后卸载。黑屏但任务完成时检查目标 entry 的 camera 已启用、至少跨过一个 `Time.frameCount`、source camera 在 cover 后禁用。重复 EventSystem/Audio/Transition 直接检查 Scene asset 门禁，不能在运行时发现后销毁。
 
 Player smoke 必须可见运行；隐藏窗口会因 `runInBackground=false` 暂停。marker 后非零退出时检查是否在 Task continuation 内立即 Quit；当前 smoke 由后续 LateUpdate 延迟两帧退出。
+
+Binding 或首帧等待失败后先检查 `SceneFlowStateStore` 是否仍有 pending record；`RollingBackTarget` 必须恢复旧 state，source unload operation 启动后才允许 commit。source 已提交后的 reveal/unlock 失败不得再卸载 target。Bootstrap 卡在未 ready 时等待 `InitializationTask` 并查看 `InitializationException`，不要无限轮询 `IsReady`。

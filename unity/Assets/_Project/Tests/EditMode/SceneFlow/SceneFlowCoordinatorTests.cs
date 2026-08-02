@@ -56,6 +56,26 @@ namespace TimeKey.Tests.EditMode.SceneFlow
             Assert.That(result.PhaseHistory[^1], Is.EqualTo(SceneTransitionPhase.InputUnlocked));
         }
 
+        [TestCase(SceneTransitionPhase.Revealing)]
+        [TestCase(SceneTransitionPhase.InputUnlocked)]
+        public async Task TransitionAsync_PostCommitFailureKeepsTargetAndOnlyRecoversCoverAndInput(
+            SceneTransitionPhase failedPhase)
+        {
+            var effects = new RecordingEffects(failedPhase);
+            var coordinator = new SceneFlowCoordinator(SceneId.MainMenu, effects);
+
+            var result = await coordinator.TransitionAsync(Request(1, "post-commit"));
+
+            Assert.That(result.Failure, Is.EqualTo(SceneTransitionFailure.EffectFailed));
+            Assert.That(result.ActiveScene, Is.EqualTo(SceneId.OutOfBattleShell));
+            Assert.That(coordinator.CurrentScene, Is.EqualTo(SceneId.OutOfBattleShell));
+            Assert.That(result.PhaseHistory,
+                Has.No.Member(SceneTransitionPhase.RollingBackTarget));
+            Assert.That(result.PhaseHistory,
+                Has.No.Member(SceneTransitionPhase.RestoringSource));
+            Assert.That(result.IsInputLocked, Is.False);
+        }
+
         [Test]
         public async Task TransitionAsync_SameSequenceAndFingerprintIsIdempotent()
         {
@@ -109,6 +129,25 @@ namespace TimeKey.Tests.EditMode.SceneFlow
         }
 
         [Test]
+        public async Task TransitionAsync_RejectsEmptyPayloadThatBypassesCombatBoundary()
+        {
+            var coordinator = new SceneFlowCoordinator(
+                SceneId.OutOfBattleShell,
+                new RecordingEffects());
+            var request = new SceneTransitionRequest(
+                1,
+                "empty-combat",
+                SceneId.OutOfBattleShell,
+                SceneId.Combat,
+                new EmptySceneTransitionPayload(SceneId.Combat));
+
+            var result = await coordinator.TransitionAsync(request);
+
+            Assert.That(result.Failure, Is.EqualTo(SceneTransitionFailure.InvalidPayload));
+            Assert.That(coordinator.CurrentScene, Is.EqualTo(SceneId.OutOfBattleShell));
+        }
+
+        [Test]
         public async Task TransitionAsync_ConcurrentDifferentRequestReturnsBusy()
         {
             var effects = new BlockingEffects();
@@ -154,6 +193,7 @@ namespace TimeKey.Tests.EditMode.SceneFlow
         private sealed class RecordingEffects : ISceneFlowEffects
         {
             private readonly SceneTransitionPhase? _failedPhase;
+            private bool _failureInjected;
 
             public RecordingEffects(SceneTransitionPhase? failedPhase = null)
             {
@@ -169,10 +209,13 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 CancellationToken cancellationToken)
             {
                 Phases.Add(phase);
-                return Task.FromResult(
-                    phase == _failedPhase
-                        ? SceneFlowEffectResult.Failed("injected")
-                        : SceneFlowEffectResult.Success());
+                if (phase == _failedPhase && !_failureInjected)
+                {
+                    _failureInjected = true;
+                    return Task.FromResult(SceneFlowEffectResult.Failed("injected"));
+                }
+
+                return Task.FromResult(SceneFlowEffectResult.Success());
             }
         }
 

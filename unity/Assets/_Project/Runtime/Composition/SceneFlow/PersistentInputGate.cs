@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using TimeKey.Application.SceneFlow;
 
 namespace TimeKey.Composition.SceneFlow
 {
@@ -14,6 +15,7 @@ namespace TimeKey.Composition.SceneFlow
         public void SetLocked(bool value)
         {
             IsLocked = value;
+            SceneInputLockState.SetLocked(value);
             if (overlayGroup != null)
             {
                 overlayGroup.blocksRaycasts = value;
@@ -28,6 +30,16 @@ namespace TimeKey.Composition.SceneFlow
                     eventSystem.SetSelectedGameObject(null);
                 }
             }
+        }
+
+        private void OnDisable()
+        {
+            SceneInputLockState.SetLocked(false);
+        }
+
+        private void OnDestroy()
+        {
+            SceneInputLockState.SetLocked(false);
         }
     }
 }

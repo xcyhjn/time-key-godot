@@ -85,14 +85,22 @@ namespace TimeKey.Domain.BattleFlow
     public sealed class BattleSettlementSnapshot
     {
         internal BattleSettlementSnapshot(
+            string battleTag,
+            int battleSeed,
             BattleOutcome outcome,
             BattleRewardEntry rewardEntry,
             bool isRewardClaimed)
         {
+            BattleTag = battleTag;
+            BattleSeed = battleSeed;
             Outcome = outcome;
             RewardEntry = rewardEntry;
             IsRewardClaimed = isRewardClaimed;
         }
+
+        public string BattleTag { get; }
+
+        public int BattleSeed { get; }
 
         public BattleOutcome Outcome { get; }
 
@@ -223,6 +231,8 @@ namespace TimeKey.Domain.BattleFlow
             _victoryRewardEntry = victoryRewardEntry ??
                 throw new ArgumentNullException(nameof(victoryRewardEntry));
             _snapshot = new BattleSettlementSnapshot(
+                _battleTag,
+                _battleSeed,
                 BattleOutcome.Active,
                 rewardEntry: null,
                 isRewardClaimed: false);
@@ -261,6 +271,8 @@ namespace TimeKey.Domain.BattleFlow
             }
 
             _snapshot = new BattleSettlementSnapshot(
+                _battleTag,
+                _battleSeed,
                 requestedOutcome,
                 requestedOutcome == BattleOutcome.VictorySettlement
                     ? _victoryRewardEntry
@@ -299,6 +311,8 @@ namespace TimeKey.Domain.BattleFlow
             else
             {
                 _snapshot = new BattleSettlementSnapshot(
+                    _battleTag,
+                    _battleSeed,
                     _snapshot.Outcome,
                     _snapshot.RewardEntry,
                     isRewardClaimed: true);

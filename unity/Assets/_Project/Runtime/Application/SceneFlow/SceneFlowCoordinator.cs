@@ -108,6 +108,7 @@ namespace TimeKey.Application.SceneFlow
         {
             var history = new List<SceneTransitionPhase>();
             var isInputLocked = false;
+            var sourceCommitted = false;
             SceneTransitionResult result;
             try
             {
@@ -133,6 +134,7 @@ namespace TimeKey.Application.SceneFlow
                             effect == null ? "Scene effect returned no result." : effect.Message,
                             history,
                             isInputLocked,
+                            sourceCommitted,
                             CancellationToken.None);
                         Complete(record, result);
                         return;
@@ -142,9 +144,14 @@ namespace TimeKey.Application.SceneFlow
                     {
                         isInputLocked = false;
                     }
+
+                    if (phase == SceneTransitionPhase.UnloadingSource)
+                    {
+                        sourceCommitted = true;
+                        CurrentScene = request.Target;
+                    }
                 }
 
-                CurrentScene = request.Target;
                 result = new SceneTransitionResult(
                     request,
                     SceneTransitionFailure.None,
@@ -162,6 +169,7 @@ namespace TimeKey.Application.SceneFlow
                     "Scene transition was cancelled.",
                     history,
                     isInputLocked,
+                    sourceCommitted,
                     CancellationToken.None,
                     SceneTransitionFailure.Cancelled);
             }
@@ -173,6 +181,7 @@ namespace TimeKey.Application.SceneFlow
                     exception.Message,
                     history,
                     isInputLocked,
+                    sourceCommitted,
                     CancellationToken.None,
                     SceneTransitionFailure.Unexpected);
             }
@@ -186,16 +195,23 @@ namespace TimeKey.Application.SceneFlow
             string message,
             List<SceneTransitionPhase> history,
             bool isInputLocked,
+            bool sourceCommitted,
             CancellationToken cancellationToken,
             SceneTransitionFailure failure = SceneTransitionFailure.EffectFailed)
         {
-            var recoveryPhases = new[]
-            {
-                SceneTransitionPhase.RollingBackTarget,
-                SceneTransitionPhase.RestoringSource,
-                SceneTransitionPhase.Revealing,
-                SceneTransitionPhase.InputUnlocked
-            };
+            var recoveryPhases = sourceCommitted
+                ? new[]
+                {
+                    SceneTransitionPhase.Revealing,
+                    SceneTransitionPhase.InputUnlocked
+                }
+                : new[]
+                {
+                    SceneTransitionPhase.RollingBackTarget,
+                    SceneTransitionPhase.RestoringSource,
+                    SceneTransitionPhase.Revealing,
+                    SceneTransitionPhase.InputUnlocked
+                };
 
             for (var index = 0; index < recoveryPhases.Length; index++)
             {
@@ -223,7 +239,7 @@ namespace TimeKey.Application.SceneFlow
                 request,
                 failure,
                 failedPhase,
-                request.Source,
+                sourceCommitted ? request.Target : request.Source,
                 isInputLocked,
                 message,
                 history);
@@ -276,7 +292,36 @@ namespace TimeKey.Application.SceneFlow
                 return SceneTransitionFailure.InvalidPayload;
             }
 
+            if (!IsAllowedRouteAndPayload(request))
+            {
+                return SceneTransitionFailure.InvalidPayload;
+            }
+
             return SceneTransitionFailure.None;
+        }
+
+        private static bool IsAllowedRouteAndPayload(SceneTransitionRequest request)
+        {
+            if (request.Payload is EmptySceneTransitionPayload)
+            {
+                return (request.Source == SceneId.GameStart && request.Target == SceneId.MainMenu) ||
+                    (request.Source == SceneId.MainMenu &&
+                     request.Target == SceneId.OutOfBattleShell) ||
+                    (request.Source == SceneId.GameOver && request.Target == SceneId.MainMenu);
+            }
+
+            if (request.Payload is CombatLaunchPayload)
+            {
+                return request.Source == SceneId.OutOfBattleShell &&
+                    request.Target == SceneId.Combat;
+            }
+
+            if (request.Payload is CombatOutcome outcome)
+            {
+                return request.Source == SceneId.Combat && outcome.TargetScene == request.Target;
+            }
+
+            return false;
         }
 
         private SceneTransitionResult Failed(

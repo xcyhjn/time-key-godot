@@ -1,6 +1,6 @@
 # Godot / Unity 等价矩阵
 
-> 状态：Combat Shell Gate 0 源体验/契约已冻结；Unity 多场景实现待 Gate A-E
+> 状态：Combat Shell Gate A typed 多场景壳已验证；正式视觉待 Gate B-E
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：Godot 实跑截图/日志、玩法等价契约、Unity 全量测试、构建、Player smoke 与实际截图
@@ -31,10 +31,10 @@
 | 结构化诊断 | Godot 以运行日志与截图定位结算 | trace 包含 phase、card、target、timeline、effect kind 与 before/after；Unity sink 可关闭且 sink 异常不改变战斗结果 | 允许差异 | `evidence/unity-decoupling-r3/editmode-results.xml` |
 | 敌人意图 | 可见意图；当前 command 解析为空，建筑在时间轴后行动 | 显式 seed/priority/shape/target，执行前重判；空 command 返回 `UnsupportedSourceCommand` no-effect | 等价并显式化 | turn-lifecycle Gate D |
 | 回合变化 | 空结束回合推进 phase，按 36 格空位增加时间币并抽新手牌 | 同一 lifecycle hook 使用 pre-clear 占格；实际 phase `1→2→3`、时间币 `0→31→64`、抽弃/回洗 `7/5/0→2/5/5→7/5/0` | 等价 | 02B4 Gate D XML/JSON/PNG |
-| 胜负/奖励/返回 | 生命比例触发胜负，可进入奖励与局外返回路径 | 最大生命 10% 胜利规则；胜负互斥、输入锁、一次 reward entry/claim 与 typed return boundary；完整局外 Scene Flow 尚未接入 | 允许差异 | BattleFlow tests + Player summary |
+| 胜负/奖励/返回 | 生命比例触发胜负，可进入奖励与局外返回路径 | 最大生命 10% 胜利规则；胜负互斥、一次 reward entry/claim 与 typed outcome；Victory 返回局外壳、Defeat 进入 GameOver 的生产 SceneFlow 已接入 | 允许差异 | Gate A remediation XML + Player summary |
 | 视觉 | 2D 像素/UI；1920 基线且 1280 菜单可读 | 3D 棋盘 + uGUI；三视口 5 手牌、多回合、回洗、Victory/Defeat 与 Silver 均可读 | 允许差异 | `evidence/deck-battle-flow-gate-d/` 的 18 张 PNG + 人工总结 |
 
-判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1-02B4、解耦 R1/R2/R3 与 Remaining Cards Gate D 已关闭。下一阶段为 Combat Shell 与 Scene Flow；完整局外地图仍保持 Godot 权威。
+判定词只使用：`等价`、`允许差异`、`未实现`、`已知缺陷`、`待验证`。Slice 01、Wave 02A、Wave 02B1-02B4、解耦 R1/R2/R3、Remaining Cards Gate D 与 Combat Shell Gate A 已关闭。完整局外地图仍保持 Godot 权威，Gate B-E 继续补视觉与正式交互。
 
 ## Turn Lifecycle Gate 0 冻结
 
@@ -78,10 +78,10 @@ Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、Act
 
 | 行为 | Godot 可观察语义 | Unity Gate 0 状态 | 判定 | 后续验收 |
 | --- | --- | --- | --- | --- |
-| Bootstrap/场景流 | 节点树切换并使用全局 pending payload/outcome | Unity-free typed coordinator + Bootstrap additive runtime；成功/回滚/幂等已实现 | 允许差异 | Gate A `320/320 + 62/62`、build/Player |
+| Bootstrap/场景流 | 节点树切换并使用全局 pending payload/outcome | Unity-free typed coordinator + Bootstrap additive runtime；route/payload、提交点原子性、多 run、幂等和真实 bind fault 恢复已实现 | 允许差异 | Gate A remediation `330/330 + 64/64`、build/Player |
 | 启动/主菜单 | 约 3 秒三字启动；中央时钟、六按钮、弹层与 Iris | 源体验与时长已冻结，Unity Presentation 尚未实现 | 待验证 | Gate C 三视口、pointer/keyboard/focus |
-| 局外壳 | 顶部 HUD、悬挂时钟、六边形地图、士兵确认 | 最小 typed shell 契约已冻结，Scene 尚未实现 | 未实现 | Gate D room identity 与完整 roundtrip |
+| 局外壳 | 顶部 HUD、悬挂时钟、六边形地图、士兵确认 | 无视觉 `OutOfBattleShell` 生产 Scene 与 typed state 已实现；正式 HUD/地图/确认仍待实现 | 允许差异 | Gate A typed roundtrip；Gate D 正式视觉 |
 | 战斗入场 | 地图波纹 -> HUD/生命/时间轴 -> 手牌解锁 | 阶段和时长已冻结，Unity 入场未实现 | 待验证 | Gate B/E 实际动画/黑屏/输入锁 |
-| 胜利/失败 | Victory 横幅后奖励返回；Defeat 进入 GameOver | 02B4 typed outcome/return 可继承；跨 Scene 适配未实现 | 允许差异 | Gate D/E reward once、Defeat no reward、return |
+| 胜利/失败 | Victory 横幅后奖励返回；Defeat 进入 GameOver | typed 跨 Scene 适配已实现并验证 Victory/Defeat；正式横幅、奖励视觉与 GameOver 视觉待后续 | 允许差异 | Gate A roundtrip/Player；Gate D/E 视觉 |
 | 持久所有权 | Godot autoload 管理全局服务 | Bootstrap 唯一 SceneFlow/EventSystem/Audio/Transition；内容 Scene 无副本 | 等价并显式化 | Gate A Scene 结构和多轮往返 |
 | 中文与字体 | Godot ark-pixel | Unity 继续全要素简体中文与 Silver Font/Material | 允许差异 | 每 Gate asset tests + 实际截图 |

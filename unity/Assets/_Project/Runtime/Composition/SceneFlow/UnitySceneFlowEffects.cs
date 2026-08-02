@@ -24,27 +24,50 @@ namespace TimeKey.Composition.SceneFlow
             SceneId initialScene,
             CancellationToken cancellationToken)
         {
-            inputGate.SetLocked(true);
-            transition.SetCovered(true);
-            var sceneName = routes.GetSceneName(initialScene);
-            var operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-            if (operation == null)
+            string sceneName = null;
+            try
             {
-                throw new InvalidOperationException("The initial content scene could not be loaded.");
-            }
+                inputGate.SetLocked(true);
+                transition.SetCovered(true);
+                sceneName = routes.GetSceneName(initialScene);
+                var operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+                if (operation == null)
+                {
+                    throw new InvalidOperationException(
+                        "The initial content scene could not be loaded.");
+                }
 
-            await AwaitOperation(operation, cancellationToken);
-            var scene = SceneManager.GetSceneByName(sceneName);
-            var entry = FindEntry(scene, initialScene);
-            entry.Bind(new EmptySceneTransitionPayload(initialScene));
-            entry.SetCameraEnabled(true);
-            SceneManager.SetActiveScene(scene);
-            entry.EnsureRenderable();
-            await YieldFrameAsync(cancellationToken);
-            _activeEntry = entry;
-            transition.SetCovered(false);
-            inputGate.SetLocked(false);
-            entry.SetInteractive(true);
+                await AwaitOperation(operation, cancellationToken);
+                var scene = SceneManager.GetSceneByName(sceneName);
+                var entry = FindEntry(scene, initialScene);
+                entry.Bind(new EmptySceneTransitionPayload(initialScene));
+                entry.SetCameraEnabled(true);
+                SceneManager.SetActiveScene(scene);
+                entry.EnsureRenderable();
+                await YieldFrameAsync(cancellationToken);
+                _activeEntry = entry;
+                transition.SetCovered(false);
+                inputGate.SetLocked(false);
+                entry.SetInteractive(true);
+            }
+            catch
+            {
+                var failedScene = string.IsNullOrEmpty(sceneName)
+                    ? default(Scene)
+                    : SceneManager.GetSceneByName(sceneName);
+                if (failedScene.IsValid() && failedScene.isLoaded)
+                {
+                    var unload = SceneManager.UnloadSceneAsync(failedScene);
+                    if (unload != null)
+                    {
+                        await AwaitOperation(unload, CancellationToken.None);
+                    }
+                }
+
+                transition.SetCovered(false);
+                inputGate.SetLocked(false);
+                throw;
+            }
         }
 
         public async Task<SceneFlowEffectResult> ExecuteAsync(
@@ -71,8 +94,8 @@ namespace TimeKey.Composition.SceneFlow
                         await ActivateTargetAsync(request.Target, cancellationToken);
                         break;
                     case SceneTransitionPhase.BindingPayload:
-                        _targetEntry.Bind(request.Payload);
                         stateStore.Record(request);
+                        _targetEntry.Bind(request.Payload);
                         break;
                     case SceneTransitionPhase.WaitingForFirstRenderableFrame:
                         _targetEntry.SetCameraEnabled(true);
@@ -80,7 +103,7 @@ namespace TimeKey.Composition.SceneFlow
                         await YieldFrameAsync(cancellationToken);
                         break;
                     case SceneTransitionPhase.UnloadingSource:
-                        await UnloadAsync(request.Source, cancellationToken);
+                        await UnloadAsync(request, cancellationToken);
                         _activeEntry = _targetEntry;
                         _targetEntry = null;
                         break;
@@ -92,6 +115,7 @@ namespace TimeKey.Composition.SceneFlow
                         _activeEntry?.SetInteractive(true);
                         break;
                     case SceneTransitionPhase.RollingBackTarget:
+                        stateStore.Rollback(request);
                         await RollBackTargetAsync(request.Target);
                         break;
                     case SceneTransitionPhase.RestoringSource:
@@ -151,12 +175,16 @@ namespace TimeKey.Composition.SceneFlow
             SceneManager.SetActiveScene(scene);
         }
 
-        private async Task UnloadAsync(SceneId sceneId, CancellationToken cancellationToken)
+        private async Task UnloadAsync(
+            SceneTransitionRequest request,
+            CancellationToken cancellationToken)
         {
-            var scene = SceneManager.GetSceneByName(routes.GetSceneName(sceneId));
+            cancellationToken.ThrowIfCancellationRequested();
+            var scene = SceneManager.GetSceneByName(routes.GetSceneName(request.Source));
             if (!scene.IsValid() || !scene.isLoaded)
             {
-                throw new InvalidOperationException("The source scene is not loaded: " + sceneId + ".");
+                throw new InvalidOperationException(
+                    "The source scene is not loaded: " + request.Source + ".");
             }
 
             var operation = SceneManager.UnloadSceneAsync(scene);
@@ -165,8 +193,8 @@ namespace TimeKey.Composition.SceneFlow
                 throw new InvalidOperationException("The source scene could not be unloaded.");
             }
 
+            stateStore.Commit(request);
             await AwaitOperation(operation, CancellationToken.None);
-            cancellationToken.ThrowIfCancellationRequested();
         }
 
         private async Task RollBackTargetAsync(SceneId target)

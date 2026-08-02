@@ -150,6 +150,8 @@ Clear 触及 TimelineGrid/Application、effect registration、Timeline Presenter
 
 本次在 Godot 4.6.2/Vulkan/NVIDIA 上实际刷新 960x540 主菜单 idle、外景地图、士兵确认、地图收拢过渡和战斗首个可渲染帧。GameOver 直接加载仅得到灰屏，证明其依赖完整 defeat 状态，不能作为失败视觉证据；hover 因 Computer Use API 不支持 pointer move 未刷新。两项均列入后续真实 Unity/Godot 流程核验。
 
-## Combat Shell Gate A 刷新
+## Combat Shell Gate A 刷新与审查整改
 
-Bootstrap、Build Settings、Combat Scene activation、EventSystem 所有权与历史 PlayMode fixture 已改变，因此 02B4 Scene/build/Player 证据在这些边界失效并完成刷新：full EditMode `320/320`、Direct3D12 PlayMode `62/62`、六 Scene Development build `211736305` bytes、actual Player exit 0/marker 一次。02B3/02B4 的战斗规则、lifecycle、卡图/字体和现有视觉未被重写并在完整回归中保持通过；正式 shell 视觉、动画和多视口证据仍必须在 Gate B-E 刷新。
+Bootstrap、Build Settings、Combat Scene activation、EventSystem 所有权与历史 PlayMode fixture 已改变，因此 02B4 Scene/build/Player 证据在这些边界失效。Gate A 初次 `320/320 + 62/62` 证据又因两轮独立审查发现原子性、typed boundary、新 run 与真实 failure 缺口而失效；整改后已用 full EditMode `330/330`、Direct3D12 PlayMode `64/64`、六 Scene Development build `211747089` bytes、actual Player exit 0/marker 一次/异常 0 重新建立。
+
+02B3/02B4 的战斗规则、lifecycle、卡图/字体和既有视觉未被重写并在完整回归中保持通过；正式 shell TopHUD、背景、动画和多视口证据仍必须在 Gate B-E 刷新。权威入口为 `evidence/combat-shell-gate-a-remediation/verification-summary.md`。

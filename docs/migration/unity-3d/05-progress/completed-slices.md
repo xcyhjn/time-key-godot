@@ -140,5 +140,6 @@
 - Unity-free typed SceneFlow、Combat launch/outcome 与局外一次消费状态完成。
 - 六 Scene Build Settings、Bootstrap 唯一持久服务和五内容 Scene entry 完成。
 - Combat 自有 EventSystem 已移除，内容根改为 bind-before-enable；旧测试迁移到测试专用 EventSystem。
-- 成功链、Busy/幂等/conflict/stale、五类失败回滚、取消与真实 additive Victory/Defeat 往返通过。
-- Full EditMode `320/320`、Direct3D12 PlayMode `62/62`、Windows build `211736305` bytes、actual Player exit 0。
+- 成功链、Busy/幂等/conflict/stale、合法 route/payload 矩阵、提交前回滚/提交后保留 target、取消与真实 additive Victory/Defeat 往返通过。
+- settlement/return/launch battle identity、run/room/launch correlation、state store rollback/commit、Bootstrap fault 恢复和直接轮询输入锁均有回归测试。
+- Full EditMode `330/330`、Direct3D12 PlayMode `64/64`、Windows build `211747089` bytes、actual Player exit 0。

@@ -88,4 +88,4 @@ TimeKey.Editor.VerticalSliceAutomation.BuildDeckBattleFlowGateD
 
 Scene author/build 入口为 `TimeKey.Editor.CombatShellGateAAutomation.AuthorGateA` 与 `.BuildGateA`。Unity 必须通过 `D:/timekey-unity-731` ASCII junction 启动，避免 Unicode project path 的 Package Manager `path undefined`；该 junction 指向真实 `unity/`，不是副本。
 
-最终提交 `editmode-final.xml`、`playmode-final.xml`、build/player 两个 JSON 和 verification summary；raw logs 与失败/超时诊断不提交。Player 以可见 960x540 窗口和 `-timekeyCombatShellSmoke` 启动，因为隐藏窗口在 `runInBackground=false` 时会暂停 player-loop。要求 exit 0、marker 一次、异常 0。
+最终整改证据为 `combat-shell-gate-a-remediation/editmode-review-closure-final.xml`、`playmode-review-closure-rendered-final.xml`、build/player 两个 JSON 和 verification summary；raw logs 与失败/超时诊断不提交。PlayMode 视觉回归不得使用 `-nographics`，否则 RenderTexture 用例会产生假失败。Player 以可见窗口和 `-timekeyCombatShellSmoke` 启动，因为隐藏窗口在 `runInBackground=false` 时会暂停 player-loop。要求 exit 0、marker 一次、异常 0；最终刷新结果为 `330/330` 与 `64/64`。

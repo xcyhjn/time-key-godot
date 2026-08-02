@@ -1,4 +1,5 @@
 using System;
+using TimeKey.Application.SceneFlow;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -295,6 +296,11 @@ namespace TimeKey.Presentation.Cards
         public void OnPointerClick(PointerEventData eventData)
         {
             eventData.Use();
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             if (eventData.button == PointerEventData.InputButton.Right)
             {
                 RequestCancelSelectedCard();
@@ -340,6 +346,12 @@ namespace TimeKey.Presentation.Cards
         public void OnDrag(PointerEventData eventData)
         {
             eventData.Use();
+            if (SceneInputLockState.IsLocked)
+            {
+                AbortDragForInputLock();
+                return;
+            }
+
             if (!_isDragging)
             {
                 return;
@@ -353,6 +365,12 @@ namespace TimeKey.Presentation.Cards
         public void OnEndDrag(PointerEventData eventData)
         {
             eventData.Use();
+            if (SceneInputLockState.IsLocked)
+            {
+                AbortDragForInputLock();
+                return;
+            }
+
             if (!_isDragging)
             {
                 return;
@@ -371,6 +389,12 @@ namespace TimeKey.Presentation.Cards
 
         private void Update()
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                AbortDragForInputLock();
+                return;
+            }
+
             if (IsSelectionActive(InteractionState) &&
                 (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape)))
             {
@@ -423,6 +447,7 @@ namespace TimeKey.Presentation.Cards
         {
             return _viewModel != null &&
                 _viewModel.IsInteractable &&
+                !SceneInputLockState.IsLocked &&
                 InteractionState != CardHandInteractionState.Disabled;
         }
 
@@ -501,6 +526,17 @@ namespace TimeKey.Presentation.Cards
             _cardVisual.anchoredPosition = _dragOriginalAnchoredPosition;
             _cardVisual.localScale = _dragOriginalScale;
             _cardVisual.localRotation = _dragOriginalRotation;
+        }
+
+        private void AbortDragForInputLock()
+        {
+            if (!_isDragging)
+            {
+                return;
+            }
+
+            RestoreAfterDrag();
+            SetInteractionState(_stateBeforeDrag);
         }
 
         private void MoveDragVisual(PointerEventData eventData)

@@ -73,7 +73,9 @@ namespace TimeKey.Application.SceneFlow
             }
 
             if (returnPayload.BattleTag != launch.BattleTag ||
-                returnPayload.BattleSeed != launch.BattleSeed)
+                returnPayload.BattleSeed != launch.BattleSeed ||
+                settlement.BattleTag != launch.BattleTag ||
+                settlement.BattleSeed != launch.BattleSeed)
             {
                 return Failed(CombatOutcomeFailure.LaunchMismatch);
             }

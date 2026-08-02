@@ -1,6 +1,6 @@
 # 模块所有权与修改检查表
 
-> 状态：Combat Shell Gate A 冻结
+> 状态：Combat Shell Gate A 独立审查整改后冻结
 
 | 程序集 | 拥有 | 公开变化点 | 允许依赖 | 禁止依赖 |
 | --- | --- | --- | --- | --- |
@@ -35,7 +35,7 @@
 
 ## SceneFlow 所有权
 
-- `TimeKey.Application/SceneFlow` 拥有 Unity-free request/phase/failure/result、launch/outcome/shell state 与 coordinator；禁止 Scene 名称、Unity object 和静态 singleton。
-- `TimeKey.Composition/SceneFlow` 拥有 Bootstrap、route catalog、Unity additive effects、content entry、input/transition gate、state store 与参数化 Player smoke。
+- `TimeKey.Application/SceneFlow` 拥有 Unity-free request/phase/failure/result、launch/outcome/shell state 与 coordinator；禁止 Scene 名称和 Unity object。`SceneInputLockState` 是 ADR 0010 允许的窄进程级 transition 信号，不得扩展为 service locator 或承载玩法状态。
+- `TimeKey.Composition/SceneFlow` 拥有 Bootstrap、route catalog、Unity additive effects、content entry、input/transition gate、state store 与参数化 Player smoke；生产 outcome 的一次消费和 rollback/commit 由 state store 负责。
 - Bootstrap Scene 唯一拥有 EventSystem、AudioRoot、TransitionCanvas；内容 Scene 只拥有本地 camera/content/entry。
 - 正式 Scene、Build Settings、asmdef 与既有 Combat 接线始终由主集成所有；局部 Agent 不得直接修改。

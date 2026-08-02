@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using TimeKey.Application.SceneFlow;
@@ -9,11 +10,14 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using InvalidOperationException = System.InvalidOperationException;
 
 namespace TimeKey.Tests.PlayMode.SceneFlow
 {
     public sealed class SceneFlowAdditiveTests
     {
+        private const float TaskTimeoutSeconds = 15f;
+
         [UnityTest]
         public IEnumerator Bootstrap_PerformsTypedRoundTripsWithoutPersistentDuplicates()
         {
@@ -21,10 +25,10 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             yield return null;
             var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
             Assert.That(bootstrap, Is.Not.Null);
-            while (!bootstrap.IsReady)
-            {
-                yield return null;
-            }
+            var initialization = bootstrap.InitializationTask;
+            yield return AwaitTask(initialization, "Bootstrap initialization");
+            Assert.That(initialization.IsFaulted, Is.False, initialization.Exception?.ToString());
+            Assert.That(bootstrap.IsReady, Is.True);
 
             AssertPersistentState(SceneId.GameStart);
 
@@ -69,12 +73,33 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                     SceneId.OutOfBattleShell,
                     victory));
             AssertPersistentState(SceneId.OutOfBattleShell);
+            var stateStore = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            Assert.That(stateStore, Is.Not.Null);
+            Assert.That(stateStore.LastOutcome, Is.SameAs(victory));
+            Assert.That(stateStore.LastOutcomeApplyResult.Succeeded, Is.True);
+            Assert.That(stateStore.LastOutcomeApplyResult.WasAlreadyApplied, Is.False);
+            Assert.That(stateStore.OutOfBattleState.SettledRoomIds,
+                Does.Contain(victoryLaunch.RoomId));
+
+            var rejectedLaunch = Launch("settled-retry", victoryLaunch.RoomId);
+            yield return TransitionFailure(
+                bootstrap,
+                new SceneTransitionRequest(
+                    5,
+                    rejectedLaunch.LaunchCorrelationId,
+                    SceneId.OutOfBattleShell,
+                    SceneId.Combat,
+                    rejectedLaunch),
+                SceneTransitionPhase.BindingPayload);
+            AssertPersistentState(SceneId.OutOfBattleShell);
+            Assert.That(stateStore.LastOutcome, Is.SameAs(victory));
+            Assert.That(stateStore.LastPayload, Is.SameAs(victory));
 
             var defeatLaunch = Launch("defeat", "room-defeat");
             yield return Transition(
                 bootstrap,
                 new SceneTransitionRequest(
-                    5,
+                    6,
                     defeatLaunch.LaunchCorrelationId,
                     SceneId.OutOfBattleShell,
                     SceneId.Combat,
@@ -83,7 +108,7 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             yield return Transition(
                 bootstrap,
                 new SceneTransitionRequest(
-                    6,
+                    7,
                     defeat.OutcomeCorrelationId,
                     SceneId.Combat,
                     SceneId.GameOver,
@@ -93,12 +118,67 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             yield return Transition(
                 bootstrap,
                 new SceneTransitionRequest(
-                    7,
+                    8,
                     "game-over-to-menu",
                     SceneId.GameOver,
                     SceneId.MainMenu,
                     new EmptySceneTransitionPayload(SceneId.MainMenu)));
             AssertPersistentState(SceneId.MainMenu);
+            Assert.That(stateStore.OutOfBattleState, Is.Null);
+            Assert.That(stateStore.ActiveLaunch, Is.Null);
+
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    9,
+                    "new-run-shell",
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    new EmptySceneTransitionPayload(SceneId.OutOfBattleShell)));
+            var newRunLaunch = Launch("new-run", "room-new", "gate-a-run-2");
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    10,
+                    newRunLaunch.LaunchCorrelationId,
+                    SceneId.OutOfBattleShell,
+                    SceneId.Combat,
+                    newRunLaunch));
+            AssertPersistentState(SceneId.Combat);
+            Assert.That(stateStore.OutOfBattleState.RunId, Is.EqualTo("gate-a-run-2"));
+        }
+
+        [UnityTest]
+        public IEnumerator Bootstrap_InitialFailureIsObservableAndRestoresCoverAndInput()
+        {
+            var root = new GameObject("BootstrapFailureFixture");
+            root.SetActive(false);
+            var routes = ScriptableObject.CreateInstance<SceneRouteCatalog>();
+            var gate = root.AddComponent<PersistentInputGate>();
+            var transition = root.AddComponent<TransitionCanvasPresenter>();
+            var stateStore = root.AddComponent<SceneFlowStateStore>();
+            var effects = root.AddComponent<UnitySceneFlowEffects>();
+            var bootstrap = root.AddComponent<BootstrapRoot>();
+            SetField(effects, "routes", routes);
+            SetField(effects, "inputGate", gate);
+            SetField(effects, "transition", transition);
+            SetField(effects, "stateStore", stateStore);
+            SetField(bootstrap, "effects", effects);
+
+            root.SetActive(true);
+            var initialization = bootstrap.InitializationTask;
+            yield return AwaitTask(initialization, "Expected Bootstrap initialization fault");
+
+            Assert.That(initialization.IsFaulted, Is.True);
+            Assert.That(bootstrap.InitializationException, Is.TypeOf<InvalidOperationException>());
+            Assert.That(bootstrap.IsReady, Is.False);
+            Assert.That(gate.IsLocked, Is.False);
+            Assert.That(SceneInputLockState.IsLocked, Is.False);
+            Assert.That(transition.IsCovered, Is.False);
+
+            Object.Destroy(root);
+            Object.Destroy(routes);
+            yield return null;
         }
 
         private static IEnumerator Transition(
@@ -106,16 +186,44 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             SceneTransitionRequest request)
         {
             Task<SceneTransitionResult> task = bootstrap.TransitionAsync(request);
-            while (!task.IsCompleted)
-            {
-                yield return null;
-            }
+            yield return AwaitTask(task, "Scene transition " + request.CorrelationId);
 
             Assert.That(task.IsFaulted, Is.False, task.Exception?.ToString());
             Assert.That(task.IsCanceled, Is.False);
             Assert.That(task.Result.Succeeded, Is.True, task.Result.Message);
             Assert.That(task.Result.IsInputLocked, Is.False);
             Assert.That(task.Result.ActiveScene, Is.EqualTo(request.Target));
+        }
+
+        private static IEnumerator TransitionFailure(
+            BootstrapRoot bootstrap,
+            SceneTransitionRequest request,
+            SceneTransitionPhase expectedPhase)
+        {
+            Task<SceneTransitionResult> task = bootstrap.TransitionAsync(request);
+            yield return AwaitTask(task, "Expected scene transition failure " + request.CorrelationId);
+
+            Assert.That(task.IsFaulted, Is.False, task.Exception?.ToString());
+            Assert.That(task.IsCanceled, Is.False);
+            Assert.That(task.Result.Succeeded, Is.False);
+            Assert.That(task.Result.Failure, Is.EqualTo(SceneTransitionFailure.EffectFailed));
+            Assert.That(task.Result.FailedPhase, Is.EqualTo(expectedPhase));
+            Assert.That(task.Result.ActiveScene, Is.EqualTo(request.Source));
+            Assert.That(task.Result.IsInputLocked, Is.False);
+        }
+
+        private static IEnumerator AwaitTask(Task task, string operation)
+        {
+            var deadline = Time.realtimeSinceStartup + TaskTimeoutSeconds;
+            while (!task.IsCompleted)
+            {
+                if (Time.realtimeSinceStartup >= deadline)
+                {
+                    Assert.Fail(operation + " exceeded " + TaskTimeoutSeconds + " seconds.");
+                }
+
+                yield return null;
+            }
         }
 
         private static void AssertPersistentState(SceneId currentScene)
@@ -150,11 +258,14 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             Assert.That(loadedScenes, Is.EqualTo(2));
         }
 
-        private static CombatLaunchPayload Launch(string identity, string roomId)
+        private static CombatLaunchPayload Launch(
+            string identity,
+            string roomId,
+            string runId = "gate-a-run")
         {
             return new CombatLaunchPayload(
                 identity + "-launch",
-                "gate-a-run",
+                runId,
                 731,
                 1,
                 1,
@@ -198,6 +309,15 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 boundary.Payload);
             Assert.That(result.Succeeded, Is.True);
             return result.Outcome;
+        }
+
+        private static void SetField(object target, string fieldName, object value)
+        {
+            var field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, "Missing field: " + fieldName);
+            field.SetValue(target, value);
         }
     }
 }

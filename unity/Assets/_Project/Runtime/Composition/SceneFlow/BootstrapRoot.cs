@@ -14,22 +14,40 @@ namespace TimeKey.Composition.SceneFlow
         [SerializeField] private UnitySceneFlowEffects effects = null;
 
         private SceneFlowCoordinator _coordinator;
+        private Task _initializationTask;
 
         public bool IsReady { get; private set; }
 
         public SceneId CurrentScene =>
             _coordinator == null ? SceneId.None : _coordinator.CurrentScene;
 
-        private async void Awake()
+        public Task InitializationTask => _initializationTask ?? Task.CompletedTask;
+
+        public Exception InitializationException { get; private set; }
+
+        private void Awake()
         {
             if (effects == null)
             {
                 throw new InvalidOperationException("BootstrapRoot requires scene-flow effects.");
             }
 
-            await effects.LoadInitialAsync(initialScene, CancellationToken.None);
-            _coordinator = new SceneFlowCoordinator(initialScene, effects);
-            IsReady = true;
+            _initializationTask = InitializeAsync();
+        }
+
+        private async Task InitializeAsync()
+        {
+            try
+            {
+                await effects.LoadInitialAsync(initialScene, CancellationToken.None);
+                _coordinator = new SceneFlowCoordinator(initialScene, effects);
+                IsReady = true;
+            }
+            catch (Exception exception)
+            {
+                InitializationException = exception;
+                throw;
+            }
         }
 
         public Task<SceneTransitionResult> TransitionAsync(

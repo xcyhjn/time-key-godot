@@ -20,7 +20,7 @@ namespace TimeKey.Tests.EditMode.SceneFlow
         }
 
         [Test]
-        public void CombatLaunchPayload_FingerprintCoversCharacterChapterAndDeck()
+        public void CombatLaunchPayload_FingerprintCoversCharacterChapterBattleAndDeck()
         {
             var baseline = Launch(new[] { "lighting", "recover" });
             var differentCharacter = new CombatLaunchPayload(
@@ -37,9 +37,23 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 baseline.BattleSeed,
                 baseline.DeckStableIds);
             var differentDeck = Launch(new[] { "lighting", "wind" });
+            var differentBattle = new CombatLaunchPayload(
+                baseline.LaunchCorrelationId,
+                baseline.RunId,
+                baseline.RunSeed,
+                baseline.Chapter,
+                baseline.Era,
+                baseline.Phase,
+                baseline.RoomId,
+                baseline.CharacterId,
+                baseline.Timecoins,
+                "different-battle",
+                baseline.BattleSeed,
+                baseline.DeckStableIds);
 
             Assert.That(differentCharacter.Fingerprint, Is.Not.EqualTo(baseline.Fingerprint));
             Assert.That(differentDeck.Fingerprint, Is.Not.EqualTo(baseline.Fingerprint));
+            Assert.That(differentBattle.Fingerprint, Is.Not.EqualTo(baseline.Fingerprint));
         }
 
         [Test]
@@ -81,20 +95,7 @@ namespace TimeKey.Tests.EditMode.SceneFlow
 
             var first = shell.TryApplyOutcome(outcome);
             var repeated = shell.TryApplyOutcome(outcome);
-            var otherLaunch = new CombatLaunchPayload(
-                launch.LaunchCorrelationId,
-                launch.RunId,
-                launch.RunSeed,
-                launch.Chapter,
-                launch.Era,
-                launch.Phase,
-                "room-2",
-                launch.CharacterId,
-                launch.Timecoins,
-                launch.BattleTag,
-                launch.BattleSeed,
-                launch.DeckStableIds);
-            var conflict = shell.TryApplyOutcome(VictoryOutcome(otherLaunch, "outcome-1"));
+            var conflict = shell.TryApplyOutcome(DefeatOutcome(launch, "outcome-1"));
 
             Assert.That(first.Succeeded, Is.True);
             Assert.That(first.WasAlreadyApplied, Is.False);
@@ -126,6 +127,46 @@ namespace TimeKey.Tests.EditMode.SceneFlow
             Assert.That(result.Failure, Is.EqualTo(CombatOutcomeFailure.LaunchMismatch));
         }
 
+        [Test]
+        public void CombatOutcome_RejectsClaimedSettlementFromAnotherBattle()
+        {
+            var launch = Launch(new[] { "lighting" });
+            var launchSettlement = Settlement(launch);
+            launchSettlement.TryResolve(1, BattleOutcome.VictorySettlement);
+            var launchBoundary = launchSettlement.TryCreateReturnBoundary(
+                new BattleRoundLedger(1, 1, 0).Snapshot,
+                launch.DeckStableIds);
+            var otherSettlement = new BattleSettlementState(
+                "other-battle",
+                launch.BattleSeed,
+                new BattleRewardEntry("reward", BattleRewardKind.Acquire, "获得卡牌"));
+            otherSettlement.TryResolve(1, BattleOutcome.VictorySettlement);
+            otherSettlement.TryClaimReward(2);
+
+            var result = CombatOutcome.TryCreate(
+                "outcome-cross-battle",
+                launch,
+                otherSettlement.Snapshot,
+                launchBoundary.Payload);
+
+            Assert.That(result.Failure, Is.EqualTo(CombatOutcomeFailure.LaunchMismatch));
+        }
+
+        [Test]
+        public void OutOfBattleShellState_RejectsWrongRoomAndLaunchCorrelation()
+        {
+            var launch = Launch(new[] { "lighting" });
+            var shell = new OutOfBattleShellState(launch);
+            var wrongRoom = CopyLaunch(launch, launch.LaunchCorrelationId, "room-2");
+            var wrongCorrelation = CopyLaunch(launch, "other-launch", launch.RoomId);
+
+            Assert.That(shell.TryApplyOutcome(VictoryOutcome(wrongRoom, "wrong-room")).Failure,
+                Is.EqualTo(CombatOutcomeApplyFailure.RoomMismatch));
+            Assert.That(shell.TryApplyOutcome(
+                    VictoryOutcome(wrongCorrelation, "wrong-correlation")).Failure,
+                Is.EqualTo(CombatOutcomeApplyFailure.LaunchMismatch));
+        }
+
         private static CombatLaunchPayload Launch(IReadOnlyList<string> deck)
         {
             return new CombatLaunchPayload(
@@ -151,6 +192,26 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 new BattleRewardEntry("reward", BattleRewardKind.Acquire, "获得卡牌"));
         }
 
+        private static CombatLaunchPayload CopyLaunch(
+            CombatLaunchPayload source,
+            string correlationId,
+            string roomId)
+        {
+            return new CombatLaunchPayload(
+                correlationId,
+                source.RunId,
+                source.RunSeed,
+                source.Chapter,
+                source.Era,
+                source.Phase,
+                roomId,
+                source.CharacterId,
+                source.Timecoins,
+                source.BattleTag,
+                source.BattleSeed,
+                source.DeckStableIds);
+        }
+
         private static CombatOutcome VictoryOutcome(
             CombatLaunchPayload launch,
             string outcomeCorrelationId)
@@ -158,6 +219,22 @@ namespace TimeKey.Tests.EditMode.SceneFlow
             var settlement = Settlement(launch);
             settlement.TryResolve(1, BattleOutcome.VictorySettlement);
             settlement.TryClaimReward(2);
+            var boundary = settlement.TryCreateReturnBoundary(
+                new BattleRoundLedger(1, 1, 0).Snapshot,
+                launch.DeckStableIds);
+            return CombatOutcome.TryCreate(
+                outcomeCorrelationId,
+                launch,
+                settlement.Snapshot,
+                boundary.Payload).Outcome;
+        }
+
+        private static CombatOutcome DefeatOutcome(
+            CombatLaunchPayload launch,
+            string outcomeCorrelationId)
+        {
+            var settlement = Settlement(launch);
+            settlement.TryResolve(1, BattleOutcome.Defeat);
             var boundary = settlement.TryCreateReturnBoundary(
                 new BattleRoundLedger(1, 1, 0).Snapshot,
                 launch.DeckStableIds);

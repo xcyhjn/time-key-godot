@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
+using TimeKey.Application.SceneFlow;
 using TimeKey.Presentation.Cards;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -26,6 +27,7 @@ namespace TimeKey.Tests.PlayMode.Cards
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            SceneInputLockState.SetLocked(false);
             if (_renderTexture != null)
             {
                 _renderTexture.Release();
@@ -151,6 +153,39 @@ namespace TimeKey.Tests.PlayMode.Cards
             yield return new WaitForSecondsRealtime(0.35f);
             Assert.That(_view.CardVisual.anchoredPosition, Is.EqualTo(Vector2.zero).Using(Vector2Comparer(0.2f)));
             Assert.That(_view.CardVisual.localScale, Is.EqualTo(Vector3.one).Using(Vector3Comparer(0.01f)));
+        }
+
+        [UnityTest]
+        public IEnumerator TransitionLock_AbortsCapturedDragWithoutPublishingMorePhases()
+        {
+            BuildRig();
+            _view.SetInteractionState(CardHandInteractionState.Scheduling);
+            var originalParent = _view.CardVisual.parent;
+            var phases = new List<CardDragPhase>();
+            _view.CardDragChanged += (_, _, phase) => phases.Add(phase);
+
+            _view.OnBeginDrag(Pointer(
+                PointerEventData.InputButton.Left,
+                new Vector2(640f, 420f)));
+            Assert.That(_view.IsDragging, Is.True);
+            Assert.That(phases, Is.EqualTo(new[] { CardDragPhase.Started }));
+
+            SceneInputLockState.SetLocked(true);
+            _view.OnDrag(Pointer(
+                PointerEventData.InputButton.Left,
+                new Vector2(780f, 510f)));
+            _view.OnEndDrag(Pointer(
+                PointerEventData.InputButton.Left,
+                new Vector2(820f, 550f)));
+
+            Assert.That(_view.IsDragging, Is.False);
+            Assert.That(_view.CardVisual.parent, Is.SameAs(originalParent));
+            Assert.That(_view.InteractionState,
+                Is.EqualTo(CardHandInteractionState.Scheduling));
+            Assert.That(phases, Is.EqualTo(new[] { CardDragPhase.Started }));
+
+            SceneInputLockState.SetLocked(false);
+            yield return null;
         }
 
         [UnityTest]

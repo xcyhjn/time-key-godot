@@ -26,9 +26,11 @@ namespace TimeKey.Composition.SceneFlow
 
             try
             {
-                while (!bootstrap.IsReady)
+                await bootstrap.InitializationTask;
+                if (!bootstrap.IsReady)
                 {
-                    await Task.Yield();
+                    throw new InvalidOperationException(
+                        "Bootstrap initialization completed without a ready scene.");
                 }
 
                 await Transition(

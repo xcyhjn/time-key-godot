@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Application.BattleFlow;
+using TimeKey.Application.SceneFlow;
 using TimeKey.Domain;
 using TimeKey.Domain.BattleFlow;
 using TimeKey.Presentation.Bindings;
@@ -166,6 +167,11 @@ namespace TimeKey.Presentation
 
         private void Update()
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             if (_generatedRoot == null ||
                 boardCamera == null ||
                 boardCamera.IsManipulating ||

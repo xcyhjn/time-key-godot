@@ -3,6 +3,7 @@
 > 结论：PASS
 > 日期：2026-08-02
 > Unity：6000.4.10f1
+> 历史说明：本目录记录 Gate A 初次交付结果；独立审查整改后的权威结论已迁移到 `../combat-shell-gate-a-remediation/verification-summary.md`。
 
 ## 实现
 

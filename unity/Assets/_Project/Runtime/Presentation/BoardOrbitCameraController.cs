@@ -1,3 +1,4 @@
+using TimeKey.Application.SceneFlow;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -75,7 +76,7 @@ namespace TimeKey.Presentation
 
         private void Update()
         {
-            if (!InputEnabled || _camera == null)
+            if (SceneInputLockState.IsLocked || !InputEnabled || _camera == null)
             {
                 EndPointerGestures();
                 return;

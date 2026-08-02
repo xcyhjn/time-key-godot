@@ -84,7 +84,8 @@ namespace TimeKey.Application.SceneFlow
 
         public string Fingerprint =>
             "combat:" + LaunchCorrelationId + ":" + RunId + ":" + RoomId + ":" +
-            CharacterId + ":" + RunSeed + ":" + Chapter + ":" + BattleSeed + ":" +
+            CharacterId + ":" + RunSeed + ":" + Chapter + ":" + BattleTag + ":" +
+            BattleSeed + ":" +
             Era + ":" + Phase + ":" + Timecoins + ":" +
             string.Join(",", _deckStableIds);
 

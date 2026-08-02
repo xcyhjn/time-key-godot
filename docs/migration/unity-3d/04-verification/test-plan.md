@@ -1,6 +1,6 @@
 # Unity 战斗切片与解耦阶段测试计划
 
-> 状态：Combat Shell Gate 0 已通过；Gate A SceneFlow 验证待执行
+> 状态：Combat Shell Gate A 独立审查整改已通过；Gate B 待执行
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
@@ -210,13 +210,13 @@ Gate C 已通过 Scene EditMode `4/4`、BattleFlow integration `3/3`、回归 `1
 
 ## Combat Shell Gate A
 
-- EditMode contracts：合法 phase chain、非法 route/payload、Busy、same-sequence idempotent/conflict、stale、cancel/generation、每个失败 phase、typed failure/result 与防御性复制。
-- EditMode state：launch/outcome roundtrip；Victory reward-before-return；Defeat no-reward；outcome correlation consume-once；同 room 重复恢复幂等/冲突。
+- EditMode contracts：合法 phase chain 与 route/payload 类型矩阵、Busy、same-sequence idempotent/conflict、stale、cancel、提交前回滚/提交后保留 target、typed failure/result 与防御性复制。
+- EditMode state：launch/outcome roundtrip；Victory reward-before-return；Defeat no-reward；launch/settlement/return battle identity；run/room/launch correlation；outcome consume-once；state store rollback/commit。
 - 静态边界：Application 不引用 Unity；Build index 0 为 Bootstrap；内容 Scene 不保存 EventSystem/AudioRoot/TransitionCanvas；每个内容 Scene 恰好一个 content entry。
 - PlayMode additive：至少三轮 MainMenu <-> OutOfBattle、OutOfBattle -> Combat -> OutOfBattle、Combat -> GameOver -> MainMenu；始终一个 Bootstrap/SceneFlow/EventSystem/Audio/Transition root、最多一个 enabled content camera/interactive root。
-- PlayMode failure：注入 load/activate/bind/first-frame/unload failure，断言来源 Scene、phase、overlay alpha/raycast、input/focus、run state 与 persistent object count 恢复。
+- PlayMode failure：Bootstrap initial route fault 必须以 Task 可观察，并断言 overlay/input 恢复；直接轮询入口同时服从全局锁。coordinator 注入 post-commit reveal/unlock failure，断言 target 保留且不发生双卸载。
 - 回归：迁移历史 direct-load fixture 后重跑完整 EditMode/graphical PlayMode；Gate A 不以 fake-only 或 headless scene load 代替真实 additive lifecycle。
 
 Gate 0 的 960x540 Godot 图形刷新和三份审计位于 `evidence/combat-shell-gate-0/`；hover、弹层、Victory/Defeat/return 和三视口只列为后续视觉清单，不冒充已验证。
 
-Gate A 已通过：full EditMode `320/320`、full Direct3D12 PlayMode `62/62`、六 Scene Windows Development build `211736305` bytes、actual Player exit 0/marker 一次/异常 0。真实 additive 测试覆盖 Victory 返回与 Defeat -> GameOver -> MainMenu；Scene 结构断言 Bootstrap 持久对象各一、内容 Scene 无副本。证据位于 `evidence/combat-shell-gate-a/verification-summary.md`。
+Gate A 独立审查整改已通过：SceneFlow 定向 `30/30`、full EditMode `330/330`、full Direct3D12 PlayMode `64/64`、六 Scene Windows Development build `211747089` bytes、actual Player exit 0/marker 一次/异常 0。真实 additive test 覆盖实际 Combat load/activate 后的 production bind failure、state rollback、source restore 与 unlock；所有 async 等待有 15 秒超时。证据位于 `evidence/combat-shell-gate-a-remediation/verification-summary.md`；原 `combat-shell-gate-a/` 目录保留为整改前历史。

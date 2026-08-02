@@ -55,6 +55,16 @@ namespace TimeKey.Application.SceneFlow
         string Fingerprint { get; }
     }
 
+    public static class SceneInputLockState
+    {
+        public static bool IsLocked { get; private set; }
+
+        public static void SetLocked(bool value)
+        {
+            IsLocked = value;
+        }
+    }
+
     public sealed class EmptySceneTransitionPayload : ISceneTransitionPayload
     {
         public EmptySceneTransitionPayload(SceneId targetScene)

@@ -10,8 +10,19 @@ namespace TimeKey.Application.SceneFlow
         None,
         InvalidOutcome,
         RunMismatch,
+        RoomMismatch,
+        LaunchMismatch,
         OutcomeConflict,
         RoomAlreadySettled
+    }
+
+    public enum CombatLaunchApplyFailure
+    {
+        None,
+        InvalidLaunch,
+        RunMismatch,
+        RoomAlreadySettled,
+        StateMismatch
     }
 
     public sealed class CombatOutcomeApplyResult
@@ -48,15 +59,38 @@ namespace TimeKey.Application.SceneFlow
 
             RunId = launch.RunId;
             CurrentRoomId = launch.RoomId;
+            CurrentLaunchCorrelationId = launch.LaunchCorrelationId;
             Era = launch.Era;
             Phase = launch.Phase;
             Timecoins = launch.Timecoins;
             _deckStableIds = Copy(launch.DeckStableIds);
         }
 
+        private OutOfBattleShellState(OutOfBattleShellState source)
+        {
+            RunId = source.RunId;
+            CurrentRoomId = source.CurrentRoomId;
+            CurrentLaunchCorrelationId = source.CurrentLaunchCorrelationId;
+            Era = source.Era;
+            Phase = source.Phase;
+            Timecoins = source.Timecoins;
+            _deckStableIds = Copy(source._deckStableIds);
+            foreach (var pair in source._consumedOutcomeFingerprints)
+            {
+                _consumedOutcomeFingerprints.Add(pair.Key, pair.Value);
+            }
+
+            foreach (var roomId in source._settledRoomIds)
+            {
+                _settledRoomIds.Add(roomId);
+            }
+        }
+
         public string RunId { get; }
 
         public string CurrentRoomId { get; private set; }
+
+        public string CurrentLaunchCorrelationId { get; private set; }
 
         public int Era { get; private set; }
 
@@ -69,6 +103,39 @@ namespace TimeKey.Application.SceneFlow
         public IReadOnlyCollection<string> SettledRoomIds =>
             new ReadOnlyCollection<string>(new List<string>(_settledRoomIds));
 
+        public OutOfBattleShellState Copy()
+        {
+            return new OutOfBattleShellState(this);
+        }
+
+        public CombatLaunchApplyFailure TryBeginCombat(CombatLaunchPayload launch)
+        {
+            if (launch == null)
+            {
+                return CombatLaunchApplyFailure.InvalidLaunch;
+            }
+
+            if (launch.RunId != RunId)
+            {
+                return CombatLaunchApplyFailure.RunMismatch;
+            }
+
+            if (_settledRoomIds.Contains(launch.RoomId))
+            {
+                return CombatLaunchApplyFailure.RoomAlreadySettled;
+            }
+
+            if (launch.Era != Era || launch.Phase != Phase ||
+                launch.Timecoins != Timecoins || !DeckMatches(launch.DeckStableIds))
+            {
+                return CombatLaunchApplyFailure.StateMismatch;
+            }
+
+            CurrentRoomId = launch.RoomId;
+            CurrentLaunchCorrelationId = launch.LaunchCorrelationId;
+            return CombatLaunchApplyFailure.None;
+        }
+
         public CombatOutcomeApplyResult TryApplyOutcome(CombatOutcome outcome)
         {
             if (outcome == null)
@@ -79,6 +146,16 @@ namespace TimeKey.Application.SceneFlow
             if (outcome.RunId != RunId)
             {
                 return Failed(CombatOutcomeApplyFailure.RunMismatch);
+            }
+
+            if (outcome.RoomId != CurrentRoomId)
+            {
+                return Failed(CombatOutcomeApplyFailure.RoomMismatch);
+            }
+
+            if (outcome.LaunchCorrelationId != CurrentLaunchCorrelationId)
+            {
+                return Failed(CombatOutcomeApplyFailure.LaunchMismatch);
             }
 
             var fingerprint = Fingerprint(outcome);
@@ -123,6 +200,24 @@ namespace TimeKey.Application.SceneFlow
         private static ReadOnlyCollection<string> Copy(IReadOnlyList<string> source)
         {
             return new ReadOnlyCollection<string>(new List<string>(source));
+        }
+
+        private bool DeckMatches(IReadOnlyList<string> deckStableIds)
+        {
+            if (deckStableIds == null || deckStableIds.Count != _deckStableIds.Count)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < deckStableIds.Count; index++)
+            {
+                if (deckStableIds[index] != _deckStableIds[index])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static CombatOutcomeApplyResult Failed(CombatOutcomeApplyFailure failure)
