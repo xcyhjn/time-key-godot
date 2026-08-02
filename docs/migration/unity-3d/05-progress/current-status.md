@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Combat Shell Gate A 独立审查整改已提交；Gate B 已启动
+> 状态：Combat Shell Gate B 已完成；Gate C 可启动
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -70,3 +70,13 @@ Build index 0 现为持久 Bootstrap，后续依次为 GameStart、MainMenu、Ou
 Application typed SceneFlow、launch/outcome/shell state、成功/回滚 phase、sequence 幂等与失败语义已实现。两轮独立审查整改进一步封闭合法 route/payload 矩阵、battle/room/correlation identity、state store rollback/commit、post-commit 恢复、Bootstrap fault、同会话多 run、captured drag 和 async timeout。最终刷新门禁为 EditMode `330/330`、Direct3D12 PlayMode `64/64`、build `211747089` bytes 和实际 Player exit 0/marker 一次/异常 0。Gate B 下一步补 TopHUD 与 3D 背景。
 
 Gate A 初次功能与证据提交已推送；独立审查整改已形成本地检查点 `9a42a3d`。三次 push 均因 GitHub 443 connect/reset 失败，用户明确指示跳过 push；当前本地相对远端 ahead 1。受保护未提交文件与原始日志继续排除在暂存范围外。
+
+## Combat Shell Gate B complete
+
+正式 Combat Scene 已接入保存的 `CombatTopHUD` 与 `CombatBattleBackground`。Top HUD 直接投影 Application snapshot 的 Era/phase/timecoins、draw/hand/discard、目标 HP 和角色身份；暂停/设置使用独立输入锁 lease 与焦点恢复，不清除 SceneFlow 锁。所有玩家文字继续使用 Silver。
+
+背景由海面、透明浅水和四块远景组成；旧近黑地面只关闭 renderer，board collider 不变。四 yaw、pitch/zoom 边界、三视口和卡牌详情/目标/时间轴/敌意/Top HUD 共存截图已人工检查。入口 reveal 现由 SceneFlow 显式启动并等待 0.45 秒完成后才解锁，真实 PlayMode 初/中/末帧已保存。
+
+最终门禁为 full EditMode `334/334`、full D3D12 PlayMode `68/68`、post-build Gate B assets `3/3`、Windows build `Succeeded`（`217436478` bytes）和 actual Bootstrap Player exit 0/marker 一次/异常 0。证据入口为 `../04-verification/evidence/combat-shell-gate-b/verification-summary.md`。原背景图片授权仍为 MIG-005 的“本地验证可用、公开发布未放行”；Gate C 下一步实现 GameStart/MainMenu。
+
+用户明确指示 push 不可用时直接跳过。本阶段不再重试 push，所有检查点只保留本地并继续保护既有未提交改动。

@@ -15,6 +15,7 @@ namespace TimeKey.Application
         private readonly TimelineGrid _timeline;
         private readonly ICombatTraceSink _traceSink;
         private readonly IActionDisplayCatalog _actionDisplayCatalog;
+        private readonly string _playerIdentityLabel;
         private long _actionIdentitySequence;
         private readonly CombatTurnLifecycleCoordinator _turnLifecycle;
         private readonly BattleFlowNextTurnHook _battleFlow;
@@ -43,7 +44,8 @@ namespace TimeKey.Application
             long actionIdentitySequence = 1,
             IActionDisplayCatalog actionDisplayCatalog = null,
             IEnemyIntentSourceCatalog enemyIntentSourceCatalog = null,
-            BattleFlowNextTurnHook battleFlow = null)
+            BattleFlowNextTurnHook battleFlow = null,
+            string playerIdentityLabel = "银 · 时钥行者")
         {
             _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             _state = state ?? throw new ArgumentNullException(nameof(state));
@@ -51,6 +53,7 @@ namespace TimeKey.Application
             _traceSink = traceSink;
             _actionDisplayCatalog = actionDisplayCatalog ?? StableIdActionDisplayCatalog.Instance;
             _battleFlow = battleFlow;
+            _playerIdentityLabel = playerIdentityLabel ?? string.Empty;
             if (actionIdentitySequence <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(actionIdentitySequence));
@@ -128,7 +131,10 @@ namespace TimeKey.Application
             _lastClearResult,
             LastLifecycleChanges,
             _selectedCardInstanceId,
-            BattleFlowCurrent);
+            BattleFlowCurrent,
+            _state.TargetHp,
+            _state.TargetMaxHp,
+            _playerIdentityLabel);
 
         public CombatCommandResult SelectCard(string stableId)
         {

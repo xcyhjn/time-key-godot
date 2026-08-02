@@ -866,6 +866,11 @@ namespace TimeKey.Presentation
 
         private void HandleCardCancelRequested(string stableId)
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             var selectedViewId = SelectedCardViewId;
             if (selectedViewId != null &&
                 string.Equals(stableId, selectedViewId, StringComparison.Ordinal))
@@ -876,6 +881,11 @@ namespace TimeKey.Presentation
 
         private void HandleCardDragChanged(string stableId, Vector2 pointerPosition, CardDragPhase phase)
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             var selectedViewId = SelectedCardViewId;
             if (selectedViewId == null ||
                 !string.Equals(stableId, selectedViewId, StringComparison.Ordinal))
@@ -982,31 +992,61 @@ namespace TimeKey.Presentation
 
         private void HandleCardSelected(string stableId)
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             SelectCard(stableId);
         }
 
         private void HandleTimelineClicked(TimelineCell coordinate)
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             TryPlaceSelected(coordinate.X, coordinate.Y);
         }
 
         private void HandleTimelinePointerEntered(TimelineCell coordinate)
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             PreviewTimelineSelected(coordinate.X, coordinate.Y);
         }
 
         private void HandleTimelinePointerExited()
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             ClearTimelinePreview();
         }
 
         private void HandleResolveClicked()
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             ResolveTimeline();
         }
 
         private void HandleBattleRewardRequested(BattleRewardEntry rewardEntry)
         {
+            if (SceneInputLockState.IsLocked)
+            {
+                return;
+            }
+
             var currentReward = BattleFlow == null
                 ? null
                 : BattleFlow.Settlement.RewardEntry;

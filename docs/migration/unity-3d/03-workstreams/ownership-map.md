@@ -140,10 +140,12 @@ Gate C/D 中 Agent D 只写独占 Presentation/Prefab/tests/report，主智能�
 | --- | --- | --- | --- |
 | Gate 0 | source/visual 与 scene architecture 两个只读 Agent | 只读审计结果；不写工作区 | 已完成返回；均为 PASS WITH CONCERNS，无硬阻塞 |
 | Gate A | Agent A / SceneFlow 白名单 | 仅新增 `Application/SceneFlow/**`、`Composition/SceneFlow/**`、对应 EditMode/PlayMode tests 与自己的报告 | 主智能体完成并回收；两轮独立审查整改后 `330/330 + 64/64`、build/Player 通过 |
-| Gate B | Agent B / Combat Shell | 仅新增 `Presentation/CombatShell/**`、局部 Prefab/Material/tests/report | Prompt 已审查；Gate A 后启动 |
+| Gate B | Agent B / Combat Shell | 仅新增 `Presentation/CombatShell/**`、局部 Prefab/Material/tests/report | 已完成并交回；主智能体完成共享接线、整改与全量验证 |
 | Gate C | Agent C / Menu/Transition | 仅新增 `Presentation/GameStart/MainMenu/TransitionVisuals/**`、Shell Prefab/Animation/tests/report | Prompt 已审查；Gate B 后启动 |
 | 全程 | 主智能体 | 所有既有文件、正式 Scene、Build Settings、asmdef、route/payload 接线、Editor harness、共享 docs/evidence/Git | 独占 |
 
 三份实现白名单无交集，详见 `agents/prompt-review-combat-shell.md`。任何 Agent 都不得运行 Unity/Godot、修改共享 Scene/Build Settings、暂存或提交；主智能体在每个 Agent 返回后回收路径并串行验证。
 
 Gate A 实际未启动并行写入 Agent；主智能体独占 SceneFlow 白名单和全部共享文件完成实现、Scene authoring、Unity 验证、build/Player 与 Git。随后只读审查 Agent 两轮提出原子性、typed boundary、新 run、真实 failure、captured drag 与 timeout 问题，主智能体完成整改并以 `330/330 + 64/64`、build/Player 关闭。Agent B/C 路径未写入，继续保持 Gate B/C 的独占所有权。
+
+Gate B 的局部 authoring/test 任务在互斥路径完成并交回后，主智能体独占修改 Application view、Binding、Controller、SceneFlow、正式 Combat Scene、Editor harness 和共享证据。独立只读复核提出的背景遮挡、modal 输入/排序、reveal completion 与证据缺口已关闭；最终 `334/334 + 68/68`、post-build `3/3`、build/Player 通过。Gate B 所有权已全部回收，Gate C 路径仍未开放写入。

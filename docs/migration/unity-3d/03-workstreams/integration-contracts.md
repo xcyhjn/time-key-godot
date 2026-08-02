@@ -349,3 +349,13 @@ Bootstrap (persistent, Build index 0)
 - Combat 只接受 `CombatLaunchPayload` 进入，只接受目标一致的 `CombatOutcome` 离开；settlement、return 与 launch 的 battle tag/seed 必须一致。
 - `GameOver -> MainMenu` 清理旧 run 的 shell/launch/outcome state；后续新 run 不得被旧 RunId 拒绝。
 - 六 Scene build、唯一持久对象、Combat bind-before-enable、真实 bind failure 回滚与多 run 往返已由 EditMode `330/330`、Direct3D12 PlayMode `64/64`、build/Player 验证。
+
+## Combat Shell Gate B frozen contract
+
+- `CombatSessionView` is the only Top HUD state source. Presentation receives Era, phase, timecoins, draw/hand/discard counts, target current/max HP, player identity and input lock as immutable values.
+- `CombatTopHudPresenter` and `CombatBattleBackground` are saved presentation objects. They cannot mutate deck, turn, outcome, target or action-identity state.
+- Modal input uses a scoped `SceneInputLockState.Acquire()` lease. Closing a modal releases only that lease and cannot clear an independent transition lock.
+- Stable combat UI event callbacks reject input while `SceneInputLockState.IsLocked`; programmatic Application commands and Domain contracts are unchanged.
+- `ISceneRevealPresentation` is Unity-free. Composition starts the active content reveal after uncover and waits for completion before input unlock; disable/missing/zero-duration presentations complete deterministically.
+- The legacy ground collider remains active for board interaction while only its near-black renderer is disabled. Background materials, textures and six renderers live in the saved Prefab/Scene.
+- Gate B is frozen by full EditMode `334/334`, full D3D12 PlayMode `68/68`, post-build asset verification `3/3`, Windows build and actual Bootstrap Player smoke. Evidence is under `../04-verification/evidence/combat-shell-gate-b/`.

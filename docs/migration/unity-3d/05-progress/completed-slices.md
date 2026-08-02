@@ -143,3 +143,13 @@
 - 成功链、Busy/幂等/conflict/stale、合法 route/payload 矩阵、提交前回滚/提交后保留 target、取消与真实 additive Victory/Defeat 往返通过。
 - settlement/return/launch battle identity、run/room/launch correlation、state store rollback/commit、Bootstrap fault 恢复和直接轮询输入锁均有回归测试。
 - Full EditMode `330/330`、Direct3D12 PlayMode `64/64`、Windows build `211747089` bytes、actual Player exit 0。
+
+## Combat Shell Gate B：战斗顶部 UI、背景与入场
+
+完成日期：2026-08-02。
+
+- 保存的响应式 Top HUD 投影 Era/phase/timecoins、三牌区、目标 HP 与角色身份；暂停/设置 modal 具备输入锁、最高 UI 排序和焦点恢复。
+- 保存的背景 Prefab 使用 Godot 原 BG/title/sea/shallow 图，包含海面、透明浅水和四向远景；源/副本哈希、Importer 与授权状态已记录。
+- SceneFlow 等待真实 0.45 秒 Combat reveal 完成后再解锁；初始/中段/完成三帧来自 PlayMode，而非静态 harness 模拟。
+- 三视口、四 yaw、pitch/zoom、卡牌/详情/敌意/Timeline/地图/Top HUD 共存和 pause modal 已逐图人工通过。
+- Full EditMode `334/334`、full D3D12 PlayMode `68/68`、post-build assets `3/3`、Windows build `217436478` bytes、actual Bootstrap Player exit 0。

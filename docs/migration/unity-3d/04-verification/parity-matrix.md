@@ -85,3 +85,15 @@ Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、Act
 | 胜利/失败 | Victory 横幅后奖励返回；Defeat 进入 GameOver | typed 跨 Scene 适配已实现并验证 Victory/Defeat；正式横幅、奖励视觉与 GameOver 视觉待后续 | 允许差异 | Gate A roundtrip/Player；Gate D/E 视觉 |
 | 持久所有权 | Godot autoload 管理全局服务 | Bootstrap 唯一 SceneFlow/EventSystem/Audio/Transition；内容 Scene 无副本 | 等价并显式化 | Gate A Scene 结构和多轮往返 |
 | 中文与字体 | Godot ark-pixel | Unity 继续全要素简体中文与 Silver Font/Material | 允许差异 | 每 Gate asset tests + 实际截图 |
+
+## Combat Shell Gate B final supplement
+
+| Behavior | Godot observable semantics | Unity implementation | Verdict | Evidence |
+| --- | --- | --- | --- | --- |
+| Combat Top HUD | Gold/brown top strip, central clock, player/target state and turn resources | Saved responsive Top HUD consumes the existing Application/BattleFlow snapshot; all visible text uses Silver | 允许差异 | three viewport PNGs + PlayMode |
+| Combat background | Layered water/map atmosphere remains present while navigating the battle | Saved sea, shallow and four-panel horizon remain continuous for four yaw and camera bounds; old black renderer disabled, collider preserved | 允许差异 | yaw/pitch/zoom PNGs + asset tests |
+| Combat entrance | HUD/map/timeline/hand reveal before input becomes available | Saved 0.45s HUD/background reveal implements an explicit SceneFlow completion boundary and input remains locked | 允许差异 | three PlayMode frames + SceneFlow tests |
+| Pause/settings | Modal blocks underlying combat and restores prior focus | Scoped input-lock lease, sorting order 500, raycast dim layer, Escape close and focus restoration | 等价并显式化 | modal PNG + PlayMode |
+| Existing battle interaction | Card/detail/intent/timeline/map share action identity | Gate B adds no alternate identity or resource state; coexistence remains visible at minimum/reference viewport | 等价 | coexistence PNGs + full regression |
+
+Gate B is closed at `334/334 + 68/68`, Windows build and actual Bootstrap Player smoke. Main menu, formal overworld/reward presentation and full transition orchestration remain Gate C-E work.

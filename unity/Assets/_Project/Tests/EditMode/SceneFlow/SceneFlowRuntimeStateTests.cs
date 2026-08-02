@@ -157,6 +157,18 @@ namespace TimeKey.Tests.EditMode.SceneFlow
         }
 
         [Test]
+        public void SceneInputLockLease_DoesNotClearAnIndependentTransitionLock()
+        {
+            SceneInputLockState.SetLocked(true);
+            var lease = SceneInputLockState.Acquire();
+            SceneInputLockState.SetLocked(false);
+            Assert.That(SceneInputLockState.IsLocked, Is.True);
+
+            lease.Dispose();
+            Assert.That(SceneInputLockState.IsLocked, Is.False);
+        }
+
+        [Test]
         public async Task InitialLoadFailure_RevealsAndUnlocksWithObservableFault()
         {
             var root = new GameObject("initial-load-failure-test");

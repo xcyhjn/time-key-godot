@@ -55,13 +55,55 @@ namespace TimeKey.Application.SceneFlow
         string Fingerprint { get; }
     }
 
+    public interface ISceneRevealPresentation
+    {
+        bool IsComplete { get; }
+
+        void PlayReveal();
+
+        void CompleteImmediately();
+    }
+
     public static class SceneInputLockState
     {
-        public static bool IsLocked { get; private set; }
+        private static bool _explicitLock;
+        private static int _leaseCount;
+
+        public static bool IsLocked => _explicitLock || _leaseCount > 0;
 
         public static void SetLocked(bool value)
         {
-            IsLocked = value;
+            _explicitLock = value;
+        }
+
+        public static IDisposable Acquire()
+        {
+            _leaseCount++;
+            return new LockLease();
+        }
+
+        private static void Release()
+        {
+            if (_leaseCount > 0)
+            {
+                _leaseCount--;
+            }
+        }
+
+        private sealed class LockLease : IDisposable
+        {
+            private bool _disposed;
+
+            public void Dispose()
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                Release();
+            }
         }
     }
 

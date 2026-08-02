@@ -61,7 +61,10 @@ namespace TimeKey.Application
             TimelineClearResult lastClearResult,
             IReadOnlyList<LifecycleOccupantChangeResult> lifecycleChanges,
             CardInstanceId? selectedCardInstanceId = null,
-            BattleFlowPresentationSnapshot battleFlow = null)
+            BattleFlowPresentationSnapshot battleFlow = null,
+            int targetHp = 0,
+            int targetMaxHp = 0,
+            string playerIdentityLabel = "银 · 时钥行者")
         {
             Phase = phase;
             SelectedCard = selectedCard;
@@ -78,6 +81,9 @@ namespace TimeKey.Application
             LifecycleChanges = lifecycleChanges;
             SelectedCardInstanceId = selectedCardInstanceId;
             BattleFlow = battleFlow;
+            TargetHp = targetHp;
+            TargetMaxHp = targetMaxHp;
+            PlayerIdentityLabel = playerIdentityLabel ?? string.Empty;
         }
 
         public CombatSessionPhase Phase { get; }
@@ -111,6 +117,12 @@ namespace TimeKey.Application
         public CardInstanceId? SelectedCardInstanceId { get; }
 
         public BattleFlowPresentationSnapshot BattleFlow { get; }
+
+        public int TargetHp { get; }
+
+        public int TargetMaxHp { get; }
+
+        public string PlayerIdentityLabel { get; }
     }
 
     public sealed class CombatCommandResult

@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "unityVersion": "6000.4.10f1",
+  "viewport": "1280x720",
+  "durationSeconds": 0.45,
+  "frames": [
+    {
+      "file": "combat-shell-entrance-1280x720-initial.png",
+      "state": "initial",
+      "assertion": "HUD alpha is zero and background scale is below the resting scale"
+    },
+    {
+      "file": "combat-shell-entrance-1280x720-middle.png",
+      "state": "middle",
+      "assertion": "HUD alpha and background scale are strictly between their initial and completed values"
+    },
+    {
+      "file": "combat-shell-entrance-1280x720-complete.png",
+      "state": "complete",
+      "assertion": "HUD alpha and background scale reached their resting values"
+    }
+  ],
+  "sceneFlowWaitsForCompletion": true,
+  "inputLockedUntilCompletion": true,
+  "renderedFramesDiffer": true,
+  "manualInspection": "passed"
+}

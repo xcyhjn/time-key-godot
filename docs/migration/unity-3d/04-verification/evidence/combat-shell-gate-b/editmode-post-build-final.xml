@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.3607181">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="334" result="Passed" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.360718" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1348" name="TimeKey.Tests.EditMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.EditMode.dll" runstate="Runnable" testcasecount="293" result="Passed" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.343962" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="20428" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1349" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="293" result="Passed" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.334511" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1350" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="293" result="Passed" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.324492" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1351" name="EditMode" fullname="TimeKey.Tests.EditMode" runstate="Runnable" testcasecount="293" result="Passed" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.323234" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1363" name="Composition" fullname="TimeKey.Tests.EditMode.Composition" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.308531" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1243" name="CombatShellGateBAssetTests" fullname="TimeKey.Tests.EditMode.Composition.CombatShellGateBAssetTests" classname="TimeKey.Tests.EditMode.Composition.CombatShellGateBAssetTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.307114" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1246" name="CombatScene_SavesGateBPathsBindingEntranceAndSolidColorCamera" fullname="TimeKey.Tests.EditMode.Composition.CombatShellGateBAssetTests.CombatScene_SavesGateBPathsBindingEntranceAndSolidColorCamera" methodname="CombatScene_SavesGateBPathsBindingEntranceAndSolidColorCamera" classname="TimeKey.Tests.EditMode.Composition.CombatShellGateBAssetTests" runstate="Runnable" seed="1886458447" result="Passed" start-time="2026-08-02 16:11:29Z" end-time="2026-08-02 16:11:30Z" duration="0.256433" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1245" name="GateBBackgroundAssets_PreserveSourceTexturesAndSavedMaterials" fullname="TimeKey.Tests.EditMode.Composition.CombatShellGateBAssetTests.GateBBackgroundAssets_PreserveSourceTexturesAndSavedMaterials" methodname="GateBBackgroundAssets_PreserveSourceTexturesAndSavedMaterials" classname="TimeKey.Tests.EditMode.Composition.CombatShellGateBAssetTests" runstate="Runnable" seed="687304269" result="Passed" start-time="2026-08-02 16:11:30Z" end-time="2026-08-02 16:11:30Z" duration="0.032592" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1244" name="GateBPrefabs_SaveTopHudFontAndBackgroundRendererContracts" fullname="TimeKey.Tests.EditMode.Composition.CombatShellGateBAssetTests.GateBPrefabs_SaveTopHudFontAndBackgroundRendererContracts" methodname="GateBPrefabs_SaveTopHudFontAndBackgroundRendererContracts" classname="TimeKey.Tests.EditMode.Composition.CombatShellGateBAssetTests" runstate="Runnable" seed="295499439" result="Passed" start-time="2026-08-02 16:11:30Z" end-time="2026-08-02 16:11:30Z" duration="0.008031" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

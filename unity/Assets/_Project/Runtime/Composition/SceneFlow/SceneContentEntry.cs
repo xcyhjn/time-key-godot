@@ -69,5 +69,30 @@ namespace TimeKey.Composition.SceneFlow
                     "The content scene cannot signal a renderable frame without an enabled camera.");
             }
         }
+
+        public void PlayRevealPresentation()
+        {
+            foreach (var behaviour in GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (behaviour is ISceneRevealPresentation presentation)
+                {
+                    presentation.PlayReveal();
+                }
+            }
+        }
+
+        public bool IsRevealPresentationComplete()
+        {
+            foreach (var behaviour in GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (behaviour is ISceneRevealPresentation presentation &&
+                    !presentation.IsComplete)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

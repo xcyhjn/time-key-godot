@@ -220,3 +220,15 @@ Gate C 已通过 Scene EditMode `4/4`、BattleFlow integration `3/3`、回归 `1
 Gate 0 的 960x540 Godot 图形刷新和三份审计位于 `evidence/combat-shell-gate-0/`；hover、弹层、Victory/Defeat/return 和三视口只列为后续视觉清单，不冒充已验证。
 
 Gate A 独立审查整改已通过：SceneFlow 定向 `30/30`、full EditMode `330/330`、full Direct3D12 PlayMode `64/64`、六 Scene Windows Development build `211747089` bytes、actual Player exit 0/marker 一次/异常 0。真实 additive test 覆盖实际 Combat load/activate 后的 production bind failure、state rollback、source restore 与 unlock；所有 async 等待有 15 秒超时。证据位于 `evidence/combat-shell-gate-a-remediation/verification-summary.md`；原 `combat-shell-gate-a/` 目录保留为整改前历史。
+
+## Combat Shell Gate B
+
+- Top HUD: Application snapshot binding, Era/phase/timecoins/deck counts/target HP/identity, Silver font/material, disabled/input-lock projection and idempotent refresh.
+- Modal: pause/settings open/close, highest UI sorting layer, raycast blocking, Escape handling, focus move/restore, and lease isolation from an independent transition lock.
+- Background: saved Prefab/material/texture references, six renderers, no colliders, opaque sea plus transparent shallow layer, disabled legacy renderer with collider preserved.
+- Reveal: real additive Combat bind, initial/middle/completed alpha and scale, visibly different rendered frames, disabled/zero-duration completion and SceneFlow wait-before-unlock.
+- Regression: card selection/drag/cancel, action/detail/intent/timeline/map mapping, deck/turn/outcome/reward and true SceneFlow additive routes.
+- Rendered matrix: 1280x720, 1920x1080, 2560x1080; yaw 0/90/180/270; pitch/zoom limits; shared interaction state; pause modal; entrance frames. Every canonical PNG receives manual review.
+- Delivery: full EditMode/PlayMode, post-build Scene/asset test, six-Scene Windows build and actual Bootstrap Player route.
+
+Gate B passed full EditMode `334/334`, full D3D12 PlayMode `68/68`, post-build assets `3/3`, Windows build `217436478` bytes and Player exit 0/marker once. Canonical evidence is `evidence/combat-shell-gate-b/verification-summary.md`.

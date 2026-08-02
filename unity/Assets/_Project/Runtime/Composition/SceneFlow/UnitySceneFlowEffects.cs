@@ -47,6 +47,8 @@ namespace TimeKey.Composition.SceneFlow
                 await YieldFrameAsync(cancellationToken);
                 _activeEntry = entry;
                 transition.SetCovered(false);
+                entry.PlayRevealPresentation();
+                await AwaitRevealPresentation(entry, cancellationToken);
                 inputGate.SetLocked(false);
                 entry.SetInteractive(true);
             }
@@ -109,6 +111,8 @@ namespace TimeKey.Composition.SceneFlow
                         break;
                     case SceneTransitionPhase.Revealing:
                         transition.SetCovered(false);
+                        _activeEntry?.PlayRevealPresentation();
+                        await AwaitRevealPresentation(_activeEntry, cancellationToken);
                         break;
                     case SceneTransitionPhase.InputUnlocked:
                         inputGate.SetLocked(false);
@@ -270,6 +274,19 @@ namespace TimeKey.Composition.SceneFlow
                 cancellationToken.ThrowIfCancellationRequested();
             }
             while (Time.frameCount == initialFrame);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        private static async Task AwaitRevealPresentation(
+            SceneContentEntry entry,
+            CancellationToken cancellationToken)
+        {
+            while (entry != null && !entry.IsRevealPresentationComplete())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Task.Yield();
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
         }
     }

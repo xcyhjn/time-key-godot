@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "entryScene": "Bootstrap",
+  "arguments": [
+    "-timekeyCombatShellSmoke",
+    "-screen-fullscreen",
+    "0",
+    "-screen-width",
+    "960",
+    "-screen-height",
+    "540"
+  ],
+  "route": "GameStart -> MainMenu -> OutOfBattleShell -> Combat -> OutOfBattleShell",
+  "exitCode": 0,
+  "marker": "TIMEKEY_COMBAT_SHELL_GATE_A_PLAYER_SMOKE_PASS",
+  "markerCount": 1,
+  "exceptionCount": 0,
+  "graphicsApi": "Direct3D 12"
+}

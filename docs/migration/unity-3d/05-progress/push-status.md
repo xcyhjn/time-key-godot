@@ -1,6 +1,6 @@
 # Git 提交与推送状态
 
-> 状态：Combat Shell Gate A 实现、证据与维护文档均已推送
+> 状态：Combat Shell Gate B 已形成本地检查点；按用户指示跳过 push
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：`git status`、`git log`、后续 push 输出
@@ -33,6 +33,7 @@
 | Deck & Battle Flow Gate D | `bbd040c` | 2026-08-02 已推送至 `origin/unity_7.31`；推送后 `0/0` | Full `300/300 + 61/61`、18 张 PNG、Windows build/Player、人工总结、架构/维护/进度账本 |
 | Combat Shell Gate A | `86cdc05` | 2026-08-02 已推送至 `origin/unity_7.31`；推送后 `0/0` | Unity-free SceneFlow、Bootstrap/additive 六 Scene、typed launch/outcome、失败回滚、full `320/320 + 62/62`、Windows build/Player 与结构化证据 |
 | Combat Shell Gate A review remediation | `9a42a3d` | 三次 GitHub 443 connect/reset 失败；用户指示跳过 push，本地 ahead 1 | 两轮独立审查整改、full `330/330 + 64/64`、Windows build `211747089` bytes、actual Player smoke 与结构化证据 |
+| Combat Shell Gate B | 本次本地检查点 | 用户明确要求 push 不可用时直接跳过；本阶段未再尝试 push | 保存 TopHUD/背景、SceneFlow reveal completion、modal input/focus、full `334/334 + 68/68`、Windows build `217436478` bytes、actual Bootstrap Player、视觉/素材/维护证据 |
 
 用户原有四个未提交文件、两个未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均未进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。最终状态提交推送后以 `git rev-list --left-right --count HEAD...origin/unity_7.31 = 0/0` 为同步门禁。
 
