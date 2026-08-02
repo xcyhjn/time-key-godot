@@ -88,3 +88,11 @@ GameStart 与 MainMenu 已使用保存的响应式 Prefab。GameStart 复用源�
 无存档时继续按钮明确禁用；pointer hover、键盘焦点、pressed 与 disabled 状态可区分。种子接受任意文本；设置面板实际保存并应用主音量/全屏，未接入的 Music/SFX 明确禁用。种子、设置、数据库和退出弹层使用 scoped lease 阻断底层输入并恢复焦点，Presentation 不持有 SceneFlow、payload 或 application 行为。
 
 持久转场遮罩现有真实 cover/reveal completion。SceneFlow 在关闭来源相机前等待 cover，并在解锁输入前同时等待遮罩与内容 reveal；来源 Scene 正常卸载不再取消 post-commit reveal。最终全量门禁为 EditMode `340/340`、D3D12 PlayMode `85/85`；51 张 GameStart、分层入场、三视口、交互与弹层 PNG 已逐图复核。Gate D 下一步；按用户指示不尝试 push。
+
+## Combat Shell Gate D complete
+
+正式局外壳现使用保存的响应式 Prefab、原六边形地图背景、共享顶部 HUD、单一战斗房间与确认/已结算反馈；GameOver 使用保存 Prefab 显示 typed defeat 并返回 MainMenu。全部玩家可见文字使用 Silver。
+
+`RunStartPayload` 现在显式携带角色身份；局外 launch factory 保留 run/room/correlation/battle/deck/Era/phase/timecoins。Combat composition 在内容启用前消费正式 launch，而首个 authoritative outcome 会关闭 active launch；相同重放幂等，不同或相反重放显式拒绝。Victory 领取奖励后只返回并结算同一房间一次，Defeat 进入 GameOver 后清理 run。
+
+最终 Gate D 门禁为 full EditMode `343/343`、full graphical D3D12 PlayMode `92/92`，以及 18 张三视口局外/GameOver PNG 人工复核；失败、跳过和不确定均为 0。Gate E 接续 Windows build、actual Player smoke、连续三轮、性能与扩展动画；按用户指示不尝试 push。

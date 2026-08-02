@@ -164,3 +164,13 @@
 - Presentation 仅发 typed callback；Composition 创建带显式 run seed/state 的 `RunStartPayload`、递增 sequence 的 SceneFlow request，并拥有 application quit。
 - 持久转场遮罩以真实 cover/reveal completion 驱动相机关闭和输入解锁，不用固定延时。
 - Gate C 最终 EditMode `340/340`、D3D12 PlayMode `85/85`；51 张启动/分层入场/三视口/交互/弹层 PNG 逐图通过。
+
+## Combat Shell Gate D：最小局外壳与完整往返
+
+完成日期：2026-08-03。
+
+- 保存的 OutOfBattleShell/GameOver Prefab 与正式 Scene 完成；局外复用原地图视觉与共享 Top HUD，GameOver 提供 typed defeat 和返回入口，全部中文使用 Silver。
+- typed launch 保留 run/character/room/correlation/battle/deck/Era/phase/timecoins；Combat 在激活前使用该状态创建正式 composition。
+- Victory 领取一次奖励后返回同一 settled room；Defeat 进入 GameOver 后返回 MainMenu 并清理 run。active launch 单次关闭、相同 outcome 幂等、冲突 outcome 拒绝。
+- 三视口覆盖局外 idle/hover/selected/confirming/settled 与 GameOver defeat，共 18 张 PNG，均已人工检查。
+- Full EditMode `343/343`、full graphical D3D12 PlayMode `92/92`，失败/跳过/不确定均为 0。

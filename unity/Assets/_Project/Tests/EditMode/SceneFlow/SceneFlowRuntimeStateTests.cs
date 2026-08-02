@@ -45,16 +45,24 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 Assert.That(store.LastOutcomeApplyResult.Succeeded, Is.True);
                 Assert.That(store.LastOutcomeApplyResult.WasAlreadyApplied, Is.False);
                 Assert.That(store.OutOfBattleState.SettledRoomIds, Does.Contain("room-1"));
+                Assert.That(store.ActiveLaunch, Is.Null);
 
                 store.Record(outcomeRequest);
                 Assert.That(store.LastOutcomeApplyResult.WasAlreadyApplied, Is.True);
                 store.Commit(outcomeRequest);
 
+                Assert.Throws<InvalidOperationException>(() =>
+                    store.Record(Request(
+                        3,
+                        SceneId.Combat,
+                        SceneId.GameOver,
+                        DefeatOutcome(launch, "outcome-conflict"))));
+
                 var otherLaunch = Launch("launch-2", "room-2");
                 var otherOutcome = VictoryOutcome(otherLaunch, "outcome-2");
                 Assert.Throws<InvalidOperationException>(() =>
                     store.Record(Request(
-                        3,
+                        4,
                         SceneId.Combat,
                         SceneId.OutOfBattleShell,
                         otherOutcome)));
@@ -247,6 +255,25 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 new BattleRewardEntry("reward", BattleRewardKind.Acquire, "获得卡牌"));
             settlement.TryResolve(1, BattleOutcome.VictorySettlement);
             settlement.TryClaimReward(2);
+            var boundary = settlement.TryCreateReturnBoundary(
+                new BattleRoundLedger(1, 1, 0).Snapshot,
+                launch.DeckStableIds);
+            return CombatOutcome.TryCreate(
+                correlationId,
+                launch,
+                settlement.Snapshot,
+                boundary.Payload).Outcome;
+        }
+
+        private static CombatOutcome DefeatOutcome(
+            CombatLaunchPayload launch,
+            string correlationId)
+        {
+            var settlement = new BattleSettlementState(
+                launch.BattleTag,
+                launch.BattleSeed,
+                new BattleRewardEntry("reward", BattleRewardKind.Acquire, "获得卡牌"));
+            settlement.TryResolve(1, BattleOutcome.Defeat);
             var boundary = settlement.TryCreateReturnBoundary(
                 new BattleRoundLedger(1, 1, 0).Snapshot,
                 launch.DeckStableIds);

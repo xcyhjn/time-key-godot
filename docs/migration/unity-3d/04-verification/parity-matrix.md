@@ -80,9 +80,9 @@ Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、Act
 | --- | --- | --- | --- | --- |
 | Bootstrap/场景流 | 节点树切换并使用全局 pending payload/outcome | Unity-free typed coordinator + Bootstrap additive runtime；route/payload、提交点原子性、多 run、幂等和真实 bind fault 恢复已实现 | 允许差异 | Gate A remediation `330/330 + 64/64`、build/Player |
 | 启动/主菜单 | 约 3 秒钥匙/三字启动；中央时钟、六枚源纹理按钮、设置/种子/退出与 Iris | 保存 Prefab 已实现钥匙/三字、源比例中央钟/按钮、分层菜单入场、typed run-start/settings、设置与输入/焦点；Iris 以持久 cover/reveal 替代 | 允许差异 | Gate C `340/340 + 85/85`、51 张 PNG |
-| 局外壳 | 顶部 HUD、悬挂时钟、六边形地图、士兵确认 | 无视觉 `OutOfBattleShell` 生产 Scene 与 typed state 已实现；正式 HUD/地图/确认仍待实现 | 允许差异 | Gate A typed roundtrip；Gate D 正式视觉 |
-| 战斗入场 | 地图波纹 -> HUD/生命/时间轴 -> 手牌解锁 | 阶段和时长已冻结，Unity 入场未实现 | 待验证 | Gate B/E 实际动画/黑屏/输入锁 |
-| 胜利/失败 | Victory 横幅后奖励返回；Defeat 进入 GameOver | typed 跨 Scene 适配已实现并验证 Victory/Defeat；正式横幅、奖励视觉与 GameOver 视觉待后续 | 允许差异 | Gate A roundtrip/Player；Gate D/E 视觉 |
+| 局外壳 | 顶部 HUD、悬挂时钟、六边形地图、士兵确认 | 保存的响应式局外 Prefab 复用原六边形地图，显示共享顶部 HUD、单一战斗房间及确认/已结算状态 | 允许差异 | Gate D 15 张局外 PNG + Presenter/asset tests |
+| 战斗入场 | 地图波纹 -> HUD/生命/时间轴 -> 手牌解锁 | 保存的 Combat 背景/Top HUD 以显式 0.45 秒 reveal completion 驱动解锁；更完整分层动画留 Gate E | 允许差异 | Gate B entrance frames + SceneFlow tests |
+| 胜利/失败 | Victory 横幅后奖励返回；Defeat 进入 GameOver | Victory 必须领取一次奖励后返回同一已结算房间；Defeat 绑定 Silver GameOver 并返回 MainMenu 清理 run | 允许差异 | Gate D production roundtrip `2/2` + 3 张 GameOver PNG |
 | 持久所有权 | Godot autoload 管理全局服务 | Bootstrap 唯一 SceneFlow/EventSystem/Audio/Transition；内容 Scene 无副本 | 等价并显式化 | Gate A Scene 结构和多轮往返 |
 | 中文与字体 | Godot ark-pixel | Unity 继续全要素简体中文与 Silver Font/Material | 允许差异 | 每 Gate asset tests + 实际截图 |
 
@@ -110,3 +110,15 @@ Gate B is closed at `334/334 + 69/69`, including direct Application snapshot-to-
 | Transition | Iris/cover blocks input until the target is ready | Persistent cover/reveal completion blocks input and is awaited by SceneFlow; visual shape differs from Iris | 允许差异 | SceneFlow `2/2` + transition tests |
 
 Gate C is closed at `340/340 + 85/85` with 51 manually inspected PNGs. Formal overworld/reward/GameOver visuals and complete success/failure round trips remain Gate D/E work.
+
+## Combat Shell Gate D supplement
+
+| Behavior | Godot observable semantics | Unity implementation | Verdict | Evidence |
+| --- | --- | --- | --- | --- |
+| Battle room launch | Stable room enters combat with current run/deck/round state | Typed launch factory preserves run, character, room, correlation, battle, deck, Era/phase and timecoins before activation | 等价并显式化 | SceneFlow EditMode + production roundtrip |
+| Victory return | Reward is consumed before overworld room settles | Reward button claims authoritative entry once; outcome closes launch and settles the same room once | 等价并显式化 | Gate D Victory roundtrip |
+| Defeat return | Defeat enters GameOver, then returns to menu | Typed defeat binds saved GameOver; return clears the old run and reaches MainMenu | 等价 | Gate D Defeat roundtrip + PNG |
+| Out-of-battle states | Room supports hover, select, confirm and settled feedback | Saved responsive room covers idle/hover/focus/selected/confirming/settled/disabled and transition lock | 允许差异 | 15 PNG + Presenter `4/4` |
+| Identity replay | Scene callbacks must not duplicate outcomes or rooms | Exact outcome replay is idempotent; different/opposite replay conflicts after active launch closes | 等价并显式化 | state-store tests |
+
+Gate D is closed at `343/343 + 92/92` with 18 manually inspected PNGs. Build, actual Player smoke, repeated three-cycle stability, performance and expanded layered animation remain Gate E work.

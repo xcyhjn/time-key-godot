@@ -106,6 +106,7 @@ namespace TimeKey.Tests.PlayMode.MainMenu
                 "main-menu",
                 "entrance-initial",
                 false);
+            menu.PlayEntrance();
             var entranceMiddleDeadline = Time.realtimeSinceStartup + 0.3f;
             while (Time.realtimeSinceStartup < entranceMiddleDeadline)
             {

@@ -30,7 +30,18 @@ namespace TimeKey.Tests.EditMode.SceneFlow
             Assert.That(shell.RunId, Is.EqualTo("run-custom"));
             Assert.That(shell.RunSeed, Is.EqualTo(9123));
             Assert.That(shell.Chapter, Is.EqualTo(1));
+            Assert.That(shell.CharacterId, Is.EqualTo("silver-character"));
             Assert.That(shell.DeckStableIds, Is.EqualTo(start.DeckStableIds));
+
+            var launch = shell.CreateCombatLaunch(
+                "launch-custom",
+                "combat-room-01",
+                "combat-vertical-slice",
+                9123);
+            Assert.That(launch.RunId, Is.EqualTo(shell.RunId));
+            Assert.That(launch.RoomId, Is.EqualTo("combat-room-01"));
+            Assert.That(launch.CharacterId, Is.EqualTo(shell.CharacterId));
+            Assert.That(launch.DeckStableIds, Is.EqualTo(shell.DeckStableIds));
         }
 
         [Test]
@@ -129,6 +140,13 @@ namespace TimeKey.Tests.EditMode.SceneFlow
             Assert.That(repeated.WasAlreadyApplied, Is.True);
             Assert.That(conflict.Failure, Is.EqualTo(CombatOutcomeApplyFailure.OutcomeConflict));
             Assert.That(shell.SettledRoomIds, Does.Contain(launch.RoomId));
+            Assert.That(shell.IsRoomSettled(launch.RoomId), Is.True);
+            Assert.Throws<System.InvalidOperationException>(() =>
+                shell.CreateCombatLaunch(
+                    "launch-again",
+                    launch.RoomId,
+                    launch.BattleTag,
+                    launch.BattleSeed));
         }
 
         [Test]

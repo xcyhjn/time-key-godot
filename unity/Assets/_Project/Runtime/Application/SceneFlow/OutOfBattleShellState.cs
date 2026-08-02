@@ -60,6 +60,7 @@ namespace TimeKey.Application.SceneFlow
             RunId = launch.RunId;
             RunSeed = launch.RunSeed;
             Chapter = launch.Chapter;
+            CharacterId = launch.CharacterId;
             CurrentRoomId = launch.RoomId;
             CurrentLaunchCorrelationId = launch.LaunchCorrelationId;
             Era = launch.Era;
@@ -78,6 +79,7 @@ namespace TimeKey.Application.SceneFlow
             RunId = start.RunId;
             RunSeed = start.RunSeed;
             Chapter = start.Chapter;
+            CharacterId = start.CharacterId;
             CurrentRoomId = string.Empty;
             CurrentLaunchCorrelationId = string.Empty;
             Era = start.Era;
@@ -91,6 +93,7 @@ namespace TimeKey.Application.SceneFlow
             RunId = source.RunId;
             RunSeed = source.RunSeed;
             Chapter = source.Chapter;
+            CharacterId = source.CharacterId;
             CurrentRoomId = source.CurrentRoomId;
             CurrentLaunchCorrelationId = source.CurrentLaunchCorrelationId;
             Era = source.Era;
@@ -114,6 +117,8 @@ namespace TimeKey.Application.SceneFlow
 
         public int Chapter { get; }
 
+        public string CharacterId { get; }
+
         public string CurrentRoomId { get; private set; }
 
         public string CurrentLaunchCorrelationId { get; private set; }
@@ -128,6 +133,37 @@ namespace TimeKey.Application.SceneFlow
 
         public IReadOnlyCollection<string> SettledRoomIds =>
             new ReadOnlyCollection<string>(new List<string>(_settledRoomIds));
+
+        public bool IsRoomSettled(string roomId)
+        {
+            return !string.IsNullOrWhiteSpace(roomId) && _settledRoomIds.Contains(roomId);
+        }
+
+        public CombatLaunchPayload CreateCombatLaunch(
+            string launchCorrelationId,
+            string roomId,
+            string battleTag,
+            int battleSeed)
+        {
+            if (IsRoomSettled(roomId))
+            {
+                throw new InvalidOperationException("A settled room cannot launch combat again.");
+            }
+
+            return new CombatLaunchPayload(
+                launchCorrelationId,
+                RunId,
+                RunSeed,
+                Chapter,
+                Era,
+                Phase,
+                roomId,
+                CharacterId,
+                Timecoins,
+                battleTag,
+                battleSeed,
+                _deckStableIds);
+        }
 
         public OutOfBattleShellState Copy()
         {

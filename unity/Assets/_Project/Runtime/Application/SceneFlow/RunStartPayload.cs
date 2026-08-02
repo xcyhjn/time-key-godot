@@ -24,6 +24,31 @@ namespace TimeKey.Application.SceneFlow
             int phase,
             int timecoins,
             IReadOnlyList<string> deckStableIds)
+            : this(
+                kind,
+                runId,
+                runSeed,
+                seedText,
+                chapter,
+                era,
+                phase,
+                timecoins,
+                "silver-character",
+                deckStableIds)
+        {
+        }
+
+        public RunStartPayload(
+            RunStartKind kind,
+            string runId,
+            int runSeed,
+            string seedText,
+            int chapter,
+            int era,
+            int phase,
+            int timecoins,
+            string characterId,
+            IReadOnlyList<string> deckStableIds)
         {
             if (string.IsNullOrWhiteSpace(runId))
             {
@@ -42,6 +67,11 @@ namespace TimeKey.Application.SceneFlow
                 throw new ArgumentException("A starter deck is required.", nameof(deckStableIds));
             }
 
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                throw new ArgumentException("A character identity is required.", nameof(characterId));
+            }
+
             Kind = kind;
             RunId = runId;
             RunSeed = runSeed;
@@ -50,6 +80,7 @@ namespace TimeKey.Application.SceneFlow
             Era = era;
             Phase = phase;
             Timecoins = timecoins;
+            CharacterId = characterId;
             _deckStableIds = new ReadOnlyCollection<string>(
                 new List<string>(deckStableIds));
         }
@@ -72,11 +103,14 @@ namespace TimeKey.Application.SceneFlow
 
         public int Timecoins { get; }
 
+        public string CharacterId { get; }
+
         public IReadOnlyList<string> DeckStableIds => _deckStableIds;
 
         public string Fingerprint =>
             "run-start:" + Kind + ":" + RunId + ":" + RunSeed + ":" + SeedText + ":" +
             Chapter + ":" + Era + ":" + Phase + ":" + Timecoins + ":" +
+            CharacterId + ":" +
             string.Join(",", _deckStableIds);
     }
 }

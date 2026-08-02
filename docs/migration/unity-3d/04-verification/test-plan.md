@@ -243,3 +243,14 @@ Gate B passed full EditMode `334/334`, CombatShell PlayMode `5/5`, full D3D12 Pl
 - Regression: full EditMode, full D3D12 PlayMode and real additive typed round trips.
 
 Gate C passed full EditMode `340/340` and full D3D12 PlayMode `85/85`; 51 PNGs cover every listed GameStart/MainMenu state at all three viewports and were manually inspected. The full suite includes formal adapter source-unload completion and Composition-owned settings persistence. Build and actual Player smoke remain Gate E checks after Gate D changes the same round-trip surface.
+
+## Combat Shell Gate D
+
+- Contracts/state: explicit character identity, launch fingerprinting, launch factory snapshot preservation, active-launch close on first outcome, exact replay idempotency, opposite/different outcome rejection and rollback restoration.
+- Production round trip: Bootstrap -> MainMenu -> OutOfBattleShell -> Combat -> reward claim -> same settled shell; Combat defeat -> GameOver -> MainMenu. Assertions cover run/room/launch/outcome/battle/deck identity and single settlement.
+- Presentation: OutOfBattle idle/hover/focus/selected/confirming/settled/disabled, typed single confirmation, lock rejection, retry and Escape cancellation; GameOver typed defeat and one return command.
+- Assets: Prefab-backed scenes, ordinary content root plus child overlay Canvas, sibling camera, typed content entry, serialized Presenter/Navigation bindings and Silver on every visible Text.
+- Visual: OutOfBattle idle/hover/selected/confirming/settled and GameOver defeat at 1280x720, 1920x1080 and 2560x1080. Every PNG is manually reviewed for nonblank render, clipping, overlap, readability and distinct state.
+- Regression: targeted SceneFlow `33/33`, out-of-battle Presenter `4/4`, formal round trip `2/2`, asset constraints `3/3`, visual capture `1/1`, full EditMode `343/343` and full graphical D3D12 PlayMode `92/92`; all failed/skipped/inconclusive counts are zero.
+
+Gate D does not claim Windows build, actual Player smoke, repeated three-cycle stability or performance evidence. Those checks remain mandatory in Gate E.

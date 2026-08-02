@@ -189,6 +189,7 @@ namespace TimeKey.Composition.SceneFlow
                 1,
                 1,
                 0,
+                "silver-character",
                 StarterDeck.OrderedStableIds);
         }
 

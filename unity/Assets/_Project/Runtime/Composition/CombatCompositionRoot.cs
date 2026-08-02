@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Application.BattleFlow;
+using TimeKey.Application.SceneFlow;
+using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain;
 using TimeKey.Domain.BattleFlow;
 using TimeKey.Domain.Deck;
@@ -31,6 +33,8 @@ namespace TimeKey.Composition
 
         public int CardCount { get; private set; }
 
+        public CombatLaunchPayload ActiveLaunch { get; private set; }
+
         private void Awake()
         {
             Initialize();
@@ -51,28 +55,38 @@ namespace TimeKey.Composition
             }
 
             var catalog = CardContentCatalog.FromJson(documents);
+            ActiveLaunch = FindFirstObjectByType<SceneFlowStateStore>()?.ActiveLaunch;
             var registrations = CardEffectRegistrationCatalog.CreateVerticalSlice();
             var sprites = LoadArtwork(catalog.Entries);
             presentationBinding.ConfigureCards(
                 CreateCardModels(catalog.Cards, sprites, registrations));
 
             var board = CreateBoard();
+            var battleSeed = ActiveLaunch == null
+                ? VerticalSliceController.FixtureSeed
+                : ActiveLaunch.BattleSeed;
+            var battleTag = ActiveLaunch == null
+                ? "combat-vertical-slice"
+                : ActiveLaunch.BattleTag;
             var state = new CombatSliceState(
                 VerticalSliceController.TargetId,
                 10,
-                VerticalSliceController.FixtureSeed,
+                battleSeed,
                 board);
             var timeline = new TimelineGrid();
             var battleFlow = new BattleFlowNextTurnHook(
-                DeckState.CreateStarter(
-                    VerticalSliceController.FixtureSeed,
-                    "combat-vertical-slice"),
-                new BattleRoundLedger(),
+                CreateDeckState(ActiveLaunch),
+                ActiveLaunch == null
+                    ? new BattleRoundLedger()
+                    : new BattleRoundLedger(
+                        ActiveLaunch.Era,
+                        ActiveLaunch.Phase,
+                        ActiveLaunch.Timecoins),
                 new BattleSettlementState(
-                    "combat-vertical-slice",
-                    VerticalSliceController.FixtureSeed,
+                    battleTag,
+                    battleSeed,
                     new BattleRewardEntry(
-                        "combat-vertical-slice/acquire-card",
+                        battleTag + "/acquire-card",
                         BattleRewardKind.Acquire,
                         "获得卡牌")));
             _session = new CombatApplicationSession(
@@ -90,6 +104,29 @@ namespace TimeKey.Composition
                 Array.Empty<TimelineAction>());
             CardCount = catalog.Cards.Count;
             _initialized = true;
+        }
+
+        private static DeckState CreateDeckState(CombatLaunchPayload launch)
+        {
+            if (launch == null)
+            {
+                return DeckState.CreateStarter(
+                    VerticalSliceController.FixtureSeed,
+                    "combat-vertical-slice");
+            }
+
+            var cards = new List<CardInstance>(launch.DeckStableIds.Count);
+            for (var index = 0; index < launch.DeckStableIds.Count; index++)
+            {
+                cards.Add(new CardInstance(
+                    launch.DeckStableIds[index],
+                    CardInstanceId.FromOrdinal(launch.LaunchCorrelationId, index)));
+            }
+
+            return new DeckState(
+                cards,
+                unchecked((ulong)(uint)launch.BattleSeed),
+                shuffleInitially: true);
         }
 
         private static IReadOnlyList<CardViewModel> CreateCardModels(

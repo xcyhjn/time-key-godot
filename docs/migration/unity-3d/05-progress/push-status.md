@@ -35,6 +35,7 @@
 | Combat Shell Gate A review remediation | `9a42a3d` | 三次 GitHub 443 connect/reset 失败；用户指示跳过 push，本地 ahead 1 | 两轮独立审查整改、full `330/330 + 64/64`、Windows build `211747089` bytes、actual Player smoke 与结构化证据 |
 | Combat Shell Gate B | 本地功能检查点 + 审查闭环 | 用户明确要求 push 不可用时直接跳过；本阶段未再尝试 push | 保存 TopHUD/背景、SceneFlow reveal completion、modal input/focus、Application snapshot binding、full `334/334 + 69/69`、Windows build `217436478` bytes、actual Bootstrap Player、视觉/素材/维护证据 |
 | Combat Shell Gate C | 本地 Gate C 检查点（本次提交） | 按用户指示不尝试 push | 保存 GameStart/MainMenu/Transition Prefab、源钥匙/按钮、`RunStartPayload`、正式 Scene/Composition/设置接线、full `340/340 + 85/85`、51 张视觉证据与维护文档 |
+| Combat Shell Gate D | 本地 Gate D 检查点（本次提交） | 按用户指示不尝试 push | typed launch/outcome production adapters、保存 OutOfBattleShell/GameOver Prefab/Scene、正式 Victory/Defeat 往返、full `343/343 + 92/92`、18 张视觉证据与维护文档 |
 
 用户原有未提交文件、未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均不进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。本阶段按用户指示不执行 push，远端同步不作为当前门禁。
 

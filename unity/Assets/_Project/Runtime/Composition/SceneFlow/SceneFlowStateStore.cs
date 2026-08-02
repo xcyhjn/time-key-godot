@@ -55,9 +55,11 @@ namespace TimeKey.Composition.SceneFlow
                 RecordOutcome(
                     outcome,
                     nextActiveLaunch,
+                    nextLastOutcome,
                     nextOutOfBattleState,
                     out nextLastOutcome,
                     out nextOutcomeApplyResult);
+                nextActiveLaunch = null;
             }
             else if (request.Payload is EmptySceneTransitionPayload &&
                      request.Source == SceneId.GameOver &&
@@ -134,14 +136,22 @@ namespace TimeKey.Composition.SceneFlow
         private static void RecordOutcome(
             CombatOutcome outcome,
             CombatLaunchPayload activeLaunch,
+            CombatOutcome priorOutcome,
             OutOfBattleShellState outOfBattleState,
             out CombatOutcome lastOutcome,
             out CombatOutcomeApplyResult outcomeApplyResult)
         {
-            if (activeLaunch == null || outOfBattleState == null ||
-                outcome.RunId != activeLaunch.RunId ||
-                outcome.RoomId != activeLaunch.RoomId ||
-                outcome.LaunchCorrelationId != activeLaunch.LaunchCorrelationId)
+            var isExactReplay = activeLaunch == null && priorOutcome != null &&
+                string.Equals(
+                    priorOutcome.Fingerprint,
+                    outcome.Fingerprint,
+                    StringComparison.Ordinal);
+            if (outOfBattleState == null ||
+                (!isExactReplay &&
+                 (activeLaunch == null ||
+                  outcome.RunId != activeLaunch.RunId ||
+                  outcome.RoomId != activeLaunch.RoomId ||
+                  outcome.LaunchCorrelationId != activeLaunch.LaunchCorrelationId)))
             {
                 throw new InvalidOperationException(
                     "Combat outcome does not match the active combat launch.");

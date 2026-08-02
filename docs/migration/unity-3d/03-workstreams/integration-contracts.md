@@ -372,3 +372,14 @@ Bootstrap (persistent, Build index 0)
 - Bootstrap remains the unique EventSystem/TransitionCanvas/Audio owner. GameStart and MainMenu only contain their typed content entry, content camera, responsive canvas, Presenter and scene adapter.
 - Source Scene lifetime cancellation is checked before Bootstrap accepts a request. Once accepted, normal source unload cannot cancel post-commit reveal or input unlock.
 - Gate C is frozen by full EditMode `340/340`, full D3D12 PlayMode `85/85` and 51 manually inspected PNGs. Evidence is under `../04-verification/evidence/combat-shell-gate-c/`.
+
+## Combat Shell Gate D frozen contract
+
+- `RunStartPayload.CharacterId` is explicit and participates in the request fingerprint. The compatibility constructor keeps `silver-character`; new production navigation passes it explicitly.
+- `OutOfBattleShellState.CreateCombatLaunch(...)` is the only production launch factory. It preserves run, character, chapter, Era, phase, timecoins and deck snapshots while assigning stable room, launch-correlation and battle identities.
+- `CombatCompositionRoot` consumes the active typed launch before presentation activation. Direct scene loads retain test-fixture fallback, but formal SceneFlow never substitutes fixture seed, deck or round state.
+- The first accepted `CombatOutcome` closes `ActiveLaunch`. Exact same-correlation replay is idempotent; a different or opposite outcome after consumption is rejected. Pre-commit rollback can still restore the original launch snapshot.
+- Victory navigation waits for the authoritative reward claim, then returns to the same shell state exactly once. Defeat bypasses reward, binds the typed outcome to GameOver, and returning to MainMenu clears the run.
+- Out-of-battle and GameOver Presentation emit only typed room/command callbacks. Composition alone owns payload construction, retry identity, SceneFlow request sequencing and application state.
+- Saved OutOfBattleShell/GameOver Prefabs use an ordinary content root, one child `GateDCanvas`, one sibling content camera and Silver on every visible `Text`; scenes contain one typed `SceneContentEntry` and prefab-backed content root.
+- Gate D is frozen by full EditMode `343/343`, full graphical D3D12 PlayMode `92/92`, targeted production Victory/Defeat round trips `2/2`, asset constraints `3/3`, and 18 manually inspected PNGs across three viewports. Build, actual Player smoke and repeated three-cycle stability remain Gate E delivery checks.

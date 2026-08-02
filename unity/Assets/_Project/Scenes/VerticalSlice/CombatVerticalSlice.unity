@@ -133,6 +133,7 @@ GameObject:
   - component: {fileID: 1004}
   - component: {fileID: 1003}
   - component: {fileID: 1006}
+  - component: {fileID: 1007}
   m_Layer: 0
   m_Name: VerticalSliceRoot
   m_TagString: Untagged
@@ -262,6 +263,21 @@ MonoBehaviour:
   topHud: {fileID: 1034515385}
   backgroundRoot: {fileID: 774398680}
   duration: 0.45
+--- !u!114 &1007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 049785ec5e824e228d9d3fde939448f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TimeKey.Composition::TimeKey.Composition.SceneFlow.CombatSceneNavigation
+  bootstrap: {fileID: 0}
+  stateStore: {fileID: 0}
+  controller: {fileID: 1002}
 --- !u!1 &44619100
 GameObject:
   m_ObjectHideFlags: 0

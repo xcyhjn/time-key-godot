@@ -151,3 +151,5 @@ Gate A 实际未启动并行写入 Agent；主智能体独占 SceneFlow 白名�
 Gate B 的局部 authoring/test 任务在互斥路径完成并交回后，主智能体独占修改 Application view、Binding、Controller、SceneFlow、正式 Combat Scene、Editor harness 和共享证据。独立只读复核提出的背景遮挡、modal 输入/排序、reveal completion、snapshot binding 测试与证据缺口已关闭；最终 `334/334 + 69/69`、CombatShell `5/5`、post-build `3/3`、build/Player 通过。Gate B 所有权已全部回收。
 
 Gate C 按原互斥边界完成 Presentation、三个 Shell Prefab 和局部测试；主智能体独占 Bootstrap/GameStart/MainMenu Scene、Composition sequence/navigation/settings、`RunStartPayload`、transition wait、Editor authoring、共享证据与文档。独立复核阻塞整改后最终为 `340/340 + 85/85`，51 张 PNG 已逐图复核，所有权现已全部交回主智能体。
+
+Gate D 使用新增的互斥 Prompt：Presentation Agent 只拥有 `Runtime/Presentation/OutOfBattleShell/**` 与对应 PlayMode tests；契约审计 Agent 只读检查 SceneFlow/02B4 边界；资产测试 Agent 只新增 `CombatShellGateDAssetTests.cs(.meta)`。主智能体独占既有 Application/Composition、正式 Scene/Prefab、Editor authoring、共享文档、证据与 Git。所有 Agent 均已返回，未 stage/commit/push，当前 Gate D 路径已全部回收；最终验证为 `343/343 + 92/92`。
