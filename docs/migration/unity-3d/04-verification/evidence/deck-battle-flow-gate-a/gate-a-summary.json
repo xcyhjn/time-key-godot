@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "branch": "unity_7.31",
+  "unityVersion": "6000.4.10f1",
+  "targetedEditMode": {
+    "total": 44,
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0
+  },
+  "fullEditMode": {
+    "total": 280,
+    "passed": 280,
+    "failed": 0,
+    "skipped": 0
+  },
+  "domainUsesUnityApi": false,
+  "sceneOrPrefabChanged": false,
+  "inheritedVisualEvidence": "turn-lifecycle-gate-d"
+}

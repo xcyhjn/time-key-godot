@@ -188,6 +188,8 @@ Gate 0 已解析 02B3 最终 XML/JSON，并在系统临时目录实跑 lifecycle
 - Outcome/return：Victory/Defeat 竞争、重复同结果、相反结果 conflict、reward once、typed victory/defeat return payload 与防御性复制。
 - 纯 C# 编译、定向 EditMode 和 full EditMode；Domain 静态无 Unity API。
 
+Gate A 已通过：定向 EditMode `44/44`、完整 EditMode `280/280`，0 失败、0 跳过；证据位于 `evidence/deck-battle-flow-gate-a/`。
+
 ### Gate B
 
 - InitialStart 只洗牌/抽 5；EndTurn hook 顺序为弃手、时间币、phase/Era、必要洗回、抽 5，之后才 refresh intent。

@@ -297,3 +297,11 @@ Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/r
 - card stable ID、card-instance identity、action identity 三者不得互代；牌离开 hand 或 View 销毁后，既有 action frame 继续消费保存的 immutable display payload。
 
 源行号与迁移差异见 `agents/reports/deck-battle-flow-source-semantics.md`；决策见 ADR 0009。
+
+### Wave 02B4 Gate A 实际冻结
+
+- `DeckState.CreateStarter(seed, identityScope)` 是牌区聚合入口；`CardInstanceId` 在三堆移动中稳定，`DeckCommandId` 为直接操作去重键。
+- `DeckState.Draw/DiscardFromHand/ForceDiscardHand` 返回 before/after counts、移动 instance IDs、shuffle 信息与 typed reason；所有集合防御性只读。
+- `BattleRoundLedger.Apply` 是 Era/phase/timecoin 唯一写入口，同 sequence+payload 返回原结果，冲突 payload 显式失败。
+- `BattleSettlementState` 是 outcome/reward/return 唯一写入口；终局 snapshot 直接提供输入锁状态。
+- Gate A Unity 结果为定向 EditMode `44/44`、完整 EditMode `280/280`；证据位于 `../04-verification/evidence/deck-battle-flow-gate-a/`。

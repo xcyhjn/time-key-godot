@@ -120,10 +120,12 @@ Gate A 实际执行保持互斥：Agent A 只新增 Prompt 白名单内文件，
 | 波次 | 角色 | 独占路径摘要 | 当前状态 |
 | --- | --- | --- | --- |
 | Gate 0 | Agent 0 / Godot source | 单一 `deck-battle-flow-source-semantics.md` 报告 | 已完成并交回；无硬阻塞 |
-| Gate A | Agent A / Deck Domain | 新 `Runtime/Domain/Deck/**`、`Tests/EditMode/Deck/**`、报告 | 待启动 |
-| Gate A | Agent B / Round + Outcome Domain | 新 `Runtime/Domain/BattleFlow/**`、`Tests/EditMode/BattleFlow/**`、报告 | 待启动 |
+| Gate A | Agent A / Deck Domain | 新 `Runtime/Domain/Deck/**`、`Tests/EditMode/Deck/**`、报告 | 已完成并交回；独占 `12/12`，Unity Gate A 纳入 `44/44` |
+| Gate A | Agent B / Round + Outcome Domain | 新 `Runtime/Domain/BattleFlow/**`、`Tests/EditMode/BattleFlow/**`、报告 | 已完成并交回；独占 `32/32`，Unity Gate A 纳入 `44/44` |
 | Gate B | Agent C / Application hook | 新 `Runtime/Application/BattleFlow/**`、对应 tests/report | 等待 A+B API |
 | Gate C | Agent D / Presentation | 新 `Presentation/BattleFlow/**`、新 BattleFlow Prefab/tests/report | 等待 Gate B API |
 | 全程 | 主智能体 | 所有既有/共享代码、Controller、Composition、Binding、Scene、asmdef、Editor、证据、维护文档和 Git | 独占 |
 
 路径白名单见 `agents/prompts/deck-battle-flow-agent-*.md`，交集审查见 `agents/prompt-review-deck-battle-flow.md`。执行顺序为 `Agent 0 -> (A || B) -> C -> D -> 主集成`；任何时刻仅主智能体可串行启动 Unity。
+
+Gate A 实际保持互斥：Agent A/B 只新增各自 Domain/test/report，均未运行 Unity 或 Git。主智能体在两者交回后完成定向 EditMode `44/44` 与完整 EditMode `280/280`，并回收 Gate A 全部路径。
