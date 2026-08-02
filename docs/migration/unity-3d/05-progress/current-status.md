@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Combat Shell Gate A 已完成验证；检查点与推送待记录
+> 状态：Combat Shell Gate A 已完成并推送；Gate B 正在启动
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -68,3 +68,5 @@ Gate C `1a98db0` 与 Gate D `bbd040c` 均已推送到 `origin/unity_7.31`；该�
 Build index 0 现为持久 Bootstrap，后续依次为 GameStart、MainMenu、OutOfBattleShell、CombatVerticalSlice、GameOver。Bootstrap 唯一拥有 SceneFlow、TransitionCanvas、输入/焦点 gate、EventSystem、AudioRoot 与 state store；内容 Scene 各一个 typed entry 且无持久副本。
 
 Application typed SceneFlow、launch/outcome/shell state、成功/回滚 phase、sequence 幂等与失败语义已实现。Combat 在 payload bind 前保持 inactive；历史直接加载测试用测试专用 EventSystem。最终门禁为 EditMode `320/320`、Direct3D12 PlayMode `62/62`、build `211736305` bytes 和实际 Player exit 0/marker 一次。Gate B 下一步补 TopHUD 与 3D 背景。
+
+Gate A 功能、测试与结构化证据提交为 `86cdc05`，已推送至 `origin/unity_7.31`；推送后 ahead/behind 为 `0/0`。
