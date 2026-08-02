@@ -1,6 +1,6 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：截至 Wave 02B4 Gate D 已冻结并验证
+> 状态：Combat Shell Gate 0 SceneFlow/Bootstrap 契约已冻结；Gate A 待实现
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
@@ -322,3 +322,19 @@ Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/r
 - Scene 在 Play 前保存 `BattleFlowPanel`、Presenter、结算按钮和终局输入锁引用；新增稳定 UI 来自保存 Prefab，全部简体中文使用 Silver。
 - 自动胜利只调用纯 Domain `BattleVictoryRule`：`maximumHp > 0` 且 `currentHp * 10 <= maximumHp`。绝对 HP 常量、UI 文本或 View 不得决定 outcome。
 - Gate D 验证为 full EditMode `300/300`、Direct3D12 PlayMode `61/61`、18 张人工复核 PNG、Windows build `Succeeded`（`211133001` bytes）和 actual Player exit 0；最终证据位于 `../04-verification/evidence/deck-battle-flow-gate-d/`。
+
+## Combat Shell Gate 0 冻结
+
+```text
+Bootstrap (persistent, Build index 0)
+  -> SceneFlowRoot + TransitionCanvas + Input/Focus gate
+  -> unique EventSystem + AudioRoot + diagnostics
+  -> additive content Scene with exactly one typed content entry
+```
+
+- Application 新边界只包含 Unity-free `SceneId`、typed request/payload/outcome、phase/failure/result、局外 state 与 effects port；Unity Scene 名称只在 Composition route catalog。
+- 成功 phase 固定为 `Idle -> InputLocked -> Covering -> LoadingTarget -> ActivatingTarget -> BindingPayload -> WaitingForFirstRenderableFrame -> UnloadingSource -> Revealing -> InputUnlocked -> Idle`。
+- `CombatLaunchPayload` 必须在 Combat 内容根启用前绑定。`CombatOutcome` 组合原 launch 的 run/room/correlation identity 与 02B4 `BattleReturnPayload`；Victory 要求 reward claimed，Defeat 不走 reward。
+- 同 sequence + 同 fingerprint 幂等；同 sequence + 不同请求冲突；stale 与 Busy typed fail。异步回调以 generation 拒绝取消后的陈旧写入。
+- load/activate/bind/first-frame/unload 失败均在遮罩下回滚目标、恢复来源 camera/content/focus，最后揭罩并解锁。
+- Bootstrap 唯一拥有 EventSystem、TransitionCanvas 与 AudioRoot；内容 Scene 不得保留副本。该约定由 ADR 0010 明确取代 ADR 0004 中 Combat Scene 自有 EventSystem 的历史点。

@@ -1,6 +1,6 @@
 # Godot / Unity 等价矩阵
 
-> 状态：Wave 02B4 Gate D 已验证
+> 状态：Combat Shell Gate 0 源体验/契约已冻结；Unity 多场景实现待 Gate A-E
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：Godot 实跑截图/日志、玩法等价契约、Unity 全量测试、构建、Player smoke 与实际截图
@@ -73,3 +73,15 @@ Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、Act
 | 时间币与阶段 | 12x3 空位发币，phase 1..8 后推进 Era | pre-clear occupancy 快照，幂等 ledger，phase/Era rollover 受测 | 等价 | BattleFlow tests + PNG |
 | 终局 | 最大生命比例判定，胜负进入不同流程 | 10% 纯 Domain 规则、互斥 typed outcome、终局输入锁 | 等价并显式化 | `BattleVictoryRuleTests` + PlayMode |
 | 奖励与返回 | 胜利进入奖励并把战斗状态返回局外 | 一次 reward entry/claim 和 typed return payload 已实现；外部 Scene Flow 留给下一阶段 | 允许差异 | Player/build/return tests |
+
+## Combat Shell Gate 0
+
+| 行为 | Godot 可观察语义 | Unity Gate 0 状态 | 判定 | 后续验收 |
+| --- | --- | --- | --- | --- |
+| Bootstrap/场景流 | 节点树切换并使用全局 pending payload/outcome | typed additive ADR 已冻结，尚无 Unity Bootstrap/SceneFlow | 未实现 | Gate A 真实往返与失败恢复 |
+| 启动/主菜单 | 约 3 秒三字启动；中央时钟、六按钮、弹层与 Iris | 源体验与时长已冻结，Unity Presentation 尚未实现 | 待验证 | Gate C 三视口、pointer/keyboard/focus |
+| 局外壳 | 顶部 HUD、悬挂时钟、六边形地图、士兵确认 | 最小 typed shell 契约已冻结，Scene 尚未实现 | 未实现 | Gate D room identity 与完整 roundtrip |
+| 战斗入场 | 地图波纹 -> HUD/生命/时间轴 -> 手牌解锁 | 阶段和时长已冻结，Unity 入场未实现 | 待验证 | Gate B/E 实际动画/黑屏/输入锁 |
+| 胜利/失败 | Victory 横幅后奖励返回；Defeat 进入 GameOver | 02B4 typed outcome/return 可继承；跨 Scene 适配未实现 | 允许差异 | Gate D/E reward once、Defeat no reward、return |
+| 持久所有权 | Godot autoload 管理全局服务 | Unity ADR 冻结 Bootstrap 唯一 EventSystem/Audio/Transition | 待验证 | Gate A Scene 结构和三轮往返 |
+| 中文与字体 | Godot ark-pixel | Unity 继续全要素简体中文与 Silver Font/Material | 允许差异 | 每 Gate asset tests + 实际截图 |

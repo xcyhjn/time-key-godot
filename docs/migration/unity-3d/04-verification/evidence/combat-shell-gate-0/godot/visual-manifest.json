@@ -1,0 +1,45 @@
+{
+  "capturedAt": "2026-08-02T17:14:00+08:00",
+  "engine": "Godot 4.6.2 stable",
+  "renderer": "Vulkan Forward+",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "requestedClientResolution": "960x540",
+  "capturedWindowResolution": "962x561",
+  "input": "Computer Use pointer clicks",
+  "images": [
+    {
+      "file": "main-menu-idle-960x540.png",
+      "sha256": "B2E7611EFB959344DEA8807DC77E8BF38F325B3D163C16AB42D3588CF7B227F5",
+      "verdict": "pass"
+    },
+    {
+      "file": "out-scene-map-initial-960x540.png",
+      "sha256": "C134004FB40B905AE983DD0A11F729F14568FE1BE560E34DAE2FDFBFE62341F2",
+      "verdict": "pass"
+    },
+    {
+      "file": "room-confirm-soldier-960x540.png",
+      "sha256": "471D9C3D7BFED947A807C9ABCA52B1088EB324417D5BA5967B51D24182735863",
+      "verdict": "pass"
+    },
+    {
+      "file": "out-scene-map-zoom-transition-960x540.png",
+      "sha256": "0DBE701E7492364094D51A59C70027A261ABEE95C7F8954EFA4EBEEF19DD90F7",
+      "verdict": "pass"
+    },
+    {
+      "file": "in-scene-first-renderable-960x540.png",
+      "sha256": "0A58ED85B24BBD8B094C4309A69290EF1072D7B20C1D1942C3098870CC639BE0",
+      "verdict": "pass"
+    },
+    {
+      "file": "game-over-direct-load-blank-960x540.png",
+      "sha256": "85A499D5876720F5C08623478FCA3C996E0A438A1FC9A5064C1AFAB1DEE6423F",
+      "verdict": "invalid-direct-load-evidence"
+    }
+  ],
+  "limitations": [
+    "Pointer hover was unavailable because the Computer Use API exposes click but not pointer move.",
+    "GameOver direct load produced a blank gray frame because the scene depends on complete defeat-flow state."
+  ]
+}

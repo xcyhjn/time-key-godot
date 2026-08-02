@@ -136,3 +136,16 @@ Clear 触及 TimelineGrid/Application、effect registration、Timeline Presenter
 02B4 触及 Deck/BattleFlow Domain、Application hook、CardHand/Binding/Controller、Scene/Prefab、终局 UI 与 Player 路径，因此这些边界不继承 02B3 的 Unity build、Player 或截图。最终刷新为 full EditMode `300/300`、Direct3D12 PlayMode `61/61`、18 张人工复核 PNG、Windows build `Succeeded`（`211133001` bytes）和 actual Player exit 0/marker 一次。继续继承未修改的 Godot 源语义、原卡图/字体哈希、3D 棋盘/镜头/高度与 02B3 lifecycle 固定顺序；后继 Combat Shell 可继承 02B4 的 typed outcome/return、顶部 UI、Silver 与 battle-flow hook，触及 SceneFlow/Bootstrap/转场后必须刷新对应 Scene、视觉、build 和 Player 证据。
 
 结构化入口：`evidence/deck-battle-flow-gate-d/verification-summary.md`、`editmode-final.xml`、`playmode-final.xml`、`visual-summary.json`、`build-summary.json` 与 `player-smoke-summary.json`。
+
+## Combat Shell Gate 0 继承与失效
+
+| 前置证据 | Gate 0 判定 | 失效条件 |
+| --- | --- | --- |
+| 02B4 Domain/Application、typed return、10% Victory、reward once | 可继承 | 修改 Deck/BattleFlow/Settlement 或 return adapter 字段丢失 |
+| 02B3 lifecycle 顺序和 action identity | 可继承 | 修改 lifecycle coordinator/processors/identity |
+| Silver 字体、卡图、3D 棋盘/镜头/高度 | 可继承为未受影响边界 | 修改对应资源、相机、Terrain 或 UI font/material |
+| 02B4 `300/300`、`61/61` | 仅作进入基线 | SceneFlow/Bootstrap/Scene fixture 接入后完整回归必须刷新 |
+| 02B4 build/Player smoke | 已因 Build Settings 与启动入口即将改变而失效 | Gate E 从最终多场景 Build 重新建立 |
+| 02B4 18 张截图 | 只证明既有 Combat 规则与表现 | TopHUD/background/入场/SceneFlow 修改后相应视觉必须刷新 |
+
+本次在 Godot 4.6.2/Vulkan/NVIDIA 上实际刷新 960x540 主菜单 idle、外景地图、士兵确认、地图收拢过渡和战斗首个可渲染帧。GameOver 直接加载仅得到灰屏，证明其依赖完整 defeat 状态，不能作为失败视觉证据；hover 因 Computer Use API 不支持 pointer move 未刷新。两项均列入后续真实 Unity/Godot 流程核验。

@@ -1,6 +1,6 @@
 # 多智能体所有权图
 
-> 状态：Wave 02B4 Gate D 全部所有权已交回并完成集成
+> 状态：Combat Shell Gate 0 Prompt 审查通过；Gate A SceneFlow 所有权已开放
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
@@ -133,3 +133,15 @@ Gate A 实际保持互斥：Agent A/B 只新增各自 Domain/test/report，均�
 Gate B 初稿保持 Agent C 新目录所有权；主智能体审查后补齐 frozen hand identity/atomic discard，并独占修改既有 Coordinator、Session 与共享测试。Agent C 未运行 Unity 或 Git；主智能体串行完成 Application `10/10`、集成 `60/60`、full EditMode `293/293` 与 graphical PlayMode `53/53`，现已回收 Gate B 全部路径。
 
 Gate C/D 中 Agent D 只写独占 Presentation/Prefab/tests/report，主智能体负责共享 Scene、Binding、Composition、Controller、harness、终验与 Git。最终 full EditMode `300/300`、graphical PlayMode `61/61`，18 张 PNG、Windows build 和 actual Player smoke 均通过；所有 02B4 所有权现已交回。
+
+## Combat Shell 所有权
+
+| Gate | 角色 | 独占路径摘要 | 当前状态 |
+| --- | --- | --- | --- |
+| Gate 0 | source/visual 与 scene architecture 两个只读 Agent | 只读审计结果；不写工作区 | 已完成返回；均为 PASS WITH CONCERNS，无硬阻塞 |
+| Gate A | Agent A / SceneFlow | 仅新增 `Application/SceneFlow/**`、`Composition/SceneFlow/**`、对应 EditMode/PlayMode tests 与自己的报告 | Prompt review PASS；待立即执行 |
+| Gate B | Agent B / Combat Shell | 仅新增 `Presentation/CombatShell/**`、局部 Prefab/Material/tests/report | Prompt 已审查；Gate A 后启动 |
+| Gate C | Agent C / Menu/Transition | 仅新增 `Presentation/GameStart/MainMenu/TransitionVisuals/**`、Shell Prefab/Animation/tests/report | Prompt 已审查；Gate B 后启动 |
+| 全程 | 主智能体 | 所有既有文件、正式 Scene、Build Settings、asmdef、route/payload 接线、Editor harness、共享 docs/evidence/Git | 独占 |
+
+三份实现白名单无交集，详见 `agents/prompt-review-combat-shell.md`。任何 Agent 都不得运行 Unity/Godot、修改共享 Scene/Build Settings、暂存或提交；主智能体在每个 Agent 返回后回收路径并串行验证。

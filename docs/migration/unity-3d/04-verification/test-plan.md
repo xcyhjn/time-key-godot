@@ -1,6 +1,6 @@
 # Unity 战斗切片与解耦阶段测试计划
 
-> 状态：Wave 02B4 Gate D 已通过
+> 状态：Combat Shell Gate 0 已通过；Gate A SceneFlow 验证待执行
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
@@ -207,3 +207,14 @@ Gate B 已通过：Application hook `10/10`、Deck/Application/Lifecycle 集成 
 - 最终 full EditMode、full graphical PlayMode、Windows build、actual Player smoke；保存 XML、JSON、PNG 和人工总结。
 
 Gate C 已通过 Scene EditMode `4/4`、BattleFlow integration `3/3`、回归 `1/1` 与 graphical targeted `13/13`。Gate D 通过 full EditMode `300/300`、full graphical PlayMode `61/61`，均 0 failed/skipped/inconclusive，PlayMode 日志确认 Direct3D12。Harness 生成 18 张 PNG 并逐张人工复核；Windows x64 Development build `Succeeded`、`211133001` bytes；actual Player exit 0，`TIMEKEY_PLAYER_SMOKE_PASS` 恰好一次、异常零次。证据位于 `evidence/deck-battle-flow-gate-c/` 与 `evidence/deck-battle-flow-gate-d/verification-summary.md`。
+
+## Combat Shell Gate A
+
+- EditMode contracts：合法 phase chain、非法 route/payload、Busy、same-sequence idempotent/conflict、stale、cancel/generation、每个失败 phase、typed failure/result 与防御性复制。
+- EditMode state：launch/outcome roundtrip；Victory reward-before-return；Defeat no-reward；outcome correlation consume-once；同 room 重复恢复幂等/冲突。
+- 静态边界：Application 不引用 Unity；Build index 0 为 Bootstrap；内容 Scene 不保存 EventSystem/AudioRoot/TransitionCanvas；每个内容 Scene 恰好一个 content entry。
+- PlayMode additive：至少三轮 MainMenu <-> OutOfBattle、OutOfBattle -> Combat -> OutOfBattle、Combat -> GameOver -> MainMenu；始终一个 Bootstrap/SceneFlow/EventSystem/Audio/Transition root、最多一个 enabled content camera/interactive root。
+- PlayMode failure：注入 load/activate/bind/first-frame/unload failure，断言来源 Scene、phase、overlay alpha/raycast、input/focus、run state 与 persistent object count 恢复。
+- 回归：迁移历史 direct-load fixture 后重跑完整 EditMode/graphical PlayMode；Gate A 不以 fake-only 或 headless scene load 代替真实 additive lifecycle。
+
+Gate 0 的 960x540 Godot 图形刷新和三份审计位于 `evidence/combat-shell-gate-0/`；hover、弹层、Victory/Defeat/return 和三视口只列为后续视觉清单，不冒充已验证。
