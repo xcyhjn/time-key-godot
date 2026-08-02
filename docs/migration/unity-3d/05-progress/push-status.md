@@ -32,6 +32,7 @@
 | Deck & Battle Flow Gate C | `1a98db0` | 2026-08-02 前两次因 GitHub 443 reset/无法连接失败；随后与 Gate D 一起推送成功 | BattleFlow Presentation/Prefab/Scene、动态手牌、10% 胜利规则、Gate C 测试与增强 Player smoke |
 | Deck & Battle Flow Gate D | `bbd040c` | 2026-08-02 已推送至 `origin/unity_7.31`；推送后 `0/0` | Full `300/300 + 61/61`、18 张 PNG、Windows build/Player、人工总结、架构/维护/进度账本 |
 | Combat Shell Gate A | `86cdc05` | 2026-08-02 已推送至 `origin/unity_7.31`；推送后 `0/0` | Unity-free SceneFlow、Bootstrap/additive 六 Scene、typed launch/outcome、失败回滚、full `320/320 + 62/62`、Windows build/Player 与结构化证据 |
+| Combat Shell Gate A review remediation | `9a42a3d` | 三次 GitHub 443 connect/reset 失败；用户指示跳过 push，本地 ahead 1 | 两轮独立审查整改、full `330/330 + 64/64`、Windows build `211747089` bytes、actual Player smoke 与结构化证据 |
 
 用户原有四个未提交文件、两个未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均未进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。最终状态提交推送后以 `git rev-list --left-right --count HEAD...origin/unity_7.31 = 0/0` 为同步门禁。
 
