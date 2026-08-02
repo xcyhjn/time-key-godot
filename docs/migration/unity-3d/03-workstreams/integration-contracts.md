@@ -358,4 +358,4 @@ Bootstrap (persistent, Build index 0)
 - Stable combat UI event callbacks reject input while `SceneInputLockState.IsLocked`; programmatic Application commands and Domain contracts are unchanged.
 - `ISceneRevealPresentation` is Unity-free. Composition starts the active content reveal after uncover and waits for completion before input unlock; disable/missing/zero-duration presentations complete deterministically.
 - The legacy ground collider remains active for board interaction while only its near-black renderer is disabled. Background materials, textures and six renderers live in the saved Prefab/Scene.
-- Gate B is frozen by full EditMode `334/334`, full D3D12 PlayMode `68/68`, post-build asset verification `3/3`, Windows build and actual Bootstrap Player smoke. Evidence is under `../04-verification/evidence/combat-shell-gate-b/`.
+- Gate B is frozen by full EditMode `334/334`, CombatShell PlayMode `5/5`, full D3D12 PlayMode `69/69`, post-build asset verification `3/3`, Windows build and actual Bootstrap Player smoke. Evidence is under `../04-verification/evidence/combat-shell-gate-b/`.

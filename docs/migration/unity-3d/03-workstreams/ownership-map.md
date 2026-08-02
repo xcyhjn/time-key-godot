@@ -148,4 +148,4 @@ Gate C/D 中 Agent D 只写独占 Presentation/Prefab/tests/report，主智能�
 
 Gate A 实际未启动并行写入 Agent；主智能体独占 SceneFlow 白名单和全部共享文件完成实现、Scene authoring、Unity 验证、build/Player 与 Git。随后只读审查 Agent 两轮提出原子性、typed boundary、新 run、真实 failure、captured drag 与 timeout 问题，主智能体完成整改并以 `330/330 + 64/64`、build/Player 关闭。Agent B/C 路径未写入，继续保持 Gate B/C 的独占所有权。
 
-Gate B 的局部 authoring/test 任务在互斥路径完成并交回后，主智能体独占修改 Application view、Binding、Controller、SceneFlow、正式 Combat Scene、Editor harness 和共享证据。独立只读复核提出的背景遮挡、modal 输入/排序、reveal completion 与证据缺口已关闭；最终 `334/334 + 68/68`、post-build `3/3`、build/Player 通过。Gate B 所有权已全部回收，Gate C 路径仍未开放写入。
+Gate B 的局部 authoring/test 任务在互斥路径完成并交回后，主智能体独占修改 Application view、Binding、Controller、SceneFlow、正式 Combat Scene、Editor harness 和共享证据。独立只读复核提出的背景遮挡、modal 输入/排序、reveal completion、snapshot binding 测试与证据缺口已关闭；最终 `334/334 + 69/69`、CombatShell `5/5`、post-build `3/3`、build/Player 通过。Gate B 所有权已全部回收，Gate C 路径仍未开放写入。

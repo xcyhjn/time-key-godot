@@ -77,6 +77,6 @@ Gate A 初次功能与证据提交已推送；独立审查整改已形成本地�
 
 背景由海面、透明浅水和四块远景组成；旧近黑地面只关闭 renderer，board collider 不变。四 yaw、pitch/zoom 边界、三视口和卡牌详情/目标/时间轴/敌意/Top HUD 共存截图已人工检查。入口 reveal 现由 SceneFlow 显式启动并等待 0.45 秒完成后才解锁，真实 PlayMode 初/中/末帧已保存。
 
-最终门禁为 full EditMode `334/334`、full D3D12 PlayMode `68/68`、post-build Gate B assets `3/3`、Windows build `Succeeded`（`217436478` bytes）和 actual Bootstrap Player exit 0/marker 一次/异常 0。证据入口为 `../04-verification/evidence/combat-shell-gate-b/verification-summary.md`。原背景图片授权仍为 MIG-005 的“本地验证可用、公开发布未放行”；Gate C 下一步实现 GameStart/MainMenu。
+最终门禁为 full EditMode `334/334`、CombatShell PlayMode `5/5`、full D3D12 PlayMode `69/69`、post-build Gate B assets `3/3`、Windows build `Succeeded`（`217436478` bytes）和 actual Bootstrap Player exit 0/marker 一次/异常 0。独立复核补充的 Application snapshot→TopHUD 直接测试已关闭。证据入口为 `../04-verification/evidence/combat-shell-gate-b/verification-summary.md`。原背景图片授权仍为 MIG-005 的“本地验证可用、公开发布未放行”；Gate C 下一步实现 GameStart/MainMenu。
 
 用户明确指示 push 不可用时直接跳过。本阶段不再重试 push，所有检查点只保留本地并继续保护既有未提交改动。

@@ -17,12 +17,13 @@
 | Gate | Result |
 | --- | --- |
 | Full EditMode | `334/334`, 0 failed/skipped/inconclusive |
-| Full D3D12 PlayMode | `68/68`, 0 failed/skipped/inconclusive |
+| CombatShell PlayMode | `5/5`, including direct `Refresh(CombatSessionView)` snapshot projection |
+| Full D3D12 PlayMode | `69/69`, 0 failed/skipped/inconclusive |
 | Post-build Gate B asset/Scene verification | `3/3`, 0 failed/skipped/inconclusive |
 | Windows x64 Development build | `Succeeded`, 6 scenes, `217436478` bytes |
 | Actual Windows Player | Bootstrap route completed, exit 0, marker once, exceptions 0, Direct3D 12 |
 
-Canonical machine-readable evidence is `editmode-full.xml`, `playmode-full-final.xml`, `editmode-post-build-final.xml`, `build-summary.json`, `player-smoke-summary.json` and `entrance-frame-summary.json`. Raw Unity/Player logs and failed exploratory runs remain local and are not delivery evidence.
+Canonical machine-readable evidence is `editmode-full.xml`, `playmode-combat-shell-final.xml`, `playmode-full-final.xml`, `editmode-post-build-final.xml`, `build-summary.json`, `player-smoke-summary.json` and `entrance-frame-summary.json`. Raw Unity/Player logs and failed exploratory runs remain local and are not delivery evidence.
 
 ## Rendered gates
 

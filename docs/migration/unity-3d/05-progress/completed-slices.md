@@ -152,4 +152,4 @@
 - 保存的背景 Prefab 使用 Godot 原 BG/title/sea/shallow 图，包含海面、透明浅水和四向远景；源/副本哈希、Importer 与授权状态已记录。
 - SceneFlow 等待真实 0.45 秒 Combat reveal 完成后再解锁；初始/中段/完成三帧来自 PlayMode，而非静态 harness 模拟。
 - 三视口、四 yaw、pitch/zoom、卡牌/详情/敌意/Timeline/地图/Top HUD 共存和 pause modal 已逐图人工通过。
-- Full EditMode `334/334`、full D3D12 PlayMode `68/68`、post-build assets `3/3`、Windows build `217436478` bytes、actual Bootstrap Player exit 0。
+- Full EditMode `334/334`、CombatShell PlayMode `5/5`、full D3D12 PlayMode `69/69`、post-build assets `3/3`、Windows build `217436478` bytes、actual Bootstrap Player exit 0。

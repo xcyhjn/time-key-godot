@@ -1,7 +1,15 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using TimeKey.Application;
+using TimeKey.Application.BattleFlow;
 using TimeKey.Application.SceneFlow;
+using TimeKey.Domain;
+using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Deck;
+using TimeKey.Domain.Intents;
 using TimeKey.Presentation.CombatShell;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -26,7 +34,7 @@ namespace TimeKey.Tests.PlayMode.CombatShell
             SceneInputLockState.SetLocked(false);
             if (_root != null)
             {
-                Object.Destroy(_root);
+                UnityEngine.Object.Destroy(_root);
             }
 
             yield return null;
@@ -85,6 +93,52 @@ namespace TimeKey.Tests.PlayMode.CombatShell
                 2, 3, 17, 7, 5, 1, 80, 100, "银 · 时钥行者", true));
             Assert.That(rig.Pause.interactable, Is.False);
             Assert.That(rig.Settings.interactable, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator TopHud_RefreshProjectsApplicationSnapshot()
+        {
+            var rig = CreateTopHudRig();
+            var card = new CardDefinition(
+                "snapshot-card",
+                1,
+                new[] { new CardEffect(CardEffectKind.Damage, 10) },
+                new[] { new HexCoord(0, 0) },
+                new[] { new TimelineCell(0, 0) });
+            var battleFlow = new BattleFlowNextTurnHook(
+                DeckState.CreateStarter(731UL, "top-hud-snapshot"),
+                new BattleRoundLedger(2, 4, 17),
+                new BattleSettlementState(
+                    "top-hud-snapshot",
+                    731,
+                    new BattleRewardEntry(
+                        "top-hud-reward",
+                        BattleRewardKind.Acquire,
+                        "领取卡牌奖励")));
+            Assert.That(battleFlow.PrepareInitialStart(1).Succeeded, Is.True);
+            Assert.That(
+                battleFlow.ExecutePrepared(1, TurnLifecycleRequestKind.InitialStart).Succeeded,
+                Is.True);
+
+            using (var session = new CombatApplicationSession(
+                       new TestCatalog(card),
+                       new CombatSliceState("target-01", 80, 731),
+                       new TimelineGrid(),
+                       enemyIntentSourceCatalog: EmptyIntentSourceCatalog.Instance,
+                       battleFlow: battleFlow,
+                       playerIdentityLabel: "银 · 观星者"))
+            {
+                rig.Presenter.Refresh(session.Current);
+            }
+
+            Assert.That(rig.Round.text, Is.EqualTo("时代 2  /  阶段 4"));
+            Assert.That(rig.Clock.text, Is.EqualTo("02 : 04"));
+            Assert.That(rig.Timecoins.text, Is.EqualTo("时间币 17"));
+            Assert.That(rig.DeckZones.text, Is.EqualTo("牌库 7  手牌 5  弃牌 0"));
+            Assert.That(rig.EnemyHealth.text, Is.EqualTo("敌方总生命  80 / 100"));
+            Assert.That(rig.Identity.text, Is.EqualTo("银 · 观星者"));
+            Assert.That(rig.Pause.interactable, Is.True);
+            yield return null;
         }
 
         [UnityTest]
@@ -283,6 +337,39 @@ namespace TimeKey.Tests.PlayMode.CombatShell
             public Text ModalTitle { get; }
             public Button ModalClose { get; }
             public Font Silver { get; }
+        }
+
+        private sealed class TestCatalog : ICardCatalog
+        {
+            private readonly CardDefinition _card;
+
+            public TestCatalog(CardDefinition card)
+            {
+                _card = card;
+                Cards = new[] { card };
+            }
+
+            public IReadOnlyList<CardDefinition> Cards { get; }
+
+            public bool TryGet(string stableId, out CardDefinition card)
+            {
+                card = string.Equals(stableId, _card.StableId, StringComparison.Ordinal)
+                    ? _card
+                    : null;
+                return card != null;
+            }
+        }
+
+        private sealed class EmptyIntentSourceCatalog : IEnemyIntentSourceCatalog
+        {
+            public static EmptyIntentSourceCatalog Instance { get; } =
+                new EmptyIntentSourceCatalog();
+
+            public IReadOnlyList<EnemyIntentSourceSnapshot> CaptureSources(
+                CombatSliceState state)
+            {
+                return Array.Empty<EnemyIntentSourceSnapshot>();
+            }
         }
     }
 }

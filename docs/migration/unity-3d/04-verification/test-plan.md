@@ -231,4 +231,4 @@ Gate A 独立审查整改已通过：SceneFlow 定向 `30/30`、full EditMode `3
 - Rendered matrix: 1280x720, 1920x1080, 2560x1080; yaw 0/90/180/270; pitch/zoom limits; shared interaction state; pause modal; entrance frames. Every canonical PNG receives manual review.
 - Delivery: full EditMode/PlayMode, post-build Scene/asset test, six-Scene Windows build and actual Bootstrap Player route.
 
-Gate B passed full EditMode `334/334`, full D3D12 PlayMode `68/68`, post-build assets `3/3`, Windows build `217436478` bytes and Player exit 0/marker once. Canonical evidence is `evidence/combat-shell-gate-b/verification-summary.md`.
+Gate B passed full EditMode `334/334`, CombatShell PlayMode `5/5`, full D3D12 PlayMode `69/69`, post-build assets `3/3`, Windows build `217436478` bytes and Player exit 0/marker once. The local Presenter suite directly calls `Refresh(CombatSessionView)` with an authoritative BattleFlow snapshot. Canonical evidence is `evidence/combat-shell-gate-b/verification-summary.md`.

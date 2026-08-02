@@ -96,4 +96,4 @@ Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、Act
 | Pause/settings | Modal blocks underlying combat and restores prior focus | Scoped input-lock lease, sorting order 500, raycast dim layer, Escape close and focus restoration | 等价并显式化 | modal PNG + PlayMode |
 | Existing battle interaction | Card/detail/intent/timeline/map share action identity | Gate B adds no alternate identity or resource state; coexistence remains visible at minimum/reference viewport | 等价 | coexistence PNGs + full regression |
 
-Gate B is closed at `334/334 + 68/68`, Windows build and actual Bootstrap Player smoke. Main menu, formal overworld/reward presentation and full transition orchestration remain Gate C-E work.
+Gate B is closed at `334/334 + 69/69`, including direct Application snapshot-to-TopHUD coverage, Windows build and actual Bootstrap Player smoke. Main menu, formal overworld/reward presentation and full transition orchestration remain Gate C-E work.
