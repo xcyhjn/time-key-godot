@@ -5,6 +5,8 @@ using System.IO;
 using NUnit.Framework;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Composition.SceneFlow;
+using TimeKey.Presentation;
+using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.CombatShell;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -23,9 +25,6 @@ namespace TimeKey.Tests.PlayMode.CombatShell
         private Scene _loadedScene;
         private Camera _camera;
         private RenderTexture _renderTexture;
-        private Transform _reusedSceneRoot;
-        private bool _reusedSceneRootWasActive;
-        private bool _ownsLoadedScene;
         private int _previousWidth;
         private int _previousHeight;
         private bool _previousFullscreen;
@@ -41,26 +40,6 @@ namespace TimeKey.Tests.PlayMode.CombatShell
             if (_previousActiveScene.IsValid() && _previousActiveScene.isLoaded)
             {
                 SceneManager.SetActiveScene(_previousActiveScene);
-            }
-
-            if (_ownsLoadedScene && _loadedScene.IsValid() && _loadedScene.isLoaded)
-            {
-                var unload = SceneManager.UnloadSceneAsync(_loadedScene);
-                if (unload != null)
-                {
-                    var deadline = Time.realtimeSinceStartup + TimeoutSeconds;
-                    while (!unload.isDone && Time.realtimeSinceStartup < deadline)
-                    {
-                        yield return null;
-                    }
-
-                    Assert.That(unload.isDone, Is.True, "Combat scene unload timed out.");
-                }
-            }
-
-            if (_reusedSceneRoot != null)
-            {
-                _reusedSceneRoot.gameObject.SetActive(_reusedSceneRootWasActive);
             }
 
             if (_renderTexture != null)
@@ -87,48 +66,18 @@ namespace TimeKey.Tests.PlayMode.CombatShell
             Screen.SetResolution(CaptureWidth, CaptureHeight, false);
             yield return null;
 
-            var existingScene = SceneManager.GetSceneByName("CombatVerticalSlice");
-            if (existingScene.IsValid() && existingScene.isLoaded)
+            var load = SceneManager.LoadSceneAsync(
+                "CombatVerticalSlice",
+                LoadSceneMode.Single);
+            Assert.That(load, Is.Not.Null);
+            var loadDeadline = Time.realtimeSinceStartup + TimeoutSeconds;
+            while (!load.isDone && Time.realtimeSinceStartup < loadDeadline)
             {
-                var unloadExisting = SceneManager.UnloadSceneAsync(existingScene);
-                if (unloadExisting != null)
-                {
-                    var unloadDeadline = Time.realtimeSinceStartup + TimeoutSeconds;
-                    while (!unloadExisting.isDone && Time.realtimeSinceStartup < unloadDeadline)
-                    {
-                        yield return null;
-                    }
-
-                    Assert.That(unloadExisting.isDone, Is.True,
-                        "An existing combat scene could not be unloaded before evidence capture.");
-                }
-                else
-                {
-                    _loadedScene = existingScene;
-                    _reusedSceneRoot = FindInScene<Transform>(_loadedScene, "VerticalSliceRoot");
-                    Assert.That(_reusedSceneRoot, Is.Not.Null,
-                        "The existing combat scene had no reusable vertical slice root.");
-                    _reusedSceneRootWasActive = _reusedSceneRoot.gameObject.activeSelf;
-                    _reusedSceneRoot.gameObject.SetActive(false);
-                }
+                yield return null;
             }
 
-            if (!_loadedScene.IsValid())
-            {
-                var load = SceneManager.LoadSceneAsync(
-                    "CombatVerticalSlice",
-                    LoadSceneMode.Additive);
-                Assert.That(load, Is.Not.Null);
-                var loadDeadline = Time.realtimeSinceStartup + TimeoutSeconds;
-                while (!load.isDone && Time.realtimeSinceStartup < loadDeadline)
-                {
-                    yield return null;
-                }
-
-                Assert.That(load.isDone, Is.True, "Combat scene load timed out.");
-                _loadedScene = SceneManager.GetSceneByName("CombatVerticalSlice");
-                _ownsLoadedScene = true;
-            }
+            Assert.That(load.isDone, Is.True, "Combat scene load timed out.");
+            _loadedScene = SceneManager.GetSceneByName("CombatVerticalSlice");
 
             Assert.That(_loadedScene.IsValid() && _loadedScene.isLoaded, Is.True);
             SceneManager.SetActiveScene(_loadedScene);
@@ -140,10 +89,14 @@ namespace TimeKey.Tests.PlayMode.CombatShell
             Assert.That(entry, Is.Not.Null);
 
             var presenter = root.GetComponent<CombatShellEntrancePresenter>();
+            var controller = root.GetComponent<VerticalSliceController>();
+            var settlement = FindInScene<BattleSettlementPresenter>(_loadedScene);
             var topHudRoot = root.Find("SliceCanvas/HUD/CombatTopHUD");
             var background = root.Find("World/CombatShellBackground");
             var cameraRoot = root.Find("World/SliceCamera");
             Assert.That(presenter, Is.Not.Null);
+            Assert.That(controller, Is.Not.Null);
+            Assert.That(settlement, Is.Not.Null);
             Assert.That(topHudRoot, Is.Not.Null);
             Assert.That(background, Is.Not.Null);
             Assert.That(cameraRoot, Is.Not.Null);
@@ -166,6 +119,10 @@ namespace TimeKey.Tests.PlayMode.CombatShell
 
             entry.Bind(DirectLaunch());
             Assert.That(root.gameObject.activeSelf, Is.True);
+            Assert.That(controller.CurrentTargetHp, Is.GreaterThan(0),
+                "Entrance evidence must start from a fresh combat session.");
+            Assert.That(settlement.IsVisible, Is.False,
+                "Entrance evidence must not capture a previous settlement state.");
             Assert.That(presenter.IsComplete, Is.False);
             Assert.That(topHud.alpha, Is.Zero.Within(0.001f));
             var initialScale = background.localScale;

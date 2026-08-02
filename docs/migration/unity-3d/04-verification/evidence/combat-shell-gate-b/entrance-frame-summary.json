@@ -22,6 +22,8 @@
   ],
   "sceneFlowWaitsForCompletion": true,
   "inputLockedUntilCompletion": true,
+  "freshCombatSession": true,
+  "settlementOverlayAbsent": true,
   "renderedFramesDiffer": true,
-  "manualInspection": "passed"
+  "manualInspection": "passed: active combat state, positive target HP, no settlement overlay"
 }

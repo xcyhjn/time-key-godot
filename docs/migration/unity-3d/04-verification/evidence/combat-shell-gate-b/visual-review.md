@@ -16,6 +16,6 @@ The following rendered evidence was opened and inspected, not accepted from exit
 | `interaction-coexist-1280x720.png` | Selected Poison card, effect detail, target highlight, timeline preview, enemy state and Top HUD coexist at the minimum viewport. |
 | `interaction-coexist-1920x1080.png` | The same shared action identity state remains aligned at the reference viewport. |
 | `pause-modal-1280x720.png` | Dim layer and dialog cover world sprites; focus is on the close action and underlying combat input is locked. |
-| three `combat-shell-entrance-1280x720-*.png` frames | Initial, middle and completed HUD/background states visibly progress and match the automated alpha/scale assertions. |
+| three `combat-shell-entrance-1280x720-*.png` frames | A fresh active combat session (positive target HP, no settlement overlay) visibly progresses through initial, middle and completed HUD/background states and matches the automated alpha/scale assertions. |
 
 No unreadable Chinese glyphs, non-Silver player text, incoherent overlap, missing controls, exposed background seams or modal penetration was found. Static captures deliberately disable the entrance presenter; the three PlayMode frames are the animation evidence.
