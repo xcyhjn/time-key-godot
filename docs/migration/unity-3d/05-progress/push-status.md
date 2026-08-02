@@ -1,6 +1,6 @@
 # Git 提交与推送状态
 
-> 状态：Wave 02B4 Gate C 本地检查点已建立；GitHub 443 连接恢复后继续推送
+> 状态：Wave 02B4 Gate D 实现、证据与维护文档均已推送
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：`git status`、`git log`、后续 push 输出
@@ -29,7 +29,8 @@
 | Deck & Battle Flow Gate 0 | `41743fd` | 2026-08-02 已推送至 `origin/unity_7.31` | 02B4 来源语义、ADR 0009、所有权 Prompt、共享契约与 Gate 0 保护清单 |
 | Deck & Battle Flow Gate A | `239e878` | 2026-08-02 已推送至 `origin/unity_7.31` | Deck/BattleFlow Domain、固定 seed、时间币、终局/奖励/return 与 EditMode `280/280` |
 | Deck & Battle Flow Gate B | `2e6f101` | 2026-08-02 已推送至 `origin/unity_7.31` | Application hook、正式手牌实例身份、lifecycle 集成与 `293/293 + 53/53` |
-| Deck & Battle Flow Gate C | `1a98db0` | 2026-08-02 两次 push 均因 GitHub 443 reset/无法连接失败；本地待推送 | BattleFlow Presentation/Prefab/Scene、动态手牌、10% 胜利规则、Gate C 测试与增强 Player smoke |
+| Deck & Battle Flow Gate C | `1a98db0` | 2026-08-02 前两次因 GitHub 443 reset/无法连接失败；随后与 Gate D 一起推送成功 | BattleFlow Presentation/Prefab/Scene、动态手牌、10% 胜利规则、Gate C 测试与增强 Player smoke |
+| Deck & Battle Flow Gate D | `bbd040c` | 2026-08-02 已推送至 `origin/unity_7.31`；推送后 `0/0` | Full `300/300 + 61/61`、18 张 PNG、Windows build/Player、人工总结、架构/维护/进度账本 |
 
 用户原有四个未提交文件、两个未跟踪 Prompt、来源不明的旧证据图和后续出现的未知迁移路线图改动均未进入检查点。每次提交前记录 `git diff --cached --name-only` 并确认只包含表中范围。最终状态提交推送后以 `git rev-list --left-right --count HEAD...origin/unity_7.31 = 0/0` 为同步门禁。
 

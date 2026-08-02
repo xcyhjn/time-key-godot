@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Wave 02B4 Gate D 验证已通过；检查点与推送待记录
+> 状态：Wave 02B4 Gate D 已完成并推送；下一阶段为 Combat Shell 与 Scene Flow
 > 负责人：主智能体
 > 最后验证日期：2026-08-02
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -60,3 +60,5 @@ Git 检查点与远端同步结果以 `push-status.md` 为唯一账本；本文�
 胜利条件为最大生命 10% 的纯 Domain 规则。Victory/Defeat 互斥，终局锁输入，胜利产生一次 reward entry/claim；typed return 携带 12 张 deck snapshot、Era/phase/timecoins、battle tag 与 seed。动态实体卡离手后，既有 action frame 仍使用独立 action identity/display snapshot。
 
 最终门禁为 EditMode `300/300`、Direct3D12 PlayMode `61/61`、18 张逐图复核 PNG、Windows build `Succeeded`（`211133001` bytes）和 actual Player exit 0/marker 一次。证据入口为 `../04-verification/evidence/deck-battle-flow-gate-d/verification-summary.md`。
+
+Gate C `1a98db0` 与 Gate D `bbd040c` 均已推送到 `origin/unity_7.31`；该次推送后 ahead/behind 为 `0/0`。
