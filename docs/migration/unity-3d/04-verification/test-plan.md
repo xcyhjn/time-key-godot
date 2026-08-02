@@ -176,3 +176,28 @@ Gate A 历史结果为定向 EditMode `85/85`、full EditMode `183/183`、full P
 - 视觉：Gate B 六张、Gate D 六张 PNG 已逐图检查；像素存在性不替代人工结论。
 
 证据入口为 `evidence/turn-lifecycle-gate-b/verification-summary.md` 与 `evidence/turn-lifecycle-gate-d/verification-summary.md`。
+
+## Wave 02B4 Gate 矩阵
+
+Gate 0 已解析 02B3 最终 XML/JSON，并在系统临时目录实跑 lifecycle EditMode `49/49` 与 action/tooltip graphical PlayMode `6/6`，0 失败、0 跳过；最终证据不能以该临时结果替代。
+
+### Gate A
+
+- Deck：12 张 starter input、重复 stable ID/唯一 instance ID、固定 seed、top 方向、hand limit 7、抽 5、空 deck 洗回、双空 exhausted、多周期与失败无副作用。
+- Round/resources：Era 1/phase 1、phase 8 rollover、36 格时间币、0/部分/全占格、重复 sequence 幂等和整数溢出保护。
+- Outcome/return：Victory/Defeat 竞争、重复同结果、相反结果 conflict、reward once、typed victory/defeat return payload 与防御性复制。
+- 纯 C# 编译、定向 EditMode 和 full EditMode；Domain 静态无 Unity API。
+
+### Gate B
+
+- InitialStart 只洗牌/抽 5；EndTurn hook 顺序为弃手、时间币、phase/Era、必要洗回、抽 5，之后才 refresh intent。
+- hook 只使用 EndTurn 开始冻结的 occupancy/hand/action snapshots；Timeline clear 后不能误发 36 时间币。
+- 重复 lifecycle sequence 不重复移动卡、加币或推进；步骤失败无部分副作用；终局拒绝 hook/action。
+- 手牌 View 消失后 action display payload 仍显示卡名、效果、source/target 和原 action identity。
+
+### Gate C / D
+
+- PlayMode：deck/hand/discard 数量、Era/phase、时间币、输入锁、胜负互斥、奖励入口 once、重复 Apply 幂等和 Silver Font/Material。
+- Scene/Prefab：稳定 HUD/settlement 对象与 Inspector 引用在 Play 前存在；Presenter 不推导规则。
+- 视觉：1280x720、1920x1080、2560x1080 覆盖多回合抽弃/洗牌、空堆、资源变化、残留 action frame、Victory 与 Defeat；逐图检查裁切、重叠、缺字和错误交互。
+- 最终 full EditMode、full graphical PlayMode、Windows build、actual Player smoke；保存 XML、JSON、PNG 和人工总结。

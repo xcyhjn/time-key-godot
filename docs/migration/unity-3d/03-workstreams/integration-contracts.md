@@ -281,3 +281,19 @@ Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/r
 - `CardEffectFrame`/`TimelineActionFrame` 来自保存 Prefab，所有玩家可见文字与 world TextMesh 使用 Silver Font/Material。
 
 最终验证为 full EditMode `236/236`、graphical PlayMode `53/53`、Windows build `Succeeded`（`211055434` bytes）和 actual Player smoke exit 0。
+
+## Wave 02B4 Gate 0 冻结契约
+
+> 状态：2026-08-02 Gate 0 完成；ADR 0009 已接受
+
+- starter deck 的有序输入为 `lighting x2, earthquake x2, recover x2, wind x2, tower x2, poison x2`；每张实体卡另有稳定 `CardInstanceId`。
+- deck top 为数组尾端；hand limit 7、正式抽牌请求 5。deck 空时只把非空 discard 洗回一次；双空返回 typed exhausted。
+- 所有洗牌只消费显式 seed/自有随机状态，固定 seed 的初始顺序和跨多轮结果必须可复现。
+- EndTurnRequested 冻结 occupied cells、remaining hand instances 和 action display snapshots；现有 runner 顺序不变。
+- reserved hook 固定为 `discard -> timecoin -> phase/Era -> reshuffle-if-needed -> draw 5`。InitialStart 只初始化/抽 5，不推进、不发时间币。
+- 时间币按冻结的 12x3 Timeline 空格计算，不能在 clear 后读取空网格；多格 action 按实际 occupied cells 计数。
+- outcome 为单一 authoritative transaction；Victory/Defeat 互斥、重复同结果幂等、相反结果 typed conflict，终局后输入锁定。
+- Victory 只发一次最小 reward entry；typed return payload 明确携带 outcome/Era/phase/timecoins/deck/context。完整局外奖励与 OutScene 不迁移。
+- card stable ID、card-instance identity、action identity 三者不得互代；牌离开 hand 或 View 销毁后，既有 action frame 继续消费保存的 immutable display payload。
+
+源行号与迁移差异见 `agents/reports/deck-battle-flow-source-semantics.md`；决策见 ADR 0009。
