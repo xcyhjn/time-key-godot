@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "unityVersion": "6000.4.10f1",
+  "renderer": "Direct3D 12",
+  "gameStartFrames": 9,
+  "mainMenuFrames": 42,
+  "viewports": [
+    "1280x720",
+    "1920x1080",
+    "2560x1080"
+  ],
+  "states": [
+    "idle",
+    "entrance-initial",
+    "entrance-middle",
+    "entrance-complete",
+    "hover-left",
+    "hover-right",
+    "focus-left",
+    "focus-right",
+    "pressed",
+    "continue-disabled",
+    "seed",
+    "settings",
+    "database",
+    "exit"
+  ],
+  "viewportCoverage": "every listed state at all three viewports",
+  "silverFont": true,
+  "manualInspection": "passed"
+}

@@ -8,6 +8,32 @@ namespace TimeKey.Tests.EditMode.SceneFlow
     public sealed class SceneFlowPayloadTests
     {
         [Test]
+        public void RunStartPayload_CarriesExplicitSeedAndDefensivelyCopiesInitialState()
+        {
+            var deck = new List<string> { "lighting", "recover" };
+            var start = new RunStartPayload(
+                RunStartKind.SeedGame,
+                "run-custom",
+                9123,
+                "custom-seed",
+                1,
+                1,
+                1,
+                0,
+                deck);
+            deck[0] = "mutated";
+            var shell = new OutOfBattleShellState(start);
+
+            Assert.That(start.TargetScene, Is.EqualTo(SceneId.OutOfBattleShell));
+            Assert.That(start.DeckStableIds, Is.EqualTo(new[] { "lighting", "recover" }));
+            Assert.That(start.Fingerprint, Does.Contain("custom-seed"));
+            Assert.That(shell.RunId, Is.EqualTo("run-custom"));
+            Assert.That(shell.RunSeed, Is.EqualTo(9123));
+            Assert.That(shell.Chapter, Is.EqualTo(1));
+            Assert.That(shell.DeckStableIds, Is.EqualTo(start.DeckStableIds));
+        }
+
+        [Test]
         public void CombatLaunchPayload_DefensivelyCopiesDeckAndTargetsCombat()
         {
             var deck = new List<string> { "lighting", "recover" };

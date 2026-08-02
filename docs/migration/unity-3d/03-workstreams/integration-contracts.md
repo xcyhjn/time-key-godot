@@ -359,3 +359,16 @@ Bootstrap (persistent, Build index 0)
 - `ISceneRevealPresentation` is Unity-free. Composition starts the active content reveal after uncover and waits for completion before input unlock; disable/missing/zero-duration presentations complete deterministically.
 - The legacy ground collider remains active for board interaction while only its near-black renderer is disabled. Background materials, textures and six renderers live in the saved Prefab/Scene.
 - Gate B is frozen by full EditMode `334/334`, CombatShell PlayMode `5/5`, full D3D12 PlayMode `69/69`, post-build asset verification `3/3`, Windows build and actual Bootstrap Player smoke. Evidence is under `../04-verification/evidence/combat-shell-gate-b/`.
+
+## Combat Shell Gate C frozen contract
+
+- GameStart reveal is approximately three seconds and non-skippable in the authored production Prefab. The source key, independent three-character motion and black/gold/black sequence report explicit completion; immediate completion stops active routines.
+- The six MainMenu commands are New Game, Seed Game, Continue, Settings, Database and Exit. Continue remains disabled; Database is unavailable; saved settings connect master volume/fullscreen and explicitly disable absent music/SFX channels.
+- Presentation emits `MainMenuCommandRequest` only. Composition creates `RunStartPayload` with explicit run ID/seed/state, owns increasing sequence identity and owns application quit.
+- Settings, seed and modal overlays own scoped input-lock leases, restore prior focus and give Escape priority to the top open overlay. Idle Escape opens Settings; Return/KeypadEnter confirms an open seed input once. Repeated navigation commands are suppressed until failure or source unload.
+- Presentation emits a typed settings snapshot only. Composition owns PlayerPrefs, master AudioListener volume and Screen fullscreen application; unavailable Music/SFX channels stay disabled.
+- MainMenu background, title, clock and source-texture button layers implement `ISceneRevealPresentation`; SceneFlow cannot unlock input before the layered entrance is complete.
+- `TransitionVisualPresenter` owns only cover/reveal visuals and completion. SceneFlow awaits cover before disabling the source camera and awaits both transition and content reveal before input unlock.
+- Bootstrap remains the unique EventSystem/TransitionCanvas/Audio owner. GameStart and MainMenu only contain their typed content entry, content camera, responsive canvas, Presenter and scene adapter.
+- Source Scene lifetime cancellation is checked before Bootstrap accepts a request. Once accepted, normal source unload cannot cancel post-commit reveal or input unlock.
+- Gate C is frozen by full EditMode `340/340`, full D3D12 PlayMode `85/85` and 51 manually inspected PNGs. Evidence is under `../04-verification/evidence/combat-shell-gate-c/`.

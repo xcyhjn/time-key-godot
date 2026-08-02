@@ -43,6 +43,13 @@ namespace TimeKey.Composition.SceneFlow
             {
                 RecordLaunch(launch, ref nextOutOfBattleState, out nextActiveLaunch);
             }
+            else if (request.Payload is RunStartPayload start)
+            {
+                nextOutOfBattleState = new OutOfBattleShellState(start);
+                nextActiveLaunch = null;
+                nextLastOutcome = null;
+                nextOutcomeApplyResult = null;
+            }
             else if (request.Payload is CombatOutcome outcome)
             {
                 RecordOutcome(

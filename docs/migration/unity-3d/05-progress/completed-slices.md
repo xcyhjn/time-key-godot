@@ -153,3 +153,14 @@
 - SceneFlow 等待真实 0.45 秒 Combat reveal 完成后再解锁；初始/中段/完成三帧来自 PlayMode，而非静态 harness 模拟。
 - 三视口、四 yaw、pitch/zoom、卡牌/详情/敌意/Timeline/地图/Top HUD 共存和 pause modal 已逐图人工通过。
 - Full EditMode `334/334`、CombatShell PlayMode `5/5`、full D3D12 PlayMode `69/69`、post-build assets `3/3`、Windows build `217436478` bytes、actual Bootstrap Player exit 0。
+
+## Combat Shell Gate C：启动、主菜单与转场表现
+
+完成日期：2026-08-03。
+
+- 保存的 GameStart Prefab 复用源钥匙图，实现约 3 秒、不可跳过的 Silver 三字独立移动、黑/金/黑启动表现与显式 completion。
+- 保存的 MainMenu Prefab 复用原六边形地图、中央时钟、三份字节一致时钟素材和十二张源按钮状态图，完成新游戏/种子/继续/设置/数据库/退出六项。
+- Continue 无存档时明确 disabled；hover/focus/pressed/disabled、任意文本种子、设置/数据库提示、退出确认、ESC/焦点与 scoped 输入锁完成。设置实际保存并应用主音量/全屏，未接入 Music/SFX 明确禁用。
+- Presentation 仅发 typed callback；Composition 创建带显式 run seed/state 的 `RunStartPayload`、递增 sequence 的 SceneFlow request，并拥有 application quit。
+- 持久转场遮罩以真实 cover/reveal completion 驱动相机关闭和输入解锁，不用固定延时。
+- Gate C 最终 EditMode `340/340`、D3D12 PlayMode `85/85`；51 张启动/分层入场/三视口/交互/弹层 PNG 逐图通过。

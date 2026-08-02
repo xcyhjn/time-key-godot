@@ -148,6 +148,24 @@ namespace TimeKey.Tests.EditMode.SceneFlow
         }
 
         [Test]
+        public async Task TransitionAsync_RejectsEmptyPayloadThatBypassesRunStartBoundary()
+        {
+            var coordinator = new SceneFlowCoordinator(
+                SceneId.MainMenu,
+                new RecordingEffects());
+            var result = await coordinator.TransitionAsync(
+                new SceneTransitionRequest(
+                    1,
+                    "empty-run",
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    new EmptySceneTransitionPayload(SceneId.OutOfBattleShell)));
+
+            Assert.That(result.Failure, Is.EqualTo(SceneTransitionFailure.InvalidPayload));
+            Assert.That(coordinator.CurrentScene, Is.EqualTo(SceneId.MainMenu));
+        }
+
+        [Test]
         public async Task TransitionAsync_ConcurrentDifferentRequestReturnsBusy()
         {
             var effects = new BlockingEffects();
@@ -182,12 +200,25 @@ namespace TimeKey.Tests.EditMode.SceneFlow
             SceneId source = SceneId.MainMenu,
             SceneId target = SceneId.OutOfBattleShell)
         {
+            ISceneTransitionPayload payload = source == SceneId.MainMenu &&
+                target == SceneId.OutOfBattleShell
+                    ? new RunStartPayload(
+                        RunStartKind.NewGame,
+                        "run-731",
+                        731,
+                        "731",
+                        1,
+                        1,
+                        1,
+                        0,
+                        new[] { "lighting" })
+                    : new EmptySceneTransitionPayload(target);
             return new SceneTransitionRequest(
                 sequence,
                 correlation,
                 source,
                 target,
-                new EmptySceneTransitionPayload(target));
+                payload);
         }
 
         private sealed class RecordingEffects : ISceneFlowEffects

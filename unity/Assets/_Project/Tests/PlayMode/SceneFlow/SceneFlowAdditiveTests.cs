@@ -6,6 +6,7 @@ using NUnit.Framework;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Deck;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -41,6 +42,9 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                     SceneId.MainMenu,
                     new EmptySceneTransitionPayload(SceneId.MainMenu)));
             AssertPersistentState(SceneId.MainMenu);
+            var menu = Object.FindAnyObjectByType<TimeKey.Presentation.MainMenu.MainMenuPresenter>();
+            Assert.That(menu, Is.Not.Null);
+            Assert.That(menu.IsEntranceComplete, Is.True);
 
             yield return Transition(
                 bootstrap,
@@ -49,7 +53,7 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                     "menu-to-shell",
                     SceneId.MainMenu,
                     SceneId.OutOfBattleShell,
-                    new EmptySceneTransitionPayload(SceneId.OutOfBattleShell)));
+                    Start("gate-a-run")));
             AssertPersistentState(SceneId.OutOfBattleShell);
 
             var victoryLaunch = Launch("victory", "room-victory");
@@ -134,7 +138,7 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                     "new-run-shell",
                     SceneId.MainMenu,
                     SceneId.OutOfBattleShell,
-                    new EmptySceneTransitionPayload(SceneId.OutOfBattleShell)));
+                    Start("gate-a-run-2")));
             var newRunLaunch = Launch("new-run", "room-new", "gate-a-run-2");
             yield return Transition(
                 bootstrap,
@@ -275,11 +279,21 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 0,
                 "combat-vertical-slice",
                 731,
-                new[]
-                {
-                    "lighting", "earthquake", "recover", "built", "poison",
-                    "wind", "tornado", "lighting", "recover", "built", "poison", "wind"
-                });
+                StarterDeck.OrderedStableIds);
+        }
+
+        private static RunStartPayload Start(string runId)
+        {
+            return new RunStartPayload(
+                RunStartKind.NewGame,
+                runId,
+                731,
+                "731",
+                1,
+                1,
+                1,
+                0,
+                StarterDeck.OrderedStableIds);
         }
 
         private static CombatOutcome Outcome(

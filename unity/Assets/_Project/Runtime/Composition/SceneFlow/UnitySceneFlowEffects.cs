@@ -48,7 +48,7 @@ namespace TimeKey.Composition.SceneFlow
                 _activeEntry = entry;
                 transition.SetCovered(false);
                 entry.PlayRevealPresentation();
-                await AwaitRevealPresentation(entry, cancellationToken);
+                await AwaitRevealPresentation(entry, transition, cancellationToken);
                 inputGate.SetLocked(false);
                 entry.SetInteractive(true);
             }
@@ -87,6 +87,7 @@ namespace TimeKey.Composition.SceneFlow
                         break;
                     case SceneTransitionPhase.Covering:
                         transition.SetCovered(true);
+                        await AwaitTransitionPresentation(transition, cancellationToken);
                         _activeEntry?.SetCameraEnabled(false);
                         break;
                     case SceneTransitionPhase.LoadingTarget:
@@ -112,7 +113,10 @@ namespace TimeKey.Composition.SceneFlow
                     case SceneTransitionPhase.Revealing:
                         transition.SetCovered(false);
                         _activeEntry?.PlayRevealPresentation();
-                        await AwaitRevealPresentation(_activeEntry, cancellationToken);
+                        await AwaitRevealPresentation(
+                            _activeEntry,
+                            transition,
+                            cancellationToken);
                         break;
                     case SceneTransitionPhase.InputUnlocked:
                         inputGate.SetLocked(false);
@@ -279,9 +283,24 @@ namespace TimeKey.Composition.SceneFlow
 
         private static async Task AwaitRevealPresentation(
             SceneContentEntry entry,
+            TransitionCanvasPresenter transition,
             CancellationToken cancellationToken)
         {
-            while (entry != null && !entry.IsRevealPresentationComplete())
+            while ((entry != null && !entry.IsRevealPresentationComplete()) ||
+                   (transition != null && !transition.IsComplete))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Task.Yield();
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        private static async Task AwaitTransitionPresentation(
+            TransitionCanvasPresenter transition,
+            CancellationToken cancellationToken)
+        {
+            while (transition != null && !transition.IsComplete)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await Task.Yield();

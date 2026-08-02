@@ -232,3 +232,14 @@ Gate A 独立审查整改已通过：SceneFlow 定向 `30/30`、full EditMode `3
 - Delivery: full EditMode/PlayMode, post-build Scene/asset test, six-Scene Windows build and actual Bootstrap Player route.
 
 Gate B passed full EditMode `334/334`, CombatShell PlayMode `5/5`, full D3D12 PlayMode `69/69`, post-build assets `3/3`, Windows build `217436478` bytes and Player exit 0/marker once. The local Presenter suite directly calls `Refresh(CombatSessionView)` with an authoritative BattleFlow snapshot. Canonical evidence is `evidence/combat-shell-gate-b/verification-summary.md`.
+
+## Combat Shell Gate C
+
+- Asset: three saved Shell Prefabs, formal Scene connections, source key/clock/button byte equality and Silver on every visible Text.
+- GameStart: initial/middle/black-complete frames, source key, independent character directions, three-second completion, `allowSkip=false` and active-routine immediate completion.
+- MainMenu: typed run seed/state, arbitrary seed text, Continue disabled, saved master/fullscreen settings, explicitly disabled absent audio channels, database/exit overlays, lock isolation and focus restoration.
+- Interaction visuals: source asymmetric normal/active textures for both columns, pointer-hover, keyboard-focus, pressed and disabled states.
+- Transition: cover/reveal completion, correct zero-duration terminal state, cover input blocking and Bootstrap wait-before-camera-disable/unlock.
+- Regression: full EditMode, full D3D12 PlayMode and real additive typed round trips.
+
+Gate C passed full EditMode `340/340` and full D3D12 PlayMode `85/85`; 51 PNGs cover every listed GameStart/MainMenu state at all three viewports and were manually inspected. The full suite includes formal adapter source-unload completion and Composition-owned settings persistence. Build and actual Player smoke remain Gate E checks after Gate D changes the same round-trip surface.

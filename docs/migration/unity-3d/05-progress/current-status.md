@@ -1,8 +1,8 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Combat Shell Gate B 已完成；Gate C 可启动
+> 状态：Combat Shell Gate C 已完成；Gate D 可启动
 > 负责人：主智能体
-> 最后验证日期：2026-08-02
+> 最后验证日期：2026-08-03
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
 
 ## 结论
@@ -33,7 +33,7 @@ Wave 02B3 已在 Gate A identity/runner 基础上完成 B-D 集成；02B4 只通
 
 Git 检查点与远端同步结果以 `push-status.md` 为唯一账本；本文件只记录已通过的功能和验收状态。MIG-012 的 TLS 校验警告仍保留，未修改用户级 Git/GCM 配置。
 
-`00-bootstrap/NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md` 的 Gate 0-D 已全部关闭。下一阶段规范为 `NEXT_STAGE_COMBAT_SHELL_AND_SCENE_FLOW_PROMPT.md`，先核验 02B3/02B4 Gate D 再启动。
+`00-bootstrap/NEXT_STAGE_DECK_AND_BATTLE_FLOW_PROMPT.md` 的 Gate 0-D 已全部关闭。当前唯一阶段规范为 `NEXT_STAGE_COMBAT_SHELL_AND_SCENE_FLOW_PROMPT.md`；其 Gate 0-C 已关闭，Gate D 下一步实现正式局外壳、奖励与 GameOver 往返。
 
 ## 分支与工作区保护
 
@@ -80,3 +80,11 @@ Gate A 初次功能与证据提交已推送；独立审查整改已形成本地�
 最终门禁为 full EditMode `334/334`、CombatShell PlayMode `5/5`、full D3D12 PlayMode `69/69`、post-build Gate B assets `3/3`、Windows build `Succeeded`（`217436478` bytes）和 actual Bootstrap Player exit 0/marker 一次/异常 0。独立复核补充的 Application snapshot→TopHUD 直接测试已关闭。证据入口为 `../04-verification/evidence/combat-shell-gate-b/verification-summary.md`。原背景图片授权仍为 MIG-005 的“本地验证可用、公开发布未放行”；Gate C 下一步实现 GameStart/MainMenu。
 
 用户明确指示 push 不可用时直接跳过。本阶段不再重试 push，所有检查点只保留本地并继续保护既有未提交改动。
+
+## Combat Shell Gate C complete
+
+GameStart 与 MainMenu 已使用保存的响应式 Prefab。GameStart 复用源钥匙图，以 Silver 三字完成冻结的约三秒不可跳过黑/金/黑序列。MainMenu 复用原六边形地图、字节一致时钟和十二张左右不对称按钮状态图，提供新游戏、种子游戏、继续、设置、数据库和退出六项命令。
+
+无存档时继续按钮明确禁用；pointer hover、键盘焦点、pressed 与 disabled 状态可区分。种子接受任意文本；设置面板实际保存并应用主音量/全屏，未接入的 Music/SFX 明确禁用。种子、设置、数据库和退出弹层使用 scoped lease 阻断底层输入并恢复焦点，Presentation 不持有 SceneFlow、payload 或 application 行为。
+
+持久转场遮罩现有真实 cover/reveal completion。SceneFlow 在关闭来源相机前等待 cover，并在解锁输入前同时等待遮罩与内容 reveal；来源 Scene 正常卸载不再取消 post-commit reveal。最终全量门禁为 EditMode `340/340`、D3D12 PlayMode `85/85`；51 张 GameStart、分层入场、三视口、交互与弹层 PNG 已逐图复核。Gate D 下一步；按用户指示不尝试 push。

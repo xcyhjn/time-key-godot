@@ -79,7 +79,7 @@ Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、Act
 | 行为 | Godot 可观察语义 | Unity Gate 0 状态 | 判定 | 后续验收 |
 | --- | --- | --- | --- | --- |
 | Bootstrap/场景流 | 节点树切换并使用全局 pending payload/outcome | Unity-free typed coordinator + Bootstrap additive runtime；route/payload、提交点原子性、多 run、幂等和真实 bind fault 恢复已实现 | 允许差异 | Gate A remediation `330/330 + 64/64`、build/Player |
-| 启动/主菜单 | 约 3 秒三字启动；中央时钟、六按钮、弹层与 Iris | 源体验与时长已冻结，Unity Presentation 尚未实现 | 待验证 | Gate C 三视口、pointer/keyboard/focus |
+| 启动/主菜单 | 约 3 秒钥匙/三字启动；中央时钟、六枚源纹理按钮、设置/种子/退出与 Iris | 保存 Prefab 已实现钥匙/三字、源比例中央钟/按钮、分层菜单入场、typed run-start/settings、设置与输入/焦点；Iris 以持久 cover/reveal 替代 | 允许差异 | Gate C `340/340 + 85/85`、51 张 PNG |
 | 局外壳 | 顶部 HUD、悬挂时钟、六边形地图、士兵确认 | 无视觉 `OutOfBattleShell` 生产 Scene 与 typed state 已实现；正式 HUD/地图/确认仍待实现 | 允许差异 | Gate A typed roundtrip；Gate D 正式视觉 |
 | 战斗入场 | 地图波纹 -> HUD/生命/时间轴 -> 手牌解锁 | 阶段和时长已冻结，Unity 入场未实现 | 待验证 | Gate B/E 实际动画/黑屏/输入锁 |
 | 胜利/失败 | Victory 横幅后奖励返回；Defeat 进入 GameOver | typed 跨 Scene 适配已实现并验证 Victory/Defeat；正式横幅、奖励视觉与 GameOver 视觉待后续 | 允许差异 | Gate A roundtrip/Player；Gate D/E 视觉 |
@@ -97,3 +97,16 @@ Gate A 已关闭纯编排与共享 identity 基础：Runner、x 后 y plan、Act
 | Existing battle interaction | Card/detail/intent/timeline/map share action identity | Gate B adds no alternate identity or resource state; coexistence remains visible at minimum/reference viewport | 等价 | coexistence PNGs + full regression |
 
 Gate B is closed at `334/334 + 69/69`, including direct Application snapshot-to-TopHUD coverage, Windows build and actual Bootstrap Player smoke. Main menu, formal overworld/reward presentation and full transition orchestration remain Gate C-E work.
+
+## Combat Shell Gate C supplement
+
+| Behavior | Godot observable semantics | Unity implementation | Verdict | Evidence |
+| --- | --- | --- | --- | --- |
+| GameStart | Approximately 3-second key/three-character motion; current source disables skip | Source key, independent Silver characters, black/gold/black sequence, `allowSkip=false` and explicit completion | 等价 | three real frames + asset/PlayMode tests |
+| Main menu composition | Original hex map, central clock and asymmetric left/right buttons | Reuses original BG plus byte-identical clock and six normal/active button texture pairs in a saved responsive Prefab | 等价 | entrance + three viewport PNGs |
+| Six commands | New, seed, continue, settings, database and quit | Same six commands; Continue disabled without save, Database shows unavailable notice | 等价并显式化 | component tests + idle/modal PNGs |
+| Input states | Pointer/keyboard, arbitrary seed entry, Escape and modal focus | Source active textures, initial focus, fixed Escape priority, scoped overlay lock and focus restore | 等价并显式化 | interaction PNGs + PlayMode |
+| Settings | Master/music/SFX sliders and fullscreen | Saved panel applies/persists master/fullscreen; unavailable music/SFX channels are present but explicitly disabled | 允许差异 | settings PNG + asset/PlayMode |
+| Transition | Iris/cover blocks input until the target is ready | Persistent cover/reveal completion blocks input and is awaited by SceneFlow; visual shape differs from Iris | 允许差异 | SceneFlow `2/2` + transition tests |
+
+Gate C is closed at `340/340 + 85/85` with 51 manually inspected PNGs. Formal overworld/reward/GameOver visuals and complete success/failure round trips remain Gate D/E work.

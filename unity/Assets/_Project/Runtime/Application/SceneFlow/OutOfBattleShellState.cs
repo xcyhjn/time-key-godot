@@ -58,6 +58,8 @@ namespace TimeKey.Application.SceneFlow
             }
 
             RunId = launch.RunId;
+            RunSeed = launch.RunSeed;
+            Chapter = launch.Chapter;
             CurrentRoomId = launch.RoomId;
             CurrentLaunchCorrelationId = launch.LaunchCorrelationId;
             Era = launch.Era;
@@ -66,9 +68,29 @@ namespace TimeKey.Application.SceneFlow
             _deckStableIds = Copy(launch.DeckStableIds);
         }
 
+        public OutOfBattleShellState(RunStartPayload start)
+        {
+            if (start == null)
+            {
+                throw new ArgumentNullException(nameof(start));
+            }
+
+            RunId = start.RunId;
+            RunSeed = start.RunSeed;
+            Chapter = start.Chapter;
+            CurrentRoomId = string.Empty;
+            CurrentLaunchCorrelationId = string.Empty;
+            Era = start.Era;
+            Phase = start.Phase;
+            Timecoins = start.Timecoins;
+            _deckStableIds = Copy(start.DeckStableIds);
+        }
+
         private OutOfBattleShellState(OutOfBattleShellState source)
         {
             RunId = source.RunId;
+            RunSeed = source.RunSeed;
+            Chapter = source.Chapter;
             CurrentRoomId = source.CurrentRoomId;
             CurrentLaunchCorrelationId = source.CurrentLaunchCorrelationId;
             Era = source.Era;
@@ -87,6 +109,10 @@ namespace TimeKey.Application.SceneFlow
         }
 
         public string RunId { get; }
+
+        public int RunSeed { get; }
+
+        public int Chapter { get; }
 
         public string CurrentRoomId { get; private set; }
 
@@ -118,6 +144,11 @@ namespace TimeKey.Application.SceneFlow
             if (launch.RunId != RunId)
             {
                 return CombatLaunchApplyFailure.RunMismatch;
+            }
+
+            if (launch.RunSeed != RunSeed || launch.Chapter != Chapter)
+            {
+                return CombatLaunchApplyFailure.StateMismatch;
             }
 
             if (_settledRoomIds.Contains(launch.RoomId))

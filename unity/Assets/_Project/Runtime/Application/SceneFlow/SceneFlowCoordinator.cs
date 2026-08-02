@@ -305,9 +305,13 @@ namespace TimeKey.Application.SceneFlow
             if (request.Payload is EmptySceneTransitionPayload)
             {
                 return (request.Source == SceneId.GameStart && request.Target == SceneId.MainMenu) ||
-                    (request.Source == SceneId.MainMenu &&
-                     request.Target == SceneId.OutOfBattleShell) ||
                     (request.Source == SceneId.GameOver && request.Target == SceneId.MainMenu);
+            }
+
+            if (request.Payload is RunStartPayload)
+            {
+                return request.Source == SceneId.MainMenu &&
+                    request.Target == SceneId.OutOfBattleShell;
             }
 
             if (request.Payload is CombatLaunchPayload)

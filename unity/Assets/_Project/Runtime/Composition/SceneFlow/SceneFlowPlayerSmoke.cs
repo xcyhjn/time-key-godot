@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Deck;
 using UnityEngine;
 
 namespace TimeKey.Composition.SceneFlow
@@ -44,7 +45,16 @@ namespace TimeKey.Composition.SceneFlow
                     "smoke-menu-shell",
                     SceneId.MainMenu,
                     SceneId.OutOfBattleShell,
-                    new EmptySceneTransitionPayload(SceneId.OutOfBattleShell));
+                    new RunStartPayload(
+                        RunStartKind.NewGame,
+                        "player-smoke-run",
+                        731,
+                        "731",
+                        1,
+                        1,
+                        1,
+                        0,
+                        StarterDeck.OrderedStableIds));
 
                 var launch = Launch();
                 await Transition(
@@ -127,11 +137,7 @@ namespace TimeKey.Composition.SceneFlow
                 0,
                 "combat-vertical-slice",
                 731,
-                new[]
-                {
-                    "lighting", "earthquake", "recover", "built", "poison",
-                    "wind", "tornado", "lighting", "recover", "built", "poison", "wind"
-                });
+                StarterDeck.OrderedStableIds);
         }
 
         private static CombatOutcome VictoryOutcome(CombatLaunchPayload launch)

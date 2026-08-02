@@ -15,6 +15,7 @@ namespace TimeKey.Composition.SceneFlow
 
         private SceneFlowCoordinator _coordinator;
         private Task _initializationTask;
+        private long _reservedSequence;
 
         public bool IsReady { get; private set; }
 
@@ -24,6 +25,11 @@ namespace TimeKey.Composition.SceneFlow
         public Task InitializationTask => _initializationTask ?? Task.CompletedTask;
 
         public Exception InitializationException { get; private set; }
+
+        public long ReserveTransitionSequence()
+        {
+            return Interlocked.Increment(ref _reservedSequence);
+        }
 
         private void Awake()
         {
@@ -59,7 +65,30 @@ namespace TimeKey.Composition.SceneFlow
                 throw new InvalidOperationException("Bootstrap has not loaded its initial content scene.");
             }
 
+            if (request != null)
+            {
+                RaiseSequenceFloor(request.Sequence);
+            }
+
             return _coordinator.TransitionAsync(request, cancellationToken);
+        }
+
+        private void RaiseSequenceFloor(long sequence)
+        {
+            var current = Interlocked.Read(ref _reservedSequence);
+            while (sequence > current)
+            {
+                var observed = Interlocked.CompareExchange(
+                    ref _reservedSequence,
+                    sequence,
+                    current);
+                if (observed == current)
+                {
+                    return;
+                }
+
+                current = observed;
+            }
         }
     }
 }
