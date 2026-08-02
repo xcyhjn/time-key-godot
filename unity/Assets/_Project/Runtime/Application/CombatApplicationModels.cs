@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using TimeKey.Application.BattleFlow;
 using TimeKey.Domain;
+using TimeKey.Domain.Deck;
 
 namespace TimeKey.Application
 {
@@ -57,7 +59,9 @@ namespace TimeKey.Application
             CombatInteractionMode? interactionMode,
             TimelineClearPreview clearPreview,
             TimelineClearResult lastClearResult,
-            IReadOnlyList<LifecycleOccupantChangeResult> lifecycleChanges)
+            IReadOnlyList<LifecycleOccupantChangeResult> lifecycleChanges,
+            CardInstanceId? selectedCardInstanceId = null,
+            BattleFlowPresentationSnapshot battleFlow = null)
         {
             Phase = phase;
             SelectedCard = selectedCard;
@@ -72,6 +76,8 @@ namespace TimeKey.Application
             ClearPreview = clearPreview;
             LastClearResult = lastClearResult;
             LifecycleChanges = lifecycleChanges;
+            SelectedCardInstanceId = selectedCardInstanceId;
+            BattleFlow = battleFlow;
         }
 
         public CombatSessionPhase Phase { get; }
@@ -101,6 +107,10 @@ namespace TimeKey.Application
         public TimelineClearResult LastClearResult { get; }
 
         public IReadOnlyList<LifecycleOccupantChangeResult> LifecycleChanges { get; }
+
+        public CardInstanceId? SelectedCardInstanceId { get; }
+
+        public BattleFlowPresentationSnapshot BattleFlow { get; }
     }
 
     public sealed class CombatCommandResult

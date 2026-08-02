@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using TimeKey.Application.Intents;
+using TimeKey.Application.BattleFlow;
 using TimeKey.Domain;
+using TimeKey.Domain.Deck;
 using TimeKey.Domain.Intents;
 
 namespace TimeKey.Application
@@ -19,6 +21,7 @@ namespace TimeKey.Application
         private readonly TowerBuildingBehaviorProcessor _towerProcessor;
         private readonly PoisonTurnStartProcessor _poisonProcessor;
         private readonly TurnLifecycleRunner _runner;
+        private readonly BattleFlowNextTurnHook _battleFlowHook;
         private readonly Dictionary<TimelineActionIdentity, EnemyIntentScheduledAction>
             _scheduledIntents =
                 new Dictionary<TimelineActionIdentity, EnemyIntentScheduledAction>();
@@ -36,12 +39,14 @@ namespace TimeKey.Application
             CombatSliceState state,
             TimelineGrid timeline,
             IEnemyIntentSourceCatalog intentSources,
-            EnemyIntentApplicationService intentService = null)
+            EnemyIntentApplicationService intentService = null,
+            BattleFlowNextTurnHook battleFlowHook = null)
         {
             _state = state ?? throw new ArgumentNullException(nameof(state));
             _timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
             _intentSources = intentSources ?? throw new ArgumentNullException(nameof(intentSources));
             _intentService = intentService ?? new EnemyIntentApplicationService();
+            _battleFlowHook = battleFlowHook;
             _towerProcessor = new TowerBuildingBehaviorProcessor(_state);
             _poisonProcessor = new PoisonTurnStartProcessor(_state);
             _runner = new TurnLifecycleRunner(
@@ -49,6 +54,7 @@ namespace TimeKey.Application
                 _towerProcessor,
                 this,
                 _poisonProcessor,
+                _battleFlowHook,
                 enemyIntentRefresher: this);
         }
 
@@ -74,6 +80,7 @@ namespace TimeKey.Application
             }
 
             ResetCycleResults();
+            _battleFlowHook?.PrepareInitialStart(_runner.Sequence + 1);
             var result = _runner.Run(TurnLifecycleRequest.InitialStart());
             if (result.Succeeded)
             {
@@ -84,7 +91,9 @@ namespace TimeKey.Application
             return result;
         }
 
-        public TurnLifecycleResult RunEndTurn()
+        public TurnLifecycleResult RunEndTurn(
+            IReadOnlyList<CardInstanceId> remainingHandInstanceIds = null,
+            IReadOnlyList<TimelineActionPresentationSnapshot> actionDisplaySnapshots = null)
         {
             if (!_initialStartCompleted)
             {
@@ -94,6 +103,18 @@ namespace TimeKey.Application
 
             ResetCycleResults();
             var plan = _timeline.CreateResolutionPlan();
+            if (_battleFlowHook != null)
+            {
+                var frozenHand = remainingHandInstanceIds ?? Array.Empty<CardInstanceId>();
+                var frozenSnapshots = actionDisplaySnapshots ??
+                    Array.Empty<TimelineActionPresentationSnapshot>();
+                _battleFlowHook.PrepareEndTurn(
+                    _runner.Sequence + 1,
+                    CountOccupiedCells(plan),
+                    frozenHand,
+                    frozenSnapshots);
+            }
+
             _resolutionBatch = _timeline.BeginResolution(_state);
             if (_resolutionBatch.IsComplete)
             {
@@ -257,6 +278,17 @@ namespace TimeKey.Application
             }
 
             _lifecycleChanges = new ReadOnlyCollection<LifecycleOccupantChangeResult>(changes);
+        }
+
+        private static int CountOccupiedCells(TimelineActionPlan plan)
+        {
+            var count = 0;
+            for (var actionIndex = 0; actionIndex < plan.Actions.Count; actionIndex++)
+            {
+                count = checked(count + plan.Actions[actionIndex].OccupiedCells.Count);
+            }
+
+            return count;
         }
     }
 }

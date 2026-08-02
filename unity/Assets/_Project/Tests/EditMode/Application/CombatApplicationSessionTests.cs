@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using TimeKey.Application;
+using TimeKey.Application.BattleFlow;
 using TimeKey.Diagnostics;
 using TimeKey.Domain;
+using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Deck;
+using TimeKey.Domain.Intents;
 
 namespace TimeKey.Tests.EditMode.Application
 {
@@ -689,6 +693,70 @@ namespace TimeKey.Tests.EditMode.Application
             Assert.That(grid.OccupiedCellCount, Is.EqualTo(1));
         }
 
+        [Test]
+        public void BattleFlow_UsesCardInstanceAndLocksResolvedOutcome()
+        {
+            var deck = new DeckState(
+                new[]
+                {
+                    new CardInstance(
+                        "lighting",
+                        CardInstanceId.FromOrdinal("session-test", 0))
+                },
+                seed: 731,
+                shuffleInitially: false);
+            var hook = new BattleFlowNextTurnHook(
+                deck,
+                new BattleRoundLedger(),
+                new BattleSettlementState(
+                    "session-test",
+                    731,
+                    new BattleRewardEntry(
+                        "reward-test",
+                        BattleRewardKind.Acquire,
+                        "获得卡牌")));
+            var session = new CombatApplicationSession(
+                CreateCatalog(),
+                new CombatSliceState(
+                    "target-01",
+                    10,
+                    731,
+                    CreateSevenTileBoard()),
+                new TimelineGrid(),
+                enemyIntentSourceCatalog: EmptyIntentSourceCatalog.Instance,
+                battleFlow: hook);
+            var card = session.BattleFlowCurrent.Hand.Single();
+
+            Assert.That(session.SelectCard(card.InstanceId.ToString()).Succeeded, Is.True);
+            Assert.That(session.Current.SelectedCardInstanceId, Is.EqualTo(card.InstanceId));
+            Assert.That(session.SelectTarget(
+                CombatTarget.ForEntity("target-01", new HexCoord(0, 0))).Succeeded, Is.True);
+            Assert.That(session.PreviewTimeline(new TimelineCell(0, 0)).Succeeded, Is.True);
+            Assert.That(session.CommitTimeline().Succeeded, Is.True);
+            Assert.That(session.BattleFlowCurrent.Hand, Is.Empty);
+            Assert.That(session.BattleFlowCurrent.DiscardPile.Single().InstanceId,
+                Is.EqualTo(card.InstanceId));
+            Assert.That(session.ResolveTimeline().Succeeded, Is.True);
+
+            var outcome = session.TryResolveBattleOutcome(
+                100,
+                BattleOutcome.VictorySettlement);
+            var reward = session.TryClaimBattleReward(101);
+            var duplicateReward = session.TryClaimBattleReward(102);
+            var boundary = session.TryCreateBattleReturnBoundary();
+
+            Assert.That(outcome.Succeeded, Is.True);
+            Assert.That(session.Current.Phase, Is.EqualTo(CombatSessionPhase.Resolved));
+            Assert.That(session.SelectCard("lighting").Failure,
+                Is.EqualTo(CombatCommandFailure.AlreadyResolved));
+            Assert.That(reward.Succeeded, Is.True);
+            Assert.That(duplicateReward.Failure,
+                Is.EqualTo(BattleSettlementFailure.RewardAlreadyClaimed));
+            Assert.That(boundary.Succeeded, Is.True);
+            Assert.That(boundary.Payload.IsCompleted, Is.True);
+            Assert.That(boundary.Payload.DeckStableIds, Is.EqualTo(new[] { "lighting" }));
+        }
+
         private static CombatApplicationSession CreateSession(
             out TimelineGrid grid,
             out CollectingCombatTraceSink sink)
@@ -920,6 +988,18 @@ namespace TimeKey.Tests.EditMode.Application
                 origin,
                 new[] { new TimelineCell(0, 0) },
                 0);
+        }
+
+        private sealed class EmptyIntentSourceCatalog : IEnemyIntentSourceCatalog
+        {
+            public static EmptyIntentSourceCatalog Instance { get; } =
+                new EmptyIntentSourceCatalog();
+
+            public IReadOnlyList<EnemyIntentSourceSnapshot> CaptureSources(
+                CombatSliceState state)
+            {
+                return Array.Empty<EnemyIntentSourceSnapshot>();
+            }
         }
 
         private sealed class TestCardCatalog : ICardCatalog

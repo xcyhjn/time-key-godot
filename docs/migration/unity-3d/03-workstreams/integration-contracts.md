@@ -305,3 +305,12 @@ Gate 0 来源语义、Unity 缺口和视觉交互审计分别记录在 `agents/r
 - `BattleRoundLedger.Apply` 是 Era/phase/timecoin 唯一写入口，同 sequence+payload 返回原结果，冲突 payload 显式失败。
 - `BattleSettlementState` 是 outcome/reward/return 唯一写入口；终局 snapshot 直接提供输入锁状态。
 - Gate A Unity 结果为定向 EditMode `44/44`、完整 EditMode `280/280`；证据位于 `../04-verification/evidence/deck-battle-flow-gate-a/`。
+
+### Wave 02B4 Gate B 实际冻结
+
+- `BattleFlowHookRequest` 是 pre-clear 冻结边界，包含 lifecycle sequence、remaining card-instance identities、occupied cell count 与 immutable action display snapshots。
+- `DeckState.DiscardHand` 先验证整批 frozen identities，再一次性移动；任一缺失/重复/无效 identity 保持三堆不变。
+- `CombatTurnLifecycleCoordinator` 只把 `BattleFlowNextTurnHook` 注入 ADR 0008 预留位置；Timeline、building、clear、status、intent phase 顺序没有新增或重排。
+- `CombatApplicationSession` 正式手牌选择支持 card-instance identity；提交 action 后实体卡立即进入 discard，结束回合只弃 remaining hand。旧 stable-ID 入口保留为兼容路径。
+- outcome、reward claim 与 return payload 只通过 battle-flow typed boundary；Victory/Defeat 后 Session 转为 `Resolved` 并拒绝后续 action。
+- Gate B 验证为 Application `10/10`、集成 `60/60`、full EditMode `293/293`、full graphical PlayMode `53/53`；证据位于 `../04-verification/evidence/deck-battle-flow-gate-b/`。

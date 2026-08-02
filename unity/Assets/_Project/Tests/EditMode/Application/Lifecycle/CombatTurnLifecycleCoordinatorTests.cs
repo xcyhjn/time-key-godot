@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using TimeKey.Application;
+using TimeKey.Application.BattleFlow;
 using TimeKey.Domain;
+using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Deck;
 using TimeKey.Domain.Intents;
 
 namespace TimeKey.Tests.EditMode.Application.Lifecycle
@@ -132,6 +135,44 @@ namespace TimeKey.Tests.EditMode.Application.Lifecycle
             Assert.That(timeline.ScheduledActions, Is.Empty);
         }
 
+        [Test]
+        public void EndTurn_AwardsTimecoinsFromFrozenOccupiedCellsNotActionCount()
+        {
+            var state = CreateState();
+            var timeline = new TimelineGrid();
+            var hook = CreateBattleFlowHook();
+            var coordinator = new CombatTurnLifecycleCoordinator(
+                state,
+                timeline,
+                EmptyIntentSourceCatalog.Instance,
+                battleFlowHook: hook);
+            Assert.That(coordinator.RunInitialStart().Succeeded, Is.True);
+            var action = new TimelineAction(
+                TimelineActorKind.Player,
+                "lighting",
+                "target-01",
+                new TimelineCell(2, 0),
+                new[]
+                {
+                    new TimelineCell(0, 0),
+                    new TimelineCell(0, 1)
+                },
+                damage: 0);
+            Assert.That(timeline.TryPlace(action), Is.True);
+            var handIds = hook.Current.Hand
+                .Select(card => card.InstanceId)
+                .ToArray();
+
+            var result = coordinator.RunEndTurn(
+                handIds,
+                Array.Empty<TimelineActionPresentationSnapshot>());
+
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That(hook.LastResult.RoundResult.TimecoinsAwarded, Is.EqualTo(34));
+            Assert.That(hook.Current.Phase, Is.EqualTo(2));
+            Assert.That(hook.Current.Hand, Has.Count.EqualTo(5));
+        }
+
         private static readonly TurnLifecyclePhase[] EndTurnPhases =
         {
             TurnLifecyclePhase.EndTurnRequested,
@@ -160,6 +201,32 @@ namespace TimeKey.Tests.EditMode.Application.Lifecycle
             board.AddTile(new HexCoord(1, 0), 1);
             board.AddTile(new HexCoord(2, 0), 1);
             return new CombatSliceState("target-01", 100, 8721, board);
+        }
+
+        private static BattleFlowNextTurnHook CreateBattleFlowHook()
+        {
+            return new BattleFlowNextTurnHook(
+                DeckState.CreateStarter(731, "coordinator-test"),
+                new BattleRoundLedger(),
+                new BattleSettlementState(
+                    "coordinator-test",
+                    731,
+                    new BattleRewardEntry(
+                        "reward-test",
+                        BattleRewardKind.Acquire,
+                        "获得卡牌")));
+        }
+
+        private sealed class EmptyIntentSourceCatalog : IEnemyIntentSourceCatalog
+        {
+            public static EmptyIntentSourceCatalog Instance { get; } =
+                new EmptyIntentSourceCatalog();
+
+            public IReadOnlyList<EnemyIntentSourceSnapshot> CaptureSources(
+                CombatSliceState state)
+            {
+                return Array.Empty<EnemyIntentSourceSnapshot>();
+            }
         }
 
         private sealed class TestIntentSourceCatalog : IEnemyIntentSourceCatalog

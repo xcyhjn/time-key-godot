@@ -197,6 +197,8 @@ Gate A 已通过：定向 EditMode `44/44`、完整 EditMode `280/280`，0 失�
 - 重复 lifecycle sequence 不重复移动卡、加币或推进；步骤失败无部分副作用；终局拒绝 hook/action。
 - 手牌 View 消失后 action display payload 仍显示卡名、效果、source/target 和原 action identity。
 
+Gate B 已通过：Application hook `10/10`、Deck/Application/Lifecycle 集成 `60/60`、full EditMode `293/293`、full graphical PlayMode `53/53`，0 失败、0 跳过；结构化证据位于 `evidence/deck-battle-flow-gate-b/`。
+
 ### Gate C / D
 
 - PlayMode：deck/hand/discard 数量、Era/phase、时间币、输入锁、胜负互斥、奖励入口 once、重复 Apply 幂等和 Silver Font/Material。

@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using TimeKey.Application.BattleFlow;
 using TimeKey.Domain;
+using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Deck;
 using TimeKey.Domain.Intents;
 
 namespace TimeKey.Application
@@ -14,6 +17,7 @@ namespace TimeKey.Application
         private readonly IActionDisplayCatalog _actionDisplayCatalog;
         private long _actionIdentitySequence;
         private readonly CombatTurnLifecycleCoordinator _turnLifecycle;
+        private readonly BattleFlowNextTurnHook _battleFlow;
 
         private CombatSessionPhase _phase;
         private CardDefinition _selectedCard;
@@ -28,6 +32,7 @@ namespace TimeKey.Application
         private TimelineClearPreview _clearPreview;
         private TimelineClearResult _lastClearResult;
         private int _nextActionOrdinal;
+        private CardInstanceId? _selectedCardInstanceId;
 
         public CombatApplicationSession(
             ICardCatalog catalog,
@@ -37,13 +42,15 @@ namespace TimeKey.Application
             ICombatTraceSink traceSink = null,
             long actionIdentitySequence = 1,
             IActionDisplayCatalog actionDisplayCatalog = null,
-            IEnemyIntentSourceCatalog enemyIntentSourceCatalog = null)
+            IEnemyIntentSourceCatalog enemyIntentSourceCatalog = null,
+            BattleFlowNextTurnHook battleFlow = null)
         {
             _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             _state = state ?? throw new ArgumentNullException(nameof(state));
             _timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
             _traceSink = traceSink;
             _actionDisplayCatalog = actionDisplayCatalog ?? StableIdActionDisplayCatalog.Instance;
+            _battleFlow = battleFlow;
             if (actionIdentitySequence <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(actionIdentitySequence));
@@ -57,12 +64,20 @@ namespace TimeKey.Application
 
             PlaceInitialActions(initialActions);
             _phase = CombatSessionPhase.Idle;
+            if (_battleFlow != null && enemyIntentSourceCatalog == null)
+            {
+                throw new ArgumentException(
+                    "Battle flow requires the authoritative lifecycle coordinator.",
+                    nameof(enemyIntentSourceCatalog));
+            }
+
             if (enemyIntentSourceCatalog != null)
             {
                 _turnLifecycle = new CombatTurnLifecycleCoordinator(
                     _state,
                     _timeline,
-                    enemyIntentSourceCatalog);
+                    enemyIntentSourceCatalog,
+                    battleFlowHook: _battleFlow);
                 var initialStart = _turnLifecycle.RunInitialStart();
                 if (!initialStart.Succeeded)
                 {
@@ -90,6 +105,12 @@ namespace TimeKey.Application
                 ? Array.Empty<EnemyIntentResolveResult>()
                 : _turnLifecycle.IntentResolveResults;
 
+        public BattleFlowPresentationSnapshot BattleFlowCurrent =>
+            _battleFlow == null ? null : _battleFlow.Current;
+
+        public BattleFlowHookResult LastBattleFlowResult =>
+            _battleFlow == null ? null : _battleFlow.LastResult;
+
         public CombatSessionView Current => new CombatSessionView(
             _phase,
             _selectedCard,
@@ -105,7 +126,9 @@ namespace TimeKey.Application
             _interactionMode,
             _clearPreview,
             _lastClearResult,
-            LastLifecycleChanges);
+            LastLifecycleChanges,
+            _selectedCardInstanceId,
+            BattleFlowCurrent);
 
         public CombatCommandResult SelectCard(string stableId)
         {
@@ -125,8 +148,7 @@ namespace TimeKey.Application
                 return Failure("select-card", before, CombatCommandFailure.AlreadyResolved, stableId);
             }
 
-            if (string.IsNullOrWhiteSpace(stableId) ||
-                !_catalog.TryGet(stableId, out var card) ||
+            if (!TryResolveSelectableCard(stableId, out var card, out var cardInstanceId) ||
                 card == null)
             {
                 return Failure("select-card", before, CombatCommandFailure.UnknownCard, stableId);
@@ -145,6 +167,7 @@ namespace TimeKey.Application
             }
 
             _selectedCard = card;
+            _selectedCardInstanceId = cardInstanceId;
             _cardPlaySession = isClearCard
                 ? null
                 : new CardPlaySession(card, NextActionIdentity());
@@ -314,6 +337,12 @@ namespace TimeKey.Application
                 _timelineOrigin = _cardPlaySession.TimelineOrigin;
                 _isPlacementValid = transition.IsPlacementValid;
                 _phase = MapPhase(transition.State);
+                if (transition.Succeeded && !TryDiscardSelectedCard(_cardPlaySession.ActionId))
+                {
+                    throw new InvalidOperationException(
+                        "The selected card instance could not enter the discard pile.");
+                }
+
                 return transition.Succeeded
                     ? Success(
                         "commit-timeline",
@@ -412,6 +441,15 @@ namespace TimeKey.Application
                     clearResult: transition.Result);
             }
 
+            if (!TryDiscardSelectedCard(
+                    TimelineActionIdentity.FromSequence(
+                        _actionIdentitySequence,
+                        checked(_nextActionOrdinal++))))
+            {
+                throw new InvalidOperationException(
+                    "The selected clear card instance could not enter the discard pile.");
+            }
+
             _phase = CombatSessionPhase.Resolved;
             _clearPreview = null;
             _isPlacementValid = false;
@@ -422,6 +460,7 @@ namespace TimeKey.Application
                 origin: _timelineOrigin,
                 clearResult: transition.Result);
             _selectedCard = null;
+            _selectedCardInstanceId = null;
             _cardPlaySession = null;
             _timelineClearSession = null;
             _interactionMode = null;
@@ -504,6 +543,7 @@ namespace TimeKey.Application
                 origin,
                 clearPreview: _clearPreview);
             _selectedCard = null;
+            _selectedCardInstanceId = null;
             _cardPlaySession = null;
             _timelineClearSession = null;
             _interactionMode = null;
@@ -564,7 +604,9 @@ namespace TimeKey.Application
                 }
                 else
                 {
-                    var lifecycle = _turnLifecycle.RunEndTurn();
+                    var lifecycle = _turnLifecycle.RunEndTurn(
+                        CaptureRemainingHandInstanceIds(),
+                        BuildTimelineActionSnapshots());
                     if (!lifecycle.Succeeded)
                     {
                         return Failure(
@@ -595,6 +637,7 @@ namespace TimeKey.Application
             }
 
             _selectedCard = null;
+            _selectedCardInstanceId = null;
             _cardPlaySession = null;
             _timelineClearSession = null;
             _interactionMode = null;
@@ -741,6 +784,56 @@ namespace TimeKey.Application
 
         private string CurrentStableId => _selectedCard == null ? null : _selectedCard.StableId;
 
+        public BattleSettlementResult TryResolveBattleOutcome(
+            long sequence,
+            BattleOutcome outcome)
+        {
+            if (_battleFlow == null)
+            {
+                throw new InvalidOperationException(
+                    "The combat session has no battle-flow boundary.");
+            }
+
+            var result = _battleFlow.TryResolveOutcome(sequence, outcome);
+            if (result.Succeeded)
+            {
+                _phase = CombatSessionPhase.Resolved;
+                _selectedCard = null;
+                _selectedCardInstanceId = null;
+                _cardPlaySession = null;
+                _timelineClearSession = null;
+                _interactionMode = null;
+                _requiredTargetKind = null;
+                _target = null;
+                _timelineOrigin = null;
+                _isPlacementValid = false;
+            }
+
+            return result;
+        }
+
+        public BattleSettlementResult TryClaimBattleReward(long sequence)
+        {
+            if (_battleFlow == null)
+            {
+                throw new InvalidOperationException(
+                    "The combat session has no battle-flow boundary.");
+            }
+
+            return _battleFlow.TryClaimReward(sequence);
+        }
+
+        public BattleReturnResult TryCreateBattleReturnBoundary()
+        {
+            if (_battleFlow == null)
+            {
+                throw new InvalidOperationException(
+                    "The combat session has no battle-flow boundary.");
+            }
+
+            return _battleFlow.TryCreateReturnBoundary();
+        }
+
         private TimelineActionIdentity NextActionIdentity()
         {
             while (true)
@@ -819,6 +912,96 @@ namespace TimeKey.Application
             }
 
             return snapshots;
+        }
+
+        private bool TryResolveSelectableCard(
+            string requestedId,
+            out CardDefinition card,
+            out CardInstanceId? instanceId)
+        {
+            card = null;
+            instanceId = null;
+            if (string.IsNullOrWhiteSpace(requestedId))
+            {
+                return false;
+            }
+
+            if (_battleFlow == null)
+            {
+                return _catalog.TryGet(requestedId, out card);
+            }
+
+            CardInstance selected = null;
+            var hand = _battleFlow.Current.Hand;
+            for (var index = 0; index < hand.Count; index++)
+            {
+                if (string.Equals(
+                        hand[index].InstanceId.ToString(),
+                        requestedId,
+                        StringComparison.Ordinal))
+                {
+                    selected = hand[index];
+                    break;
+                }
+            }
+
+            if (selected == null)
+            {
+                for (var index = 0; index < hand.Count; index++)
+                {
+                    if (string.Equals(
+                            hand[index].StableId,
+                            requestedId,
+                            StringComparison.Ordinal))
+                    {
+                        selected = hand[index];
+                        break;
+                    }
+                }
+            }
+
+            if (selected == null || !_catalog.TryGet(selected.StableId, out card))
+            {
+                return false;
+            }
+
+            instanceId = selected.InstanceId;
+            return true;
+        }
+
+        private bool TryDiscardSelectedCard(TimelineActionIdentity actionId)
+        {
+            if (_battleFlow == null)
+            {
+                return true;
+            }
+
+            if (!_selectedCardInstanceId.HasValue)
+            {
+                return false;
+            }
+
+            var result = _battleFlow.DiscardPlayedCard(
+                new DeckCommandId("action:" + actionId + "/discard"),
+                _selectedCardInstanceId.Value);
+            return result != null && result.Succeeded;
+        }
+
+        private IReadOnlyList<CardInstanceId> CaptureRemainingHandInstanceIds()
+        {
+            if (_battleFlow == null)
+            {
+                return Array.Empty<CardInstanceId>();
+            }
+
+            var hand = _battleFlow.Current.Hand;
+            var ids = new List<CardInstanceId>(hand.Count);
+            for (var index = 0; index < hand.Count; index++)
+            {
+                ids.Add(hand[index].InstanceId);
+            }
+
+            return ids;
         }
 
         private bool IsKnownTarget(CombatTarget target)

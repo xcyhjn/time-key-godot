@@ -174,6 +174,68 @@ namespace TimeKey.Domain.Deck
                 DeckShuffleInfo.None());
         }
 
+        public DeckMoveResult DiscardHand(
+            DeckCommandId commandId,
+            IReadOnlyList<CardInstanceId> instanceIds)
+        {
+            var before = Counts();
+            var validationFailure = Validate(commandId);
+            if (validationFailure != DeckOperationReason.None)
+            {
+                return Failure(
+                    validationFailure,
+                    instanceIds == null ? 0 : instanceIds.Count,
+                    before);
+            }
+
+            if (instanceIds == null)
+            {
+                return Failure(DeckOperationReason.InvalidRequest, 0, before);
+            }
+
+            var requestedIds = new HashSet<CardInstanceId>();
+            for (var index = 0; index < instanceIds.Count; index++)
+            {
+                var instanceId = instanceIds[index];
+                if (!instanceId.IsValid || !requestedIds.Add(instanceId))
+                {
+                    return Failure(
+                        DeckOperationReason.InvalidRequest,
+                        instanceIds.Count,
+                        before);
+                }
+
+                if (FindHandIndex(instanceId) < 0)
+                {
+                    return Failure(
+                        DeckOperationReason.CardNotInHand,
+                        instanceIds.Count,
+                        before);
+                }
+            }
+
+            var movedIds = new List<CardInstanceId>(instanceIds.Count);
+            for (var index = instanceIds.Count - 1; index >= 0; index--)
+            {
+                var instanceId = instanceIds[index];
+                var handIndex = FindHandIndex(instanceId);
+                var card = _hand[handIndex];
+                _hand.RemoveAt(handIndex);
+                _discardPile.Add(card);
+                movedIds.Add(instanceId);
+            }
+
+            _completedCommands.Add(commandId);
+            return new DeckMoveResult(
+                true,
+                DeckOperationReason.None,
+                instanceIds.Count,
+                before,
+                Counts(),
+                movedIds,
+                DeckShuffleInfo.None());
+        }
+
         private static List<CardInstance> CopyAndValidateCards(
             IReadOnlyList<CardInstance> cards)
         {

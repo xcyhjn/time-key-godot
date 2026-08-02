@@ -156,6 +156,29 @@ namespace TimeKey.Tests.EditMode.Deck
         }
 
         [Test]
+        public void DiscardHand_InvalidFrozenIdentity_IsAtomic()
+        {
+            var state = CreateOrderedState("lighting", "wind", "tower");
+            state.Draw(Command("draw"), DeckState.FormalDrawRequest);
+            var before = state.Snapshot();
+
+            var result = state.DiscardHand(
+                Command("discard-frozen"),
+                new[]
+                {
+                    before.Hand[0].InstanceId,
+                    Id(99)
+                });
+
+            Assert.That(result.Succeeded, Is.False);
+            Assert.That(result.Reason, Is.EqualTo(DeckOperationReason.CardNotInHand));
+            Assert.That(state.Snapshot().Counts, Is.EqualTo(before.Counts));
+            Assert.That(
+                state.Snapshot().Hand.Select(card => card.InstanceId),
+                Is.EqualTo(before.Hand.Select(card => card.InstanceId)));
+        }
+
+        [Test]
         public void InvalidAndDuplicateDraw_DoNotChangeState()
         {
             var state = CreateOrderedState("lighting", "wind");
