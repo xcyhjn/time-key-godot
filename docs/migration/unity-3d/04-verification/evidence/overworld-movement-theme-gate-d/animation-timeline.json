@@ -1,0 +1,15 @@
+{
+  "stage": "Wave 03P",
+  "durationSeconds": 0.3,
+  "easing": "SineEaseOut",
+  "events": [
+    {"time": 0.0, "event": "accept adjacent MoveCommand; lock map input"},
+    {"time": 0.0, "event": "capture marker and camera start positions"},
+    {"time": 0.15, "event": "marker and camera are halfway interpolated"},
+    {"time": 0.3, "event": "commit arrival; update current node and settled visual; emit ArrivalCommitted"},
+    {"time": 0.3, "event": "unlock map input unless SceneFlow transition lock remains"}
+  ],
+  "cancellation": "invalid, duplicate, stale, drag-suppressed and transition-locked commands do not start the timeline",
+  "zeroDuration": "commit and unlock occur in one frame",
+  "evidence": ["moving-1920x1080.png", "arrived-room-01-1920x1080.png", "dynamic-resize-1600x900.png"]
+}

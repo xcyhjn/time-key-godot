@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Presentation.CombatShell;
 using TimeKey.Presentation.OutOfBattleShell;
+using TimeKey.Presentation.OverworldMovement;
 using UnityEngine;
 
 namespace TimeKey.Composition.SceneFlow
@@ -16,6 +17,7 @@ namespace TimeKey.Composition.SceneFlow
         [SerializeField] private OutOfBattleShellPresenter presenter = null;
         [SerializeField] private CombatTopHudPresenter sharedTopHud = null;
         [SerializeField] private string battleTag = "combat-vertical-slice";
+        [SerializeField] private OverworldMovementPresenter movementPresenter = null;
 
         private CancellationTokenSource _lifetime;
         private bool _inFlight;
@@ -33,14 +35,29 @@ namespace TimeKey.Composition.SceneFlow
             stateStore = stateStore != null
                 ? stateStore
                 : FindFirstObjectByType<SceneFlowStateStore>();
+            movementPresenter = movementPresenter != null
+                ? movementPresenter
+                : GetComponentInChildren<OverworldMovementPresenter>(true);
             if (presenter != null)
             {
                 presenter.RoomConfirmationRequested += OnRoomConfirmationRequested;
                 if (stateStore?.OutOfBattleState != null)
                 {
+                    if (movementPresenter != null)
+                    {
+                        movementPresenter.ApplySceneFlowState(
+                            stateStore.OutOfBattleState.CurrentRoomId,
+                            stateStore.OutOfBattleState.SettledRoomIds);
+                    }
+
                     presenter.Apply(stateStore.OutOfBattleState);
                     ApplySharedTopHud(stateStore.OutOfBattleState);
                 }
+            }
+
+            if (movementPresenter != null)
+            {
+                movementPresenter.ArrivalCommitted += OnArrivalCommitted;
             }
         }
 
@@ -51,9 +68,27 @@ namespace TimeKey.Composition.SceneFlow
                 presenter.RoomConfirmationRequested -= OnRoomConfirmationRequested;
             }
 
+            if (movementPresenter != null)
+            {
+                movementPresenter.ArrivalCommitted -= OnArrivalCommitted;
+            }
+
             _lifetime?.Cancel();
             _lifetime?.Dispose();
             _lifetime = null;
+        }
+
+        private void OnArrivalCommitted(TimeKey.Domain.OverworldMovement.MapNodeId nodeId)
+        {
+            if (movementPresenter == null || presenter == null ||
+                !movementPresenter.TryGetNodeType(nodeId, out var nodeType))
+            {
+                return;
+            }
+
+            stateStore?.OutOfBattleState?.SetCurrentRoom(nodeId.Value);
+            presenter.SetCurrentRoomIdentity(nodeId, "时隙节点 " + nodeId.Value);
+            presenter.SetRoomAvailable(nodeType != TimeKey.Domain.OverworldMovement.MapNodeType.Start);
         }
 
         private async void OnRoomConfirmationRequested(
@@ -103,6 +138,7 @@ namespace TimeKey.Composition.SceneFlow
 
             _inFlight = true;
             presenter?.SetTransitionLocked(true);
+            movementPresenter?.SetTransitionLocked(true);
             try
             {
                 await bootstrap.InitializationTask;
@@ -130,6 +166,7 @@ namespace TimeKey.Composition.SceneFlow
                 {
                     _inFlight = false;
                     presenter?.SetTransitionLocked(false);
+                    movementPresenter?.SetTransitionLocked(false);
                     presenter?.RejectPendingConfirmation();
                     Debug.LogError(
                         "Out-of-battle combat transition failed: " + LastResult.Message,
@@ -142,6 +179,7 @@ namespace TimeKey.Composition.SceneFlow
             {
                 _inFlight = false;
                 presenter?.SetTransitionLocked(false);
+                movementPresenter?.SetTransitionLocked(false);
                 presenter?.RejectPendingConfirmation();
                 throw;
             }

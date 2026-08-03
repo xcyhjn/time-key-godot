@@ -2,6 +2,7 @@ using System;
 using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Theming;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,6 +17,7 @@ namespace TimeKey.Presentation.Tooltips
         [SerializeField] private Text description = null;
         [SerializeField] private Text metadata = null;
         [SerializeField] private CanvasGroup canvasGroup = null;
+        [SerializeField] private UiThemeScope themeScope = null;
 
         public bool IsVisible => canvasGroup != null && canvasGroup.alpha > 0.5f;
 
@@ -32,8 +34,7 @@ namespace TimeKey.Presentation.Tooltips
             title.text = card.DisplayName;
             description.text = card.EffectDescription;
             metadata.text = card.PlacementDescription;
-            background.color = new Color(0.055f, 0.075f, 0.078f, 0.98f);
-            actorStripe.color = new Color(0.18f, 0.76f, 0.72f, 1f);
+            ApplyTheme(UiStyleId.CardEffectFrame);
             SetVisible(true);
         }
 
@@ -49,12 +50,7 @@ namespace TimeKey.Presentation.Tooltips
             title.text = (enemy ? "敌方意图  " : "玩家行动  ") + action.Display.Title;
             description.text = action.Display.Description;
             metadata.text = BuildActionMetadata(action);
-            background.color = enemy
-                ? new Color(0.12f, 0.055f, 0.06f, 0.98f)
-                : new Color(0.045f, 0.085f, 0.09f, 0.98f);
-            actorStripe.color = enemy
-                ? new Color(0.92f, 0.31f, 0.28f, 1f)
-                : new Color(0.18f, 0.76f, 0.72f, 1f);
+            ApplyTheme(enemy ? UiStyleId.EnemyIntentFrame : UiStyleId.PlayerActionFrame);
             SetVisible(true);
         }
 
@@ -84,6 +80,39 @@ namespace TimeKey.Presentation.Tooltips
             canvasGroup.alpha = visible ? 1f : 0f;
             canvasGroup.blocksRaycasts = false;
             canvasGroup.interactable = false;
+        }
+
+        private void ApplyTheme(UiStyleId styleId)
+        {
+            if (themeScope == null)
+            {
+                themeScope = GetComponentInParent<UiThemeScope>();
+            }
+
+            if (themeScope == null || !themeScope.TryGet(styleId, out var style))
+            {
+                background.color = styleId == UiStyleId.EnemyIntentFrame
+                    ? new Color(0.12f, 0.055f, 0.06f, 0.98f)
+                    : new Color(0.055f, 0.075f, 0.078f, 0.98f);
+                actorStripe.color = styleId == UiStyleId.EnemyIntentFrame
+                    ? new Color(0.92f, 0.31f, 0.28f, 1f)
+                    : new Color(0.18f, 0.76f, 0.72f, 1f);
+                return;
+            }
+
+            background.sprite = style.frame.backgroundSprite;
+            background.type = style.frame.imageType;
+            background.color = style.frame.fillColor;
+            actorStripe.color = style.frame.borderColor;
+            foreach (var text in new[] { title, description, metadata })
+            {
+                if (style.text.font != null)
+                {
+                    text.font = style.text.font;
+                }
+
+                text.color = style.text.normalColor;
+            }
         }
 
         private void ValidateDependencies()

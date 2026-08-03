@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TimeKey.Presentation.Theming;
 
 namespace TimeKey.Presentation.MainMenu
 {
@@ -18,6 +19,8 @@ namespace TimeKey.Presentation.MainMenu
         [SerializeField] private Text label = null;
         [SerializeField] private Texture normalTexture = null;
         [SerializeField] private Texture activeTexture = null;
+        [SerializeField] private UiThemeScope themeScope = null;
+        [SerializeField] private UiStyleId styleId = UiStyleId.SecondaryButton;
 
         private bool _hovered;
         private bool _pressed;
@@ -85,6 +88,11 @@ namespace TimeKey.Presentation.MainMenu
                 return;
             }
 
+            if (ApplyTheme())
+            {
+                return;
+            }
+
             if (!button.interactable)
             {
                 ApplyTexture(normalTexture);
@@ -115,6 +123,51 @@ namespace TimeKey.Presentation.MainMenu
                     : Color.white;
                 label.color = new Color(0.98f, 0.95f, 0.84f, 1f);
             }
+        }
+
+        private bool ApplyTheme()
+        {
+            if (themeScope == null)
+            {
+                themeScope = GetComponentInParent<UiThemeScope>();
+            }
+
+            if (themeScope == null || !themeScope.TryGet(styleId, out var style))
+            {
+                return false;
+            }
+
+            if (!button.interactable)
+            {
+                ApplyTexture(normalTexture);
+                background.color = style.button.disabledColor;
+                label.color = style.text.disabledColor;
+            }
+            else if (_pressed)
+            {
+                ApplyTexture(activeTexture);
+                background.color = style.button.pressedColor;
+                label.color = style.text.normalColor;
+            }
+            else if (_hovered || _selected)
+            {
+                ApplyTexture(activeTexture);
+                background.color = style.button.highlightedColor;
+                label.color = style.text.normalColor;
+            }
+            else
+            {
+                ApplyTexture(normalTexture);
+                background.color = style.button.normalColor;
+                label.color = style.text.normalColor;
+            }
+
+            if (style.text.font != null)
+            {
+                label.font = style.text.font;
+            }
+
+            return true;
         }
 
         private void ApplyTexture(Texture texture)

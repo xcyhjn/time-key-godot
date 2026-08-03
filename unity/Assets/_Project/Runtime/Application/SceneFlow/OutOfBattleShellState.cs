@@ -139,6 +139,16 @@ namespace TimeKey.Application.SceneFlow
             return !string.IsNullOrWhiteSpace(roomId) && _settledRoomIds.Contains(roomId);
         }
 
+        public void SetCurrentRoom(string roomId)
+        {
+            if (string.IsNullOrWhiteSpace(roomId))
+            {
+                throw new ArgumentException("A current room identity is required.", nameof(roomId));
+            }
+
+            CurrentRoomId = roomId;
+        }
+
         public CombatLaunchPayload CreateCombatLaunch(
             string launchCorrelationId,
             string roomId,

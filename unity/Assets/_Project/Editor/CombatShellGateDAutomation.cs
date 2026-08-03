@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using TimeKey.Composition.SceneFlow;
+using TimeKey.Editor.OverworldMovement;
 using TimeKey.Presentation;
 using TimeKey.Presentation.CombatShell;
 using TimeKey.Presentation.GameOver;
@@ -69,6 +70,7 @@ namespace TimeKey.Editor
                 gameOverPrefab,
                 "ReturnButton");
             IntegrateCombatNavigation();
+            OverworldMovementThemeAuthoring.AuthorFormalAssets();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("TIMEKEY_COMBAT_SHELL_GATE_D_AUTHORING_PASS");

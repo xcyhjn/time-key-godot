@@ -4,6 +4,7 @@ using TimeKey.Application.SceneFlow;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TimeKey.Domain.OverworldMovement;
 
 namespace TimeKey.Presentation.OutOfBattleShell
 {
@@ -43,7 +44,9 @@ namespace TimeKey.Presentation.OutOfBattleShell
         private bool _selected;
         private bool _confirmationPending;
         private bool _settled;
+        private bool _roomAvailable = true;
         private bool _transitionLocked;
+        private OutOfBattleShellState _snapshot;
 
         public event Action<OutOfBattleRoomConfirmationRequest>
             RoomConfirmationRequested;
@@ -101,12 +104,40 @@ namespace TimeKey.Presentation.OutOfBattleShell
             eraLabel.text = "时代 " + snapshot.Era;
             phaseLabel.text = "阶段 " + snapshot.Phase;
             timecoinsLabel.text = "时间币 " + snapshot.Timecoins;
+            _snapshot = snapshot;
             _hasSnapshot = true;
             _selected = false;
             _confirmationPending = false;
             _settled = snapshot.SettledRoomIds.Contains(roomId);
+            _roomAvailable = !string.IsNullOrWhiteSpace(roomId);
             roomView.Configure(roomTitle);
             ApplySilverFont();
+            RefreshInputState();
+        }
+
+        public void SetCurrentRoomIdentity(MapNodeId stableNodeId, string displayTitle)
+        {
+            roomId = stableNodeId.Value;
+            roomTitle = string.IsNullOrWhiteSpace(displayTitle)
+                ? "战斗房间"
+                : displayTitle;
+            _selected = false;
+            _confirmationPending = false;
+            _settled = _snapshot != null && _snapshot.IsRoomSettled(roomId);
+            _roomAvailable = true;
+            roomView.Configure(roomTitle);
+            RefreshInputState();
+        }
+
+        public void SetRoomAvailable(bool available)
+        {
+            _roomAvailable = available;
+            if (!available)
+            {
+                _selected = false;
+                _confirmationPending = false;
+            }
+
             RefreshInputState();
         }
 
@@ -180,7 +211,7 @@ namespace TimeKey.Presentation.OutOfBattleShell
             }
 
             var locked = !_hasSnapshot || _transitionLocked ||
-                SceneInputLockState.IsLocked;
+                !_roomAvailable || SceneInputLockState.IsLocked;
             roomView.SetSettled(_settled);
             roomView.SetSelected(_selected);
             roomView.SetConfirming(_confirmationPending);

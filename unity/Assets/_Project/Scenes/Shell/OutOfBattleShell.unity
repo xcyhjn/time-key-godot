@@ -146,7 +146,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81b9d2266992dbc4983f8f51547cdc4b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: TimeKey.Composition::TimeKey.Composition.SceneFlow.SceneContentEntry
   sceneId: 3
   contentRoot: {fileID: 1153657456}

@@ -1,0 +1,555 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e4f9b6e3b7a4e4aa4d58b9c4f62ad01, type: 3}
+  m_Name: TimeKeyDefaultUiTheme
+  m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Theming.TimeKeyUiTheme
+  styles:
+  - id: 0
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 24
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.035, g: 0.05, b: 0.06, a: 0.92}
+      borderColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 24
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.035, g: 0.05, b: 0.06, a: 0.92}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.035, g: 0.05, b: 0.06, a: 0.92}
+      highlightedColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      pressedColor: {r: 0.026250001, g: 0.0375, b: 0.044999998, a: 0.94}
+      selectedColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 1
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 24
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.12, g: 0.4, b: 0.36, a: 0.98}
+      borderColor: {r: 0.64, g: 0.92, b: 0.88, a: 1}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 24
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.12, g: 0.4, b: 0.36, a: 0.98}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.12, g: 0.4, b: 0.36, a: 0.98}
+      highlightedColor: {r: 0.64, g: 0.92, b: 0.88, a: 1}
+      pressedColor: {r: 0.089999996, g: 0.3, b: 0.27, a: 0.985}
+      selectedColor: {r: 0.64, g: 0.92, b: 0.88, a: 1}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 2
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 24
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.035, g: 0.05, b: 0.06, a: 0.92}
+      borderColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 24
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.035, g: 0.05, b: 0.06, a: 0.92}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.035, g: 0.05, b: 0.06, a: 0.92}
+      highlightedColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      pressedColor: {r: 0.026250001, g: 0.0375, b: 0.044999998, a: 0.94}
+      selectedColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 3
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 24
+      normalColor: {r: 0.98, g: 0.95, b: 0.84, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.12, g: 0.055, b: 0.06, a: 0.98}
+      borderColor: {r: 0.92, g: 0.31, b: 0.28, a: 1}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 24
+        normalColor: {r: 0.98, g: 0.95, b: 0.84, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.12, g: 0.055, b: 0.06, a: 0.98}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.12, g: 0.055, b: 0.06, a: 0.98}
+      highlightedColor: {r: 0.92, g: 0.31, b: 0.28, a: 1}
+      pressedColor: {r: 0.089999996, g: 0.041249998, b: 0.044999998, a: 0.985}
+      selectedColor: {r: 0.92, g: 0.31, b: 0.28, a: 1}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 4
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 24
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.025, g: 0.1, b: 0.11, a: 0.94}
+      borderColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 24
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.025, g: 0.1, b: 0.11, a: 0.94}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.025, g: 0.1, b: 0.11, a: 0.94}
+      highlightedColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      pressedColor: {r: 0.01875, g: 0.075, b: 0.082499996, a: 0.955}
+      selectedColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 5
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 24
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.12, g: 0.4, b: 0.36, a: 0.98}
+      borderColor: {r: 0.64, g: 0.92, b: 0.88, a: 1}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 24
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.12, g: 0.4, b: 0.36, a: 0.98}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.12, g: 0.4, b: 0.36, a: 0.98}
+      highlightedColor: {r: 0.64, g: 0.92, b: 0.88, a: 1}
+      pressedColor: {r: 0.089999996, g: 0.3, b: 0.27, a: 0.985}
+      selectedColor: {r: 0.64, g: 0.92, b: 0.88, a: 1}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 6
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 24
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.025, g: 0.1, b: 0.11, a: 0.94}
+      borderColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 24
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.025, g: 0.1, b: 0.11, a: 0.94}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.025, g: 0.1, b: 0.11, a: 0.94}
+      highlightedColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      pressedColor: {r: 0.01875, g: 0.075, b: 0.082499996, a: 0.955}
+      selectedColor: {r: 0.4, g: 0.78, b: 0.68, a: 0.86}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 7
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 22
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.055, g: 0.075, b: 0.078, a: 0.98}
+      borderColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 22
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.055, g: 0.075, b: 0.078, a: 0.98}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.055, g: 0.075, b: 0.078, a: 0.98}
+      highlightedColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      pressedColor: {r: 0.041249998, g: 0.056250002, b: 0.0585, a: 0.985}
+      selectedColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 8
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 22
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.055, g: 0.075, b: 0.078, a: 0.98}
+      borderColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 22
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.055, g: 0.075, b: 0.078, a: 0.98}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.055, g: 0.075, b: 0.078, a: 0.98}
+      highlightedColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      pressedColor: {r: 0.041249998, g: 0.056250002, b: 0.0585, a: 0.985}
+      selectedColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 9
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 24
+      normalColor: {r: 0.98, g: 0.95, b: 0.84, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.12, g: 0.055, b: 0.06, a: 0.98}
+      borderColor: {r: 0.92, g: 0.31, b: 0.28, a: 1}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 24
+        normalColor: {r: 0.98, g: 0.95, b: 0.84, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.12, g: 0.055, b: 0.06, a: 0.98}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.12, g: 0.055, b: 0.06, a: 0.98}
+      highlightedColor: {r: 0.92, g: 0.31, b: 0.28, a: 1}
+      pressedColor: {r: 0.089999996, g: 0.041249998, b: 0.044999998, a: 0.985}
+      selectedColor: {r: 0.92, g: 0.31, b: 0.28, a: 1}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 10
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 20
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.04, g: 0.1, b: 0.11, a: 0.92}
+      borderColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 20
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.04, g: 0.1, b: 0.11, a: 0.92}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.04, g: 0.1, b: 0.11, a: 0.92}
+      highlightedColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      pressedColor: {r: 0.03, g: 0.075, b: 0.082499996, a: 0.94}
+      selectedColor: {r: 0.18, g: 0.76, b: 0.72, a: 1}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+  - id: 11
+    text:
+      font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+      fontSize: 18
+      normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+      disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineSize: 0
+    frame:
+      backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+      imageType: 1
+      fillColor: {r: 0.05, g: 0.06, b: 0.08, a: 0.92}
+      borderColor: {r: 0.95, g: 0.82, b: 0.28, a: 1}
+      borderWidth: {x: 1, y: 1, z: 1, w: 1}
+      padding: {x: 18, y: 12, z: 18, w: 12}
+      visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+      cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+      shadowColor: {r: 0, g: 0, b: 0, a: 0.45}
+      shadowOffset: {x: 2, y: -2}
+      shadowSize: 2
+    button:
+      text:
+        font: {fileID: 12800000, guid: 35b5b371d76876b4f8b26cd2376eb08c, type: 3}
+        fontSize: 18
+        normalColor: {r: 0.94, g: 0.93, b: 0.86, a: 1}
+        disabledColor: {r: 0.55, g: 0.58, b: 0.58, a: 1}
+        outlineColor: {r: 0, g: 0, b: 0, a: 1}
+        outlineSize: 0
+      frame:
+        backgroundSprite: {fileID: 21300000, guid: f92a7e3bdc18bc14aba3ec3c8e37567c, type: 3}
+        imageType: 1
+        fillColor: {r: 0.05, g: 0.06, b: 0.08, a: 0.92}
+        borderColor: {r: 0, g: 0, b: 0, a: 0}
+        borderWidth: {x: 0, y: 0, z: 0, w: 0}
+        padding: {x: 0, y: 0, z: 0, w: 0}
+        visualOverflow: {x: 0, y: 0, z: 0, w: 0}
+        cornerRadius: {x: 0, y: 0, z: 0, w: 0}
+        shadowColor: {r: 0, g: 0, b: 0, a: 0}
+        shadowOffset: {x: 0, y: 0}
+        shadowSize: 0
+      normalColor: {r: 0.05, g: 0.06, b: 0.08, a: 0.92}
+      highlightedColor: {r: 0.95, g: 0.82, b: 0.28, a: 1}
+      pressedColor: {r: 0.0375, g: 0.044999998, b: 0.06, a: 0.94}
+      selectedColor: {r: 0.95, g: 0.82, b: 0.28, a: 1}
+      disabledColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}

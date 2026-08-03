@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TimeKey.Presentation.Theming;
 
 namespace TimeKey.Presentation.OutOfBattleShell
 {
@@ -26,6 +27,7 @@ namespace TimeKey.Presentation.OutOfBattleShell
         [SerializeField] private Graphic background = null;
         [SerializeField] private Text titleLabel = null;
         [SerializeField] private Text statusLabel = null;
+        [SerializeField] private UiThemeScope themeScope = null;
 
         private bool _bound;
         private bool _hovered;
@@ -209,6 +211,11 @@ namespace TimeKey.Presentation.OutOfBattleShell
             }
 
             var state = State;
+            if (ApplyTheme(state))
+            {
+                return;
+            }
+
             roomButton.interactable = state != OutOfBattleRoomState.Confirming &&
                 state != OutOfBattleRoomState.Settled &&
                 state != OutOfBattleRoomState.Disabled;
@@ -238,6 +245,78 @@ namespace TimeKey.Presentation.OutOfBattleShell
                     background.color = new Color(0.035f, 0.05f, 0.06f, 0.92f);
                     statusLabel.text = "可进入";
                     break;
+            }
+        }
+
+        private bool ApplyTheme(OutOfBattleRoomState state)
+        {
+            if (themeScope == null)
+            {
+                themeScope = GetComponentInParent<UiThemeScope>();
+            }
+
+            if (themeScope == null ||
+                !themeScope.TryGet(UiStyleId.OverworldNode, out var style))
+            {
+                return false;
+            }
+
+            roomButton.interactable = state != OutOfBattleRoomState.Confirming &&
+                state != OutOfBattleRoomState.Settled &&
+                state != OutOfBattleRoomState.Disabled;
+            background.color = ColorFor(state, style);
+            titleLabel.color = style.text.normalColor;
+            statusLabel.color = state == OutOfBattleRoomState.Disabled
+                ? style.text.disabledColor
+                : style.text.normalColor;
+            if (style.text.font != null)
+            {
+                titleLabel.font = style.text.font;
+                statusLabel.font = style.text.font;
+            }
+
+            switch (state)
+            {
+                case OutOfBattleRoomState.Hovered:
+                    statusLabel.text = "查看战斗";
+                    break;
+                case OutOfBattleRoomState.Selected:
+                    statusLabel.text = "已选择";
+                    break;
+                case OutOfBattleRoomState.Confirming:
+                    statusLabel.text = "正在进入";
+                    break;
+                case OutOfBattleRoomState.Settled:
+                    statusLabel.text = "已完成";
+                    break;
+                case OutOfBattleRoomState.Disabled:
+                    statusLabel.text = "暂不可用";
+                    break;
+                default:
+                    statusLabel.text = "可进入";
+                    break;
+            }
+
+            return true;
+        }
+
+        private static Color ColorFor(
+            OutOfBattleRoomState state,
+            TimeKeyUiTheme.UiStyleDefinition style)
+        {
+            switch (state)
+            {
+                case OutOfBattleRoomState.Hovered:
+                    return style.button.highlightedColor;
+                case OutOfBattleRoomState.Selected:
+                    return style.button.selectedColor;
+                case OutOfBattleRoomState.Confirming:
+                    return style.button.pressedColor;
+                case OutOfBattleRoomState.Settled:
+                case OutOfBattleRoomState.Disabled:
+                    return style.button.disabledColor;
+                default:
+                    return style.frame.fillColor;
             }
         }
     }

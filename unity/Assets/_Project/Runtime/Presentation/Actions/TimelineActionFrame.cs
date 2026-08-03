@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Domain;
+using TimeKey.Presentation.Theming;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,6 +19,7 @@ namespace TimeKey.Presentation.Actions
         [SerializeField] private CanvasGroup canvasGroup = null;
         [SerializeField] private Image cellBackgroundTemplate = null;
         [SerializeField] private Image edgeTemplate = null;
+        [SerializeField] private UiThemeScope themeScope = null;
 
         private readonly Vector3[] _corners = new Vector3[4];
         private readonly List<Image> _cellVisuals = new List<Image>();
@@ -71,20 +73,10 @@ namespace TimeKey.Presentation.Actions
             _layer = layer;
             var enemy = snapshot.ActorKind == TimelineActorKind.Enemy;
             var unsupported = snapshot.Validity == TimelineActionValidity.Unsupported;
-            _fillColor = enemy
-                ? new Color(0.42f, 0.10f, 0.11f, 0.42f)
-                : new Color(0.04f, 0.38f, 0.40f, 0.38f);
-            _edgeColor = unsupported
-                ? new Color(1f, 0.72f, 0.18f, 1f)
-                : enemy
-                    ? new Color(1f, 0.34f, 0.28f, 1f)
-                    : new Color(0.18f, 0.88f, 0.80f, 1f);
+            ApplyThemeColors(enemy, unsupported);
             background.color = _fillColor;
             background.enabled = false;
             stripe.gameObject.SetActive(enemy);
-            stripe.color = unsupported
-                ? new Color(1f, 0.72f, 0.18f, 0.90f)
-                : new Color(0.95f, 0.31f, 0.27f, 0.90f);
             label.text = snapshot.Display.Title;
             badge.text = enemy
                 ? unsupported ? "敌方 / 无效果" : "敌方"
@@ -112,6 +104,47 @@ namespace TimeKey.Presentation.Actions
             }
 
             SetHighlighted(_highlighted);
+        }
+
+        private void ApplyThemeColors(bool enemy, bool unsupported)
+        {
+            if (themeScope == null)
+            {
+                themeScope = GetComponentInParent<UiThemeScope>();
+            }
+
+            var styleId = enemy ? UiStyleId.EnemyIntentFrame : UiStyleId.PlayerActionFrame;
+            if (themeScope != null && themeScope.TryGet(styleId, out var style))
+            {
+                _fillColor = style.frame.fillColor;
+                _edgeColor = unsupported
+                    ? style.button.highlightedColor
+                    : style.frame.borderColor;
+                stripe.color = unsupported
+                    ? style.button.highlightedColor
+                    : style.frame.borderColor;
+                label.color = style.text.normalColor;
+                badge.color = style.text.normalColor;
+                if (style.text.font != null)
+                {
+                    label.font = style.text.font;
+                    badge.font = style.text.font;
+                }
+
+                return;
+            }
+
+            _fillColor = enemy
+                ? new Color(0.42f, 0.10f, 0.11f, 0.42f)
+                : new Color(0.04f, 0.38f, 0.40f, 0.38f);
+            _edgeColor = unsupported
+                ? new Color(1f, 0.72f, 0.18f, 1f)
+                : enemy
+                    ? new Color(1f, 0.34f, 0.28f, 1f)
+                    : new Color(0.18f, 0.88f, 0.80f, 1f);
+            stripe.color = unsupported
+                ? new Color(1f, 0.72f, 0.18f, 0.90f)
+                : new Color(0.95f, 0.31f, 0.27f, 0.90f);
         }
 
         public void SetHighlighted(bool highlighted)

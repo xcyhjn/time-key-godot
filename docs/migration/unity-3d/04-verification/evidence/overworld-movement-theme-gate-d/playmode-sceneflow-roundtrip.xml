@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:09Z" duration="14.0269459">
+  <test-suite type="TestSuite" id="1164" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="108" result="Passed" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:09Z" duration="14.026946" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1140" name="TimeKey.Tests.PlayMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.PlayMode.dll" runstate="Runnable" testcasecount="108" result="Passed" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:09Z" duration="14.020068" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="38112" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1141" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="108" result="Passed" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:09Z" duration="14.018601" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1142" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="108" result="Passed" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:09Z" duration="14.017496" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1143" name="PlayMode" fullname="TimeKey.Tests.PlayMode" runstate="Runnable" testcasecount="108" result="Passed" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:09Z" duration="14.016455" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1149" name="SceneFlow" fullname="TimeKey.Tests.PlayMode.SceneFlow" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:09Z" duration="14.014509" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1050" name="CombatShellGateDRoundTripTests" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:09Z" duration="14.013438" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1052" name="Defeat_GoesToGameOverThenClearsRunAtMainMenu" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests.Defeat_GoesToGameOverThenClearsRunAtMainMenu" methodname="Defeat_GoesToGameOverThenClearsRunAtMainMenu" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests" runstate="Runnable" seed="1271135650" result="Passed" start-time="2026-08-03 09:39:55Z" end-time="2026-08-03 09:40:03Z" duration="7.620029" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+]]></output>
+                </test-case>
+                <test-case id="1051" name="VictoryReward_ReturnsToSameRunAndSettlesRoomOnce" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests.VictoryReward_ReturnsToSameRunAndSettlesRoomOnce" methodname="VictoryReward_ReturnsToSameRunAndSettlesRoomOnce" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests" runstate="Runnable" seed="234072444" result="Passed" start-time="2026-08-03 09:40:03Z" end-time="2026-08-03 09:40:09Z" duration="6.385259" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
