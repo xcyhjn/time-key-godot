@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -12,6 +13,9 @@ using TimeKey.Domain.Deck;
 using TimeKey.Domain.Overworld;
 using TimeKey.Domain.OverworldMovement;
 using TimeKey.Infrastructure.Persistence;
+using TimeKey.Presentation.MainMenu;
+using TimeKey.Presentation.OutOfBattleShell;
+using TimeKey.Presentation.OverworldMovement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -440,6 +444,121 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             }
         }
 
+        [UnityTest]
+        public IEnumerator Bootstrap_GateCEventRoomSkipsMissingContentAndPersists()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-c-event-" + System.Guid.NewGuid().ToString("N"));
+            var savePath = Path.Combine(directory, "overworld.json");
+            SceneManager.LoadScene("Bootstrap", LoadSceneMode.Single);
+            yield return null;
+            var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
+            yield return AwaitTask(bootstrap.InitializationTask, "Bootstrap initialization");
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    1,
+                    "gate-c-event-start-to-menu",
+                    SceneId.GameStart,
+                    SceneId.MainMenu,
+                    new EmptySceneTransitionPayload(SceneId.MainMenu)));
+
+            var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            store.ConfigurePersistencePath(savePath);
+            var seed = FindSeedWithAvailableRoomType(OverworldRoomType.Event);
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    2,
+                    "gate-c-event-menu-to-shell",
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    Start("gate-c-event-run", seed, 100)));
+
+            var roomId = FindAvailableRoom(store.OverworldRun, OverworldRoomType.Event);
+            var before = store.OverworldRun.CreatePersistenceSnapshot();
+            yield return SelectAndConfirmLocalRoom(store, roomId, "安全跳过");
+            var after = store.OverworldRun.CreatePersistenceSnapshot();
+
+            Assert.That(after.CurrentNodeId, Is.EqualTo(roomId.Value));
+            Assert.That(after.SettledNodeIds, Does.Contain(roomId.Value));
+            Assert.That(after.Timecoins, Is.EqualTo(before.Timecoins));
+            Assert.That(after.DeckStableIds, Is.EqualTo(before.DeckStableIds));
+            Assert.That(FindText("RoomDetail").text, Does.Contain("后继路线已解锁"));
+            var persisted = new OverworldSaveRepository(savePath).Load();
+            Assert.That(persisted.Succeeded, Is.True, persisted.Detail);
+            Assert.That(persisted.Document.CurrentNodeId, Is.EqualTo(roomId.Value));
+
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Bootstrap_GateCShopPurchasePersistsBalanceAndCardExactlyOnce()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-c-shop-" + System.Guid.NewGuid().ToString("N"));
+            var savePath = Path.Combine(directory, "overworld.json");
+            SceneManager.LoadScene("Bootstrap", LoadSceneMode.Single);
+            yield return null;
+            var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
+            yield return AwaitTask(bootstrap.InitializationTask, "Bootstrap initialization");
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    1,
+                    "gate-c-shop-start-to-menu",
+                    SceneId.GameStart,
+                    SceneId.MainMenu,
+                    new EmptySceneTransitionPayload(SceneId.MainMenu)));
+
+            var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            store.ConfigurePersistencePath(savePath);
+            var seed = FindSeedWithAvailableRoomType(OverworldRoomType.Shop);
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    2,
+                    "gate-c-shop-menu-to-shell",
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    Start("gate-c-shop-run", seed, 100)));
+
+            var roomId = FindAvailableRoom(store.OverworldRun, OverworldRoomType.Shop);
+            var offer = store.OverworldRun.GetShopOffer(roomId);
+            var before = store.OverworldRun.CreatePersistenceSnapshot();
+            yield return SelectAndConfirmLocalRoom(store, roomId, "价格");
+            var after = store.OverworldRun.CreatePersistenceSnapshot();
+
+            Assert.That(after.Timecoins, Is.EqualTo(before.Timecoins - offer.TimecoinCost));
+            Assert.That(after.DeckStableIds.Count, Is.EqualTo(before.DeckStableIds.Count + 1));
+            Assert.That(after.DeckStableIds.Last(), Is.EqualTo(offer.CardStableId));
+            var replay = store.PurchaseShopRoom(20, 21, roomId.Value);
+            Assert.That(replay.Succeeded, Is.False);
+            Assert.That(store.OverworldRun.CreatePersistenceSnapshot().Timecoins,
+                Is.EqualTo(after.Timecoins));
+            var persisted = new OverworldSaveRepository(savePath).Load();
+            Assert.That(persisted.Succeeded, Is.True, persisted.Detail);
+            Assert.That(persisted.Document.Timecoins, Is.EqualTo(after.Timecoins));
+            Assert.That(persisted.Document.DeckStableIds.Last(), Is.EqualTo(offer.CardStableId));
+
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Bootstrap_GateCCorruptAndFutureSavesShowRecoverableChineseNotice()
+        {
+            yield return AssertInvalidSaveNotice(false);
+            yield return AssertInvalidSaveNotice(true);
+        }
+
         private static IEnumerator Transition(
             BootstrapRoot bootstrap,
             SceneTransitionRequest request)
@@ -542,7 +661,7 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             return Start(runId, 731);
         }
 
-        private static RunStartPayload Start(string runId, int seed)
+        private static RunStartPayload Start(string runId, int seed, int timecoins = 0)
         {
             return new RunStartPayload(
                 RunStartKind.NewGame,
@@ -552,8 +671,142 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 1,
                 1,
                 1,
-                0,
+                timecoins,
                 StarterDeck.OrderedStableIds);
+        }
+
+        private static int FindSeedWithAvailableRoomType(OverworldRoomType roomType)
+        {
+            var generator = new DeterministicOverworldMapGenerator();
+            for (var seed = 1; seed <= 10000; seed++)
+            {
+                var map = generator.Generate(seed, new OverworldMapGenerationConfig(1));
+                foreach (var nodeId in map.GetOutgoing(map.EntryNodeId))
+                {
+                    if (map.GetNode(nodeId).RoomType == roomType)
+                    {
+                        return seed;
+                    }
+                }
+            }
+
+            Assert.Fail("No deterministic seed exposed an adjacent " + roomType + " room.");
+            return 0;
+        }
+
+        private static MapNodeId FindAvailableRoom(
+            OverworldRunApplication application,
+            OverworldRoomType roomType)
+        {
+            foreach (var nodeId in application.GetAvailableRoomIds())
+            {
+                if (application.GetRoomType(nodeId) == roomType)
+                {
+                    return nodeId;
+                }
+            }
+
+            Assert.Fail("The generated map has no available " + roomType + " room.");
+            return default(MapNodeId);
+        }
+
+        private static IEnumerator SelectAndConfirmLocalRoom(
+            SceneFlowStateStore store,
+            MapNodeId roomId,
+            string expectedDetail)
+        {
+            var movement = Object.FindAnyObjectByType<OverworldMovementPresenter>();
+            Assert.That(movement, Is.Not.Null);
+            var view = movement.GetComponentsInChildren<OverworldNodeView>(true)
+                .Single(candidate => candidate.Id == roomId);
+            view.GetComponent<Button>().onClick.Invoke();
+            var deadline = Time.realtimeSinceStartup + TaskTimeoutSeconds;
+            while (movement.IsMoving)
+            {
+                if (Time.realtimeSinceStartup >= deadline)
+                {
+                    Assert.Fail("Generated room selection timed out.");
+                }
+
+                yield return null;
+            }
+
+            Assert.That(movement.SelectedNodeId, Is.EqualTo(roomId.Value));
+            var presenter = Object.FindAnyObjectByType<OutOfBattleShellPresenter>();
+            Assert.That(presenter.RoomId, Is.EqualTo(roomId.Value));
+            Assert.That(FindText("RoomDetail").text, Does.Contain(expectedDetail));
+            FindButton("CombatRoom").onClick.Invoke();
+            yield return null;
+            Assert.That(FindButton("ConfirmButton").interactable, Is.True);
+            FindButton("ConfirmButton").onClick.Invoke();
+            while (!store.OverworldRun.CreatePersistenceSnapshot()
+                       .SettledNodeIds.Contains(roomId.Value))
+            {
+                if (Time.realtimeSinceStartup >= deadline)
+                {
+                    Assert.Fail("Local room completion timed out.");
+                }
+
+                yield return null;
+            }
+
+            yield return null;
+        }
+
+        private static IEnumerator AssertInvalidSaveNotice(bool futureVersion)
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-c-invalid-" + System.Guid.NewGuid().ToString("N"));
+            var savePath = Path.Combine(directory, "overworld.json");
+            Directory.CreateDirectory(directory);
+            if (futureVersion)
+            {
+                var run = new OverworldRunApplication(
+                    Start("gate-c-future-run", 731),
+                    new OverworldMapGenerationConfig(1),
+                    finalChapter: 3);
+                var repository = new OverworldSaveRepository(savePath);
+                Assert.That(repository.Save(
+                    OverworldSaveMapper.ToDocument(run.CreatePersistenceSnapshot())).Succeeded,
+                    Is.True);
+                var json = File.ReadAllText(savePath)
+                    .Replace("\"schemaVersion\": 2", "\"schemaVersion\": 999");
+                File.WriteAllText(savePath, json);
+            }
+            else
+            {
+                File.WriteAllText(savePath, "{not-json");
+            }
+
+            SceneManager.LoadScene("Bootstrap", LoadSceneMode.Single);
+            yield return null;
+            var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
+            yield return AwaitTask(bootstrap.InitializationTask, "Bootstrap initialization");
+            var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            store.ConfigurePersistencePath(savePath);
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    1,
+                    futureVersion ? "gate-c-future-menu" : "gate-c-corrupt-menu",
+                    SceneId.GameStart,
+                    SceneId.MainMenu,
+                    new EmptySceneTransitionPayload(SceneId.MainMenu)));
+
+            var navigation = Object.FindAnyObjectByType<MainMenuSceneNavigation>();
+            var presenter = Object.FindAnyObjectByType<MainMenuPresenter>();
+            Assert.That(FindButton("Continue").interactable, Is.False);
+            Assert.That(presenter.IsModalOpen, Is.True);
+            Assert.That(navigation.LastContinueNotice,
+                Does.Contain(futureVersion ? "更新版本" : "损坏"));
+            Assert.That(FindText("ModalBody").text,
+                Does.Contain(futureVersion ? "更新版本" : "损坏"));
+
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
         }
 
         private static int FindSeedWithAvailableCombatRoom()
@@ -607,6 +860,20 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             }
 
             Assert.Fail("Missing button " + name + ".");
+            return null;
+        }
+
+        private static Text FindText(string name)
+        {
+            foreach (var text in Object.FindObjectsByType<Text>(FindObjectsInactive.Include))
+            {
+                if (text.gameObject.name == name)
+                {
+                    return text;
+                }
+            }
+
+            Assert.Fail("Missing text " + name + ".");
             return null;
         }
 

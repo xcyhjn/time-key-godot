@@ -274,3 +274,21 @@ Final results are full EditMode `343/343`, full graphical Direct3D12 PlayMode `1
 - Scene PlayMode: blank/card/cancel/commit/resolve cleanup plus Scene rebind/global lock; final `2/2`.
 - Visual PlayMode: ordinary action and non-rect Poison/Tower at 1280x720, 2560x1080 and 1920x1080, same frame IDs across resize; `2/2`, 9 PNGs manually reviewed.
 - Delivery: full EditMode `351/351`, full graphical D3D12 PlayMode `107/107`, Windows build and visible Player smoke `PASS=1 / Exception=0 / Error=0`.
+
+## Wave 03 Overworld Gate C
+
+- Dynamic map: exact Gate A node/edge count, identity, layer/slot/type, available/locked/
+  visited/settled projection and resize-safe relayout.
+- Local rooms: Event safe-skip atomic save; Shop exact-once 50-timecoin purchase, deck add,
+  room settlement and persistence failure rollback.
+- Continue: valid save enables and restores; corrupt/future/I/O states stay disabled and
+  show recoverable Silver Chinese feedback.
+- Visual: 1280x720, 1920x1080, 2560x1080, dynamic 1600x900 resize, hover/focus,
+  selected/confirming/moving, all node states, Event, Shop and Continue states.
+- Delivery: targeted EditMode `39/39`, additive/round-trip regression `10/10`, visual
+  PlayMode `2/2`, full graphical EditMode `446/446`, full graphical D3D12 PlayMode
+  `128/128`, exact six-Scene Windows build and actual visible Player route.
+
+All counts passed with zero failed, skipped or inconclusive tests. Fifteen PNGs were
+manually reviewed for nonblank output, overlap, clipping, Silver readability and dynamic
+layout. Canonical evidence is `evidence/overworld-map-gate-c/verification-summary.md`.

@@ -268,6 +268,11 @@ namespace TimeKey.Editor.OverworldMovement
                 var edgeHost = FindOrCreateRect(mapHost, "EdgeHost");
                 Stretch(edgeHost);
                 edgeHost.SetAsFirstSibling();
+                foreach (var existingNode in mapHost.GetComponentsInChildren<OverworldNodeView>(true))
+                {
+                    UnityEngine.Object.DestroyImmediate(existingNode.gameObject);
+                }
+
                 var marker = FindOrCreateRect(mapHost, "PlayerMarker");
                 var markerImage = GetOrAdd<Image>(marker.gameObject);
                 markerImage.sprite = markerSprite;
@@ -276,20 +281,11 @@ namespace TimeKey.Editor.OverworldMovement
                 marker.sizeDelta = new Vector2(66f, 66f);
                 marker.SetAsLastSibling();
 
-                var nodes = new OverworldNodeView[3];
-                nodes[0] = AddNode(mapHost, nodePrefab, "Start", "start", 0, 0,
-                    TimeKey.Domain.OverworldMovement.MapNodeType.Start,
-                    new Vector2(0f, 0f));
-                nodes[1] = AddNode(mapHost, nodePrefab, "Room01", "room-01", 1, 0,
-                    TimeKey.Domain.OverworldMovement.MapNodeType.Normal,
-                    new Vector2(180f, 80f));
-                nodes[2] = AddNode(mapHost, nodePrefab, "Room02", "room-02", 0, 1,
-                    TimeKey.Domain.OverworldMovement.MapNodeType.Normal,
-                    new Vector2(0f, 160f));
-
                 var presenter = GetOrAdd<OverworldMovementPresenter>(root);
                 var serialized = new SerializedObject(presenter);
-                SetObjectArray(serialized, "nodeViews", nodes);
+                SetObjectArray(serialized, "nodeViews", Array.Empty<UnityEngine.Object>());
+                SetReference(serialized, "nodePrefab", nodePrefab);
+                SetReference(serialized, "edgeHost", edgeHost);
                 SetReference(serialized, "playerMarker", marker);
                 SetReference(serialized, "mapHost", mapHost);
                 SetReference(serialized, "mapCamera", root.transform.Find("OutOfBattleCamera")?.GetComponent<Camera>());
@@ -306,10 +302,55 @@ namespace TimeKey.Editor.OverworldMovement
                 var room = root.transform.Find("GateDCanvas/RoomRevealLayer/CombatRoom");
                 if (room != null)
                 {
+                    var roomRect = (RectTransform)room;
+                    roomRect.anchorMin = roomRect.anchorMax = new Vector2(0.5f, 0f);
+                    roomRect.pivot = new Vector2(0.5f, 0.5f);
+                    roomRect.anchoredPosition = new Vector2(0f, 190f);
+                    roomRect.sizeDelta = new Vector2(900f, 130f);
+                    var roomImage = room.GetComponent<Image>();
+                    if (roomImage != null)
+                    {
+                        roomImage.sprite = null;
+                        roomImage.type = Image.Type.Simple;
+                    }
+
+                    var titleRect = room.Find("RoomTitle") as RectTransform;
+                    if (titleRect != null)
+                    {
+                        SetRect(titleRect, new Vector2(0.04f, 0.52f),
+                            new Vector2(0.32f, 0.88f), Vector2.zero, Vector2.zero);
+                    }
+
+                    var statusRect = room.Find("RoomStatus") as RectTransform;
+                    if (statusRect != null)
+                    {
+                        SetRect(statusRect, new Vector2(0.04f, 0.16f),
+                            new Vector2(0.32f, 0.48f), Vector2.zero, Vector2.zero);
+                    }
+
+                    var detailRect = FindOrCreateRect(room, "RoomDetail");
+                    SetRect(
+                        detailRect,
+                        new Vector2(0.35f, 0.12f),
+                        new Vector2(0.96f, 0.88f),
+                        Vector2.zero,
+                        Vector2.zero);
+                    var detailText = GetOrAdd<Text>(detailRect.gameObject);
+                    detailText.font = font;
+                    detailText.fontSize = 18;
+                    detailText.alignment = TextAnchor.MiddleCenter;
+                    detailText.horizontalOverflow = HorizontalWrapMode.Wrap;
+                    detailText.verticalOverflow = VerticalWrapMode.Overflow;
+                    detailText.resizeTextForBestFit = true;
+                    detailText.resizeTextMinSize = 14;
+                    detailText.resizeTextMaxSize = 18;
+                    detailText.color = new Color(0.94f, 0.93f, 0.86f, 1f);
+                    detailText.raycastTarget = false;
+
                     var roomBinder = GetOrAdd<UiThemeBinder>(room.gameObject);
                     serialized = new SerializedObject(roomBinder);
                     serialized.FindProperty("styleId").enumValueIndex = (int)UiStyleId.ConfirmationDialog;
-                    SetReference(serialized, "background", room.GetComponent<Image>());
+                    SetReference(serialized, "background", null);
                     SetReference(serialized, "text", room.GetComponentInChildren<Text>(true));
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                     var roomView = room.GetComponent<OutOfBattleRoomView>();
@@ -317,6 +358,15 @@ namespace TimeKey.Editor.OverworldMovement
                     {
                         serialized = new SerializedObject(roomView);
                         SetReference(serialized, "themeScope", scope);
+                        serialized.FindProperty("usePanelStateColors").boolValue = true;
+                        serialized.ApplyModifiedPropertiesWithoutUndo();
+                    }
+
+                    var shellPresenter = root.GetComponent<OutOfBattleShellPresenter>();
+                    if (shellPresenter != null)
+                    {
+                        serialized = new SerializedObject(shellPresenter);
+                        SetReference(serialized, "roomDetailLabel", detailText);
                         serialized.ApplyModifiedPropertiesWithoutUndo();
                     }
                 }
@@ -340,32 +390,6 @@ namespace TimeKey.Editor.OverworldMovement
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
-        }
-
-        private static OverworldNodeView AddNode(
-            RectTransform parent,
-            GameObject nodePrefab,
-            string name,
-            string id,
-            int q,
-            int r,
-            TimeKey.Domain.OverworldMovement.MapNodeType nodeType,
-            Vector2 position)
-        {
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(nodePrefab);
-            instance.name = name;
-            instance.transform.SetParent(parent, false);
-            var rect = instance.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(150f, 120f);
-            rect.anchoredPosition = position;
-            var serialized = new SerializedObject(instance.GetComponent<OverworldNodeView>());
-            serialized.FindProperty("nodeId").stringValue = id;
-            serialized.FindProperty("q").intValue = q;
-            serialized.FindProperty("r").intValue = r;
-            serialized.FindProperty("nodeType").enumValueIndex = (int)nodeType;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            return instance.GetComponent<OverworldNodeView>();
         }
 
         private static void ConfigureButtonTheme(

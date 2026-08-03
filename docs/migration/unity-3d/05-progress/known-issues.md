@@ -9,7 +9,7 @@
 | --- | --- | --- | --- |
 | MIG-001 | Godot editor import 有大量 TileSet 错误，主场景退出还有清理错误 | 说明源工程基线并非干净，不能要求 Unity 复刻错误 | 日志保留；按可观察玩法对照 |
 | MIG-002 | Godot 敌人意图 command 解析当前返回空 | 不能声称已实现真实敌人攻击效果 | 02B3 已完成确定性生成、共享 snapshot、最终重判和 `UnsupportedSourceCommand` 显式 no-effect；真实 typed enemy effect 留给有权威数据的后续内容波次 |
-| MIG-003 | 普通/精英房完成状态存在 TODO，事件场景路径缺失 | 局外闭环不可直接照搬 | Wave 03 单独修复/重设计，不阻塞首切片 |
+| MIG-003 | Godot 事件场景资源缺失；普通/精英完成路径不能直接照搬 | 不得伪造事件剧情或奖励；最终局外闭环需 Unity 明确策略 | Gate C 已实现显式 Event 安全跳过和原子结算；Combat/Elite 继续既有 typed SceneFlow，缺失事件内容仍作为透明非阻塞差异 |
 | MIG-004 | Godot CFG 无 schema 且状态不完整 | 强兼容会明显增加工期 | Wave 03 前由用户选择兼容等级 |
 | MIG-005 | 图片、音频、ARK Pixel 字体与 Dialogic vendored 根授权不完整 | 开发迁移不等于可直接公开发布 | 按用户要求在本地开发切片使用原 `center_altar.png`；发布前仍需逐项授权清单 |
 | MIG-006 | 预检时可用内存低于 1 GiB | Unity 导入可能交换或超时 | 避免并行运行 Godot/Unity 图形实例；记录开发机性能基线 |
@@ -31,3 +31,7 @@
 Tower decay、Poison 传播/伤害/减层、action identity 映射、02B4 牌库/资源/终局和 Combat Shell Gate E 均已关闭。当前没有阻塞 Wave 03 的产品或环境问题；MIG-002 仍只限制“无权威 command 时不得发明敌人伤害”。MIG-019 与 MIG-020 均为非阻塞观察。
 
 Wave 02B3R 已关闭效果框真实轮廓、动态 resize、重复卡 identity、idle/Cancelled 地块检查和全状态清理问题，未新增阻塞项。MIG-019 与 MIG-020 的非阻塞观察保持不变；当前无用户决策阻塞。
+
+Wave 03 Overworld Gate C 未新增硬阻塞。MIG-003 的事件内容缺失不会被静默填充；当前
+安全跳过路径已自动化并有实际渲染证据，后续若获得权威事件资源再单独替换内容，不改
+地图或 SceneFlow 状态机。Gate D 可继续执行。

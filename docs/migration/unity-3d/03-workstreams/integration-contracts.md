@@ -419,3 +419,24 @@ Bootstrap (persistent, Build index 0)
 - Combat keeps `CombatLaunchPayload`/`CombatOutcome`; Event and Shop use their own typed
   outcomes. Exact outcome replay is idempotent after restart; a changed fingerprint is a
   typed conflict.
+
+## Wave 03 Overworld Gate C presentation and local-room boundary
+
+- `OverworldMovementPresenter` builds nodes and edges only from the authoritative Gate A
+  snapshot. Serialized hosts and the saved node Prefab are presentation infrastructure;
+  selection, focus and animation never mutate map state.
+- Runtime node identity is the exact `MapNodeId` plus layer/slot/room type. Idle, Current,
+  Available, Locked, Visited, Settled, Selected, Confirming, Moving and Arrived are visual
+  states over one node model, not a second progression machine.
+- Composition owns room confirmation. Battle/Elite/Boss continue through existing typed
+  SceneFlow; Event safe-skip and Shop purchase call atomic state-store operations and then
+  refresh the same shell snapshot.
+- Event source content is absent, so Gate C exposes an explicit Chinese safe-skip result
+  without inventing story or reward. Shop uses a deterministic seven-card catalog and a
+  source-backed fixed cost of 50 timecoins.
+- Continue is enabled only for a valid recoverable save. Corrupt, future-schema and I/O
+  results stay typed and are surfaced by a recoverable Silver Chinese modal.
+- Gate C is frozen by targeted EditMode `39/39`, additive regression `10/10`, visual
+  PlayMode `2/2`, full graphical EditMode `446/446`, full graphical D3D12 PlayMode
+  `128/128`, 15 manually reviewed PNGs, a successful six-Scene Windows build and an
+  actual visible Player Bootstrap-to-overworld inspection.

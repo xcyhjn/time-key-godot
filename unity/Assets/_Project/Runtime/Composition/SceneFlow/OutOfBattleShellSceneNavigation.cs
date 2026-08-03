@@ -56,17 +56,27 @@ namespace TimeKey.Composition.SceneFlow
             if (presenter != null)
             {
                 presenter.RoomConfirmationRequested += OnRoomConfirmationRequested;
+                presenter.RoomInteractionStateChanged += OnRoomInteractionStateChanged;
                 if (stateStore?.OutOfBattleState != null)
                 {
                     if (movementPresenter != null)
                     {
-                        movementPresenter.ApplySceneFlowState(
-                            stateStore.OutOfBattleState.CurrentRoomId,
-                            stateStore.OutOfBattleState.SettledRoomIds);
+                        if (stateStore.OverworldRun != null)
+                        {
+                            movementPresenter.BindAuthoritativeMap(
+                                stateStore.OverworldRun.Map,
+                                stateStore.OverworldRun.ChapterSnapshot);
+                        }
+                        else
+                        {
+                            movementPresenter.ApplySceneFlowState(
+                                stateStore.OutOfBattleState.CurrentRoomId,
+                                stateStore.OutOfBattleState.SettledRoomIds);
+                        }
                     }
 
                     presenter.Apply(stateStore.OutOfBattleState);
-                    BindFirstAvailableCombatRoom();
+                    BindCurrentMapPrompt();
                     ApplySharedTopHud(stateStore.OutOfBattleState);
                     BeginEraClockProjection(stateStore.OutOfBattleState);
                 }
@@ -94,6 +104,7 @@ namespace TimeKey.Composition.SceneFlow
             if (presenter != null)
             {
                 presenter.RoomConfirmationRequested -= OnRoomConfirmationRequested;
+                presenter.RoomInteractionStateChanged -= OnRoomInteractionStateChanged;
             }
 
             if (movementPresenter != null)
@@ -109,13 +120,26 @@ namespace TimeKey.Composition.SceneFlow
         private void OnArrivalCommitted(TimeKey.Domain.OverworldMovement.MapNodeId nodeId)
         {
             if (movementPresenter == null || presenter == null ||
-                !movementPresenter.TryGetNodeType(nodeId, out var nodeType))
+                !movementPresenter.TryGetRoomType(nodeId, out var roomType))
             {
                 return;
             }
 
-            presenter.SetCurrentRoomIdentity(nodeId, "时隙节点 " + nodeId.Value);
-            presenter.SetRoomAvailable(nodeType != TimeKey.Domain.OverworldMovement.MapNodeType.Start);
+            BindRoomPresentation(nodeId, roomType);
+        }
+
+        private void OnRoomInteractionStateChanged(OutOfBattleRoomInteractionState state)
+        {
+            if (state == null || string.IsNullOrWhiteSpace(state.RoomId) ||
+                movementPresenter == null)
+            {
+                return;
+            }
+
+            movementPresenter.SetRoomInteractionState(
+                new TimeKey.Domain.OverworldMovement.MapNodeId(state.RoomId),
+                state.Selected,
+                state.Confirming);
         }
 
         private async void OnRoomConfirmationRequested(
@@ -123,7 +147,16 @@ namespace TimeKey.Composition.SceneFlow
         {
             try
             {
-                await LaunchCombatAsync(request, _lifetime.Token);
+                var roomType = stateStore?.OverworldRun?.GetRoomType(
+                    new TimeKey.Domain.OverworldMovement.MapNodeId(request.RoomId));
+                if (roomType == OverworldRoomType.Event || roomType == OverworldRoomType.Shop)
+                {
+                    await CompleteLocalRoomAsync(request, roomType.Value, _lifetime.Token);
+                }
+                else
+                {
+                    await LaunchCombatAsync(request, _lifetime.Token);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -164,6 +197,8 @@ namespace TimeKey.Composition.SceneFlow
             }
 
             _inFlight = true;
+            movementPresenter?.RequestRoomPreparation(
+                new TimeKey.Domain.OverworldMovement.MapNodeId(request.RoomId));
             presenter?.SetTransitionLocked(true);
             movementPresenter?.SetTransitionLocked(true);
             try
@@ -220,6 +255,87 @@ namespace TimeKey.Composition.SceneFlow
             }
         }
 
+        private async Task CompleteLocalRoomAsync(
+            OutOfBattleRoomConfirmationRequest request,
+            OverworldRoomType roomType,
+            CancellationToken cancellationToken)
+        {
+            if (_inFlight)
+            {
+                return;
+            }
+
+            bootstrap = bootstrap != null
+                ? bootstrap
+                : FindFirstObjectByType<BootstrapRoot>();
+            stateStore = stateStore != null
+                ? stateStore
+                : FindFirstObjectByType<SceneFlowStateStore>();
+            if (bootstrap == null || stateStore?.OverworldRun == null)
+            {
+                throw new InvalidOperationException(
+                    "Local overworld rooms require Bootstrap and an authoritative run.");
+            }
+
+            _inFlight = true;
+            movementPresenter?.RequestRoomPreparation(
+                new TimeKey.Domain.OverworldMovement.MapNodeId(request.RoomId));
+            presenter?.SetTransitionLocked(true);
+            movementPresenter?.SetTransitionLocked(true);
+            try
+            {
+                await bootstrap.InitializationTask;
+                cancellationToken.ThrowIfCancellationRequested();
+                var entrySequence = bootstrap.ReserveTransitionSequence();
+                var outcomeSequence = bootstrap.ReserveTransitionSequence();
+                var result = roomType == OverworldRoomType.Event
+                    ? stateStore.CompleteEventRoom(
+                        entrySequence,
+                        outcomeSequence,
+                        request.RoomId)
+                    : stateStore.PurchaseShopRoom(
+                        entrySequence,
+                        outcomeSequence,
+                        request.RoomId);
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        "Local overworld room failed: " + result.Failure + ": " +
+                        result.ApplicationFailure + ": " + result.Detail);
+                }
+
+                movementPresenter?.ApplyAuthoritativeSnapshot(
+                    stateStore.OverworldRun.ChapterSnapshot);
+                presenter?.Apply(stateStore.OutOfBattleState);
+                presenter?.SetCurrentRoomPresentation(
+                    new TimeKey.Domain.OverworldMovement.MapNodeId(request.RoomId),
+                    RoomTitle(roomType, request.RoomId),
+                    roomType == OverworldRoomType.Event
+                        ? "事件资源尚未迁移，本节点已安全跳过并保存。"
+                        : "已购买 " + CardDisplayName(result.ShopOffer.CardStableId) +
+                          "，消费 " + result.ShopOffer.TimecoinCost + " 时间币。",
+                    "已完成",
+                    confirmAvailable: false);
+                presenter?.ShowResolvedRoom(
+                    roomType == OverworldRoomType.Event
+                        ? "事件节点已结算，后继路线已解锁。"
+                        : "购买已写入牌组与存档，后继路线已解锁。");
+                ApplySharedTopHud(stateStore.OutOfBattleState);
+                movementPresenter?.FocusFirstAvailable();
+                _inFlight = false;
+                presenter?.SetTransitionLocked(false);
+                movementPresenter?.SetTransitionLocked(false);
+            }
+            catch
+            {
+                _inFlight = false;
+                presenter?.SetTransitionLocked(false);
+                movementPresenter?.SetTransitionLocked(false);
+                presenter?.RejectPendingConfirmation();
+                throw;
+            }
+        }
+
         private static int DeriveBattleSeed(int runSeed, string roomId)
         {
             unchecked
@@ -235,7 +351,7 @@ namespace TimeKey.Composition.SceneFlow
             }
         }
 
-        private void BindFirstAvailableCombatRoom()
+        private void BindCurrentMapPrompt()
         {
             var application = stateStore?.OverworldRun;
             if (application == null || presenter == null)
@@ -243,24 +359,58 @@ namespace TimeKey.Composition.SceneFlow
                 return;
             }
 
-            foreach (var nodeId in application.GetAvailableRoomIds())
-            {
-                var roomType = application.GetRoomType(nodeId);
-                if (roomType != OverworldRoomType.Battle &&
-                    roomType != OverworldRoomType.Elite &&
-                    roomType != OverworldRoomType.Boss)
-                {
-                    continue;
-                }
+            var current = application.ChapterSnapshot.CurrentNodeId;
+            presenter.SetCurrentRoomPresentation(
+                current,
+                "章节地图",
+                "使用鼠标、方向键或手柄选择发光的相邻节点。",
+                "进入",
+                confirmAvailable: false);
+            presenter.SetRoomAvailable(false);
+        }
 
-                presenter.SetCurrentRoomIdentity(
-                    nodeId,
-                    RoomTitle(roomType.Value, nodeId.Value));
-                presenter.SetRoomAvailable(true);
-                return;
+        private void BindRoomPresentation(
+            TimeKey.Domain.OverworldMovement.MapNodeId nodeId,
+            OverworldRoomType roomType)
+        {
+            var detail = "确认后进入该房间。";
+            var confirmText = "进入战斗";
+            var confirmAvailable = true;
+            if (roomType == OverworldRoomType.Event)
+            {
+                detail = "Godot 的事件场景资源缺失。可安全跳过此节点，不会生成剧情或奖励。";
+                confirmText = "跳过事件";
+            }
+            else if (roomType == OverworldRoomType.Shop)
+            {
+                var application = stateStore?.OverworldRun;
+                var offer = application?.GetShopOffer(nodeId);
+                var balance = application?.CreatePersistenceSnapshot().Timecoins ?? 0;
+                if (offer == null)
+                {
+                    detail = "商店数据当前不可用。";
+                    confirmAvailable = false;
+                }
+                else
+                {
+                    detail = "商品：" + CardDisplayName(offer.CardStableId) +
+                        "\n价格：" + offer.TimecoinCost + " 时间币" +
+                        "\n余额：" + balance;
+                    confirmText = "购买并离开";
+                    confirmAvailable = balance >= offer.TimecoinCost;
+                    if (!confirmAvailable)
+                    {
+                        detail += "\n余额不足，当前不可购买。";
+                    }
+                }
             }
 
-            presenter.SetRoomAvailable(false);
+            presenter.SetCurrentRoomPresentation(
+                nodeId,
+                RoomTitle(roomType, nodeId.Value),
+                detail,
+                confirmText,
+                confirmAvailable);
         }
 
         private static string RoomTitle(OverworldRoomType roomType, string roomId)
@@ -271,8 +421,35 @@ namespace TimeKey.Composition.SceneFlow
                     return "精英战斗 · " + roomId;
                 case OverworldRoomType.Boss:
                     return "章节首领 · " + roomId;
+                case OverworldRoomType.Event:
+                    return "时序事件 · " + roomId;
+                case OverworldRoomType.Shop:
+                    return "时钥商店 · " + roomId;
                 default:
                     return "战斗房间 · " + roomId;
+            }
+        }
+
+        private static string CardDisplayName(string stableId)
+        {
+            switch (stableId)
+            {
+                case "lighting":
+                    return "雷击";
+                case "earthquake":
+                    return "地震";
+                case "wind":
+                    return "风";
+                case "recover":
+                    return "恢复";
+                case "tower":
+                    return "塔";
+                case "poison":
+                    return "毒";
+                case "tornado":
+                    return "龙卷风";
+                default:
+                    return stableId;
             }
         }
 
@@ -336,6 +513,7 @@ namespace TimeKey.Composition.SceneFlow
                 state,
                 NextEraClockSequence(),
                 EraClockAnchorTarget.Hud));
+            movementPresenter?.FocusFirstAvailable();
         }
 
         private long NextEraClockSequence()

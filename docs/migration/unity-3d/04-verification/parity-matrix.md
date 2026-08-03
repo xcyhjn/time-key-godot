@@ -143,3 +143,18 @@ Gate E closes with full EditMode `343/343`, full graphical Direct3D12 PlayMode `
 | 响应式吸附 | frame 跟随时间轴格 | 同实例 1280→2560→1920 重算且 ID 不变 | 等价 | Gate D visual tests/screenshots |
 | 身份映射 | action、卡实体、地图实体互相可追踪 | action primary + card instance/map runtime reverse index | 等价并消除重复 stable ID 歧义 | EditMode identity `2/2` |
 | 无卡地图检查 | 复点/空地/取消输入退出 | blank/Escape/短右键/卡牌/提交/结算/rebind/lock 清理 | 等价 | targeted EditMode/PlayMode；full `351/351 + 107/107` |
+
+## Wave 03 Overworld Gate C
+
+| 行为 | Godot 可观察语义 | Unity 当前实现 | 判定 | 证据 |
+| --- | --- | --- | --- | --- |
+| 地图拓扑 | 分层节点、可达边与 Boss 收束 | 由唯一 Gate A snapshot 动态生成精确节点/边，不保留静态房间表 | 等价并显式化 | dynamic map tests + 三视口 PNG |
+| 节点交互 | 当前/可前往/锁定/完成与选择确认 | 十种视觉态投影同一 `MapNodeId`，键盘/指针焦点可恢复 | 允许差异 | state PNG + Presentation tests |
+| 事件房 | 当前源事件资源缺失 | 显式安全跳过并原子结算/存档，不伪造剧情或奖励 | 允许差异且透明 | additive Event test + PNG |
+| 商店房 | 固定价格购买卡牌并推进房间 | 确定性七卡 offer，50 时间币扣除、deck add、settled/save 原子提交 | 等价并显式化 | application/store tests + PNG |
+| Continue | 有效存档继续；坏档不可继续 | 有效档恢复同一地图/资源；corrupt/future/I/O typed fail 与中文提示 | 等价并显式化 | additive tests + valid/corrupt PNG |
+| 响应式布局 | 地图与 HUD 不遮挡核心房间 | 顶部 Era Clock、中央地图、底部详情带在三视口和 resize 中保持分区 | 允许差异 | 15 PNG + actual Player inspection |
+
+Gate C closes at full graphical `446/446 + 128/128`, a successful six-Scene build,
+actual visible Player inspection and 15 manually reviewed PNGs. Gate D retains the
+multi-room/Boss/chapter/defeat/restart end-to-end closure.

@@ -2,7 +2,7 @@
 
 ## Status
 
-Gate 0/A continuation record, pending full map SceneFlow integration.
+Accepted through Gate C. Gate D end-to-end route closure remains pending.
 
 ## Decision
 
@@ -12,4 +12,6 @@ Gate 0/A continuation record, pending full map SceneFlow integration.
 
 ## Compatibility and migration
 
-当前 Gate A 仅关闭纯 Domain 的拓扑与房间操作切片。Save schema、Continue、事件/商店 UI、Boss 章节切换和正式 SceneFlow 尚未宣称完成；它们从地图 Prompt 的下一个未完成 Gate 继续。任何 future schema must use versioned atomic write and preserve the previous file until the new snapshot validates.
+Gate B 已将唯一 `OverworldChapterState` 接入 typed SceneFlow 和 schema 2 原子存档；Gate C 的正式地图 UI 只投影该状态，不创建平行节点表或第二套状态机。事件房在源资源缺失时只允许显式安全跳过；商店使用确定性 offer，并把时间币扣除、卡牌加入 deck、房间结算和存档作为单一原子提交。Continue 仅对有效、已提交的存档启用，损坏、future schema 与 I/O failure 使用 typed 结果和可恢复中文提示。
+
+Gate D 仍负责跨多房间、Boss、章节推进、失败返回和重启恢复的最终端到端证明。任何 future schema 继续使用版本化原子写入，并在新快照通过验证前保留旧文件。

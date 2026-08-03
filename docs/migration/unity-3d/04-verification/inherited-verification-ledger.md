@@ -169,3 +169,16 @@ Gate E 的 9 张动画阶段图、3 张局外海洋三视口图和 5 张 Player 
 继续继承 Wave 02B3 Gate D 的 card targeting、enemy intent、map source/target/range、clear 和 Silver 字体证据，以及 Combat Shell Gate B-E 的 camera/background/SceneFlow/build/player 证据。效果框几何、重复卡实体映射、overlay owner 与 IdleTileInspect 退出路径属于受影响边界，不继承旧结论。
 
 受影响边界已刷新为 targeted EditMode `8/8`、geometry PlayMode `6/6`、interaction PlayMode `2/2`、visual PlayMode `2/2`、full `351/351 + 107/107`、9 张逐图复核 PNG、Windows build 与 actual Player smoke。历史失败 XML 保留为 Gate 0 红灯，不作为最终绿灯。
+
+## Wave 03 Overworld Gate C refresh
+
+Gate B 的 schema 2、typed SceneFlow、combat outcome/reward 和单一 Gate A map authority
+继续作为进入基线。Gate C 修改了正式 OutOfBattle/MainMenu Prefab、动态地图 Presenter、
+Event/Shop 本地提交、Continue 表现和正式视觉，因此旧的单房间 Gate D/海洋截图不再证明
+这些边界。
+
+受影响边界已刷新为 targeted EditMode `39/39`、additive regression `10/10`、visual
+PlayMode `2/2`、full graphical `446/446 + 128/128`、15 张三视口/resize/交互/房间/Continue
+PNG、六 Scene build 和 actual visible Player 路径。未修改的 Combat board/camera、02B3
+lifecycle、02B4 deck/battle rules 与 Silver 原始字体继续继承；Gate D 必须刷新多房间、
+Boss、章节推进、失败返回和重启恢复。

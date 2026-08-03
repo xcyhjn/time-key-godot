@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using TimeKey.Application.Overworld;
+using TimeKey.Application.SceneFlow;
+using TimeKey.Domain.Overworld;
 using TimeKey.Domain.OverworldMovement;
 using TimeKey.Presentation.OverworldMovement;
 using TimeKey.Presentation.Theming;
@@ -16,7 +19,7 @@ namespace TimeKey.Tests.EditMode.OverworldMovement
             "Assets/_Project/Prefabs/Shell/OutOfBattleShell.prefab";
 
         [Test]
-        public void FormalPrefab_ContainsMovementFixtureAndThemeScope()
+        public void FormalPrefab_ContainsDynamicMapHostsAndThemeScope()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null);
@@ -29,17 +32,73 @@ namespace TimeKey.Tests.EditMode.OverworldMovement
                 Is.Not.Null);
             var presenterData = new SerializedObject(presenter);
             var nodeViews = presenterData.FindProperty("nodeViews");
-            Assert.That(nodeViews.arraySize, Is.EqualTo(3));
-            var identities = new HashSet<string>();
-            for (var index = 0; index < nodeViews.arraySize; index++)
-            {
-                var view = nodeViews.GetArrayElementAtIndex(index).objectReferenceValue as OverworldNodeView;
-                Assert.That(view, Is.Not.Null);
-                identities.Add(view.Id.Value);
-            }
+            Assert.That(nodeViews.arraySize, Is.EqualTo(0));
+            Assert.That(
+                presenterData.FindProperty("nodePrefab").objectReferenceValue,
+                Is.Not.Null);
+            Assert.That(
+                presenterData.FindProperty("edgeHost").objectReferenceValue,
+                Is.Not.Null);
+            Assert.That(prefab.GetComponentsInChildren<UiThemeBinder>(true).Length, Is.GreaterThanOrEqualTo(3));
+        }
 
-            Assert.That(identities, Is.EquivalentTo(new[] { "start", "room-01", "room-02" }));
-            Assert.That(prefab.GetComponentsInChildren<UiThemeBinder>(true).Length, Is.GreaterThanOrEqualTo(4));
+        [Test]
+        public void AuthoritativeBind_InstantiatesExactGeneratedMapAndNodeStates()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var presenter = instance.GetComponent<OverworldMovementPresenter>();
+                var start = new RunStartPayload(
+                    RunStartKind.SeedGame,
+                    "gate-c-map-bind",
+                    731,
+                    "731",
+                    1,
+                    1,
+                    1,
+                    100,
+                    "silver-character",
+                    new[] { "lighting", "recover" });
+                var run = new OverworldRunApplication(
+                    start,
+                    new OverworldMapGenerationConfig(1, 4, 3, 3),
+                    finalChapter: 3);
+
+                presenter.BindAuthoritativeMap(run.Map, run.ChapterSnapshot);
+
+                var views = presenter.GetComponentsInChildren<OverworldNodeView>(true);
+                var identities = new HashSet<string>();
+                var currentCount = 0;
+                var availableCount = 0;
+                foreach (var view in views)
+                {
+                    identities.Add(view.Id.Value);
+                    currentCount += view.State == OverworldNodeVisualState.Current ? 1 : 0;
+                    availableCount += view.State == OverworldNodeVisualState.Available ? 1 : 0;
+                }
+
+                var expected = new HashSet<string>();
+                foreach (var node in run.Map.Nodes)
+                {
+                    expected.Add(node.Id.Value);
+                }
+
+                Assert.That(views.Length, Is.EqualTo(run.Map.Nodes.Count));
+                Assert.That(identities, Is.EquivalentTo(expected));
+                Assert.That(currentCount, Is.EqualTo(1));
+                Assert.That(availableCount, Is.GreaterThan(0));
+                Assert.That(
+                    instance.transform.Find(
+                        "GateDCanvas/RoomRevealLayer/MapViewport/MapHost/EdgeHost")
+                        .childCount,
+                    Is.EqualTo(run.Map.Edges.Count));
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
         }
 
         [Test]

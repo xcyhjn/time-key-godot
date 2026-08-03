@@ -201,3 +201,15 @@
 - Victory/reward/settled/unlock/save 顺序、outcome replay/conflict、Defeat cleanup、
   Boss single advance、focus/input/cover rollback 均有自动化覆盖。
 - Gate B 门禁：`68/68`、`100/100`、`5/5`、`17/17`、Era Clock `17/17 + 13/13`。
+
+## Wave 03 Overworld Gate C
+
+- 正式局外地图由 Gate A authoritative snapshot 动态创建全部节点/边，保持 exact
+  `MapNodeId`、layer/slot/type，不新增静态节点表或第二套状态机。
+- 节点 hover/focus/select/confirm/move/arrive/current/available/locked/visited/settled
+  视觉态完成，动态 resize 后焦点与布局可恢复。
+- Event 源内容缺失时安全跳过；Shop 的 50 时间币、deck add、room settled/save 为原子
+  exact-once 提交，失败保留旧状态与旧文件。
+- Continue 有效档恢复，corrupt/future/I/O 使用 typed fail 与 Silver 中文提示。
+- Gate C 门禁：targeted `39/39`、additive `10/10`、visual `2/2`、full graphical
+  `446/446 + 128/128`、15 张人工复核 PNG、六 Scene build 与实际可见 Player 路径。

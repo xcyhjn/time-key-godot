@@ -139,6 +139,7 @@ MonoBehaviour:
   q: 0
   r: 0
   nodeType: 0
+  roomType: 1
   button: {fileID: 8874708386570520074}
   background: {fileID: 6777147507079999108}
   label: {fileID: 8149619206709065356}

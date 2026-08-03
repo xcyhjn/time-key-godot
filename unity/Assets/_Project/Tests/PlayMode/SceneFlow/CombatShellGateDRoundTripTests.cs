@@ -8,11 +8,13 @@ using TimeKey.Application.SceneFlow;
 using TimeKey.Composition;
 using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Overworld;
 using TimeKey.Presentation;
 using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.GameOver;
 using TimeKey.Presentation.MainMenu;
 using TimeKey.Presentation.OutOfBattleShell;
+using TimeKey.Presentation.OverworldMovement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -91,7 +93,7 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
 
             var shell = Object.FindAnyObjectByType<OutOfBattleShellPresenter>();
             Assert.That(shell, Is.Not.Null);
-            Assert.That(shell.RoomState, Is.EqualTo(OutOfBattleRoomState.Idle));
+            Assert.That(shell.RoomState, Is.EqualTo(OutOfBattleRoomState.Settled));
             AssertPersistentTopology(SceneId.OutOfBattleShell);
         }
 
@@ -169,6 +171,26 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
 
         private static IEnumerator LaunchRoom(BootstrapRoot bootstrap)
         {
+            var movement = Object.FindAnyObjectByType<OverworldMovementPresenter>();
+            Assert.That(movement, Is.Not.Null);
+            var target = movement.GetComponentsInChildren<OverworldNodeView>(true)
+                .FirstOrDefault(view =>
+                    view.State == OverworldNodeVisualState.Available &&
+                    (view.RoomType == OverworldRoomType.Battle ||
+                     view.RoomType == OverworldRoomType.Elite));
+            Assert.That(target, Is.Not.Null, "The generated map has no available combat room.");
+            target.GetComponent<Button>().onClick.Invoke();
+            var selectionDeadline = Time.realtimeSinceStartup + TimeoutSeconds;
+            while (movement.IsMoving)
+            {
+                if (Time.realtimeSinceStartup >= selectionDeadline)
+                {
+                    Assert.Fail("Timed out selecting generated combat room.");
+                }
+
+                yield return null;
+            }
+
             var room = FindButton("CombatRoom");
             room.onClick.Invoke();
             yield return null;

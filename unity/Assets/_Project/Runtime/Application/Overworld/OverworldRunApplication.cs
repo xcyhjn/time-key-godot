@@ -11,6 +11,11 @@ namespace TimeKey.Application.Overworld
 {
     public sealed class OverworldRunApplication
     {
+        private static readonly string[] GateCShopCardCatalog =
+        {
+            "lighting", "earthquake", "wind", "recover", "tower", "poison", "tornado"
+        };
+
         private readonly OverworldMapGenerationConfig _config;
         private readonly OverworldMapDefinition _map;
         private OverworldChapterState _chapterState;
@@ -535,7 +540,9 @@ namespace TimeKey.Application.Overworld
                 outcome.RunId,
                 outcome.RoomId,
                 OverworldRoomType.Event,
-                outcome.Completion == EventRoomCompletion.Completed);
+                outcome.Completion == EventRoomCompletion.Completed,
+                string.Empty,
+                0);
         }
 
         public OverworldRoomOutcomeApplyResult TryApplyShopOutcome(
@@ -557,7 +564,32 @@ namespace TimeKey.Application.Overworld
                 outcome.RunId,
                 outcome.RoomId,
                 OverworldRoomType.Shop,
-                outcome.Completion == ShopRoomCompletion.Completed);
+                outcome.Completion == ShopRoomCompletion.Completed,
+                outcome.PurchasedCardStableId,
+                outcome.TimecoinCost);
+        }
+
+        public OverworldShopOffer GetShopOffer(MapNodeId roomId)
+        {
+            var node = _map.GetNode(roomId);
+            if (node == null || node.RoomType != OverworldRoomType.Shop)
+            {
+                throw new InvalidOperationException("The requested node is not a shop room.");
+            }
+
+            unchecked
+            {
+                var hash = (uint)_runSeed;
+                for (var index = 0; index < roomId.Value.Length; index++)
+                {
+                    hash ^= roomId.Value[index];
+                    hash *= 16777619u;
+                }
+
+                var card = GateCShopCardCatalog[
+                    hash % (uint)GateCShopCardCatalog.Length];
+                return new OverworldShopOffer(card, 50);
+            }
         }
 
         public OverworldPersistenceSnapshot CreatePersistenceSnapshot()
@@ -705,7 +737,9 @@ namespace TimeKey.Application.Overworld
             string runId,
             MapNodeId roomId,
             OverworldRoomType expectedRoomType,
-            bool completed)
+            bool completed,
+            string purchasedCardStableId,
+            int timecoinCost)
         {
             if (sequence <= 0)
             {
@@ -750,6 +784,15 @@ namespace TimeKey.Application.Overworld
                 {
                     result = OutcomeFailed(OverworldApplicationFailure.InvalidRoomType);
                 }
+                else if (timecoinCost < 0 ||
+                         (timecoinCost > 0 && string.IsNullOrWhiteSpace(purchasedCardStableId)))
+                {
+                    result = OutcomeFailed(OverworldApplicationFailure.InvalidCommand);
+                }
+                else if (timecoinCost > _timecoins)
+                {
+                    result = OutcomeFailed(OverworldApplicationFailure.InsufficientResources);
+                }
                 else
                 {
                     var domainResult = _chapterState.ResolveRoom(
@@ -768,18 +811,35 @@ namespace TimeKey.Application.Overworld
                     }
                     else
                     {
+                        var purchased = expectedRoomType == OverworldRoomType.Shop &&
+                            completed && timecoinCost > 0;
+                        if (purchased)
+                        {
+                            _timecoins -= timecoinCost;
+                            _deckStableIds = Append(_deckStableIds, purchasedCardStableId);
+                        }
+
                         MarkCommitted(sequence);
                         RecordProcessedOutcome(
                             outcomeKind,
                             outcomeCorrelationId,
                             outcomeFingerprint);
                         var steps = completed
-                            ? new[]
-                            {
-                                OverworldTransactionStepKind.ResolveRoom,
-                                OverworldTransactionStepKind.UnlockSuccessors,
-                                OverworldTransactionStepKind.CommitPersistence
-                            }
+                            ? purchased
+                                ? new[]
+                                {
+                                    OverworldTransactionStepKind.SpendTimecoins,
+                                    OverworldTransactionStepKind.AddCardToDeck,
+                                    OverworldTransactionStepKind.ResolveRoom,
+                                    OverworldTransactionStepKind.UnlockSuccessors,
+                                    OverworldTransactionStepKind.CommitPersistence
+                                }
+                                : new[]
+                                {
+                                    OverworldTransactionStepKind.ResolveRoom,
+                                    OverworldTransactionStepKind.UnlockSuccessors,
+                                    OverworldTransactionStepKind.CommitPersistence
+                                }
                             : new[]
                             {
                                 OverworldTransactionStepKind.RecordCancellation,
@@ -1105,6 +1165,16 @@ namespace TimeKey.Application.Overworld
         private static ReadOnlyCollection<string> Copy(IReadOnlyList<string> source)
         {
             return new ReadOnlyCollection<string>(new List<string>(source));
+        }
+
+        private static ReadOnlyCollection<string> Append(
+            IReadOnlyList<string> source,
+            string value)
+        {
+            var copy = new List<string>(source.Count + 1);
+            copy.AddRange(source);
+            copy.Add(value);
+            return new ReadOnlyCollection<string>(copy);
         }
 
         private static IReadOnlyList<string> StableIds(IEnumerable<MapNodeId> source)

@@ -9,6 +9,39 @@ using UnityEngine;
 
 namespace TimeKey.Composition.SceneFlow
 {
+    public enum OverworldLocalRoomCommitFailure
+    {
+        None,
+        InvalidRequest,
+        EntryRejected,
+        OutcomeRejected,
+        PersistenceFailed
+    }
+
+    public sealed class OverworldLocalRoomCommitResult
+    {
+        internal OverworldLocalRoomCommitResult(
+            OverworldLocalRoomCommitFailure failure,
+            OverworldApplicationFailure applicationFailure,
+            OverworldPersistenceSnapshot snapshot,
+            OverworldShopOffer shopOffer,
+            string detail)
+        {
+            Failure = failure;
+            ApplicationFailure = applicationFailure;
+            Snapshot = snapshot;
+            ShopOffer = shopOffer;
+            Detail = detail ?? string.Empty;
+        }
+
+        public bool Succeeded => Failure == OverworldLocalRoomCommitFailure.None;
+        public OverworldLocalRoomCommitFailure Failure { get; }
+        public OverworldApplicationFailure ApplicationFailure { get; }
+        public OverworldPersistenceSnapshot Snapshot { get; }
+        public OverworldShopOffer ShopOffer { get; }
+        public string Detail { get; }
+    }
+
     [DisallowMultipleComponent]
     public sealed class SceneFlowStateStore : MonoBehaviour
     {
@@ -112,6 +145,109 @@ namespace TimeKey.Composition.SceneFlow
                 snapshot.CharacterId,
                 snapshot.DeckStableIds);
             return true;
+        }
+
+        public OverworldLocalRoomCommitResult CompleteEventRoom(
+            long entrySequence,
+            long outcomeSequence,
+            string roomId)
+        {
+            if (!CanCommitLocalRoom(entrySequence, outcomeSequence, roomId))
+            {
+                return LocalRoomFailed(
+                    OverworldLocalRoomCommitFailure.InvalidRequest,
+                    OverworldApplicationFailure.InvalidCommand,
+                    "A valid event room request is required.");
+            }
+
+            var candidate = OverworldRun.Copy();
+            var target = new MapNodeId(roomId);
+            var entry = candidate.TryEnterEventRoom(new EnterOverworldRoomCommand(
+                entrySequence,
+                candidate.Revision,
+                candidate.ChapterSnapshot.CurrentNodeId,
+                target));
+            if (!entry.Succeeded)
+            {
+                return LocalRoomFailed(
+                    OverworldLocalRoomCommitFailure.EntryRejected,
+                    entry.Failure,
+                    "Event room entry was rejected.");
+            }
+
+            var outcome = candidate.TryApplyEventOutcome(
+                outcomeSequence,
+                candidate.Revision,
+                new EventRoomOutcome(
+                    "event-" + outcomeSequence,
+                    candidate.CreatePersistenceSnapshot().RunId,
+                    target,
+                    EventRoomCompletion.Completed));
+            return outcome.Succeeded
+                ? PromoteLocalRoom(candidate, outcome.CommitPlan.PersistenceSnapshot, null)
+                : LocalRoomFailed(
+                    OverworldLocalRoomCommitFailure.OutcomeRejected,
+                    outcome.Failure,
+                    "Event room outcome was rejected.");
+        }
+
+        public OverworldLocalRoomCommitResult PurchaseShopRoom(
+            long entrySequence,
+            long outcomeSequence,
+            string roomId)
+        {
+            if (!CanCommitLocalRoom(entrySequence, outcomeSequence, roomId))
+            {
+                return LocalRoomFailed(
+                    OverworldLocalRoomCommitFailure.InvalidRequest,
+                    OverworldApplicationFailure.InvalidCommand,
+                    "A valid shop room request is required.");
+            }
+
+            var candidate = OverworldRun.Copy();
+            var target = new MapNodeId(roomId);
+            OverworldShopOffer offer;
+            try
+            {
+                offer = candidate.GetShopOffer(target);
+            }
+            catch (InvalidOperationException exception)
+            {
+                return LocalRoomFailed(
+                    OverworldLocalRoomCommitFailure.InvalidRequest,
+                    OverworldApplicationFailure.InvalidRoomType,
+                    exception.Message);
+            }
+
+            var entry = candidate.TryEnterShopRoom(new EnterOverworldRoomCommand(
+                entrySequence,
+                candidate.Revision,
+                candidate.ChapterSnapshot.CurrentNodeId,
+                target));
+            if (!entry.Succeeded)
+            {
+                return LocalRoomFailed(
+                    OverworldLocalRoomCommitFailure.EntryRejected,
+                    entry.Failure,
+                    "Shop room entry was rejected.");
+            }
+
+            var outcome = candidate.TryApplyShopOutcome(
+                outcomeSequence,
+                candidate.Revision,
+                new ShopRoomOutcome(
+                    "shop-" + outcomeSequence,
+                    candidate.CreatePersistenceSnapshot().RunId,
+                    target,
+                    ShopRoomCompletion.Completed,
+                    offer.CardStableId,
+                    offer.TimecoinCost));
+            return outcome.Succeeded
+                ? PromoteLocalRoom(candidate, outcome.CommitPlan.PersistenceSnapshot, offer)
+                : LocalRoomFailed(
+                    OverworldLocalRoomCommitFailure.OutcomeRejected,
+                    outcome.Failure,
+                    "Shop room outcome was rejected.");
         }
 
         public OverworldCombatLaunchResult PrepareCombatLaunch(
@@ -336,6 +472,54 @@ namespace TimeKey.Composition.SceneFlow
             }
 
             return _preparedContinue.Copy();
+        }
+
+        private bool CanCommitLocalRoom(
+            long entrySequence,
+            long outcomeSequence,
+            string roomId)
+        {
+            return OverworldRun != null && _pending == null &&
+                entrySequence > 0 && outcomeSequence > entrySequence &&
+                !string.IsNullOrWhiteSpace(roomId);
+        }
+
+        private OverworldLocalRoomCommitResult PromoteLocalRoom(
+            OverworldRunApplication candidate,
+            OverworldPersistenceSnapshot snapshot,
+            OverworldShopOffer shopOffer)
+        {
+            var write = Repository.Save(OverworldSaveMapper.ToDocument(snapshot));
+            if (!write.Succeeded)
+            {
+                return LocalRoomFailed(
+                    OverworldLocalRoomCommitFailure.PersistenceFailed,
+                    OverworldApplicationFailure.None,
+                    write.Failure + ": " + write.Detail);
+            }
+
+            OverworldRun = candidate;
+            OutOfBattleState = new OutOfBattleShellState(snapshot);
+            _preparedContinue = null;
+            return new OverworldLocalRoomCommitResult(
+                OverworldLocalRoomCommitFailure.None,
+                OverworldApplicationFailure.None,
+                snapshot,
+                shopOffer,
+                string.Empty);
+        }
+
+        private static OverworldLocalRoomCommitResult LocalRoomFailed(
+            OverworldLocalRoomCommitFailure failure,
+            OverworldApplicationFailure applicationFailure,
+            string detail)
+        {
+            return new OverworldLocalRoomCommitResult(
+                failure,
+                applicationFailure,
+                null,
+                null,
+                detail);
         }
 
         private OverworldMapGenerationConfig CreateMapConfig(int chapter)

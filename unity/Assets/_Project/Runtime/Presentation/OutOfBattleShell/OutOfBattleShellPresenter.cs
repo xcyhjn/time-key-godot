@@ -25,6 +25,23 @@ namespace TimeKey.Presentation.OutOfBattleShell
         public string RoomId { get; }
     }
 
+    public sealed class OutOfBattleRoomInteractionState
+    {
+        public OutOfBattleRoomInteractionState(
+            string roomId,
+            bool selected,
+            bool confirming)
+        {
+            RoomId = roomId ?? string.Empty;
+            Selected = selected;
+            Confirming = confirming;
+        }
+
+        public string RoomId { get; }
+        public bool Selected { get; }
+        public bool Confirming { get; }
+    }
+
     [DisallowMultipleComponent]
     public sealed class OutOfBattleShellPresenter : MonoBehaviour
     {
@@ -33,6 +50,7 @@ namespace TimeKey.Presentation.OutOfBattleShell
         [SerializeField] private Text phaseLabel = null;
         [SerializeField] private Text timecoinsLabel = null;
         [SerializeField] private OutOfBattleRoomView roomView = null;
+        [SerializeField] private Text roomDetailLabel = null;
         [SerializeField] private Button confirmButton = null;
         [SerializeField] private Button cancelButton = null;
         [SerializeField] private Font silverFont = null;
@@ -45,11 +63,17 @@ namespace TimeKey.Presentation.OutOfBattleShell
         private bool _confirmationPending;
         private bool _settled;
         private bool _roomAvailable = true;
+        private bool _confirmAvailable = true;
         private bool _transitionLocked;
+        private string _roomDetail = "选择房间后确认进入";
+        private string _confirmText = "进入";
+        private string _cancelText = "返回";
         private OutOfBattleShellState _snapshot;
 
         public event Action<OutOfBattleRoomConfirmationRequest>
             RoomConfirmationRequested;
+        public event Action<OutOfBattleRoomInteractionState>
+            RoomInteractionStateChanged;
 
         public string RoomId => roomId;
 
@@ -110,12 +134,28 @@ namespace TimeKey.Presentation.OutOfBattleShell
             _confirmationPending = false;
             _settled = snapshot.SettledRoomIds.Contains(roomId);
             _roomAvailable = !string.IsNullOrWhiteSpace(roomId);
+            _confirmAvailable = _roomAvailable;
             roomView.Configure(roomTitle);
             ApplySilverFont();
             RefreshInputState();
         }
 
         public void SetCurrentRoomIdentity(MapNodeId stableNodeId, string displayTitle)
+        {
+            SetCurrentRoomPresentation(
+                stableNodeId,
+                displayTitle,
+                "确认后进入该房间",
+                "进入",
+                confirmAvailable: true);
+        }
+
+        public void SetCurrentRoomPresentation(
+            MapNodeId stableNodeId,
+            string displayTitle,
+            string detail,
+            string confirmText,
+            bool confirmAvailable)
         {
             roomId = stableNodeId.Value;
             roomTitle = string.IsNullOrWhiteSpace(displayTitle)
@@ -125,6 +165,10 @@ namespace TimeKey.Presentation.OutOfBattleShell
             _confirmationPending = false;
             _settled = _snapshot != null && _snapshot.IsRoomSettled(roomId);
             _roomAvailable = true;
+            _confirmAvailable = confirmAvailable;
+            _roomDetail = detail ?? string.Empty;
+            _confirmText = string.IsNullOrWhiteSpace(confirmText) ? "确认" : confirmText;
+            _cancelText = "返回";
             roomView.Configure(roomTitle);
             RefreshInputState();
         }
@@ -132,6 +176,7 @@ namespace TimeKey.Presentation.OutOfBattleShell
         public void SetRoomAvailable(bool available)
         {
             _roomAvailable = available;
+            _confirmAvailable = available;
             if (!available)
             {
                 _selected = false;
@@ -139,6 +184,18 @@ namespace TimeKey.Presentation.OutOfBattleShell
             }
 
             RefreshInputState();
+        }
+
+        public void ShowResolvedRoom(string detail)
+        {
+            _selected = false;
+            _confirmationPending = false;
+            _settled = true;
+            _roomAvailable = false;
+            _confirmAvailable = false;
+            _roomDetail = detail ?? string.Empty;
+            RefreshInputState();
+            PublishInteractionState();
         }
 
         public void SetRoomIdentity(string stableRoomId, string displayTitle)
@@ -179,7 +236,8 @@ namespace TimeKey.Presentation.OutOfBattleShell
             _confirmationPending = false;
             _selected = true;
             RefreshInputState();
-            confirmButton.Select();
+            (_confirmAvailable ? confirmButton : cancelButton).Select();
+            PublishInteractionState();
             return true;
         }
 
@@ -200,6 +258,7 @@ namespace TimeKey.Presentation.OutOfBattleShell
             }
 
             RefreshInputState();
+            PublishInteractionState();
             return true;
         }
 
@@ -217,9 +276,16 @@ namespace TimeKey.Presentation.OutOfBattleShell
             roomView.SetConfirming(_confirmationPending);
             roomView.SetInteractionLocked(locked);
             confirmButton.interactable = !locked && _selected &&
-                !_confirmationPending && !_settled;
+                !_confirmationPending && !_settled && _confirmAvailable;
             cancelButton.interactable = !locked && _selected &&
                 !_confirmationPending && !_settled;
+            if (roomDetailLabel != null)
+            {
+                roomDetailLabel.text = _roomDetail;
+            }
+
+            SetButtonText(confirmButton, _confirmText);
+            SetButtonText(cancelButton, _cancelText);
         }
 
         private void Bind()
@@ -258,17 +324,19 @@ namespace TimeKey.Presentation.OutOfBattleShell
             _selected = true;
             RefreshInputState();
             confirmButton.Select();
+            PublishInteractionState();
         }
 
         private void OnConfirm()
         {
-            if (!CanInteract() || !_selected || _confirmationPending)
+            if (!CanInteract() || !_selected || _confirmationPending || !_confirmAvailable)
             {
                 return;
             }
 
             _confirmationPending = true;
             RefreshInputState();
+            PublishInteractionState();
             RoomConfirmationRequested?.Invoke(
                 new OutOfBattleRoomConfirmationRequest(roomId));
         }
@@ -292,6 +360,23 @@ namespace TimeKey.Presentation.OutOfBattleShell
             }
 
             roomView.ApplyFont(silverFont);
+        }
+
+        private void PublishInteractionState()
+        {
+            RoomInteractionStateChanged?.Invoke(new OutOfBattleRoomInteractionState(
+                roomId,
+                _selected,
+                _confirmationPending));
+        }
+
+        private static void SetButtonText(Button button, string value)
+        {
+            var text = button == null ? null : button.GetComponentInChildren<Text>(true);
+            if (text != null)
+            {
+                text.text = value;
+            }
         }
 
         private bool DependenciesAssigned()

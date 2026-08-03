@@ -138,3 +138,27 @@ PlayMode `5/5`，全 SceneFlow D3D12 PlayMode `17/17`，Era Clock `17/17 + 13/13
 
 下一恢复点为 Gate C：正式动态地图 UI、Event/Shop、Continue 错误提示和三视口视觉。
 当前无用户决策阻塞。
+
+## Wave 03 Overworld Gate C complete
+
+正式局外壳现从唯一 Gate A map snapshot 动态生成节点与连线，使用 exact `MapNodeId`、
+layer/slot/room type，并覆盖 Current、Available、Locked、Visited、Settled、Selected、
+Confirming、Moving、Arrived 等表现态。顶部 Era Clock、中央地图和底部房间详情带在
+1280x720、1920x1080、2560x1080 与 1600x900 动态 resize 中保持分区，无节点重叠或
+文字裁切。
+
+Event 在源资源缺失时提供显式安全跳过，不伪造剧情/奖励；Shop 使用确定性七卡 offer，
+以 50 时间币完成扣款、deck add、房间结算和 schema 2 存档的原子提交。有效 Continue
+恢复同一地图/资源；corrupt/future/I/O failure 保持 typed fail 并显示可恢复 Silver 中文
+提示。
+
+最终门禁为 targeted EditMode `39/39`、additive regression `10/10`、visual PlayMode
+`2/2`、full graphical EditMode `446/446`、full graphical D3D12 PlayMode `128/128`。
+十五张 PNG 已逐图复核；六 Scene Windows build 成功，Player launcher 为 `667648`
+bytes、SHA-256 `FE5E81292DF0F6591DCEEC172141B6F0F22D7CBB853DE83786B725E1BC68BEEE`，
+Silver attribution 存在。实际可见 Player 已从 MainMenu 进入正式 OutOfBattle，确认
+Era Clock、动态地图/连线和底部详情无重叠。证据入口为
+`../04-verification/evidence/overworld-map-gate-c/verification-summary.md`。
+
+下一恢复点为 Gate D：多房间路线、Boss/章节推进、失败返回和重启 Continue 的端到端
+闭环。当前无用户决策阻塞。

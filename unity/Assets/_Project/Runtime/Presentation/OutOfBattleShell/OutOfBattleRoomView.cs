@@ -28,6 +28,7 @@ namespace TimeKey.Presentation.OutOfBattleShell
         [SerializeField] private Text titleLabel = null;
         [SerializeField] private Text statusLabel = null;
         [SerializeField] private UiThemeScope themeScope = null;
+        [SerializeField] private bool usePanelStateColors;
 
         private bool _bound;
         private bool _hovered;
@@ -264,7 +265,9 @@ namespace TimeKey.Presentation.OutOfBattleShell
             roomButton.interactable = state != OutOfBattleRoomState.Confirming &&
                 state != OutOfBattleRoomState.Settled &&
                 state != OutOfBattleRoomState.Disabled;
-            background.color = ColorFor(state, style);
+            background.color = usePanelStateColors
+                ? PanelColorFor(state)
+                : ColorFor(state, style);
             titleLabel.color = style.text.normalColor;
             statusLabel.color = state == OutOfBattleRoomState.Disabled
                 ? style.text.disabledColor
@@ -317,6 +320,25 @@ namespace TimeKey.Presentation.OutOfBattleShell
                     return style.button.disabledColor;
                 default:
                     return style.frame.fillColor;
+            }
+        }
+
+        private static Color PanelColorFor(OutOfBattleRoomState state)
+        {
+            switch (state)
+            {
+                case OutOfBattleRoomState.Hovered:
+                    return new Color(0.13f, 0.24f, 0.22f, 0.98f);
+                case OutOfBattleRoomState.Selected:
+                    return new Color(0.09f, 0.29f, 0.26f, 0.98f);
+                case OutOfBattleRoomState.Confirming:
+                    return new Color(0.08f, 0.36f, 0.32f, 1f);
+                case OutOfBattleRoomState.Settled:
+                    return new Color(0.12f, 0.14f, 0.14f, 0.92f);
+                case OutOfBattleRoomState.Disabled:
+                    return new Color(0.08f, 0.10f, 0.11f, 0.86f);
+                default:
+                    return new Color(0.08f, 0.18f, 0.17f, 0.96f);
             }
         }
     }

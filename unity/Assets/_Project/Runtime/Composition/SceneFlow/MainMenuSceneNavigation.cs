@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using TimeKey.Application.EraClock;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Domain.Deck;
+using TimeKey.Infrastructure.Persistence;
 using TimeKey.Presentation.EraClock;
 using TimeKey.Presentation.MainMenu;
 using UnityEngine;
@@ -28,6 +29,8 @@ namespace TimeKey.Composition.SceneFlow
 
         public SceneTransitionResult LastResult { get; private set; }
 
+        public string LastContinueNotice { get; private set; } = string.Empty;
+
         private void OnEnable()
         {
             _lifetime = new CancellationTokenSource();
@@ -48,8 +51,17 @@ namespace TimeKey.Composition.SceneFlow
                 presenter.CommandRequested += OnCommandRequested;
                 presenter.SettingsRequested += OnSettingsRequested;
                 ApplySettings(LoadSettings(), false);
-                presenter.SetContinueAvailable(
-                    stateStore != null && stateStore.RefreshContinueAvailability());
+                var continueAvailable = stateStore != null &&
+                    stateStore.RefreshContinueAvailability();
+                presenter.SetContinueAvailable(continueAvailable);
+                if (!continueAvailable && stateStore != null)
+                {
+                    LastContinueNotice = ContinueNotice(stateStore.ContinueStatus);
+                    if (!string.IsNullOrEmpty(LastContinueNotice))
+                    {
+                        presenter.ShowModal("存档不可继续", LastContinueNotice, false);
+                    }
+                }
             }
 
             if (stateStore?.OutOfBattleState != null && eraClockPresenter != null)
@@ -264,6 +276,21 @@ namespace TimeKey.Composition.SceneFlow
         {
             _eraClockSequence++;
             return _eraClockSequence;
+        }
+
+        private static string ContinueNotice(OverworldSaveLoadStatus status)
+        {
+            switch (status)
+            {
+                case OverworldSaveLoadStatus.Corrupt:
+                    return "存档内容已损坏。旧文件仍保留，请开始新游戏或恢复备份。";
+                case OverworldSaveLoadStatus.UnsupportedFutureVersion:
+                    return "该存档来自更新版本，当前版本不会覆盖它。请升级游戏后重试。";
+                case OverworldSaveLoadStatus.IoFailure:
+                    return "暂时无法读取存档。请检查文件占用或磁盘权限后重试。";
+                default:
+                    return string.Empty;
+            }
         }
     }
 }

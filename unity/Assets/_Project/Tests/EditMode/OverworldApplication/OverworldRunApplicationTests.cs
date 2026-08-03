@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using TimeKey.Application.Overworld;
@@ -263,6 +264,110 @@ namespace TimeKey.Tests.EditMode.OverworldApplication
         }
 
         [Test]
+        public void ShopPurchase_IsDeterministicAtomicAndReplaySafe()
+        {
+            RunStartPayload discoveredStart;
+            MapNodeId discoveredRoom;
+            SessionWithAvailable(
+                OverworldRoomType.Shop,
+                out discoveredStart,
+                out discoveredRoom);
+            var start = Start(
+                RunStartKind.SeedGame,
+                discoveredStart.RunSeed,
+                "run-shop-purchase",
+                timecoins: 100);
+            var session = new OverworldRunApplication(
+                start,
+                Config(chapter: 1, width: 4),
+                finalChapter: 3);
+            var room = session.GetAvailableRoomIds().First(
+                id => session.GetRoomType(id) == OverworldRoomType.Shop);
+            var offer = session.GetShopOffer(room);
+            var repeatedOffer = session.GetShopOffer(room);
+            var before = session.CreatePersistenceSnapshot();
+            Assert.That(session.TryEnterShopRoom(new EnterOverworldRoomCommand(
+                1,
+                session.Revision,
+                session.Map.EntryNodeId,
+                room)).Succeeded, Is.True);
+            var outcome = new ShopRoomOutcome(
+                "shop-purchase",
+                start.RunId,
+                room,
+                ShopRoomCompletion.Completed,
+                offer.CardStableId,
+                offer.TimecoinCost);
+
+            var first = session.TryApplyShopOutcome(2, session.Revision, outcome);
+            var replay = session.TryApplyShopOutcome(3, session.Revision, outcome);
+            var after = first.CommitPlan.PersistenceSnapshot;
+
+            Assert.That(repeatedOffer.CardStableId, Is.EqualTo(offer.CardStableId));
+            Assert.That(offer.TimecoinCost, Is.EqualTo(50));
+            Assert.That(after.Timecoins, Is.EqualTo(50));
+            Assert.That(after.DeckStableIds.Count, Is.EqualTo(before.DeckStableIds.Count + 1));
+            Assert.That(after.DeckStableIds[^1], Is.EqualTo(offer.CardStableId));
+            Assert.That(first.CommitPlan.Steps, Is.EqualTo(new[]
+            {
+                OverworldTransactionStepKind.SpendTimecoins,
+                OverworldTransactionStepKind.AddCardToDeck,
+                OverworldTransactionStepKind.ResolveRoom,
+                OverworldTransactionStepKind.UnlockSuccessors,
+                OverworldTransactionStepKind.CommitPersistence
+            }));
+            Assert.That(replay.Succeeded, Is.True);
+            Assert.That(replay.WasAlreadyApplied, Is.True);
+            Assert.That(session.CreatePersistenceSnapshot().Timecoins, Is.EqualTo(50));
+        }
+
+        [Test]
+        public void ShopPurchase_RejectsInsufficientBalanceWithoutPartialMutation()
+        {
+            RunStartPayload discoveredStart;
+            MapNodeId discoveredRoom;
+            SessionWithAvailable(
+                OverworldRoomType.Shop,
+                out discoveredStart,
+                out discoveredRoom);
+            var start = Start(
+                RunStartKind.SeedGame,
+                discoveredStart.RunSeed,
+                "run-shop-insufficient",
+                timecoins: 49);
+            var session = new OverworldRunApplication(
+                start,
+                Config(chapter: 1, width: 4),
+                finalChapter: 3);
+            var room = session.GetAvailableRoomIds().First(
+                id => session.GetRoomType(id) == OverworldRoomType.Shop);
+            var offer = session.GetShopOffer(room);
+            Assert.That(session.TryEnterShopRoom(new EnterOverworldRoomCommand(
+                1,
+                session.Revision,
+                session.Map.EntryNodeId,
+                room)).Succeeded, Is.True);
+
+            var result = session.TryApplyShopOutcome(
+                2,
+                session.Revision,
+                new ShopRoomOutcome(
+                    "shop-insufficient",
+                    start.RunId,
+                    room,
+                    ShopRoomCompletion.Completed,
+                    offer.CardStableId,
+                    offer.TimecoinCost));
+            var snapshot = session.CreatePersistenceSnapshot();
+
+            Assert.That(result.Failure,
+                Is.EqualTo(OverworldApplicationFailure.InsufficientResources));
+            Assert.That(snapshot.Timecoins, Is.EqualTo(49));
+            Assert.That(snapshot.DeckStableIds, Is.EqualTo(start.DeckStableIds));
+            Assert.That(snapshot.ActiveRoomId, Is.EqualTo(room.Value));
+        }
+
+        [Test]
         public void BossVictory_AdvancesOnceAndOrdersFullCommitPlan()
         {
             var session = new OverworldRunApplication(
@@ -496,7 +601,8 @@ namespace TimeKey.Tests.EditMode.OverworldApplication
             RunStartKind kind,
             int seed,
             string runId,
-            int chapter = 1)
+            int chapter = 1,
+            int timecoins = 0)
         {
             return new RunStartPayload(
                 kind,
@@ -506,7 +612,7 @@ namespace TimeKey.Tests.EditMode.OverworldApplication
                 chapter,
                 era: 1,
                 phase: 1,
-                timecoins: 0,
+                timecoins,
                 characterId: "silver-character",
                 deckStableIds: new[] { "lighting", "recover" });
         }

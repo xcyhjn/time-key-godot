@@ -66,3 +66,12 @@ atomic replacement with a recoverable backup. Schema 0 and 1 migrate to schema 2
 future, corrupt and I/O failures remain typed and cannot enable Continue. SceneFlow saves
 the complete candidate before source unload; a failed prepare leaves the prior primary
 unchanged, while a later pre-commit rollback restores the prior document.
+
+### Gate C local-room commits
+
+Event safe-skip and Shop purchase reuse schema 2; no schema bump is required. Both paths
+construct a copied candidate, apply the room outcome, persist and validate the complete
+candidate, then promote it in memory. Shop promotion includes the exact timecoin balance,
+the purchased stable card ID and the settled room identity in the same write. Persistence
+failure preserves the prior in-memory state and prior primary file, while exact operation
+replay remains idempotent and a changed fingerprint remains a typed conflict.

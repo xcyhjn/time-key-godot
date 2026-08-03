@@ -1,0 +1,12 @@
+{
+  "gate": "Wave 03 Overworld Gate C",
+  "result": "Passed",
+  "buildTarget": "Windows64",
+  "sceneCount": 6,
+  "playerExecutable": "D:/timekey-wave03-overworld-gate-c/player/TimeKey.exe",
+  "playerExecutableBytes": 667648,
+  "playerExecutableSha256": "FE5E81292DF0F6591DCEEC172141B6F0F22D7CBB853DE83786B725E1BC68BEEE",
+  "silverAttributionPresent": true,
+  "unityExitCode": 0,
+  "buildLog": "D:/timekey-wave03-overworld-gate-c/build-six-scene.log"
+}

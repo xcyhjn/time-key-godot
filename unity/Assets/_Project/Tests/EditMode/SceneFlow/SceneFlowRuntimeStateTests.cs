@@ -1,12 +1,16 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using TimeKey.Application.Overworld;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Overworld;
+using TimeKey.Domain.OverworldMovement;
 using TimeKey.Infrastructure.Persistence;
 using UnityEngine;
 
@@ -256,6 +260,125 @@ namespace TimeKey.Tests.EditMode.SceneFlow
         }
 
         [Test]
+        public void StateStore_LocalEventCommitPersistsBeforePromotingCandidate()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-c-event-" + Guid.NewGuid().ToString("N"));
+            var path = Path.Combine(directory, "overworld.json");
+            var root = new GameObject("state-store-event-test");
+            try
+            {
+                var seed = SeedWithAvailable(OverworldRoomType.Event);
+                var store = root.AddComponent<SceneFlowStateStore>();
+                store.ConfigurePersistencePath(path);
+                CommitStart(store, Start("run-event", seed), 1);
+                var room = AvailableRoom(store.OverworldRun, OverworldRoomType.Event);
+
+                var result = store.CompleteEventRoom(2, 3, room.Value);
+                var loaded = new OverworldSaveRepository(path).Load();
+
+                Assert.That(result.Succeeded, Is.True, result.Detail);
+                Assert.That(
+                    store.OverworldRun.ChapterSnapshot.SettledNodeIds.Contains(room),
+                    Is.True);
+                Assert.That(loaded.Succeeded, Is.True, loaded.Detail);
+                Assert.That(loaded.Document.SettledNodeIds, Does.Contain(room.Value));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
+            }
+        }
+
+        [Test]
+        public void StateStore_LocalShopPurchasePersistsBalanceAndDeckOnce()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-c-shop-" + Guid.NewGuid().ToString("N"));
+            var path = Path.Combine(directory, "overworld.json");
+            var root = new GameObject("state-store-shop-test");
+            try
+            {
+                var seed = SeedWithAvailable(OverworldRoomType.Shop);
+                var store = root.AddComponent<SceneFlowStateStore>();
+                store.ConfigurePersistencePath(path);
+                CommitStart(store, Start("run-shop", seed, timecoins: 100), 1);
+                var room = AvailableRoom(store.OverworldRun, OverworldRoomType.Shop);
+                var before = store.OverworldRun.CreatePersistenceSnapshot();
+
+                var result = store.PurchaseShopRoom(2, 3, room.Value);
+                var loaded = new OverworldSaveRepository(path).Load();
+
+                Assert.That(result.Succeeded, Is.True, result.Detail);
+                Assert.That(result.ShopOffer.TimecoinCost, Is.EqualTo(50));
+                Assert.That(result.Snapshot.Timecoins, Is.EqualTo(50));
+                Assert.That(result.Snapshot.DeckStableIds.Count,
+                    Is.EqualTo(before.DeckStableIds.Count + 1));
+                Assert.That(loaded.Document.Timecoins, Is.EqualTo(50));
+                Assert.That(loaded.Document.DeckStableIds[^1],
+                    Is.EqualTo(result.ShopOffer.CardStableId));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
+            }
+        }
+
+        [Test]
+        public void StateStore_LocalRoomPersistenceFailureKeepsPriorRunAndSave()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-c-local-rollback-" + Guid.NewGuid().ToString("N"));
+            var path = Path.Combine(directory, "overworld.json");
+            var root = new GameObject("state-store-local-rollback-test");
+            try
+            {
+                var seed = SeedWithAvailable(OverworldRoomType.Event);
+                var repository = new OverworldSaveRepository(path);
+                var store = root.AddComponent<SceneFlowStateStore>();
+                store.ConfigurePersistenceRepository(repository);
+                CommitStart(store, Start("run-local-prior", seed), 1);
+                var prior = store.OverworldRun.CreatePersistenceSnapshot();
+                var room = AvailableRoom(store.OverworldRun, OverworldRoomType.Event);
+                store.ConfigurePersistenceRepository(new OverworldSaveRepository(
+                    path,
+                    new ThrowBeforeReplace()));
+
+                var result = store.CompleteEventRoom(2, 3, room.Value);
+                var loaded = repository.Load();
+
+                Assert.That(result.Failure,
+                    Is.EqualTo(OverworldLocalRoomCommitFailure.PersistenceFailed));
+                Assert.That(store.OverworldRun.CreatePersistenceSnapshot().CurrentNodeId,
+                    Is.EqualTo(prior.CurrentNodeId));
+                Assert.That(
+                    store.OverworldRun.ChapterSnapshot.SettledNodeIds.Contains(room),
+                    Is.False);
+                Assert.That(loaded.Document.CurrentNodeId, Is.EqualTo(prior.CurrentNodeId));
+                Assert.That(loaded.Document.SettledNodeIds, Does.Not.Contain(room.Value));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
+            }
+        }
+
+        [Test]
         public void PersistentInputGate_PublishesAndClearsGlobalTransitionLock()
         {
             var root = new GameObject("input-gate-test");
@@ -350,7 +473,7 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 new[] { "lighting", "recover" });
         }
 
-        private static RunStartPayload Start(string runId, int seed)
+        private static RunStartPayload Start(string runId, int seed, int timecoins = 0)
         {
             return new RunStartPayload(
                 RunStartKind.NewGame,
@@ -360,9 +483,59 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 1,
                 1,
                 1,
-                0,
+                timecoins,
                 "character-silver",
                 new[] { "lighting", "recover" });
+        }
+
+        private static void CommitStart(
+            SceneFlowStateStore store,
+            RunStartPayload start,
+            long sequence)
+        {
+            var request = Request(
+                sequence,
+                SceneId.MainMenu,
+                SceneId.OutOfBattleShell,
+                start);
+            store.Record(request);
+            store.PrepareCommit(request);
+            store.Commit(request);
+        }
+
+        private static int SeedWithAvailable(OverworldRoomType roomType)
+        {
+            for (var seed = 1; seed <= 1024; seed++)
+            {
+                var run = new OverworldRunApplication(
+                    Start("seed-search", seed),
+                    new OverworldMapGenerationConfig(1, 4, 2, 3),
+                    finalChapter: 3);
+                foreach (var roomId in run.GetAvailableRoomIds())
+                {
+                    if (run.GetRoomType(roomId) == roomType)
+                    {
+                        return seed;
+                    }
+                }
+            }
+
+            throw new AssertionException("No seed produced room type " + roomType + ".");
+        }
+
+        private static MapNodeId AvailableRoom(
+            OverworldRunApplication run,
+            OverworldRoomType roomType)
+        {
+            foreach (var roomId in run.GetAvailableRoomIds())
+            {
+                if (run.GetRoomType(roomId) == roomType)
+                {
+                    return roomId;
+                }
+            }
+
+            throw new AssertionException("No available room of type " + roomType + ".");
         }
 
         private static CombatOutcome VictoryOutcome(

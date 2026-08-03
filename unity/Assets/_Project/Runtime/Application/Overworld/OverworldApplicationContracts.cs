@@ -26,6 +26,7 @@ namespace TimeKey.Application.Overworld
         RoomMismatch,
         LaunchMismatch,
         OutcomeConflict,
+        InsufficientResources,
         ChapterAlreadyAdvanced,
         DomainRejected
     }
@@ -50,6 +51,8 @@ namespace TimeKey.Application.Overworld
         AdvanceChapter,
         RecordDefeat,
         RecordCancellation,
+        SpendTimecoins,
+        AddCardToDeck,
         CommitPersistence
     }
 
@@ -106,6 +109,17 @@ namespace TimeKey.Application.Overworld
             string runId,
             MapNodeId roomId,
             ShopRoomCompletion completion)
+            : this(outcomeCorrelationId, runId, roomId, completion, string.Empty, 0)
+        {
+        }
+
+        public ShopRoomOutcome(
+            string outcomeCorrelationId,
+            string runId,
+            MapNodeId roomId,
+            ShopRoomCompletion completion,
+            string purchasedCardStableId,
+            int timecoinCost)
         {
             OutcomeCorrelationId = Required(outcomeCorrelationId, nameof(outcomeCorrelationId));
             RunId = Required(runId, nameof(runId));
@@ -116,16 +130,41 @@ namespace TimeKey.Application.Overworld
 
             RoomId = roomId;
             Completion = completion;
+            if (timecoinCost < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timecoinCost));
+            }
+
+            if (completion == ShopRoomCompletion.Cancelled &&
+                (!string.IsNullOrEmpty(purchasedCardStableId) || timecoinCost != 0))
+            {
+                throw new ArgumentException(
+                    "A cancelled shop outcome cannot contain a purchase.",
+                    nameof(purchasedCardStableId));
+            }
+
+            if (timecoinCost > 0 && string.IsNullOrWhiteSpace(purchasedCardStableId))
+            {
+                throw new ArgumentException(
+                    "A purchase requires a stable card identity.",
+                    nameof(purchasedCardStableId));
+            }
+
+            PurchasedCardStableId = purchasedCardStableId ?? string.Empty;
+            TimecoinCost = timecoinCost;
         }
 
         public string OutcomeCorrelationId { get; }
         public string RunId { get; }
         public MapNodeId RoomId { get; }
         public ShopRoomCompletion Completion { get; }
+        public string PurchasedCardStableId { get; }
+        public int TimecoinCost { get; }
         public SceneId TargetScene => SceneId.OutOfBattleShell;
         public string Fingerprint =>
             "shop-outcome:" + OutcomeCorrelationId + ":" + RunId + ":" +
-            RoomId + ":" + Completion;
+            RoomId + ":" + Completion + ":" + PurchasedCardStableId + ":" +
+            TimecoinCost;
 
         private static string Required(string value, string parameterName)
         {
@@ -136,6 +175,30 @@ namespace TimeKey.Application.Overworld
 
             return value;
         }
+    }
+
+    public sealed class OverworldShopOffer
+    {
+        public OverworldShopOffer(string cardStableId, int timecoinCost)
+        {
+            if (string.IsNullOrWhiteSpace(cardStableId))
+            {
+                throw new ArgumentException(
+                    "A stable card identity is required.",
+                    nameof(cardStableId));
+            }
+
+            if (timecoinCost < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timecoinCost));
+            }
+
+            CardStableId = cardStableId;
+            TimecoinCost = timecoinCost;
+        }
+
+        public string CardStableId { get; }
+        public int TimecoinCost { get; }
     }
 
     public sealed class OverworldMapNodeProjection
