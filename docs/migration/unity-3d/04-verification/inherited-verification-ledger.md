@@ -155,3 +155,11 @@ Clear 触及 TimelineGrid/Application、effect registration、Timeline Presenter
 Bootstrap、Build Settings、Combat Scene activation、EventSystem 所有权与历史 PlayMode fixture 已改变，因此 02B4 Scene/build/Player 证据在这些边界失效。Gate A 初次 `320/320 + 62/62` 证据又因两轮独立审查发现原子性、typed boundary、新 run 与真实 failure 缺口而失效；整改后已用 full EditMode `330/330`、Direct3D12 PlayMode `64/64`、六 Scene Development build `211747089` bytes、actual Player exit 0/marker 一次/异常 0 重新建立。
 
 02B3/02B4 的战斗规则、lifecycle、卡图/字体和既有视觉未被重写并在完整回归中保持通过；正式 shell TopHUD、背景、动画和多视口证据仍必须在 Gate B-E 刷新。权威入口为 `evidence/combat-shell-gate-a-remediation/verification-summary.md`。
+
+## Combat Shell Gate E final refresh
+
+Gate D 检查点 `105a66d` 是本阶段进入基线。Gate E 修改了正式 Shell/Combat reveal、Scene/Prefab 序列化引用、Player smoke 与 build automation，因此 Gate D 的完整测试和视觉不能证明这些受影响边界；未修改的 typed launch/outcome、顶部 UI、背景、Silver、既有战斗规则和 02B4 lifecycle 契约仍可作为回归基线。
+
+已刷新证据包括：full EditMode `343/343`、full graphical D3D12 PlayMode `100/100`、layered reveal PlayMode `7/7`、post-review entrance `5/5`、三轮稳定性 PlayMode `1/1`、动画采集 PlayMode `1/1`、六 Scene Windows Development build exit 0，以及实际 Player exit 0 / PASS 1 / PERF 3 / FAIL 0。Player 三轮保持一个 Bootstrap、一个内容 entry、不同 room/launch/outcome identity，最终输入未锁定。
+
+Gate E 的 9 张动画阶段图、3 张局外海洋三视口图和 5 张 Player 图均已人工复核，缺陷数为 0。Gate B 的四 yaw 证据继续继承，因为 Combat camera/background/board boundary 未变化；其余受影响边界已由本阶段证据刷新。

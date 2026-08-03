@@ -1,8 +1,8 @@
 # 已完成切片
 
-> 状态：截至 Combat Shell Gate A 已完成
+> 状态：截至 Combat Shell Gate E 已完成
 > 负责人：主智能体
-> 最后验证日期：2026-08-02
+> 最后验证日期：2026-08-03
 > 证据来源：Slice Definition of Done
 
 ## Wave 00：迁移评估基线
@@ -174,3 +174,15 @@
 - Victory 领取一次奖励后返回同一 settled room；Defeat 进入 GameOver 后返回 MainMenu 并清理 run。active launch 单次关闭、相同 outcome 幂等、冲突 outcome 拒绝。
 - 三视口覆盖局外 idle/hover/selected/confirming/settled 与 GameOver defeat，共 18 张 PNG，均已人工检查。
 - Full EditMode `343/343`、full graphical D3D12 PlayMode `92/92`，失败/跳过/不确定均为 0。
+
+## Combat Shell Gate E：多场景细节与交付
+
+完成日期：2026-08-03。
+
+- OutOfBattle、Combat、GameOver 使用保存的分层 reveal，并以既有 completion boundary 驱动 SceneFlow 解锁；缺层、零时长、disable/destroy/replay 均确定完成。
+- 局外关卡选择背景按用户要求改用原 Godot 海洋 tile；Unity 副本字节一致，三视口保持方形像素平铺。
+- 三轮正式 Victory 往返保持唯一 Bootstrap/内容 entry、各轮唯一 room/launch/outcome identity、旧 Scene 卸载和最终输入解锁。
+- Windows Development build 为六 Scene、`227249074` bytes，Silver attribution 存在；actual Player exit 0，`PASS=1 / PERF=3 / FAIL=0`。
+- Post-review entrance `5/5` 与 stability `1/1` 关闭运行中强制完成、旧证据误用、render-counter 误命名和固定小幅内存增长门禁。
+- Full EditMode `343/343`、full graphical Direct3D12 PlayMode `100/100`，失败/跳过/不确定均为 0。
+- 9 张 reveal、3 张海洋三视口和 5 张 Player 共 17 张 PNG 逐图通过；Gate B 四 yaw 证据因受影响边界未变化而继续继承。

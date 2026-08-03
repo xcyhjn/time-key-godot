@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="5" result="Passed" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.2392817">
+  <test-suite type="TestSuite" id="1153" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.239282" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1130" name="TimeKey.Tests.PlayMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.PlayMode.dll" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.233387" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="54264" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1131" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.232711" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1132" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.232014" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1133" name="PlayMode" fullname="TimeKey.Tests.PlayMode" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.231465" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1146" name="CombatShell" fullname="TimeKey.Tests.PlayMode.CombatShell" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.229500" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1094" name="CombatShellPresentationTests" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.228551" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1097" name="Background_UsesSavedRendererSetForVisibility" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.Background_UsesSavedRendererSetForVisibility" methodname="Background_UsesSavedRendererSetForVisibility" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="2107101302" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:05Z" duration="0.018384" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1099" name="Entrance_CompleteImmediatelyStopsRunningReveal" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.Entrance_CompleteImmediatelyStopsRunningReveal" methodname="Entrance_CompleteImmediatelyStopsRunningReveal" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="1127745819" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:05Z" duration="0.009385" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1098" name="Entrance_CompletesAtSavedAlphaAndScale" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.Entrance_CompletesAtSavedAlphaAndScale" methodname="Entrance_CompletesAtSavedAlphaAndScale" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="1252879390" result="Passed" start-time="2026-08-03 02:41:05Z" end-time="2026-08-03 02:41:06Z" duration="0.100707" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1095" name="TopHud_AppliesSnapshotFontModalAndInputLocks" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.TopHud_AppliesSnapshotFontModalAndInputLocks" methodname="TopHud_AppliesSnapshotFontModalAndInputLocks" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="1772438642" result="Passed" start-time="2026-08-03 02:41:06Z" end-time="2026-08-03 02:41:06Z" duration="0.063449" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1096" name="TopHud_RefreshProjectsApplicationSnapshot" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.TopHud_RefreshProjectsApplicationSnapshot" methodname="TopHud_RefreshProjectsApplicationSnapshot" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="261065330" result="Passed" start-time="2026-08-03 02:41:06Z" end-time="2026-08-03 02:41:06Z" duration="0.028077" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

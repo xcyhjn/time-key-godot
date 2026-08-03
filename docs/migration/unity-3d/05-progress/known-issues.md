@@ -2,7 +2,7 @@
 
 > 状态：持续更新
 > 负责人：主智能体
-> 最后验证日期：2026-08-02
+> 最后验证日期：2026-08-03
 > 证据来源：Godot 运行日志、源码侦察、授权盘点
 
 | ID | 问题 | 影响 | 当前处理 |
@@ -26,5 +26,6 @@
 | MIG-017 | R2 trace 曾缺少 effect kind 与 before/after | 已解决：结算日志可直接定位 effect 与值变化 | R3 已扩展 `CombatTraceEntry` 并加入可关闭 Unity sink；sink 中立性与 before/after 测试已通过 |
 | MIG-018 | Unity 曾只有无效果的固定 enemy intent marker | 已解决固定 marker 与跨层映射问题；仍无新增敌人内容 | 02B3 已替换为确定性 source catalog/application service、frame/tooltip/map 映射和 lifecycle refresh；新增敌人按 `06-maintenance/add-enemy.md` 登记 |
 | MIG-019 | 02B4 自动化截图中选中卡抬升会局部遮住相邻卡上缘 | 视觉密度略高，但关键标题/效果与点击边界仍可读，未发生容器或视口裁切 | 作为非阻塞视觉观察保留；后续修改 CardHandHost 布局时必须重拍三视口并逐图复核 |
+| MIG-020 | D3D12 Player 未提供有效的 `Draw Calls Count`/`Batches Count` recorder，三次内存原始样本严格递增 | 无法直接给出 draw-call 计数；短样本也不能证明不存在长期泄漏 | smoke 显式记录 `SetPass Calls Count=18` 为 render counter；总增量 412,086 bytes，material/sustained-slope 均为 false，post-GC 门禁通过；长期结论仍需 Profiler |
 
-Tower decay、Poison 传播/伤害/减层、action identity 映射和 02B4 牌库/资源/终局均已关闭。当前没有阻塞 Combat Shell 与 Scene Flow 的产品或环境问题；MIG-002 仍只限制“无权威 command 时不得发明敌人伤害”。02B4 视觉仅保留选中卡局部遮挡相邻卡上缘的非阻塞观察，关键文案和交互边界仍可读。
+Tower decay、Poison 传播/伤害/减层、action identity 映射、02B4 牌库/资源/终局和 Combat Shell Gate E 均已关闭。当前没有阻塞 Wave 03 的产品或环境问题；MIG-002 仍只限制“无权威 command 时不得发明敌人伤害”。MIG-019 与 MIG-020 均为非阻塞观察。

@@ -1,0 +1,122 @@
+{
+    "unityVersion": "6000.4.10f1",
+    "renderer": "Direct3D12",
+    "viewport": "1280x720",
+    "scenes": [
+        {
+            "scene": "out-of-battle",
+            "layerOrder": [
+                "BackgroundRevealLayer",
+                "ContextRevealLayer",
+                "RoomRevealLayer"
+            ],
+            "frames": [
+                {
+                    "frame": "initial",
+                    "elapsedSeconds": 0.0,
+                    "layerAlphas": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "frame": "middle",
+                    "elapsedSeconds": 0.03209686279296875,
+                    "layerAlphas": [
+                        0.3500562906265259,
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "frame": "complete",
+                    "elapsedSeconds": 0.4205322265625,
+                    "layerAlphas": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            ]
+        },
+        {
+            "scene": "CombatVerticalSlice",
+            "layerOrder": [
+                "Status",
+                "Timeline",
+                "DetailPanel",
+                "EffectFrameHost",
+                "CardHandHost"
+            ],
+            "frames": [
+                {
+                    "frame": "initial",
+                    "elapsedSeconds": 0.0,
+                    "layerAlphas": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "frame": "middle",
+                    "elapsedSeconds": 0.16019439697265626,
+                    "layerAlphas": [
+                        0.3501088619232178,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "frame": "complete",
+                    "elapsedSeconds": 0.9506454467773438,
+                    "layerAlphas": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            ]
+        },
+        {
+            "scene": "game-over",
+            "layerOrder": [
+                "BackgroundRevealLayer",
+                "PanelRevealLayer"
+            ],
+            "frames": [
+                {
+                    "frame": "initial",
+                    "elapsedSeconds": 0.0,
+                    "layerAlphas": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                {
+                    "frame": "middle",
+                    "elapsedSeconds": 0.0374755859375,
+                    "layerAlphas": [
+                        0.3503420352935791,
+                        0.0
+                    ]
+                },
+                {
+                    "frame": "complete",
+                    "elapsedSeconds": 0.40009307861328127,
+                    "layerAlphas": [
+                        1.0,
+                        1.0
+                    ]
+                }
+            ]
+        }
+    ]
+}

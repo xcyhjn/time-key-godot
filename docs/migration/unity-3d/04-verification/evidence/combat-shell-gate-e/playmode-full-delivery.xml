@@ -1,0 +1,1042 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="100" result="Passed" total="100" passed="100" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:35:46Z" duration="70.4768502">
+  <test-suite type="TestSuite" id="1153" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:35:46Z" duration="70.476850" total="100" passed="100" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1130" name="TimeKey.Tests.PlayMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.PlayMode.dll" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:35:46Z" duration="70.469885" total="100" passed="100" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="59624" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1131" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:35:46Z" duration="70.469294" total="100" passed="100" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1132" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:35:46Z" duration="70.469026" total="100" passed="100" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1133" name="PlayMode" fullname="TimeKey.Tests.PlayMode" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:35:46Z" duration="70.468723" total="100" passed="100" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1150" name="Actions" fullname="TimeKey.Tests.PlayMode.Actions" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.145785" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1126" name="TimelineActionFramePresentationTests" fullname="TimeKey.Tests.PlayMode.Actions.TimelineActionFramePresentationTests" classname="TimeKey.Tests.PlayMode.Actions.TimelineActionFramePresentationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.144759" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1129" name="ApplyClearResult_RemovesFrameAndCellIdentityMappingWithoutHoverResidue" fullname="TimeKey.Tests.PlayMode.Actions.TimelineActionFramePresentationTests.ApplyClearResult_RemovesFrameAndCellIdentityMappingWithoutHoverResidue" methodname="ApplyClearResult_RemovesFrameAndCellIdentityMappingWithoutHoverResidue" classname="TimeKey.Tests.PlayMode.Actions.TimelineActionFramePresentationTests" runstate="Runnable" seed="1146734049" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.119596" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1127" name="Refresh_MultiCellActionCreatesOneFrameAndEveryCellMapsSameSnapshot" fullname="TimeKey.Tests.PlayMode.Actions.TimelineActionFramePresentationTests.Refresh_MultiCellActionCreatesOneFrameAndEveryCellMapsSameSnapshot" methodname="Refresh_MultiCellActionCreatesOneFrameAndEveryCellMapsSameSnapshot" classname="TimeKey.Tests.PlayMode.Actions.TimelineActionFramePresentationTests" runstate="Runnable" seed="1346028058" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.007670" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1128" name="Refresh_PlayerAndUnsupportedEnemyHaveDistinctLabelsBadgesAndStyles" fullname="TimeKey.Tests.PlayMode.Actions.TimelineActionFramePresentationTests.Refresh_PlayerAndUnsupportedEnemyHaveDistinctLabelsBadgesAndStyles" methodname="Refresh_PlayerAndUnsupportedEnemyHaveDistinctLabelsBadgesAndStyles" classname="TimeKey.Tests.PlayMode.Actions.TimelineActionFramePresentationTests" runstate="Runnable" seed="1856228242" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.007014" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1149" name="BattleFlow" fullname="TimeKey.Tests.PlayMode.BattleFlow" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:37Z" duration="0.838919" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1117" name="BattleFlowPresenterTests" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.053442" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1119" name="Apply_IsIdempotentLocksInputAndRequestsRewardOnlyOnce" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests.Apply_IsIdempotentLocksInputAndRequestsRewardOnlyOnce" methodname="Apply_IsIdempotentLocksInputAndRequestsRewardOnlyOnce" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" seed="1604605095" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.039294" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1118" name="Apply_RefreshesDeckRoundAndTimecoinsInChineseWithSilver" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests.Apply_RefreshesDeckRoundAndTimecoinsInChineseWithSilver" methodname="Apply_RefreshesDeckRoundAndTimecoinsInChineseWithSilver" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" seed="1556033297" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.002982" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1120" name="Apply_VictoryAndDefeatRemainMutuallyExclusive" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests.Apply_VictoryAndDefeatRemainMutuallyExclusive" methodname="Apply_VictoryAndDefeatRemainMutuallyExclusive" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" seed="73048500" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.002362" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1121" name="SavedActionFrame_SurvivesHandViewDestruction" fullname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests.SavedActionFrame_SurvivesHandViewDestruction" methodname="SavedActionFrame_SurvivesHandViewDestruction" classname="TimeKey.Tests.PlayMode.BattleFlow.BattleFlowPresenterTests" runstate="Runnable" seed="1207936257" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:36Z" duration="0.007531" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1122" name="CombatBattleFlowIntegrationTests" fullname="TimeKey.Tests.PlayMode.BattleFlow.CombatBattleFlowIntegrationTests" classname="TimeKey.Tests.PlayMode.BattleFlow.CombatBattleFlowIntegrationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:37Z" duration="0.784968" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1125" name="Defeat_HasNoRewardAndCreatesTypedDefeatReturnBoundary" fullname="TimeKey.Tests.PlayMode.BattleFlow.CombatBattleFlowIntegrationTests.Defeat_HasNoRewardAndCreatesTypedDefeatReturnBoundary" methodname="Defeat_HasNoRewardAndCreatesTypedDefeatReturnBoundary" classname="TimeKey.Tests.PlayMode.BattleFlow.CombatBattleFlowIntegrationTests" runstate="Runnable" seed="533528375" result="Passed" start-time="2026-08-03 02:34:36Z" end-time="2026-08-03 02:34:37Z" duration="0.376676" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Resolved|phaseAfter=Resolved|card=poison|failure=AlreadyResolved
+]]></output>
+                </test-case>
+                <test-case id="1123" name="TwoFormalTurns_AwardTimecoinsAndRecycleDiscardWithShuffle" fullname="TimeKey.Tests.PlayMode.BattleFlow.CombatBattleFlowIntegrationTests.TwoFormalTurns_AwardTimecoinsAndRecycleDiscardWithShuffle" methodname="TwoFormalTurns_AwardTimecoinsAndRecycleDiscardWithShuffle" classname="TimeKey.Tests.PlayMode.BattleFlow.CombatBattleFlowIntegrationTests" runstate="Runnable" seed="332240327" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.212263" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=earthquake
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=earthquake|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TimelinePreview|phaseAfter=TimelinePreview|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=2|after=4
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=2|after=4
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+]]></output>
+                </test-case>
+                <test-case id="1124" name="Victory_LocksInputClaimsOneRewardAndCreatesTypedReturnBoundary" fullname="TimeKey.Tests.PlayMode.BattleFlow.CombatBattleFlowIntegrationTests.Victory_LocksInputClaimsOneRewardAndCreatesTypedReturnBoundary" methodname="Victory_LocksInputClaimsOneRewardAndCreatesTypedReturnBoundary" classname="TimeKey.Tests.PlayMode.BattleFlow.CombatBattleFlowIntegrationTests" runstate="Runnable" seed="861522848" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.195221" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=lighting
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Damage|before=100|after=0
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Resolved|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|failure=AlreadyResolved
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1148" name="Bindings" fullname="TimeKey.Tests.PlayMode.Bindings" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.011606" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1113" name="CombatPresentationBindingTests" fullname="TimeKey.Tests.PlayMode.Bindings.CombatPresentationBindingTests" classname="TimeKey.Tests.PlayMode.Bindings.CombatPresentationBindingTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.009437" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1114" name="BindTwice_ForwardsOneResolveIntent_AndUnbindStopsForwarding" fullname="TimeKey.Tests.PlayMode.Bindings.CombatPresentationBindingTests.BindTwice_ForwardsOneResolveIntent_AndUnbindStopsForwarding" methodname="BindTwice_ForwardsOneResolveIntent_AndUnbindStopsForwarding" classname="TimeKey.Tests.PlayMode.Bindings.CombatPresentationBindingTests" runstate="Runnable" seed="265075274" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.003755" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1115" name="DisableEnable_RebindsOnceWithoutDuplicatingIntent" fullname="TimeKey.Tests.PlayMode.Bindings.CombatPresentationBindingTests.DisableEnable_RebindsOnceWithoutDuplicatingIntent" methodname="DisableEnable_RebindsOnceWithoutDuplicatingIntent" classname="TimeKey.Tests.PlayMode.Bindings.CombatPresentationBindingTests" runstate="Runnable" seed="1071452041" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.001192" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1116" name="MissingSerializedPresenter_FailsBeforeBindingAndNamesTheField" fullname="TimeKey.Tests.PlayMode.Bindings.CombatPresentationBindingTests.MissingSerializedPresenter_FailsBeforeBindingAndNamesTheField" methodname="MissingSerializedPresenter_FailsBeforeBindingAndNamesTheField" classname="TimeKey.Tests.PlayMode.Bindings.CombatPresentationBindingTests" runstate="Runnable" seed="585917630" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.002253" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1147" name="Cards" fullname="TimeKey.Tests.PlayMode.Cards" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:45Z" duration="7.560744" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1100" name="CardHandHostTests" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:38Z" duration="1.075571" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1101" name="Build_MapsOrderedIdsAndIsIdempotent" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.Build_MapsOrderedIdsAndIsIdempotent" methodname="Build_MapsOrderedIdsAndIsIdempotent" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="1626775996" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.409260" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1105" name="DisabledHost_ConsumesPointersWithoutSelection" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.DisabledHost_ConsumesPointersWithoutSelection" methodname="DisabledHost_ConsumesPointersWithoutSelection" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="852910997" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.010422" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1104" name="DragEvents_BelongToOriginatingCardAndRestoreParent" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.DragEvents_BelongToOriginatingCardAndRestoreParent" methodname="DragEvents_BelongToOriginatingCardAndRestoreParent" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="1331822347" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.012786" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1102" name="DuplicateStableIds_KeepDistinctViewsAndEmitInstanceIdentity" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.DuplicateStableIds_KeepDistinctViewsAndEmitInstanceIdentity" methodname="DuplicateStableIds_KeepDistinctViewsAndEmitInstanceIdentity" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="1656793392" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:37Z" duration="0.009968" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1106" name="RenderedTwoCardStates_FitThreeViewportsAndWriteEvidence" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.RenderedTwoCardStates_FitThreeViewportsAndWriteEvidence" methodname="RenderedTwoCardStates_FitThreeViewportsAndWriteEvidence" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="1925862079" result="Passed" start-time="2026-08-03 02:34:37Z" end-time="2026-08-03 02:34:38Z" duration="0.620231" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1103" name="SelectingSecondCard_CancelsFirstAndRestoresBothPoses" fullname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests.SelectingSecondCard_CancelsFirstAndRestoresBothPoses" methodname="SelectingSecondCard_CancelsFirstAndRestoresBothPoses" classname="TimeKey.Tests.PlayMode.Cards.CardHandHostTests" runstate="Runnable" seed="1805493436" result="Passed" start-time="2026-08-03 02:34:38Z" end-time="2026-08-03 02:34:38Z" duration="0.011221" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1107" name="CardHandViewTests" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-03 02:34:38Z" end-time="2026-08-03 02:34:45Z" duration="6.484168" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1109" name="Drag_EmitsPhasesConsumesInputAndRestoresPose" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.Drag_EmitsPhasesConsumesInputAndRestoresPose" methodname="Drag_EmitsPhasesConsumesInputAndRestoresPose" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="1216538702" result="Passed" start-time="2026-08-03 02:34:38Z" end-time="2026-08-03 02:34:38Z" duration="0.360507" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1108" name="HoverSelectAndCancel_AreStableAndEmitOnce" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.HoverSelectAndCancel_AreStableAndEmitOnce" methodname="HoverSelectAndCancel_AreStableAndEmitOnce" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="930194135" result="Passed" start-time="2026-08-03 02:34:38Z" end-time="2026-08-03 02:34:39Z" duration="0.858432" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1112" name="RenderedStates_FitThreeViewportsAndHaveDistinctCardPixels" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.RenderedStates_FitThreeViewportsAndHaveDistinctCardPixels" methodname="RenderedStates_FitThreeViewportsAndHaveDistinctCardPixels" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="1251852253" result="Passed" start-time="2026-08-03 02:34:39Z" end-time="2026-08-03 02:34:45Z" duration="5.237748" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1111" name="RepeatedBuild_DoesNotDuplicateHierarchyOrEventsAndStillBlocksPointers" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.RepeatedBuild_DoesNotDuplicateHierarchyOrEventsAndStillBlocksPointers" methodname="RepeatedBuild_DoesNotDuplicateHierarchyOrEventsAndStillBlocksPointers" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="84600011" result="Passed" start-time="2026-08-03 02:34:45Z" end-time="2026-08-03 02:34:45Z" duration="0.018548" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1110" name="TransitionLock_AbortsCapturedDragWithoutPublishingMorePhases" fullname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests.TransitionLock_AbortsCapturedDragWithoutPublishingMorePhases" methodname="TransitionLock_AbortsCapturedDragWithoutPublishingMorePhases" classname="TimeKey.Tests.PlayMode.Cards.CardHandViewTests" runstate="Runnable" seed="1404438159" result="Passed" start-time="2026-08-03 02:34:45Z" end-time="2026-08-03 02:34:45Z" duration="0.006677" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1146" name="CombatShell" fullname="TimeKey.Tests.PlayMode.CombatShell" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 02:34:45Z" end-time="2026-08-03 02:34:46Z" duration="1.316629" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1092" name="CombatShellEntranceVisualEvidenceTests" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellEntranceVisualEvidenceTests" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellEntranceVisualEvidenceTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:34:45Z" end-time="2026-08-03 02:34:46Z" duration="1.193605" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1093" name="SavedCombatScene_EntranceProgressesAndCapturesRenderedFrames" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellEntranceVisualEvidenceTests.SavedCombatScene_EntranceProgressesAndCapturesRenderedFrames" methodname="SavedCombatScene_EntranceProgressesAndCapturesRenderedFrames" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellEntranceVisualEvidenceTests" runstate="Runnable" seed="312143346" result="Passed" start-time="2026-08-03 02:34:45Z" end-time="2026-08-03 02:34:46Z" duration="1.192874" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1094" name="CombatShellPresentationTests" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.122191" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1097" name="Background_UsesSavedRendererSetForVisibility" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.Background_UsesSavedRendererSetForVisibility" methodname="Background_UsesSavedRendererSetForVisibility" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="394533598" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.004291" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1099" name="Entrance_CompleteImmediatelyStopsRunningReveal" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.Entrance_CompleteImmediatelyStopsRunningReveal" methodname="Entrance_CompleteImmediatelyStopsRunningReveal" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="1210688176" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.004192" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1098" name="Entrance_CompletesAtSavedAlphaAndScale" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.Entrance_CompletesAtSavedAlphaAndScale" methodname="Entrance_CompletesAtSavedAlphaAndScale" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="1360339255" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.101828" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1095" name="TopHud_AppliesSnapshotFontModalAndInputLocks" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.TopHud_AppliesSnapshotFontModalAndInputLocks" methodname="TopHud_AppliesSnapshotFontModalAndInputLocks" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="74790730" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.005414" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1096" name="TopHud_RefreshProjectsApplicationSnapshot" fullname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests.TopHud_RefreshProjectsApplicationSnapshot" methodname="TopHud_RefreshProjectsApplicationSnapshot" classname="TimeKey.Tests.PlayMode.CombatShell.CombatShellPresentationTests" runstate="Runnable" seed="775190995" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.004788" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1001" name="CombatVerticalSliceTests" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:48Z" duration="2.583867" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1005" name="BoardSelection_IsStableAndInterfaceBlocksWorldInput" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.BoardSelection_IsStableAndInterfaceBlocksWorldInput" methodname="BoardSelection_IsStableAndInterfaceBlocksWorldInput" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1140404177" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.179818" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+]]></output>
+              </test-case>
+              <test-case id="1008" name="Built_PublicScenePathCreatesTowerPrefabViewOnEmptyTile" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.Built_PublicScenePathCreatesTowerPrefabViewOnEmptyTile" methodname="Built_PublicScenePathCreatesTowerPrefabViewOnEmptyTile" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1483860556" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.175366" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=tower
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=tower|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=tower|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TimelinePreview|phaseAfter=TimelinePreview|card=tower|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=tower|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=tower|target=built:tower:0:0|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Built|before=0|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=tower|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+]]></output>
+              </test-case>
+              <test-case id="1016" name="CardArtwork_BlocksWorldInputAndKeepsOriginalAspect" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.CardArtwork_BlocksWorldInputAndKeepsOriginalAspect" methodname="CardArtwork_BlocksWorldInputAndKeepsOriginalAspect" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1194249993" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:46Z" duration="0.166117" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+]]></output>
+              </test-case>
+              <test-case id="1012" name="CardSelectionAndCancel_RestoreHandAndOrbitInput" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.CardSelectionAndCancel_RestoreHandAndOrbitInput" methodname="CardSelectionAndCancel_RestoreHandAndOrbitInput" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="760349481" result="Passed" start-time="2026-08-03 02:34:46Z" end-time="2026-08-03 02:34:47Z" duration="0.168269" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=poison
+TIMEKEY_COMBAT_TRACE|command=cancel-card|phaseBefore=CardSelected|phaseAfter=Cancelled|card=poison
+]]></output>
+              </test-case>
+              <test-case id="1006" name="CompletePath_ResolvesLightingBeforeEnemyIntent" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.CompletePath_ResolvesLightingBeforeEnemyIntent" methodname="CompletePath_ResolvesLightingBeforeEnemyIntent" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="54425295" result="Passed" start-time="2026-08-03 02:34:47Z" end-time="2026-08-03 02:34:47Z" duration="0.175830" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Cancelled|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=lighting
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Damage|before=100|after=0
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Resolved|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+]]></output>
+              </test-case>
+              <test-case id="1014" name="Earthquake_RaisesSevenRealColumnsAndKeepsCardinalSelection" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.Earthquake_RaisesSevenRealColumnsAndKeepsCardinalSelection" methodname="Earthquake_RaisesSevenRealColumnsAndKeepsCardinalSelection" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="101449768" result="Passed" start-time="2026-08-03 02:34:47Z" end-time="2026-08-03 02:34:47Z" duration="0.183431" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=earthquake
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=earthquake|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|failure=InvalidTimelinePlacement
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TimelinePreview|phaseAfter=TimelinePreview|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TimelinePreview|phaseAfter=TimelinePreview|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=2|after=4
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=2|after=4
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Elevation|before=1|after=3
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=earthquake|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+]]></output>
+              </test-case>
+              <test-case id="1013" name="InitialFiveCardHand_UsesFrozenInstancesAndRegisteredArtwork" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.InitialFiveCardHand_UsesFrozenInstancesAndRegisteredArtwork" methodname="InitialFiveCardHand_UsesFrozenInstancesAndRegisteredArtwork" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="197780870" result="Passed" start-time="2026-08-03 02:34:47Z" end-time="2026-08-03 02:34:47Z" duration="0.167285" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=combat-vertical-slice/card:10
+TIMEKEY_COMBAT_TRACE|command=cancel-card|phaseBefore=CardSelected|phaseAfter=Cancelled|card=poison
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Cancelled|phaseAfter=CardSelected|card=combat-vertical-slice/card:11
+]]></output>
+              </test-case>
+              <test-case id="1004" name="OrbitCamera_ClampsBoundsAndKeepsTargetSelectableAtCardinalAngles" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.OrbitCamera_ClampsBoundsAndKeepsTargetSelectableAtCardinalAngles" methodname="OrbitCamera_ClampsBoundsAndKeepsTargetSelectableAtCardinalAngles" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1727401501" result="Passed" start-time="2026-08-03 02:34:47Z" end-time="2026-08-03 02:34:47Z" duration="0.178164" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=CardSelected|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=lighting
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=TargetSelected|phaseAfter=TargetSelected|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=TargetSelected|phaseAfter=TargetSelected|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=TargetSelected|phaseAfter=TargetSelected|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord
+]]></output>
+              </test-case>
+              <test-case id="1009" name="Poison_PublicScenePathShowsOriginalIconAndStackCount" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.Poison_PublicScenePathShowsOriginalIconAndStackCount" methodname="Poison_PublicScenePathShowsOriginalIconAndStackCount" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1376330965" result="Passed" start-time="2026-08-03 02:34:47Z" end-time="2026-08-03 02:34:47Z" duration="0.170985" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=TargetSelected|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=poison
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=poison|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=poison|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TimelinePreview|phaseAfter=TimelinePreview|card=poison|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=poison|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=poison|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Poison|before=0|after=2
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Resolved|card=poison|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+]]></output>
+              </test-case>
+              <test-case id="1007" name="Recover_PublicScenePathRestoresTargetAndReportsOccupantResult" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.Recover_PublicScenePathRestoresTargetAndReportsOccupantResult" methodname="Recover_PublicScenePathRestoresTargetAndReportsOccupantResult" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1093101602" result="Passed" start-time="2026-08-03 02:34:47Z" end-time="2026-08-03 02:34:48Z" duration="0.173251" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+]]></output>
+              </test-case>
+              <test-case id="1002" name="SceneBuild_IsCompleteAndIdempotent" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.SceneBuild_IsCompleteAndIdempotent" methodname="SceneBuild_IsCompleteAndIdempotent" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="285328854" result="Passed" start-time="2026-08-03 02:34:48Z" end-time="2026-08-03 02:34:48Z" duration="0.170140" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+]]></output>
+              </test-case>
+              <test-case id="1003" name="SerializedScene_DisableEnableAndRepeatedBuildDoNotDuplicateRuntimeContent" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.SerializedScene_DisableEnableAndRepeatedBuildDoNotDuplicateRuntimeContent" methodname="SerializedScene_DisableEnableAndRepeatedBuildDoNotDuplicateRuntimeContent" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="2049664303" result="Passed" start-time="2026-08-03 02:34:48Z" end-time="2026-08-03 02:34:48Z" duration="0.163325" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+]]></output>
+              </test-case>
+              <test-case id="1015" name="TargetAndTimelinePreview_DoNotMutateUntilCommitAndSurviveOrbitChanges" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.TargetAndTimelinePreview_DoNotMutateUntilCommitAndSurviveOrbitChanges" methodname="TargetAndTimelinePreview_DoNotMutateUntilCommitAndSurviveOrbitChanges" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1932713193" result="Passed" start-time="2026-08-03 02:34:48Z" end-time="2026-08-03 02:34:48Z" duration="0.172863" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=lighting
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|failure=InvalidTimelinePlacement
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TimelinePreview|phaseAfter=TimelinePreview|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TimelinePreview|phaseAfter=TimelinePreview|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Damage|before=100|after=0
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Resolved|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+]]></output>
+              </test-case>
+              <test-case id="1011" name="Tornado_IsExcludedFromFrozenStarterDeck" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.Tornado_IsExcludedFromFrozenStarterDeck" methodname="Tornado_IsExcludedFromFrozenStarterDeck" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1507018812" result="Passed" start-time="2026-08-03 02:34:48Z" end-time="2026-08-03 02:34:48Z" duration="0.165641" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=Idle|card=tornado|failure=UnknownCard
+]]></output>
+              </test-case>
+              <test-case id="1010" name="Wind_PublicScenePathClearsCompleteEnemyActionWithoutMapTarget" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.Wind_PublicScenePathClearsCompleteEnemyActionWithoutMapTarget" methodname="Wind_PublicScenePathClearsCompleteEnemyActionWithoutMapTarget" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="2046272373" result="Passed" start-time="2026-08-03 02:34:48Z" end-time="2026-08-03 02:34:48Z" duration="0.171183" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=wind
+TIMEKEY_COMBAT_TRACE|command=preview-clear|phaseBefore=CardSelected|phaseAfter=TimelinePreview|card=wind|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=preview-clear|phaseBefore=TimelinePreview|phaseAfter=TimelinePreview|card=wind|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-clear|phaseBefore=TimelinePreview|phaseAfter=Resolved|card=wind|origin=TimeKey.Domain.TimelineCell
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestSuite" id="1145" name="GameStart" fullname="TimeKey.Tests.PlayMode.GameStart" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:34:48Z" end-time="2026-08-03 02:34:49Z" duration="0.088909" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1090" name="StartLogoPresenterTests" fullname="TimeKey.Tests.PlayMode.GameStart.StartLogoPresenterTests" classname="TimeKey.Tests.PlayMode.GameStart.StartLogoPresenterTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:34:48Z" end-time="2026-08-03 02:34:49Z" duration="0.087540" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1091" name="Logo_ReachesSilverTerminalStateAndRaisesCompletionOnce" fullname="TimeKey.Tests.PlayMode.GameStart.StartLogoPresenterTests.Logo_ReachesSilverTerminalStateAndRaisesCompletionOnce" methodname="Logo_ReachesSilverTerminalStateAndRaisesCompletionOnce" classname="TimeKey.Tests.PlayMode.GameStart.StartLogoPresenterTests" runstate="Runnable" seed="1426515360" result="Passed" start-time="2026-08-03 02:34:48Z" end-time="2026-08-03 02:34:49Z" duration="0.086179" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1144" name="MainMenu" fullname="TimeKey.Tests.PlayMode.MainMenu" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-03 02:34:49Z" end-time="2026-08-03 02:34:57Z" duration="8.182885" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1079" name="CombatShellGateCVisualEvidenceTests" fullname="TimeKey.Tests.PlayMode.MainMenu.CombatShellGateCVisualEvidenceTests" classname="TimeKey.Tests.PlayMode.MainMenu.CombatShellGateCVisualEvidenceTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:34:49Z" end-time="2026-08-03 02:34:57Z" duration="8.103092" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1080" name="FormalScenes_RenderAnimationResponsiveMenuAndOverlays" fullname="TimeKey.Tests.PlayMode.MainMenu.CombatShellGateCVisualEvidenceTests.FormalScenes_RenderAnimationResponsiveMenuAndOverlays" methodname="FormalScenes_RenderAnimationResponsiveMenuAndOverlays" classname="TimeKey.Tests.PlayMode.MainMenu.CombatShellGateCVisualEvidenceTests" runstate="Runnable" seed="230153992" result="Passed" start-time="2026-08-03 02:34:49Z" end-time="2026-08-03 02:34:57Z" duration="8.101869" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="Timeout" value="240000" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1081" name="MainMenuPresenterTests" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.079102" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1089" name="Menu_ConfirmsExitThroughCallbackAndSuppressesRepeatNavigation" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests.Menu_ConfirmsExitThroughCallbackAndSuppressesRepeatNavigation" methodname="Menu_ConfirmsExitThroughCallbackAndSuppressesRepeatNavigation" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" seed="854343055" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.021631" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1088" name="Menu_DisabledOrZeroDurationEntranceUsesTerminalState" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests.Menu_DisabledOrZeroDurationEntranceUsesTerminalState" methodname="Menu_DisabledOrZeroDurationEntranceUsesTerminalState" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" seed="35854058" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.010597" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1082" name="Menu_DisablesContinueAndLocksOnlyItsModal" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests.Menu_DisablesContinueAndLocksOnlyItsModal" methodname="Menu_DisablesContinueAndLocksOnlyItsModal" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" seed="1572837534" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.006012" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1087" name="Menu_EntranceLayersAreStaggeredAndCompletionIsObservable" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests.Menu_EntranceLayersAreStaggeredAndCompletionIsObservable" methodname="Menu_EntranceLayersAreStaggeredAndCompletionIsObservable" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" seed="229033979" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.006302" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1084" name="Menu_EscapeUsesOverlayPriorityAndRestoresFocus" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests.Menu_EscapeUsesOverlayPriorityAndRestoresFocus" methodname="Menu_EscapeUsesOverlayPriorityAndRestoresFocus" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" seed="952393576" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.010116" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1086" name="Menu_OverlayBlocksUnderlyingCommands" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests.Menu_OverlayBlocksUnderlyingCommands" methodname="Menu_OverlayBlocksUnderlyingCommands" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" seed="1961517359" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.004497" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1083" name="Menu_SeedOverlayCancelsOrSubmitsTypedCommand" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests.Menu_SeedOverlayCancelsOrSubmitsTypedCommand" methodname="Menu_SeedOverlayCancelsOrSubmitsTypedCommand" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" seed="1536659962" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.008731" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1085" name="Menu_SettingsUsesInjectedSnapshotAndEmitsTypedRequest" fullname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests.Menu_SettingsUsesInjectedSnapshotAndEmitsTypedRequest" methodname="Menu_SettingsUsesInjectedSnapshotAndEmitsTypedRequest" classname="TimeKey.Tests.PlayMode.MainMenu.MainMenuPresenterTests" runstate="Runnable" seed="2081087876" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:57Z" duration="0.006581" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1142" name="Occupants" fullname="TimeKey.Tests.PlayMode.Occupants" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:58Z" duration="0.904965" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestSuite" id="1143" name="Lifecycle" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:58Z" duration="0.904512" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-suite type="TestFixture" id="1068" name="CombatOccupantLifecyclePresentationTests" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:58Z" duration="0.904065" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+                  <properties />
+                  <test-suite type="ParameterizedMethod" id="1078" name="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:58Z" duration="0.896531" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                    <properties />
+                    <test-case id="1074" name="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor(0.0f)" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor(0.0f)" methodname="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="779420259" result="Passed" start-time="2026-08-03 02:34:57Z" end-time="2026-08-03 02:34:58Z" duration="0.894250" asserts="0">
+                      <properties>
+                        <property name="retryIteration" value="0" />
+                        <property name="repeatIteration" value="0" />
+                      </properties>
+                    </test-case>
+                    <test-case id="1075" name="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor(90.0f)" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor(90.0f)" methodname="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="46291458" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:58Z" duration="0.000472" asserts="0">
+                      <properties>
+                        <property name="retryIteration" value="0" />
+                        <property name="repeatIteration" value="0" />
+                      </properties>
+                    </test-case>
+                    <test-case id="1076" name="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor(180.0f)" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor(180.0f)" methodname="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="1721307635" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:58Z" duration="0.000334" asserts="0">
+                      <properties>
+                        <property name="retryIteration" value="0" />
+                        <property name="repeatIteration" value="0" />
+                      </properties>
+                    </test-case>
+                    <test-case id="1077" name="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor(270.0f)" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor(270.0f)" methodname="BoardYaw_KeepsOccupantAndStatusOnTheSameAnchor" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="1048204648" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:58Z" duration="0.000300" asserts="0">
+                      <properties>
+                        <property name="retryIteration" value="0" />
+                        <property name="repeatIteration" value="0" />
+                      </properties>
+                    </test-case>
+                  </test-suite>
+                  <test-case id="1073" name="DisableEnableAndRebind_DoesNotDuplicateViewsOrStatuses" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.DisableEnableAndRebind_DoesNotDuplicateViewsOrStatuses" methodname="DisableEnableAndRebind_DoesNotDuplicateViewsOrStatuses" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="155452466" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:58Z" duration="0.001038" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1071" name="PoisonDeathRemainBroken_KeepsViewAndClearsStatus" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.PoisonDeathRemainBroken_KeepsViewAndClearsStatus" methodname="PoisonDeathRemainBroken_KeepsViewAndClearsStatus" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="655353405" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:58Z" duration="0.001775" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1070" name="PoisonLifecycle_UsesTypedAfterValuesForOldSourceAndNewInfection" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.PoisonLifecycle_UsesTypedAfterValuesForOldSourceAndNewInfection" methodname="PoisonLifecycle_UsesTypedAfterValuesForOldSourceAndNewInfection" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="1888108416" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:58Z" duration="0.001268" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1072" name="StaleLifecycleResult_CannotRegressHealthOrStatus" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.StaleLifecycleResult_CannotRegressHealthOrStatus" methodname="StaleLifecycleResult_CannotRegressHealthOrStatus" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="50058330" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:58Z" duration="0.000607" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1069" name="TowerLifecycle_UpdatesHealthThenRemovesViewStatusAndNotifiesOnce" fullname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests.TowerLifecycle_UpdatesHealthThenRemovesViewStatusAndNotifiesOnce" methodname="TowerLifecycle_UpdatesHealthThenRemovesViewStatusAndNotifiesOnce" classname="TimeKey.Tests.PlayMode.Occupants.Lifecycle.CombatOccupantLifecyclePresentationTests" runstate="Runnable" seed="224908766" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:58Z" duration="0.001407" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                </test-suite>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1141" name="OutOfBattleShell" fullname="TimeKey.Tests.PlayMode.OutOfBattleShell" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:59Z" duration="1.648235" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1061" name="CombatShellGateDVisualEvidenceTests" fullname="TimeKey.Tests.PlayMode.OutOfBattleShell.CombatShellGateDVisualEvidenceTests" classname="TimeKey.Tests.PlayMode.OutOfBattleShell.CombatShellGateDVisualEvidenceTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:59Z" duration="1.628257" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1062" name="FormalScenes_RenderRoomStatesAndGameOverAtThreeViewports" fullname="TimeKey.Tests.PlayMode.OutOfBattleShell.CombatShellGateDVisualEvidenceTests.FormalScenes_RenderRoomStatesAndGameOverAtThreeViewports" methodname="FormalScenes_RenderRoomStatesAndGameOverAtThreeViewports" classname="TimeKey.Tests.PlayMode.OutOfBattleShell.CombatShellGateDVisualEvidenceTests" runstate="Runnable" seed="121848404" result="Passed" start-time="2026-08-03 02:34:58Z" end-time="2026-08-03 02:34:59Z" duration="1.627208" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="Timeout" value="240000" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1063" name="OutOfBattleShellPresenterTests" fullname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests" classname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.018682" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1064" name="Apply_ProjectsSnapshotTextAndSilverFont" fullname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests.Apply_ProjectsSnapshotTextAndSilverFont" methodname="Apply_ProjectsSnapshotTextAndSilverFont" classname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests" runstate="Runnable" seed="355440888" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.006816" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1066" name="Confirm_PublishesStableRoomOnceAndHonorsBothLocks" fullname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests.Confirm_PublishesStableRoomOnceAndHonorsBothLocks" methodname="Confirm_PublishesStableRoomOnceAndHonorsBothLocks" classname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests" runstate="Runnable" seed="704064971" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.003913" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1065" name="Room_ShowsHoverFocusSelectionAndEscapeReturnsIdle" fullname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests.Room_ShowsHoverFocusSelectionAndEscapeReturnsIdle" methodname="Room_ShowsHoverFocusSelectionAndEscapeReturnsIdle" classname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests" runstate="Runnable" seed="77902783" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.002587" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1067" name="SettledRoom_IsDisabledAndCannotPublishConfirmation" fullname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests.SettledRoom_IsDisabledAndCannotPublishConfirmation" methodname="SettledRoom_IsDisabledAndCannotPublishConfirmation" classname="TimeKey.Tests.PlayMode.OutOfBattleShell.OutOfBattleShellPresenterTests" runstate="Runnable" seed="548512158" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.003291" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1140" name="Presenters" fullname="TimeKey.Tests.PlayMode.Presenters" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.023084" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1058" name="CombatPresenterRefreshTests" fullname="TimeKey.Tests.PlayMode.Presenters.CombatPresenterRefreshTests" classname="TimeKey.Tests.PlayMode.Presenters.CombatPresenterRefreshTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.022785" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1060" name="Refresh_AfterResolutionUpdatesHudAndDisablesResolve" fullname="TimeKey.Tests.PlayMode.Presenters.CombatPresenterRefreshTests.Refresh_AfterResolutionUpdatesHudAndDisablesResolve" methodname="Refresh_AfterResolutionUpdatesHudAndDisablesResolve" classname="TimeKey.Tests.PlayMode.Presenters.CombatPresenterRefreshTests" runstate="Runnable" seed="907176589" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.018672" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1059" name="Refresh_UsesTypedTargetAndShape_WhenStableIdsAreArbitrary" fullname="TimeKey.Tests.PlayMode.Presenters.CombatPresenterRefreshTests.Refresh_UsesTypedTargetAndShape_WhenStableIdsAreArbitrary" methodname="Refresh_UsesTypedTargetAndShape_WhenStableIdsAreArbitrary" classname="TimeKey.Tests.PlayMode.Presenters.CombatPresenterRefreshTests" runstate="Runnable" seed="987314417" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:34:59Z" duration="0.003227" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1139" name="SceneFlow" fullname="TimeKey.Tests.PlayMode.SceneFlow" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:35:43Z" duration="43.626284" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1046" name="CombatShellGateDRoundTripTests" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:35:13Z" duration="13.878794" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1048" name="Defeat_GoesToGameOverThenClearsRunAtMainMenu" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests.Defeat_GoesToGameOverThenClearsRunAtMainMenu" methodname="Defeat_GoesToGameOverThenClearsRunAtMainMenu" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests" runstate="Runnable" seed="564492581" result="Passed" start-time="2026-08-03 02:34:59Z" end-time="2026-08-03 02:35:07Z" duration="7.495715" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+]]></output>
+                </test-case>
+                <test-case id="1047" name="VictoryReward_ReturnsToSameRunAndSettlesRoomOnce" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests.VictoryReward_ReturnsToSameRunAndSettlesRoomOnce" methodname="VictoryReward_ReturnsToSameRunAndSettlesRoomOnce" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateDRoundTripTests" runstate="Runnable" seed="2032674866" result="Passed" start-time="2026-08-03 02:35:07Z" end-time="2026-08-03 02:35:13Z" duration="6.382100" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1049" name="CombatShellGateEStabilityTests" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateEStabilityTests" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateEStabilityTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:35:13Z" end-time="2026-08-03 02:35:23Z" duration="9.641273" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1050" name="ThreeVictoryCycles_KeepIdentityTopologyMemoryAndResizeStable" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateEStabilityTests.ThreeVictoryCycles_KeepIdentityTopologyMemoryAndResizeStable" methodname="ThreeVictoryCycles_KeepIdentityTopologyMemoryAndResizeStable" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateEStabilityTests" runstate="Runnable" seed="986217920" result="Passed" start-time="2026-08-03 02:35:13Z" end-time="2026-08-03 02:35:23Z" duration="9.640526" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="Timeout" value="240000" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1051" name="GateCNavigationLifecycleTests" fullname="TimeKey.Tests.PlayMode.SceneFlow.GateCNavigationLifecycleTests" classname="TimeKey.Tests.PlayMode.SceneFlow.GateCNavigationLifecycleTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:35:23Z" end-time="2026-08-03 02:35:32Z" duration="8.957430" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1052" name="GameStartAdapter_SourceUnloadDoesNotCancelCommittedTransition" fullname="TimeKey.Tests.PlayMode.SceneFlow.GateCNavigationLifecycleTests.GameStartAdapter_SourceUnloadDoesNotCancelCommittedTransition" methodname="GameStartAdapter_SourceUnloadDoesNotCancelCommittedTransition" classname="TimeKey.Tests.PlayMode.SceneFlow.GateCNavigationLifecycleTests" runstate="Runnable" seed="1286425727" result="Passed" start-time="2026-08-03 02:35:23Z" end-time="2026-08-03 02:35:27Z" duration="4.023591" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+                </test-case>
+                <test-case id="1054" name="MainMenuAdapter_LoadsAndPersistsTypedSettingsRequests" fullname="TimeKey.Tests.PlayMode.SceneFlow.GateCNavigationLifecycleTests.MainMenuAdapter_LoadsAndPersistsTypedSettingsRequests" methodname="MainMenuAdapter_LoadsAndPersistsTypedSettingsRequests" classname="TimeKey.Tests.PlayMode.SceneFlow.GateCNavigationLifecycleTests" runstate="Runnable" seed="1367884490" result="Passed" start-time="2026-08-03 02:35:27Z" end-time="2026-08-03 02:35:27Z" duration="0.125667" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1053" name="MainMenuAdapter_SourceUnloadDoesNotCancelCommittedTransition" fullname="TimeKey.Tests.PlayMode.SceneFlow.GateCNavigationLifecycleTests.MainMenuAdapter_SourceUnloadDoesNotCancelCommittedTransition" methodname="MainMenuAdapter_SourceUnloadDoesNotCancelCommittedTransition" classname="TimeKey.Tests.PlayMode.SceneFlow.GateCNavigationLifecycleTests" runstate="Runnable" seed="338257737" result="Passed" start-time="2026-08-03 02:35:27Z" end-time="2026-08-03 02:35:32Z" duration="4.807209" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1055" name="SceneFlowAdditiveTests" fullname="TimeKey.Tests.PlayMode.SceneFlow.SceneFlowAdditiveTests" classname="TimeKey.Tests.PlayMode.SceneFlow.SceneFlowAdditiveTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 02:35:32Z" end-time="2026-08-03 02:35:43Z" duration="11.144971" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1057" name="Bootstrap_InitialFailureIsObservableAndRestoresCoverAndInput" fullname="TimeKey.Tests.PlayMode.SceneFlow.SceneFlowAdditiveTests.Bootstrap_InitialFailureIsObservableAndRestoresCoverAndInput" methodname="Bootstrap_InitialFailureIsObservableAndRestoresCoverAndInput" classname="TimeKey.Tests.PlayMode.SceneFlow.SceneFlowAdditiveTests" runstate="Runnable" seed="2079394247" result="Passed" start-time="2026-08-03 02:35:32Z" end-time="2026-08-03 02:35:32Z" duration="0.006741" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1056" name="Bootstrap_PerformsTypedRoundTripsWithoutPersistentDuplicates" fullname="TimeKey.Tests.PlayMode.SceneFlow.SceneFlowAdditiveTests.Bootstrap_PerformsTypedRoundTripsWithoutPersistentDuplicates" methodname="Bootstrap_PerformsTypedRoundTripsWithoutPersistentDuplicates" classname="TimeKey.Tests.PlayMode.SceneFlow.SceneFlowAdditiveTests" runstate="Runnable" seed="789231590" result="Passed" start-time="2026-08-03 02:35:32Z" end-time="2026-08-03 02:35:43Z" duration="11.137476" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1138" name="SceneFlowFinale" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 02:35:43Z" end-time="2026-08-03 02:35:46Z" duration="3.216679" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1038" name="CombatShellGateEVisualEvidenceTests" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale.CombatShellGateEVisualEvidenceTests" classname="TimeKey.Tests.PlayMode.SceneFlowFinale.CombatShellGateEVisualEvidenceTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:35:43Z" end-time="2026-08-03 02:35:46Z" duration="2.768062" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1039" name="FormalScenes_CaptureLayeredRevealTimelines" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale.CombatShellGateEVisualEvidenceTests.FormalScenes_CaptureLayeredRevealTimelines" methodname="FormalScenes_CaptureLayeredRevealTimelines" classname="TimeKey.Tests.PlayMode.SceneFlowFinale.CombatShellGateEVisualEvidenceTests" runstate="Runnable" seed="922669975" result="Passed" start-time="2026-08-03 02:35:43Z" end-time="2026-08-03 02:35:46Z" duration="2.767120" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="Timeout" value="240000" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Idle|phaseAfter=Disposed
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1040" name="LayeredSceneRevealPresenterTests" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests" classname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.448066" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1045" name="Destroy_CompletesReferencedLayers" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests.Destroy_CompletesReferencedLayers" methodname="Destroy_CompletesReferencedLayers" classname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests" runstate="Runnable" seed="1026995718" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.002754" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1043" name="Disable_CompletesEveryLayer" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests.Disable_CompletesEveryLayer" methodname="Disable_CompletesEveryLayer" classname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests" runstate="Runnable" seed="689352428" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.001931" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1044" name="RepeatedPlay_RestartsThenCompletesOnceMore" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests.RepeatedPlay_RestartsThenCompletesOnceMore" methodname="RepeatedPlay_RestartsThenCompletesOnceMore" classname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests" runstate="Runnable" seed="25946120" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.160753" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1041" name="Reveal_OrdersLayersAndReachesInteractiveTerminalState" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests.Reveal_OrdersLayersAndReachesInteractiveTerminalState" methodname="Reveal_OrdersLayersAndReachesInteractiveTerminalState" classname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests" runstate="Runnable" seed="84670595" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.280834" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1042" name="ZeroDuration_CompletesSynchronously" fullname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests.ZeroDuration_CompletesSynchronously" methodname="ZeroDuration_CompletesSynchronously" classname="TimeKey.Tests.PlayMode.SceneFlowFinale.LayeredSceneRevealPresenterTests" runstate="Runnable" seed="1753339248" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.000502" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1137" name="Targeting" fullname="TimeKey.Tests.PlayMode.Targeting" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.187947" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1029" name="ClearTimelinePresentationTests" fullname="TimeKey.Tests.PlayMode.Targeting.ClearTimelinePresentationTests" classname="TimeKey.Tests.PlayMode.Targeting.ClearTimelinePresentationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.015599" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1031" name="Commit_RemovesCompleteActionUiAndTornadoPreviewRestoresAllCells" fullname="TimeKey.Tests.PlayMode.Targeting.ClearTimelinePresentationTests.Commit_RemovesCompleteActionUiAndTornadoPreviewRestoresAllCells" methodname="Commit_RemovesCompleteActionUiAndTornadoPreviewRestoresAllCells" classname="TimeKey.Tests.PlayMode.Targeting.ClearTimelinePresentationTests" runstate="Runnable" seed="1916808415" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.008017" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1030" name="Preview_ShowsEmptyHitAndOutOfBoundsMarkersThenRestoresAppearance" fullname="TimeKey.Tests.PlayMode.Targeting.ClearTimelinePresentationTests.Preview_ShowsEmptyHitAndOutOfBoundsMarkersThenRestoresAppearance" methodname="Preview_ShowsEmptyHitAndOutOfBoundsMarkersThenRestoresAppearance" classname="TimeKey.Tests.PlayMode.Targeting.ClearTimelinePresentationTests" runstate="Runnable" seed="1641803701" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.006836" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1032" name="TargetPreviewBehaviorTests" fullname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewBehaviorTests" classname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewBehaviorTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.012225" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1034" name="BoardRange_ProjectsUniqueCoordinatesReportsMissingAndRestoresBlocks" fullname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewBehaviorTests.BoardRange_ProjectsUniqueCoordinatesReportsMissingAndRestoresBlocks" methodname="BoardRange_ProjectsUniqueCoordinatesReportsMissingAndRestoresBlocks" classname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewBehaviorTests" runstate="Runnable" seed="1240633661" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.005574" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1033" name="Palette_ProvidesSixDistinctStates" fullname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewBehaviorTests.Palette_ProvidesSixDistinctStates" methodname="Palette_ProvidesSixDistinctStates" classname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewBehaviorTests" runstate="Runnable" seed="1851215215" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.002538" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1035" name="TimelinePreview_UsesDomainValidityAndRestoresPerCellColors" fullname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewBehaviorTests.TimelinePreview_UsesDomainValidityAndRestoresPerCellColors" methodname="TimelinePreview_UsesDomainValidityAndRestoresPerCellColors" classname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewBehaviorTests" runstate="Runnable" seed="1001013980" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.003026" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1036" name="TargetPreviewVisualTests" fullname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewVisualTests" classname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewVisualTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.159491" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1037" name="CardinalYaw_KeepsRangeCoordinatesAndRendersStackedHighlightsAndInvalidTimeline" fullname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewVisualTests.CardinalYaw_KeepsRangeCoordinatesAndRendersStackedHighlightsAndInvalidTimeline" methodname="CardinalYaw_KeepsRangeCoordinatesAndRendersStackedHighlightsAndInvalidTimeline" classname="TimeKey.Tests.PlayMode.Targeting.TargetPreviewVisualTests" runstate="Runnable" seed="1718134414" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.158847" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1136" name="Terrain" fullname="TimeKey.Tests.PlayMode.Terrain" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.009922" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1025" name="HexTileColumnTests" fullname="TimeKey.Tests.PlayMode.Terrain.HexTileColumnTests" classname="TimeKey.Tests.PlayMode.Terrain.HexTileColumnTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.009126" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1027" name="ApplyLogicalLayerCount_IsIdempotentAndShrinksWithoutGhosts" fullname="TimeKey.Tests.PlayMode.Terrain.HexTileColumnTests.ApplyLogicalLayerCount_IsIdempotentAndShrinksWithoutGhosts" methodname="ApplyLogicalLayerCount_IsIdempotentAndShrinksWithoutGhosts" classname="TimeKey.Tests.PlayMode.Terrain.HexTileColumnTests" runstate="Runnable" seed="1940447670" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.004468" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1026" name="ApplyLogicalLayerCount_UsesIndependentBlocksAndBounds" fullname="TimeKey.Tests.PlayMode.Terrain.HexTileColumnTests.ApplyLogicalLayerCount_UsesIndependentBlocksAndBounds" methodname="ApplyLogicalLayerCount_UsesIndependentBlocksAndBounds" classname="TimeKey.Tests.PlayMode.Terrain.HexTileColumnTests" runstate="Runnable" seed="1471955649" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.002379" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1028" name="Clear_RemovesAllBlocksAndResetsAnchor" fullname="TimeKey.Tests.PlayMode.Terrain.HexTileColumnTests.Clear_RemovesAllBlocksAndResetsAnchor" methodname="Clear_RemovesAllBlocksAndResetsAnchor" classname="TimeKey.Tests.PlayMode.Terrain.HexTileColumnTests" runstate="Runnable" seed="2117641472" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.001438" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1135" name="Tooltips" fullname="TimeKey.Tests.PlayMode.Tooltips" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.015697" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1021" name="CardEffectFramePresentationTests" fullname="TimeKey.Tests.PlayMode.Tooltips.CardEffectFramePresentationTests" classname="TimeKey.Tests.PlayMode.Tooltips.CardEffectFramePresentationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.015430" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1024" name="Overlay_ReusesSingleFrameAndClearHidesIt" fullname="TimeKey.Tests.PlayMode.Tooltips.CardEffectFramePresentationTests.Overlay_ReusesSingleFrameAndClearHidesIt" methodname="Overlay_ReusesSingleFrameAndClearHidesIt" classname="TimeKey.Tests.PlayMode.Tooltips.CardEffectFramePresentationTests" runstate="Runnable" seed="276428237" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.007199" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1023" name="ShowAction_DistinguishesPlayerAndUnsupportedEnemyInChineseMetadata" fullname="TimeKey.Tests.PlayMode.Tooltips.CardEffectFramePresentationTests.ShowAction_DistinguishesPlayerAndUnsupportedEnemyInChineseMetadata" methodname="ShowAction_DistinguishesPlayerAndUnsupportedEnemyInChineseMetadata" classname="TimeKey.Tests.PlayMode.Tooltips.CardEffectFramePresentationTests" runstate="Runnable" seed="2124128837" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.004695" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1022" name="ShowCard_DisplaysChineseDecisionContentWithoutInternalStableId" fullname="TimeKey.Tests.PlayMode.Tooltips.CardEffectFramePresentationTests.ShowCard_DisplaysChineseDecisionContentWithoutInternalStableId" methodname="ShowCard_DisplaysChineseDecisionContentWithoutInternalStableId" classname="TimeKey.Tests.PlayMode.Tooltips.CardEffectFramePresentationTests" runstate="Runnable" seed="1900132328" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.002746" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1134" name="TransitionVisuals" fullname="TimeKey.Tests.PlayMode.TransitionVisuals" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.105307" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1017" name="TransitionVisualPresenterTests" fullname="TimeKey.Tests.PlayMode.TransitionVisuals.TransitionVisualPresenterTests" classname="TimeKey.Tests.PlayMode.TransitionVisuals.TransitionVisualPresenterTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.105016" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1018" name="CoverAndRevealCompleteWithoutFixedDelayAssumptions" fullname="TimeKey.Tests.PlayMode.TransitionVisuals.TransitionVisualPresenterTests.CoverAndRevealCompleteWithoutFixedDelayAssumptions" methodname="CoverAndRevealCompleteWithoutFixedDelayAssumptions" classname="TimeKey.Tests.PlayMode.TransitionVisuals.TransitionVisualPresenterTests" runstate="Runnable" seed="431825511" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.100985" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1020" name="ImmediateCompletion_StopsTheActiveOpposingCoroutine" fullname="TimeKey.Tests.PlayMode.TransitionVisuals.TransitionVisualPresenterTests.ImmediateCompletion_StopsTheActiveOpposingCoroutine" methodname="ImmediateCompletion_StopsTheActiveOpposingCoroutine" classname="TimeKey.Tests.PlayMode.TransitionVisuals.TransitionVisualPresenterTests" runstate="Runnable" seed="1572345187" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.001785" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1019" name="ZeroDuration_AppliesEachRequestedTerminalStateImmediately" fullname="TimeKey.Tests.PlayMode.TransitionVisuals.TransitionVisualPresenterTests.ZeroDuration_AppliesEachRequestedTerminalStateImmediately" methodname="ZeroDuration_AppliesEachRequestedTerminalStateImmediately" classname="TimeKey.Tests.PlayMode.TransitionVisuals.TransitionVisualPresenterTests" runstate="Runnable" seed="716843455" result="Passed" start-time="2026-08-03 02:35:46Z" end-time="2026-08-03 02:35:46Z" duration="0.001247" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

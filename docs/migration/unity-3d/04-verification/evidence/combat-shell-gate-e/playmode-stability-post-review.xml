@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.1416229">
+  <test-suite type="TestSuite" id="1153" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.141623" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1130" name="TimeKey.Tests.PlayMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.PlayMode.dll" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.133841" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="13548" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1131" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.132466" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1132" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.131356" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1133" name="PlayMode" fullname="TimeKey.Tests.PlayMode" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.130170" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1139" name="SceneFlow" fullname="TimeKey.Tests.PlayMode.SceneFlow" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.127545" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1049" name="CombatShellGateEStabilityTests" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateEStabilityTests" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateEStabilityTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.126130" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1050" name="ThreeVictoryCycles_KeepIdentityTopologyMemoryAndResizeStable" fullname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateEStabilityTests.ThreeVictoryCycles_KeepIdentityTopologyMemoryAndResizeStable" methodname="ThreeVictoryCycles_KeepIdentityTopologyMemoryAndResizeStable" classname="TimeKey.Tests.PlayMode.SceneFlow.CombatShellGateEStabilityTests" runstate="Runnable" seed="526443244" result="Passed" start-time="2026-08-03 02:41:58Z" end-time="2026-08-03 02:42:08Z" duration="10.113154" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="Timeout" value="240000" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+TIMEKEY_COMBAT_TRACE|command=dispose|phaseBefore=Resolved|phaseAfter=Disposed
+Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

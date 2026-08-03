@@ -204,6 +204,44 @@ namespace TimeKey.Tests.PlayMode.CombatShell
             Assert.That(background.localScale, Is.EqualTo(new Vector3(2f, 3f, 4f)));
         }
 
+        [UnityTest]
+        public IEnumerator Entrance_CompleteImmediatelyStopsRunningReveal()
+        {
+            _root = new GameObject("CombatShellEntranceStopRig");
+            _root.SetActive(false);
+            var topHud = new GameObject("TopHUD").AddComponent<CanvasGroup>();
+            topHud.transform.SetParent(_root.transform, false);
+            var staged = new GameObject("Staged").AddComponent<CanvasGroup>();
+            staged.transform.SetParent(_root.transform, false);
+            var background = new GameObject("Background").transform;
+            background.SetParent(_root.transform, false);
+            background.localScale = new Vector3(2f, 3f, 4f);
+            var entrance = _root.AddComponent<CombatShellEntrancePresenter>();
+            SetField(entrance, "topHud", topHud);
+            SetField(entrance, "backgroundRoot", background);
+            SetField(entrance, "stagedUiGroups", new[] { staged });
+            SetField(entrance, "duration", 1f);
+            SetField(entrance, "layerInterval", 0.1f);
+
+            _root.SetActive(true);
+            yield return null;
+            entrance.CompleteImmediately();
+
+            for (var frame = 0; frame < 3; frame++)
+            {
+                yield return null;
+                Assert.That(entrance.IsComplete, Is.True);
+                Assert.That(topHud.alpha, Is.EqualTo(1f));
+                Assert.That(topHud.interactable, Is.True);
+                Assert.That(topHud.blocksRaycasts, Is.True);
+                Assert.That(staged.alpha, Is.EqualTo(1f));
+                Assert.That(staged.interactable, Is.True);
+                Assert.That(staged.blocksRaycasts, Is.True);
+                Assert.That(background.localScale,
+                    Is.EqualTo(new Vector3(2f, 3f, 4f)));
+            }
+        }
+
         private TopHudRig CreateTopHudRig()
         {
             _root = new GameObject("CombatTopHudRig");

@@ -1,0 +1,56 @@
+{
+    "status": "passed",
+    "unityVersion": "6000.4.10f1",
+    "renderer": "Direct3D12",
+    "runId": "player-gate-e-run",
+    "renderCounter": "SetPass Calls Count",
+    "cycles": [
+        {
+            "cycle": 1,
+            "roomId": "player-gate-e-room-1",
+            "launchCorrelationId": "player-gate-e-launch-1",
+            "outcomeCorrelationId": "player-gate-e-launch-1-outcome",
+            "transitionMilliseconds": 1674.3852000000002,
+            "cpuFrameMilliseconds": 1.2661,
+            "gpuFrameMilliseconds": 0.149504,
+            "renderCounterValue": 18,
+            "totalAllocatedMemoryBytes": 96305304,
+            "loadedSceneCount": 2,
+            "bootstrapCount": 1,
+            "contentEntryCount": 1
+        },
+        {
+            "cycle": 2,
+            "roomId": "player-gate-e-room-2",
+            "launchCorrelationId": "player-gate-e-launch-2",
+            "outcomeCorrelationId": "player-gate-e-launch-2-outcome",
+            "transitionMilliseconds": 1512.96,
+            "cpuFrameMilliseconds": 0.9814,
+            "gpuFrameMilliseconds": 0.1472,
+            "renderCounterValue": 18,
+            "totalAllocatedMemoryBytes": 96660790,
+            "loadedSceneCount": 2,
+            "bootstrapCount": 1,
+            "contentEntryCount": 1
+        },
+        {
+            "cycle": 3,
+            "roomId": "player-gate-e-room-3",
+            "launchCorrelationId": "player-gate-e-launch-3",
+            "outcomeCorrelationId": "player-gate-e-launch-3-outcome",
+            "transitionMilliseconds": 1513.1391,
+            "cpuFrameMilliseconds": 0.8675,
+            "gpuFrameMilliseconds": 0.146944,
+            "renderCounterValue": 18,
+            "totalAllocatedMemoryBytes": 96717390,
+            "loadedSceneCount": 2,
+            "bootstrapCount": 1,
+            "contentEntryCount": 1
+        }
+    ],
+    "memoryGrowthBytes": 412086,
+    "strictlyMonotonicMemoryGrowth": true,
+    "materiallyMonotonicMemoryGrowth": false,
+    "sustainedMonotonicMemoryGrowth": false,
+    "finalInputLocked": false
+}

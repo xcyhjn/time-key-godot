@@ -1,6 +1,6 @@
 # 局内战斗调试指南
 
-> 状态：适用于 Combat Shell Gate A
+> 状态：适用于 Combat Shell Gate E
 
 ## 调用链
 
@@ -75,3 +75,13 @@ Tower/Poison 数值正确但 View 错误时检查 `LifecycleOccupantChangeResult
 Player smoke 必须可见运行；隐藏窗口会因 `runInBackground=false` 暂停。marker 后非零退出时检查是否在 Task continuation 内立即 Quit；当前 smoke 由后续 LateUpdate 延迟两帧退出。
 
 Binding 或首帧等待失败后先检查 `SceneFlowStateStore` 是否仍有 pending record；`RollingBackTarget` 必须恢复旧 state，source unload operation 启动后才允许 commit。source 已提交后的 reveal/unlock 失败不得再卸载 target。Bootstrap 卡在未 ready 时等待 `InitializationTask` 并查看 `InitializationException`，不要无限轮询 `IsReady`。
+
+## Gate E layered reveal 排错
+
+进入内容 Scene 后长期锁输入时，先检查当前 `SceneContentEntry.RevealPresentation` 是否指向正确 Presenter，再检查各 `CanvasGroup` 是否已序列化。不要在 SceneFlow 增加 fixed timeout 来掩盖漏引用；missing/zero/disable/destroy 应由 Presenter 自身完成 terminal completion。
+
+中间帧没有层次时，按 Scene 检查顺序：OutOfBattle 是 background/context/room，Combat 是 status/timeline/hand，GameOver 是 background/panel。`animation-timeline.json` 中 middle 帧应至少出现第一层 alpha 大于末层，complete 帧所有 alpha 都为 1。若初始帧已为 1，通常是测试/入口先自动播放后又直接采样，应通过正式 `PlayReveal()` 生命周期重置，而不是修改截图像素。
+
+三轮 smoke 卡住或拓扑计数增加时，依次检查 Bootstrap 数量、content entry 数量、旧 content Scene 是否卸载、active launch 是否在 outcome 后关闭，以及 transition completion 是否释放 `SceneInputLockState`。每轮 room、launch correlation 与 outcome correlation 都应唯一且互相对应。
+
+Player 内存样本小幅递增不等于已证明泄漏；先看稳定性测试的 post-GC 增量预算，再用 Profiler 做更长采样。D3D12 Player 若无法取得有效的 `Draw Calls Count`/`Batches Count`，smoke 会回退到 `SetPass Calls Count` 并在 JSON 记录实际名称；不要把它误报为 draw-call 计数。最终 Player 必须以 exit 0、PASS 一次、PERF 三次、FAIL 零次和 `finalInputLocked=false` 联合判定。

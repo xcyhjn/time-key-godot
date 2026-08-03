@@ -168,8 +168,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d31a001000000000000000000000001, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   sceneCamera: {fileID: 334783091}
   boardCamera: {fileID: 334783092}
   keyLight: {fileID: 2036819413}
@@ -202,7 +202,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e2d0866df29342bc92eeeb122b662b2f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Bindings.CombatPresentationBinding
   cardHandPresenter: {fileID: 2006839660}
   boardRangePresenter: {fileID: 1973722975}
@@ -222,7 +222,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6915311ff0b12b6499a6ec9bdde325a8, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Composition::TimeKey.Composition.UnityCombatTraceSink
   loggingEnabled: 1
 --- !u!114 &1005
@@ -235,7 +235,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6e9e90894276f444382b5921006644ab, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Composition::TimeKey.Composition.CombatCompositionRoot
   controller: {fileID: 1002}
   presentationBinding: {fileID: 1003}
@@ -258,11 +258,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c78311cbab902c749b42000b4186a38c, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.CombatShell.CombatShellEntrancePresenter
   topHud: {fileID: 1034515385}
   backgroundRoot: {fileID: 774398680}
+  stagedUiGroups:
+  - {fileID: 438729164}
+  - {fileID: 1482398259}
+  - {fileID: 1582329788}
+  - {fileID: 290036139}
+  - {fileID: 2006839661}
   duration: 0.45
+  layerInterval: 0.1
 --- !u!114 &1007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -273,7 +280,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 049785ec5e824e228d9d3fde939448f0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Composition::TimeKey.Composition.SceneFlow.CombatSceneNavigation
   bootstrap: {fileID: 0}
   stateStore: {fileID: 0}
@@ -325,7 +332,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 0.92, g: 0.94, b: 0.9, a: 1}
@@ -548,7 +555,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &56366227 stripped
 MonoBehaviour:
@@ -559,7 +566,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &84068346
 GameObject:
@@ -607,7 +614,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 1
   m_MinWidth: -1
@@ -808,7 +815,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &148039093 stripped
 MonoBehaviour:
@@ -819,7 +826,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &180375463
 PrefabInstance:
@@ -1016,7 +1023,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &180375466 stripped
 MonoBehaviour:
@@ -1027,7 +1034,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &237078557
 GameObject:
@@ -1076,7 +1083,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 0.92, g: 0.94, b: 0.9, a: 1}
@@ -1299,7 +1306,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &242316616 stripped
 MonoBehaviour:
@@ -1310,7 +1317,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &243912371
 PrefabInstance:
@@ -1507,7 +1514,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &243912374 stripped
 MonoBehaviour:
@@ -1518,7 +1525,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &250023386
 GameObject:
@@ -1569,7 +1576,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
@@ -1586,7 +1593,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
@@ -1633,6 +1640,7 @@ GameObject:
   m_Component:
   - component: {fileID: 290036137}
   - component: {fileID: 290036138}
+  - component: {fileID: 290036139}
   m_Layer: 0
   m_Name: EffectFrameHost
   m_TagString: Untagged
@@ -1669,10 +1677,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e8c9ddf557c4e7ebee2f52c81ee3da8, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Tooltips.CombatInteractionOverlayPresenter
   frameHost: {fileID: 290036137}
   framePrefab: {fileID: 3835644604207850081, guid: 120eba34a22a23e41aeaf63634cfed85, type: 3}
+--- !u!225 &290036139
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 290036136}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &294055908
 GameObject:
   m_ObjectHideFlags: 0
@@ -1722,7 +1742,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.06, g: 0.08, b: 0.09, a: 1}
@@ -1945,7 +1965,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &321991294 stripped
 MonoBehaviour:
@@ -1956,7 +1976,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &334783090
 GameObject:
@@ -2038,7 +2058,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b773df61f8552845998dae15eb8afc1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.BoardOrbitCameraController
   orbitSensitivity: 0.22
   panSensitivity: 0.0022
@@ -2069,7 +2089,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -2147,7 +2167,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 77bd0c1080254fddb70e9a22a5917b85, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Presenters.CombatOccupantPresenter
   sceneCamera: {fileID: 334783091}
   creationViews:
@@ -2207,6 +2227,7 @@ GameObject:
   - component: {fileID: 438729161}
   - component: {fileID: 438729163}
   - component: {fileID: 438729162}
+  - component: {fileID: 438729164}
   m_Layer: 0
   m_Name: Status
   m_TagString: Untagged
@@ -2243,7 +2264,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 0.92, g: 0.94, b: 0.9, a: 1}
@@ -2275,6 +2296,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 438729160}
   m_CullTransparentMesh: 1
+--- !u!225 &438729164
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 438729160}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1001 &482119104
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2466,7 +2499,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &482119107 stripped
 MonoBehaviour:
@@ -2477,7 +2510,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &506277460
 PrefabInstance:
@@ -2670,7 +2703,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &506277463 stripped
 MonoBehaviour:
@@ -2681,7 +2714,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &584438154
 GameObject:
@@ -3022,7 +3055,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &610638373 stripped
 MonoBehaviour:
@@ -3033,7 +3066,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &653259090
 PrefabInstance:
@@ -3230,7 +3263,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &653259093 stripped
 MonoBehaviour:
@@ -3241,7 +3274,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &774398679
 PrefabInstance:
@@ -3500,7 +3533,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &802701061 stripped
 MonoBehaviour:
@@ -3511,7 +3544,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &856436048
 PrefabInstance:
@@ -3708,7 +3741,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &856436051 stripped
 MonoBehaviour:
@@ -3719,7 +3752,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &909771161
 PrefabInstance:
@@ -3819,151 +3852,151 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 1796128791}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[1]'
-      value: 
+      value:
       objectReference: {fileID: 2109100440}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[2]'
-      value: 
+      value:
       objectReference: {fileID: 506277463}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[3]'
-      value: 
+      value:
       objectReference: {fileID: 1720151500}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[4]'
-      value: 
+      value:
       objectReference: {fileID: 1189746842}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[5]'
-      value: 
+      value:
       objectReference: {fileID: 56366227}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[6]'
-      value: 
+      value:
       objectReference: {fileID: 482119107}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[7]'
-      value: 
+      value:
       objectReference: {fileID: 1636317350}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[8]'
-      value: 
+      value:
       objectReference: {fileID: 978319238}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[9]'
-      value: 
+      value:
       objectReference: {fileID: 148039093}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[10]'
-      value: 
+      value:
       objectReference: {fileID: 1053319205}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[11]'
-      value: 
+      value:
       objectReference: {fileID: 914209856}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[12]'
-      value: 
+      value:
       objectReference: {fileID: 1250890762}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[13]'
-      value: 
+      value:
       objectReference: {fileID: 1847265018}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[14]'
-      value: 
+      value:
       objectReference: {fileID: 180375466}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[15]'
-      value: 
+      value:
       objectReference: {fileID: 1484037975}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[16]'
-      value: 
+      value:
       objectReference: {fileID: 1112334223}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[17]'
-      value: 
+      value:
       objectReference: {fileID: 1078235010}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[18]'
-      value: 
+      value:
       objectReference: {fileID: 856436051}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[19]'
-      value: 
+      value:
       objectReference: {fileID: 321991294}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[20]'
-      value: 
+      value:
       objectReference: {fileID: 1524304444}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[21]'
-      value: 
+      value:
       objectReference: {fileID: 1594197956}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[22]'
-      value: 
+      value:
       objectReference: {fileID: 2145118416}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[23]'
-      value: 
+      value:
       objectReference: {fileID: 2003294348}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[24]'
-      value: 
+      value:
       objectReference: {fileID: 242316616}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[25]'
-      value: 
+      value:
       objectReference: {fileID: 1313724012}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[26]'
-      value: 
+      value:
       objectReference: {fileID: 610638373}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[27]'
-      value: 
+      value:
       objectReference: {fileID: 1463147348}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[28]'
-      value: 
+      value:
       objectReference: {fileID: 243912374}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[29]'
-      value: 
+      value:
       objectReference: {fileID: 1230267088}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[30]'
-      value: 
+      value:
       objectReference: {fileID: 1462010112}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[31]'
-      value: 
+      value:
       objectReference: {fileID: 653259093}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[32]'
-      value: 
+      value:
       objectReference: {fileID: 1210185598}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[33]'
-      value: 
+      value:
       objectReference: {fileID: 1515755221}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[34]'
-      value: 
+      value:
       objectReference: {fileID: 1753429808}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[35]'
-      value: 
+      value:
       objectReference: {fileID: 802701061}
     - target: {fileID: 1003, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: 'combatInputControls.Array.data[36]'
-      value: 
+      value:
       objectReference: {fileID: 1100138117}
     - target: {fileID: 1101, guid: 56e24aa6cf7f4128b4387481fc3b93fb, type: 3}
       propertyPath: m_IsActive
@@ -4059,7 +4092,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 22858cd8e0d24b49baee17b53d656b87, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.BattleFlow.BattleFlowPresenter
 --- !u!224 &909771163 stripped
 RectTransform:
@@ -4262,7 +4295,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &914209856 stripped
 MonoBehaviour:
@@ -4273,7 +4306,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &960734977
 GameObject:
@@ -4499,7 +4532,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &978319238 stripped
 MonoBehaviour:
@@ -4510,7 +4543,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1019836013
 GameObject:
@@ -4559,7 +4592,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 0.92, g: 0.94, b: 0.9, a: 1}
@@ -4702,7 +4735,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 372a97b9c8becab4bb7ba8b43e5fd6e8, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.CombatShell.CombatTopHudPresenter
 --- !u!225 &1034515385 stripped
 CanvasGroup:
@@ -4900,7 +4933,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1053319205 stripped
 MonoBehaviour:
@@ -4911,7 +4944,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1078235007
 PrefabInstance:
@@ -5108,7 +5141,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1078235010 stripped
 MonoBehaviour:
@@ -5119,7 +5152,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1100138116
 GameObject:
@@ -5150,7 +5183,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
     m_Mode: 3
@@ -5194,7 +5227,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.7, g: 0.25, b: 0.2, a: 1}
@@ -5437,7 +5470,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1112334223 stripped
 MonoBehaviour:
@@ -5448,7 +5481,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1189746839
 PrefabInstance:
@@ -5641,7 +5674,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1189746842 stripped
 MonoBehaviour:
@@ -5652,7 +5685,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1210185595
 PrefabInstance:
@@ -5849,7 +5882,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1210185598 stripped
 MonoBehaviour:
@@ -5860,7 +5893,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1230267085
 PrefabInstance:
@@ -6057,7 +6090,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1230267088 stripped
 MonoBehaviour:
@@ -6068,7 +6101,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1250890759
 PrefabInstance:
@@ -6261,7 +6294,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1250890762 stripped
 MonoBehaviour:
@@ -6272,7 +6305,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1313724009
 PrefabInstance:
@@ -6469,7 +6502,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1313724012 stripped
 MonoBehaviour:
@@ -6480,7 +6513,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1396850607
 GameObject:
@@ -6712,7 +6745,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1462010112 stripped
 MonoBehaviour:
@@ -6723,7 +6756,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1463147345
 PrefabInstance:
@@ -6920,7 +6953,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1463147348 stripped
 MonoBehaviour:
@@ -6931,7 +6964,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1482398251
 GameObject:
@@ -6948,6 +6981,7 @@ GameObject:
   - component: {fileID: 1482398254}
   - component: {fileID: 1482398253}
   - component: {fileID: 1482398258}
+  - component: {fileID: 1482398259}
   m_Layer: 0
   m_Name: Timeline
   m_TagString: Untagged
@@ -7021,7 +7055,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5dbac1c195c64b8b84de8dd540269eba, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Targeting.ClearTimelinePreview
 --- !u!114 &1482398254
 MonoBehaviour:
@@ -7033,7 +7067,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f10f69fe7bf4e4f8c6a280a47676091, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Targeting.TimelinePlacementPreview
 --- !u!114 &1482398255
 MonoBehaviour:
@@ -7045,7 +7079,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
   m_Padding:
     m_Left: 20
@@ -7069,7 +7103,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.07, g: 0.09, b: 0.1, a: 1}
@@ -7107,7 +7141,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ed60a149cf0f453888046d6cb48183e7, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Presenters.TimelinePresenter
   timelinePreview: {fileID: 1482398254}
   clearTimelinePreview: {fileID: 1482398253}
@@ -7150,6 +7184,18 @@ MonoBehaviour:
   - {fileID: 802701060}
   actionLayer: {fileID: 84068347}
   actionFramePrefab: {fileID: 838447679746412249, guid: d0200f5cc22f05348b8aaef10abcf7cf, type: 3}
+--- !u!225 &1482398259
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482398251}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1001 &1484037972
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7345,7 +7391,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1484037975 stripped
 MonoBehaviour:
@@ -7356,7 +7402,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1500364061
 GameObject:
@@ -7385,7 +7431,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81b9d2266992dbc4983f8f51547cdc4b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Composition::TimeKey.Composition.SceneFlow.SceneContentEntry
   sceneId: 4
   contentRoot: {fileID: 1000}
@@ -7602,7 +7648,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1515755221 stripped
 MonoBehaviour:
@@ -7613,7 +7659,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1524304441
 PrefabInstance:
@@ -7810,7 +7856,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1524304444 stripped
 MonoBehaviour:
@@ -7821,7 +7867,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1582329783
 GameObject:
@@ -7835,6 +7881,7 @@ GameObject:
   - component: {fileID: 1582329786}
   - component: {fileID: 1582329785}
   - component: {fileID: 1582329787}
+  - component: {fileID: 1582329788}
   m_Layer: 0
   m_Name: DetailPanel
   m_TagString: Untagged
@@ -7874,7 +7921,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.08, g: 0.1, b: 0.11, a: 0.96}
@@ -7912,11 +7959,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a0eeaf159fa41ac8b0e900d6f5d37d3, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Presenters.CombatHudPresenter
   statusText: {fileID: 438729162}
   targetText: {fileID: 2014271135}
   resolveButton: {fileID: 1100138117}
+--- !u!225 &1582329788
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1582329783}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1001 &1594197953
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8112,7 +8171,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1594197956 stripped
 MonoBehaviour:
@@ -8123,7 +8182,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1636317347
 PrefabInstance:
@@ -8316,7 +8375,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1636317350 stripped
 MonoBehaviour:
@@ -8327,7 +8386,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1720151497
 PrefabInstance:
@@ -8520,7 +8579,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1720151500 stripped
 MonoBehaviour:
@@ -8531,7 +8590,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1753429805
 PrefabInstance:
@@ -8728,7 +8787,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1753429808 stripped
 MonoBehaviour:
@@ -8739,7 +8798,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1796128788
 PrefabInstance:
@@ -8928,7 +8987,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1796128791 stripped
 MonoBehaviour:
@@ -8939,7 +8998,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1847265015
 PrefabInstance:
@@ -9136,7 +9195,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &1847265018 stripped
 MonoBehaviour:
@@ -9147,7 +9206,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1895857589
 GameObject:
@@ -9325,7 +9384,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 28ced68155b84dbe82e990a3a9175ea4, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Targeting.BoardRangePreview
 --- !u!114 &1973722975
 MonoBehaviour:
@@ -9337,7 +9396,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f97b84e6f44d42f5a91ebda476c34091, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Presenters.BoardRangePresenter
   rangePreview: {fileID: 1973722974}
 --- !u!1001 &2003294345
@@ -9535,7 +9594,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &2003294348 stripped
 MonoBehaviour:
@@ -9546,7 +9605,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &2006839657
 GameObject:
@@ -9559,6 +9618,7 @@ GameObject:
   - component: {fileID: 2006839658}
   - component: {fileID: 2006839659}
   - component: {fileID: 2006839660}
+  - component: {fileID: 2006839661}
   m_Layer: 0
   m_Name: CardHandHost
   m_TagString: Untagged
@@ -9596,7 +9656,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4b4ac7182aa144148bfd7341f862a492, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Cards.CardHandHost
   cardContainer: {fileID: 1396850608}
   cardViewPrefab: {fileID: 7548668843965124365, guid: 563b7237f7d143e4daccbef5ac3ff405, type: 3}
@@ -9614,9 +9674,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 47b7d4cf1677447583bc48d6b9ffba65, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Presenters.CardHandPresenter
   cardHand: {fileID: 2006839659}
+--- !u!225 &2006839661
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2006839657}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &2014271133
 GameObject:
   m_ObjectHideFlags: 0
@@ -9664,7 +9736,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 0.92, g: 0.94, b: 0.9, a: 1}
@@ -9984,7 +10056,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &2109100440 stripped
 MonoBehaviour:
@@ -9995,7 +10067,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &2145118413
 PrefabInstance:
@@ -10192,7 +10264,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dae37c207b4fc0d489cca94175998471, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.TimelineCellView
 --- !u!114 &2145118416 stripped
 MonoBehaviour:
@@ -10203,7 +10275,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

@@ -1,8 +1,8 @@
 # Unity 局内战斗共享集成契约
 
-> 状态：Combat Shell Gate A 独立审查整改已通过；Gate B 契约输入已冻结
+> 状态：Combat Shell Gate E 已关闭；Wave 03 仅可扩展局外地图契约
 > 负责人：主智能体
-> 最后验证日期：2026-08-02
+> 最后验证日期：2026-08-03
 > 证据来源：玩法等价契约、目标架构、数据迁移边界
 
 ## Domain API
@@ -383,3 +383,14 @@ Bootstrap (persistent, Build index 0)
 - Out-of-battle and GameOver Presentation emit only typed room/command callbacks. Composition alone owns payload construction, retry identity, SceneFlow request sequencing and application state.
 - Saved OutOfBattleShell/GameOver Prefabs use an ordinary content root, one child `GateDCanvas`, one sibling content camera and Silver on every visible `Text`; scenes contain one typed `SceneContentEntry` and prefab-backed content root.
 - Gate D is frozen by full EditMode `343/343`, full graphical D3D12 PlayMode `92/92`, targeted production Victory/Defeat round trips `2/2`, asset constraints `3/3`, and 18 manually inspected PNGs across three viewports. Build, actual Player smoke and repeated three-cycle stability remain Gate E delivery checks.
+
+## Combat Shell Gate E delivery contract
+
+- `LayeredSceneRevealPresenter` remains Presentation-only and implements the existing Unity-free `ISceneRevealPresentation` boundary. SceneFlow waits for completion; no reveal uses `Task.Delay` as a substitute for rendered progression.
+- OutOfBattle reveal order is background, context, room. Combat reveal order is status, timeline, detail/effect, hand. GameOver reveal order is background, panel. All layers finish at alpha 1 with interaction and raycasts restored.
+- Missing layers, zero duration, disable and destruction complete deterministically so SceneFlow cannot retain a stale input lock.
+- One persistent Bootstrap must survive three consecutive OutOfBattle -> Combat -> Victory -> OutOfBattle cycles. Each cycle preserves its own room and launch/outcome correlation identities, settles exactly one room and unloads the prior content Scene.
+- Build Settings remain exactly six enabled Scenes in the frozen order. The Windows Development build must include `Silver-ATTRIBUTION.txt`; the current build artifact satisfies this contract.
+- The actual Player smoke uses `-timekeyCombatShellGateESmoke`, performs three typed cycles, verifies one Bootstrap and one content entry, resizes to 2560x1080 and exits with input unlocked.
+- The out-of-battle shell reuses the byte-identical Godot ocean tile through `OutOfBattleOceanBackground`; its UV scale preserves square pixels across 1280x720, 1920x1080 and 2560x1080.
+- Gate E is frozen by full EditMode `343/343`, full graphical Direct3D12 PlayMode `100/100`, the six-Scene Windows build, three-cycle actual Player smoke and 17 manually reviewed PNGs. Post-review coverage proves running reveal completion stays terminal, evidence outputs are fresh, render-counter semantics are explicit and positive post-GC growth is not stable or increasing. Gate B four-yaw evidence remains inherited because the combat camera/background boundary was unchanged.

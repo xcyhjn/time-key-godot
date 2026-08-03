@@ -5,6 +5,7 @@ using TimeKey.Presentation;
 using TimeKey.Presentation.CombatShell;
 using TimeKey.Presentation.GameOver;
 using TimeKey.Presentation.OutOfBattleShell;
+using TimeKey.Presentation.SceneFlowFinale;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -29,8 +30,8 @@ namespace TimeKey.Editor
         private const string TopHudPrefabPath =
             "Assets/_Project/Prefabs/Battle/CombatShell/CombatTopHUD.prefab";
         private const string FontPath = "Assets/_Project/Resources/Fonts/Silver.ttf";
-        private const string BackgroundPath =
-            "Assets/_Project/Resources/Art/Battle/Background/BG.png";
+        private const string OceanBackgroundPath =
+            "Assets/_Project/Resources/Art/Battle/Background/out-bg_sea.png";
         private const string TitleBackgroundPath =
             "Assets/_Project/Resources/Art/Battle/Background/titleBG.png";
         private const string TileDirectory =
@@ -79,15 +80,22 @@ namespace TimeKey.Editor
                 "OutOfBattleShell",
                 out var canvas,
                 typeof(OutOfBattleShellPresenter),
-                typeof(OutOfBattleShellSceneNavigation));
+                typeof(OutOfBattleShellSceneNavigation),
+                typeof(LayeredSceneRevealPresenter));
             try
             {
                 var camera = CreateCamera(root.transform, "OutOfBattleCamera");
                 canvas.worldCamera = camera;
                 var uiRoot = canvas.transform;
-                CreateBackground(uiRoot, "MapBackground", BackgroundPath, Color.white);
+                var backgroundLayer = CreateRevealLayer(uiRoot, "BackgroundRevealLayer");
+                var mapBackground = CreateBackground(
+                    backgroundLayer.transform,
+                    "MapBackground",
+                    OceanBackgroundPath,
+                    Color.white);
+                mapBackground.gameObject.AddComponent<OutOfBattleOceanBackground>();
                 CreatePanel(
-                    uiRoot,
+                    backgroundLayer.transform,
                     "MapTint",
                     Vector2.zero,
                     Vector2.one,
@@ -96,11 +104,12 @@ namespace TimeKey.Editor
                     new Color(0.01f, 0.06f, 0.07f, 0.28f),
                     false);
 
-                CreateMapDecoration(uiRoot);
+                CreateMapDecoration(backgroundLayer.transform);
+                var contextLayer = CreateRevealLayer(uiRoot, "ContextRevealLayer");
                 var topHudPrefab = LoadRequired<GameObject>(TopHudPrefabPath);
                 var topHud = (GameObject)PrefabUtility.InstantiatePrefab(topHudPrefab);
                 topHud.name = "SharedTopHUD";
-                topHud.transform.SetParent(uiRoot, false);
+                topHud.transform.SetParent(contextLayer.transform, false);
                 Stretch(topHud.GetComponent<RectTransform>());
                 var enemyPanel = topHud.transform.Find("EnemyHealthPanel");
                 if (enemyPanel != null)
@@ -109,7 +118,7 @@ namespace TimeKey.Editor
                 }
 
                 var runPanel = CreatePanel(
-                    uiRoot,
+                    contextLayer.transform,
                     "RunContext",
                     new Vector2(0.5f, 1f),
                     new Vector2(0.5f, 1f),
@@ -155,9 +164,10 @@ namespace TimeKey.Editor
                     new Vector2(583f, 8f),
                     new Vector2(-14f, -8f));
 
-                var room = CreateRoom(uiRoot, font);
+                var roomLayer = CreateRevealLayer(uiRoot, "RoomRevealLayer");
+                var room = CreateRoom(roomLayer.transform, font);
                 var actions = CreatePanel(
-                    uiRoot,
+                    roomLayer.transform,
                     "RoomActions",
                     new Vector2(0.5f, 0f),
                     new Vector2(0.5f, 0f),
@@ -210,6 +220,14 @@ namespace TimeKey.Editor
                 serialized.FindProperty("battleTag").stringValue = "combat-vertical-slice";
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
+                ConfigureLayeredReveal(
+                    root.GetComponent<LayeredSceneRevealPresenter>(),
+                    0.24f,
+                    0.09f,
+                    backgroundLayer,
+                    contextLayer,
+                    roomLayer);
+
                 PrefabUtility.SaveAsPrefabAsset(root, OutOfBattlePrefabPath);
             }
             finally
@@ -226,19 +244,21 @@ namespace TimeKey.Editor
                 "GameOver",
                 out var canvas,
                 typeof(GameOverPresenter),
-                typeof(GameOverSceneNavigation));
+                typeof(GameOverSceneNavigation),
+                typeof(LayeredSceneRevealPresenter));
             try
             {
                 var camera = CreateCamera(root.transform, "GameOverCamera");
                 canvas.worldCamera = camera;
                 var uiRoot = canvas.transform;
+                var backgroundLayer = CreateRevealLayer(uiRoot, "BackgroundRevealLayer");
                 CreateBackground(
-                    uiRoot,
+                    backgroundLayer.transform,
                     "GameOverBackground",
                     TitleBackgroundPath,
                     new Color(0.48f, 0.48f, 0.48f, 1f));
                 CreatePanel(
-                    uiRoot,
+                    backgroundLayer.transform,
                     "DarkVeil",
                     Vector2.zero,
                     Vector2.one,
@@ -246,8 +266,9 @@ namespace TimeKey.Editor
                     Vector2.zero,
                     new Color(0.02f, 0.01f, 0.015f, 0.70f),
                     false);
+                var panelLayer = CreateRevealLayer(uiRoot, "PanelRevealLayer");
                 var panel = CreatePanel(
-                    uiRoot,
+                    panelLayer.transform,
                     "GameOverPanel",
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
@@ -304,6 +325,12 @@ namespace TimeKey.Editor
                 serialized = new SerializedObject(navigation);
                 SetReference(serialized, "presenter", presenter);
                 serialized.ApplyModifiedPropertiesWithoutUndo();
+                ConfigureLayeredReveal(
+                    root.GetComponent<LayeredSceneRevealPresenter>(),
+                    0.28f,
+                    0.12f,
+                    backgroundLayer,
+                    panelLayer);
                 PrefabUtility.SaveAsPrefabAsset(root, GameOverPrefabPath);
             }
             finally
@@ -362,8 +389,80 @@ namespace TimeKey.Editor
             var serialized = new SerializedObject(navigation);
             SetReference(serialized, "controller", controller);
             serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var entrance = controller.GetComponent<CombatShellEntrancePresenter>();
+            if (entrance == null)
+            {
+                throw new InvalidOperationException(
+                    "Combat scene is missing CombatShellEntrancePresenter.");
+            }
+
+            var stagedGroups = new[]
+            {
+                GetOrAddCanvasGroup(FindDescendant(controller.transform, "Status")),
+                GetOrAddCanvasGroup(FindDescendant(controller.transform, "Timeline")),
+                GetOrAddCanvasGroup(FindDescendant(controller.transform, "DetailPanel")),
+                GetOrAddCanvasGroup(FindDescendant(controller.transform, "EffectFrameHost")),
+                GetOrAddCanvasGroup(FindDescendant(controller.transform, "CardHandHost"))
+            };
+            serialized = new SerializedObject(entrance);
+            var groups = serialized.FindProperty("stagedUiGroups");
+            groups.arraySize = stagedGroups.Length;
+            for (var index = 0; index < stagedGroups.Length; index++)
+            {
+                groups.GetArrayElementAtIndex(index).objectReferenceValue = stagedGroups[index];
+            }
+
+            serialized.FindProperty("layerInterval").floatValue = 0.10f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
+        }
+
+        private static CanvasGroup CreateRevealLayer(Transform parent, string name)
+        {
+            var layer = new GameObject(name, typeof(RectTransform), typeof(CanvasGroup));
+            layer.transform.SetParent(parent, false);
+            Stretch(layer.GetComponent<RectTransform>());
+            return layer.GetComponent<CanvasGroup>();
+        }
+
+        private static void ConfigureLayeredReveal(
+            LayeredSceneRevealPresenter presenter,
+            float duration,
+            float interval,
+            params CanvasGroup[] layers)
+        {
+            var serialized = new SerializedObject(presenter);
+            var property = serialized.FindProperty("layers");
+            property.arraySize = layers.Length;
+            for (var index = 0; index < layers.Length; index++)
+            {
+                property.GetArrayElementAtIndex(index).objectReferenceValue = layers[index];
+            }
+
+            serialized.FindProperty("layerDuration").floatValue = duration;
+            serialized.FindProperty("layerInterval").floatValue = interval;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static Transform FindDescendant(Transform root, string name)
+        {
+            foreach (var child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == name)
+                {
+                    return child;
+                }
+            }
+
+            throw new InvalidOperationException("Combat scene is missing " + name + ".");
+        }
+
+        private static CanvasGroup GetOrAddCanvasGroup(Transform target)
+        {
+            var group = target.GetComponent<CanvasGroup>();
+            return group != null ? group : target.gameObject.AddComponent<CanvasGroup>();
         }
 
         private static RoomReferences CreateRoom(Transform parent, Font font)
@@ -498,7 +597,7 @@ namespace TimeKey.Editor
             return camera;
         }
 
-        private static void CreateBackground(
+        private static RawImage CreateBackground(
             Transform parent,
             string name,
             string texturePath,
@@ -511,6 +610,7 @@ namespace TimeKey.Editor
             graphic.texture = LoadRequired<Texture2D>(texturePath);
             graphic.color = color;
             graphic.raycastTarget = false;
+            return graphic;
         }
 
         private static RectTransform CreatePanel(

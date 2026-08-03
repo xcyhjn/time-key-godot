@@ -1,8 +1,8 @@
 # Unity 战斗切片与解耦阶段测试计划
 
-> 状态：Combat Shell Gate A 独立审查整改已通过；Gate B 待执行
+> 状态：Combat Shell Gate E 完整门禁已通过
 > 负责人：主智能体
-> 最后验证日期：2026-08-02
+> 最后验证日期：2026-08-03
 > 证据来源：harness 设计、首切片契约、Unity Test Framework 1.6.0
 
 ## EditMode
@@ -254,3 +254,14 @@ Gate C passed full EditMode `340/340` and full D3D12 PlayMode `85/85`; 51 PNGs c
 - Regression: targeted SceneFlow `33/33`, out-of-battle Presenter `4/4`, formal round trip `2/2`, asset constraints `3/3`, visual capture `1/1`, full EditMode `343/343` and full graphical D3D12 PlayMode `92/92`; all failed/skipped/inconclusive counts are zero.
 
 Gate D does not claim Windows build, actual Player smoke, repeated three-cycle stability or performance evidence. Those checks remain mandatory in Gate E.
+
+## Combat Shell Gate E
+
+- Layered reveal component tests: ordering, terminal state, replay, missing layers, zero duration, disable and destruction.
+- Saved asset checks: OutOfBattle/GameOver layer references and Combat staged group references; Silver attribution remains present.
+- Stability: three Victory cycles under one Bootstrap, distinct room/launch/outcome identity, one content entry, no duplicated persistent services, post-GC memory budget and 1280x720 -> 2560x1080 resize with focus/input recovery.
+- Animation evidence: initial/middle/complete frames for OutOfBattle, Combat and GameOver, plus a structured alpha timeline and three responsive ocean views.
+- Delivery: exact six-Scene Windows Development build, Silver attribution copy and actual Player `-timekeyCombatShellGateESmoke` with three cycles and one PASS marker.
+- Final closure: full EditMode, full graphical D3D12 PlayMode, refreshed affected three-viewport views, inherited unaffected four-yaw evidence and manual review.
+
+Final results are full EditMode `343/343`, full graphical Direct3D12 PlayMode `100/100`, asset EditMode `3/3`, build-smoke EditMode `3/3`, layered reveal PlayMode `7/7`, post-review Combat entrance PlayMode `5/5`, stability PlayMode `1/1`, and animation capture PlayMode `1/1`. Post-review coverage stops the active reveal coroutine before forced completion, rejects stale evidence files, records the actual render-counter name/value and rejects stable or increasing positive post-GC growth. The Windows build succeeded and actual Player smoke exited 0 with `PASS=1`, `PERF=3`, `FAIL=0`. Seventeen PNGs passed manual review; superseded failing diagnostics remain non-canonical.

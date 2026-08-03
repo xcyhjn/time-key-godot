@@ -1,8 +1,8 @@
 # 多智能体所有权图
 
-> 状态：Combat Shell Gate 0 Prompt 审查通过；Gate A SceneFlow 所有权已开放
+> 状态：Combat Shell Gate E 已关闭；全部实现路径已回收
 > 负责人：主智能体
-> 最后验证日期：2026-08-02
+> 最后验证日期：2026-08-03
 > 证据来源：目标架构、首切片依赖图、Prompt 路径审查
 
 ## 独占写入范围
@@ -142,6 +142,9 @@ Gate C/D 中 Agent D 只写独占 Presentation/Prefab/tests/report，主智能�
 | Gate A | Agent A / SceneFlow 白名单 | 仅新增 `Application/SceneFlow/**`、`Composition/SceneFlow/**`、对应 EditMode/PlayMode tests 与自己的报告 | 主智能体完成并回收；两轮独立审查整改后 `330/330 + 64/64`、build/Player 通过 |
 | Gate B | Agent B / Combat Shell | 仅新增 `Presentation/CombatShell/**`、局部 Prefab/Material/tests/report | 已完成并交回；主智能体完成共享接线、整改与全量验证 |
 | Gate C | Agent C / Menu/Transition | 仅新增 `Presentation/GameStart/MainMenu/TransitionVisuals/**`、Shell Prefab/Animation/tests/report | 已完成并交回；主智能体完成正式 Scene/Composition/Editor 接线与全量验证 |
+| Gate D | 三个互斥 Agent | OutOfBattle Presentation、只读契约审计、Gate D asset tests 各自独占 | 已完成并交回；检查点 `105a66d` |
+| Gate E | layered reveal Agent | 仅新增 `Runtime/Presentation/SceneFlowFinale/**`、对应 PlayMode tests 与自己的报告 | 实现已落盘且定向 `7/7`；当前无运行中 Agent，路径已回收 |
+| Gate E | stability Agent | 仅新增 `CombatShellGateEStabilityTests.cs(.meta)` 与自己的报告 | 实现已落盘且最终定向 `1/1`；当前无运行中 Agent，路径已回收 |
 | 全程 | 主智能体 | 所有既有文件、正式 Scene、Build Settings、asmdef、route/payload 接线、Editor harness、共享 docs/evidence/Git | 独占 |
 
 三份实现白名单无交集，详见 `agents/prompt-review-combat-shell.md`。任何 Agent 都不得运行 Unity/Godot、修改共享 Scene/Build Settings、暂存或提交；主智能体在每个 Agent 返回后回收路径并串行验证。
@@ -153,3 +156,5 @@ Gate B 的局部 authoring/test 任务在互斥路径完成并交回后，主智
 Gate C 按原互斥边界完成 Presentation、三个 Shell Prefab 和局部测试；主智能体独占 Bootstrap/GameStart/MainMenu Scene、Composition sequence/navigation/settings、`RunStartPayload`、transition wait、Editor authoring、共享证据与文档。独立复核阻塞整改后最终为 `340/340 + 85/85`，51 张 PNG 已逐图复核，所有权现已全部交回主智能体。
 
 Gate D 使用新增的互斥 Prompt：Presentation Agent 只拥有 `Runtime/Presentation/OutOfBattleShell/**` 与对应 PlayMode tests；契约审计 Agent 只读检查 SceneFlow/02B4 边界；资产测试 Agent 只新增 `CombatShellGateDAssetTests.cs(.meta)`。主智能体独占既有 Application/Composition、正式 Scene/Prefab、Editor authoring、共享文档、证据与 Git。所有 Agent 均已返回，未 stage/commit/push，当前 Gate D 路径已全部回收；最终验证为 `343/343 + 92/92`。
+
+Gate E 的两份实现 Prompt 已通过互斥审查：layered reveal Agent 只新增 SceneFlowFinale Presentation/tests，stability Agent 只新增单一稳定性测试；既有 Scene/Prefab、Combat entrance、Player smoke、build automation、共享文档、证据与 Git 始终由主智能体独占。当前协作树没有仍在运行的 Gate E 子智能体；两条实现路径已经回收。最终只读复核发现并关闭了 running reveal、证据新鲜度、render-counter 命名和内存斜率门禁；主智能体串行完成 `5/5 + 1/1 + 343/343 + 100/100`、build、Player 与 17 张逐图复核。

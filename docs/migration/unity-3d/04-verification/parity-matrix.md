@@ -1,8 +1,8 @@
 # Godot / Unity 等价矩阵
 
-> 状态：Combat Shell Gate A typed 多场景壳已验证；正式视觉待 Gate B-E
+> 状态：Combat Shell Gate E 已关闭；Wave 03 局外地图待执行
 > 负责人：主智能体
-> 最后验证日期：2026-08-02
+> 最后验证日期：2026-08-03
 > 证据来源：Godot 实跑截图/日志、玩法等价契约、Unity 全量测试、构建、Player smoke 与实际截图
 
 | 行为 | Godot 基线 | Unity 当前实现 | 判定 | 证据 |
@@ -122,3 +122,15 @@ Gate C is closed at `340/340 + 85/85` with 51 manually inspected PNGs. Formal ov
 | Identity replay | Scene callbacks must not duplicate outcomes or rooms | Exact outcome replay is idempotent; different/opposite replay conflicts after active launch closes | 等价并显式化 | state-store tests |
 
 Gate D is closed at `343/343 + 92/92` with 18 manually inspected PNGs. Build, actual Player smoke, repeated three-cycle stability, performance and expanded layered animation remain Gate E work.
+
+## Combat Shell Gate E final supplement
+
+| Behavior | Godot observable semantics | Unity implementation | Verdict | Evidence |
+| --- | --- | --- | --- | --- |
+| Layered scene entrance | Scene elements enter in a readable ordered sequence before interaction | Saved OutOfBattle, Combat and GameOver layers animate with explicit completion and deterministic terminal states | 等价并显式化 | automated timeline `1/1`; 9 reveal PNGs manually passed |
+| Repeated battle return | Re-entering combat must not duplicate persistent services or lose run identity | Three typed Victory cycles retain one Bootstrap/one content entry and distinct room/launch/outcome identities | 等价并显式化 | stability `1/1`; actual Player three-cycle summary |
+| Final build route | Startup and return paths remain reachable in the shipped scene order | Six enabled Scenes build as Windows Development player with Silver attribution | 等价并显式化 | `build-summary.json` |
+| Runtime stability | Repeated route remains interactive and responsive | Player exits unlocked after resize; raw memory grows 412,086 bytes while material and sustained-slope predicates are false | 等价并显式化 | `player-smoke-summary.json`; long profiler review not claimed |
+| Out-of-battle ocean | Godot room-selection scene uses the ocean tile without aspect distortion | Unity shell uses the byte-identical tile with responsive square-pixel UV scaling | 等价 | 3 viewport PNGs; source/import SHA-256 match |
+
+Gate E closes with full EditMode `343/343`, full graphical Direct3D12 PlayMode `100/100`, passing targeted tests, a successful six-Scene build, an actual three-cycle Player smoke and 17 manually reviewed PNGs. Gate B four-yaw evidence remains inherited because that combat boundary was unaffected.

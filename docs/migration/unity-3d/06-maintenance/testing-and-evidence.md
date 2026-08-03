@@ -1,6 +1,6 @@
 # 测试与证据指南
 
-> 状态：Combat Shell Gate A 最终门禁已通过
+> 状态：Combat Shell Gate E 完整门禁已通过
 > Unity：6000.4.10f1
 
 ## 分层门禁
@@ -89,3 +89,28 @@ TimeKey.Editor.VerticalSliceAutomation.BuildDeckBattleFlowGateD
 Scene author/build 入口为 `TimeKey.Editor.CombatShellGateAAutomation.AuthorGateA` 与 `.BuildGateA`。Unity 必须通过 `D:/timekey-unity-731` ASCII junction 启动，避免 Unicode project path 的 Package Manager `path undefined`；该 junction 指向真实 `unity/`，不是副本。
 
 最终整改证据为 `combat-shell-gate-a-remediation/editmode-review-closure-final.xml`、`playmode-review-closure-rendered-final.xml`、build/player 两个 JSON 和 verification summary；raw logs 与失败/超时诊断不提交。PlayMode 视觉回归不得使用 `-nographics`，否则 RenderTexture 用例会产生假失败。Player 以可见窗口和 `-timekeyCombatShellSmoke` 启动，因为隐藏窗口在 `runInBackground=false` 时会暂停 player-loop。要求 exit 0、marker 一次、异常 0；最终刷新结果为 `330/330` 与 `64/64`。
+
+## Combat Shell Gate E
+
+Build 入口是 `TimeKey.Editor.CombatShellGateEAutomation.BuildGateE`，菜单为 `Time Key/Build Combat Shell Gate E`。它验证六 Scene 精确顺序、构建 StandaloneWindows64 Development player、复制 Silver attribution，并写入可执行文件 SHA-256。当前权威 build JSON 是 `combat-shell-gate-e/build-summary.json`。
+
+Player 使用可见窗口启动：
+
+```text
+TimeKey.exe -timekeyCombatShellGateESmoke -logFile <path>
+```
+
+要求进程 exit 0、`TIMEKEY_COMBAT_SHELL_GATE_E_PLAYER_SMOKE_PASS` 恰好一次、三条 PERF 记录且无 FAIL marker。本地最终日志为 `player-smoke-delivery-final-2.log`，不进入检查点；权威结构化结果为 `player-smoke-summary.json`。D3D12 Player 当前选择的有效 recorder 是 `SetPass Calls Count`；JSON 必须同时保存实际 recorder 名称和值，不能把该值称为 draw-call 计数。
+
+定向测试的当前权威 XML：
+
+- `editmode-assets-targeted.xml`：`3/3`。
+- `editmode-build-smoke-compile.xml`：`3/3`。
+- `playmode-layered-targeted.xml`：`7/7`。
+- `playmode-combat-entrance-post-review.xml`：`5/5`，含运行中强制完成竞态。
+- `playmode-stability-post-review.xml`：`1/1`，含内存持续斜率判定。
+- `playmode-visual-final.xml`：`1/1`。
+- `editmode-full-final.xml`：`343/343`。
+- `playmode-full-delivery.xml`：`100/100`，Direct3D12。
+
+`playmode-stability-targeted.xml`、旧 `playmode-stability-final.xml`、`playmode-visual-targeted-2.xml`、`-3.xml`、首次失败的 `playmode-full.xml` 和 99 用例的 `playmode-full-final.xml` 是整改前/中间诊断，不能作为最终结论。动画采集必须保留图形设备；`animation-timeline.json`、9 张 reveal、3 张海洋三视口和 5 张 Player PNG 已逐图复核。Gate B 四 yaw 证据继续继承，因为 Gate E 未改 combat camera/background/board。

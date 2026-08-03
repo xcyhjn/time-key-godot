@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1323184076
+--- !u!1 &1096761091
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1323184078}
-  - component: {fileID: 1323184077}
+  - component: {fileID: 1096761093}
+  - component: {fileID: 1096761092}
   m_Layer: 0
   m_Name: OutOfBattleShellEntry
   m_TagString: Untagged
@@ -136,46 +136,46 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1323184077
+--- !u!114 &1096761092
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1323184076}
+  m_GameObject: {fileID: 1096761091}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81b9d2266992dbc4983f8f51547cdc4b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TimeKey.Composition::TimeKey.Composition.SceneFlow.SceneContentEntry
   sceneId: 3
-  contentRoot: {fileID: 2118193582}
-  contentCamera: {fileID: 2118193580}
-  interactionGroup: {fileID: 2118193579}
+  contentRoot: {fileID: 1153657456}
+  contentCamera: {fileID: 1153657454}
+  interactionGroup: {fileID: 1153657453}
   defaultFocusId: CombatRoom
---- !u!4 &1323184078
+--- !u!4 &1096761093
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1323184076}
+  m_GameObject: {fileID: 1096761091}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2118193581}
+  - {fileID: 1153657455}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &2118193578
+--- !u!1001 &1153657452
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1323184078}
+    m_TransformParent: {fileID: 1096761093}
     m_Modifications:
     - target: {fileID: 954768082197724369, guid: ebc57a70471e03c4f8753b811c990e2a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -230,28 +230,28 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ebc57a70471e03c4f8753b811c990e2a, type: 3}
---- !u!225 &2118193579 stripped
+--- !u!225 &1153657453 stripped
 CanvasGroup:
   m_CorrespondingSourceObject: {fileID: 4826620961891218219, guid: ebc57a70471e03c4f8753b811c990e2a, type: 3}
-  m_PrefabInstance: {fileID: 2118193578}
+  m_PrefabInstance: {fileID: 1153657452}
   m_PrefabAsset: {fileID: 0}
---- !u!20 &2118193580 stripped
+--- !u!20 &1153657454 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 647146153598486197, guid: ebc57a70471e03c4f8753b811c990e2a, type: 3}
-  m_PrefabInstance: {fileID: 2118193578}
+  m_PrefabInstance: {fileID: 1153657452}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &2118193581 stripped
+--- !u!4 &1153657455 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 954768082197724369, guid: ebc57a70471e03c4f8753b811c990e2a, type: 3}
-  m_PrefabInstance: {fileID: 2118193578}
+  m_PrefabInstance: {fileID: 1153657452}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &2118193582 stripped
+--- !u!1 &1153657456 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1690962871447911586, guid: ebc57a70471e03c4f8753b811c990e2a, type: 3}
-  m_PrefabInstance: {fileID: 2118193578}
+  m_PrefabInstance: {fileID: 1153657452}
   m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1323184078}
+  - {fileID: 1096761093}

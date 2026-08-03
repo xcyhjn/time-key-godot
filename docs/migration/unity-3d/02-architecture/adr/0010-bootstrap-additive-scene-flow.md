@@ -1,6 +1,6 @@
 # ADR 0010：Bootstrap 与 additive SceneFlow
 
-> 状态：已接受；Gate A 独立审查整改后刷新
+> 状态：已接受；Combat Shell Gate E 交付后刷新
 > 日期：2026-08-02
 > 取代范围：ADR 0004 中“Combat Scene 自有 EventSystem”的单一所有权约定；其余序列化 Scene/Prefab 原则继续有效。
 
@@ -61,3 +61,5 @@ Bootstrap 的全屏遮罩同时拦截 pointer 与 navigation；窄进程级 `Sce
 ## 验证后果
 
 Gate A 覆盖纯 coordinator phase/failure/idempotency、合法 route/payload、跨战斗 identity、防御性复制、state rollback/commit、Bootstrap 结构与可观察 initialization fault、真实 additive bind failure、最小 additive 往返和提交前/后失败恢复。移除 Combat 自有 EventSystem 后，历史 direct-load PlayMode fixture 由 Bootstrap fixture 或测试专用 EventSystem 替代；不得为旧测试保留生产重复对象。整改终验为 full EditMode `330/330`、Direct3D12 PlayMode `64/64`、Windows build 和 actual Player smoke 全通过。
+
+Gate E 没有扩展 SceneFlow 状态机，而是在既有 `ISceneRevealPresentation` 完成边界内加入保存的多层 reveal。OutOfBattle、Combat、GameOver 的层序由 Presentation 持有；缺层、零时长、disable/destroy 和运行中强制完成都必须停止旧协程并保持终态，SceneFlow 只等待 completion。三轮实际 Player 往返保持单一 Bootstrap、单一 content entry 与 typed identity；最终门禁为 `343/343 + 100/100`、六 Scene Windows build 和实际 Player 三轮 smoke。Wave 03 必须继续复用该边界，不得用完整局外地图重写 Bootstrap 或 typed route。

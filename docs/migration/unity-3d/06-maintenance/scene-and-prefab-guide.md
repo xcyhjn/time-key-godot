@@ -1,6 +1,6 @@
 # Scene 与 Prefab 维护指南
 
-> 状态：Combat Shell Gate A 已验证
+> 状态：Combat Shell Gate E 已验证
 > 入口场景：`unity/Assets/_Project/Scenes/Shell/Bootstrap.unity`
 
 ## 可编辑边界
@@ -58,3 +58,15 @@
 Build 顺序固定为 Bootstrap、GameStart、MainMenu、OutOfBattleShell、CombatVerticalSlice、GameOver。Bootstrap 保存唯一 EventSystem/AudioRoot/TransitionCanvas/SceneFlow；每个内容 Scene 保存恰好一个 `SceneContentEntry`。Combat Scene 的 `VerticalSliceRoot` 默认 inactive，entry 绑定 typed payload 后才启用；不得把 EventSystem 重新加回 Combat。
 
 Gate A 的四个 Shell 内容 Scene 是无视觉壳，Gate C/D 会在同一 entry/content root 结构上补正式 Prefab 和 Presenter。重新 authoring 会覆盖这些壳及 Combat entry，执行后必须重跑 Scene asset tests 和完整 PlayMode。
+
+## Combat Shell Gate E layered reveal
+
+OutOfBattleShell 保存三个 `CanvasGroup`：`BackgroundRevealLayer`、`ContextRevealLayer`、`RoomRevealLayer`，顺序不可交换；默认每层 0.24 秒、间隔 0.09 秒。GameOver 保存 `BackgroundRevealLayer`、`PanelRevealLayer`，默认每层 0.28 秒、间隔 0.12 秒。两者由同一个 `LayeredSceneRevealPresenter` 驱动。
+
+Combat Scene 的 `CombatShellEntrancePresenter` 保存 `Status`、`Timeline`、`DetailPanel`、`EffectFrameHost`、`CardHandHost` 五个 staged group，间隔 0.10 秒。顶部 HUD 与背景仍由原入口 presenter 启动，SceneFlow 只依赖 `ISceneRevealPresentation` completion，不了解具体层级。
+
+局外背景的 `OutOfBattleOceanBackground` 引用 `Resources/Art/Battle/Background/out-bg_sea.png`，每帧只在屏幕尺寸变化时更新 `RawImage.uvRect`。`verticalTileCount=4.5`，水平 tile 数按视口宽高比计算，以保持 256x256 源图的方形像素；不要用 `Image.preserveAspect` 拉伸整张 tile。
+
+不要在运行时重建这些稳定 layer 或用 fixed delay 绕过 completion。修改 Prefab/Scene 后至少重跑 Gate E asset tests、layered reveal tests 和正式动画采集；确认所有 terminal layer 的 alpha 为 1、`interactable=true`、`blocksRaycasts=true`，并覆盖零时长、disable 与 destroy。
+
+最终 Build Settings 顺序仍为 Bootstrap、GameStart、MainMenu、OutOfBattleShell、CombatVerticalSlice、GameOver。修改 Scene 列表或顺序会使 Gate E build summary 与 Player smoke 失效。

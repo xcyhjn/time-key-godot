@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Combat Shell Gate C 已完成；Gate D 可启动
+> 状态：Combat Shell Gate E 已关闭；Wave 03 Prompt 已生成
 > 负责人：主智能体
 > 最后验证日期：2026-08-03
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -96,3 +96,11 @@ GameStart 与 MainMenu 已使用保存的响应式 Prefab。GameStart 复用源�
 `RunStartPayload` 现在显式携带角色身份；局外 launch factory 保留 run/room/correlation/battle/deck/Era/phase/timecoins。Combat composition 在内容启用前消费正式 launch，而首个 authoritative outcome 会关闭 active launch；相同重放幂等，不同或相反重放显式拒绝。Victory 领取奖励后只返回并结算同一房间一次，Defeat 进入 GameOver 后清理 run。
 
 最终 Gate D 门禁为 full EditMode `343/343`、full graphical D3D12 PlayMode `92/92`，以及 18 张三视口局外/GameOver PNG 人工复核；失败、跳过和不确定均为 0。Gate E 接续 Windows build、actual Player smoke、连续三轮、性能与扩展动画；按用户指示不尝试 push。
+
+## Combat Shell Gate E complete
+
+OutOfBattle、Combat 与 GameOver 已接入保存的分层 reveal。自动化时间线验证背景/上下文/房间、状态/时间轴/手牌、背景/面板的顺序和最终可交互状态；缺层、零时长、disable、destroy 与重复播放由定向 `7/7` 覆盖。三轮 Victory 稳定性用例最终 `1/1`，验证唯一 Bootstrap、唯一内容 entry、typed room/launch/outcome identity、Scene 卸载、内存预算和 resize 后输入恢复。
+
+六 Scene Windows Development build 已成功，`227249074` bytes，Silver attribution 存在；实际 Player smoke exit 0，日志为 `PASS=1 / PERF=3 / FAIL=0`。三轮 transition 约 `1674 / 1513 / 1513 ms`，最终输入未锁定；三次内存原始样本总增量 `412086` bytes，material monotonic 与 sustained-slope 均为 false。实际渲染 recorder 为 `SetPass Calls Count`，三轮值均为 18；这些短样本不宣称长期无泄漏或 profiler-grade GPU 结论。
+
+局外关卡选择界面已按用户要求改用原 Godot 海洋 tile，并通过 1280x720、1920x1080、2560x1080 响应式复核。最终 full EditMode `343/343`、full graphical D3D12 PlayMode `100/100`；9 张 reveal、3 张海洋三视口和 5 张 Player 路径图共 17 张均逐图通过。Gate B 的四 yaw 证据因 combat camera/background 边界未变化而继续继承。Gate E 已关闭，正式后继为 `NEXT_STAGE_OVERWORLD_MAP_PROMPT.md`；用户已指示 push 不可用时直接跳过，本阶段不尝试 push。
