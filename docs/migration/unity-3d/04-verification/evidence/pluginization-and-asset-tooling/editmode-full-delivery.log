@@ -1,0 +1,865 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.10f1 (feeafc12a938) revision 16706300'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-bulbel" at "2026-08-03T06:53:48.3210267Z"
+OS: 'Windows 11  (10.0.26200) CoreCountrySpecific' Language: 'zh' Physical Memory: 16101 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-08-03T06:53:48Z
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe
+-batchmode
+-projectPath
+D:\timekey-unity-731
+-runTests
+-testPlatform
+EditMode
+-testResults
+D:\godot\时之钥\时之钥\docs\migration\unity-3d\04-verification\evidence\pluginization-and-asset-tooling\editmode-full-delivery.xml
+-logFile
+D:\godot\时之钥\时之钥\docs\migration\unity-3d\04-verification\evidence\pluginization-and-asset-tooling\editmode-full-delivery.log
+Successfully changed project path to: D:\timekey-unity-731
+D:/timekey-unity-731
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Player connection [21936]  Target information:
+
+Player connection [21936]  * "[IP] 169.254.83.107 [Port] 55504 [Flags] 2 [Guid] 2342207943 [EditorId] 2342207943 [Version] 1048832 [Id] WindowsEditor(7,XCYHJN) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor"
+
+Player connection [21936]  * "[IP] 192.168.1.4 [Port] 55504 [Flags] 2 [Guid] 2342207943 [EditorId] 2342207943 [Version] 1048832 [Id] WindowsEditor(7,XCYHJN) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor"
+
+Player connection [21936] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [21936] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Licensing::Client] Error: HandshakeResponse reported an error:
+	ResponseCode: 505
+	ResponseStatus: Unsupported protocol version '1.18.1'.
+[Licensing::Module] Error: Failed to handshake to channel: "LicenseClient-bulbel"
+[Licensing::IpcConnector] LicenseClient-bulbel channel disconnected successfully.
+[Licensing::IpcConnector] Channel LicenseClient-bulbel-6000.4.10 doesn't exist
+[Licensing::Module] Successfully launched the LicensingClient (PId: 35804)
+[Package Manager] Connected to IPC stream "Upm-23200" after 0.2 seconds.
+[Licensing::Module] Licensing is not yet initialized.
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-bulbel-6000.4.10" at "2026-08-03T06:53:50.426631Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 35804, path: "C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              b7d8c9e1d56d4fb493cda16b01cc9d40
+  Correlation Id:          ac4d6e09d78275eeee8b6e31d4e41ad0
+  External correlation Id: 2157842554888107623
+  Machine Id:              yJrbT3DoWrzBIQlBuBTMLFfdCRE=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-bulbel-6000.4.10" (connect: 0.37s, validation: 0.15s, handshake: 0.01s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-bulbel-6000.4.10-notifications" at "2026-08-03T06:53:50.5834278Z"
+[Licensing::Module] Connected to LicensingClient (PId: 35804, launch time: 0.01, total connection time: 0.53s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: ewogICJzdWJzR3JvdXAiIDogInVuaXR5IGVkaXRvciIsCiAgIm5hbWVzcGFjZSIgOiAidW5pdHlfZWRpdG9yIiwKICAidHlwZSIgOiAiRURJVE9SIiwKICAidGFnIiA6ICJVbml0eVBlcnNvbmFsXXXX
+  Product: Unity Personal Version
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.01
+[Licensing::Module] Licensing Background thread has ended after 2.29s
+[Licensing::Module] Licensing is initialized (took 0.36s).
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Artifact Garbage Collection - Removed 1 unused hashed content files
+Initialize engine version: 6000.4.10f1 (feeafc12a938)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path D:/timekey-unity-731/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+d3d12: failed to query info queue interface (0x80004002).
+Direct3D:
+    Version:         Direct3D 12 [level 12.2]
+    Renderer:        NVIDIA GeForce RTX 5060 Laptop GPU (ID=0x2d19)
+    Vendor:          NVIDIA
+    VRAM:            7899 MB
+    App VRAM Budget: 7131 MB
+    Driver:          32.0.16.1047
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56200
+CodeReloadManager initialized
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Registered in 0.003556 seconds.
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+Package Manager log level set to [2]
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.321 seconds
+Domain Reload Profiling: 677ms
+	BeginReloadAssembly (101ms)
+		CreateAndSetChildDomain (10ms)
+	RebuildCommonClasses (28ms)
+	RebuildNativeTypeToScriptingClass (10ms)
+	initialDomainReloadingComplete (46ms)
+	LoadAllAssembliesAndSetupDomain (170ms)
+		LoadAssemblies (90ms)
+		AnalyzeDomain (162ms)
+			TypeCache.Refresh (161ms)
+				TypeCache.ScanAssembly (149ms)
+	FinalizeReload (322ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (37ms)
+			BeforeProcessingInitializeOnLoad (62ms)
+			ProcessInitializeOnLoadAttributes (84ms)
+			ProcessInitializeOnLoadMethodAttributes (91ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 50 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.nuget.newtonsoft-json@3.2.2 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64)
+    com.unity.searcher@4.9.4 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.searcher@d45a78918735)
+    com.unity.burst@1.8.29 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.burst@6bb9aca3ef38)
+    com.unity.mathematics@1.3.3 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.mathematics@19a9377c4ffa)
+    com.unity.nuget.mono-cecil@1.11.6 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.4.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.test-framework.performance@aa81a99c4a75)
+  Built-in packages:
+    com.unity.render-pipelines.universal@17.4.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.render-pipelines.universal@cdf909593d80)
+    com.unity.test-framework@1.6.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.test-framework@996f223345ba)
+    com.unity.ugui@2.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.ugui@1f2d1ab0d950)
+    com.unity.modules.accessibility@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.accessibility)
+    com.unity.modules.adaptiveperformance@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.adaptiveperformance)
+    com.unity.modules.ai@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.screencapture@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.vr@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.vr)
+    com.unity.modules.wind@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.xr)
+    com.unity.modules.subsystems@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.ext.nunit@2.0.5 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.ext.nunit@d8c07649098d)
+    com.unity.render-pipelines.core@17.4.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.render-pipelines.core@5aab14b68499)
+    com.unity.shadergraph@17.4.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.shadergraph@93ee0fdc6ad8)
+    com.unity.render-pipelines.universal-config@17.4.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.render-pipelines.universal-config@0db4263b9e6b)
+    com.unity.collections@6.4.0 (location: D:\timekey-unity-731\Library\PackageCache\com.unity.collections@5b6ebd78ccc0)
+[Subsystems] No new subsystems found in resolved package list.
+[Package Manager] Done registering packages in 0.01 seconds
+Starting: C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: D:/timekey-unity-731
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 0s246ms
+[563/714    0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+*** Tundra build success (0.20 seconds), 1 items updated, 714 evaluated
+AssetDatabase: script compilation time: 0.624089s
+Begin MonoManager ReloadAssembly
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-Editor.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp.dll at Library/ScriptAssemblies/Assembly-CSharp.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  2.076 seconds
+Domain Reload Profiling: 2757ms
+	BeginReloadAssembly (292ms)
+		DisableScriptedObjects (52ms)
+		CreateAndSetChildDomain (136ms)
+	RebuildCommonClasses (28ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (65ms)
+	LoadAllAssembliesAndSetupDomain (287ms)
+		LoadAssemblies (258ms)
+		AnalyzeDomain (98ms)
+			TypeCache.Refresh (67ms)
+				TypeCache.ScanAssembly (59ms)
+			BuildScriptInfoCaches (23ms)
+			ResolveRequiredComponents (7ms)
+	FinalizeReload (2076ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (20ms)
+			BeforeProcessingInitializeOnLoad (116ms)
+			ProcessInitializeOnLoadAttributes (1520ms)
+			ProcessInitializeOnLoadMethodAttributes (65ms)
+			AfterProcessingInitializeOnLoad (5ms)
+		AwakeInstancesAfterBackupRestoration (77ms)
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=f15b33c93c25313409ccbc92decc7a82): Total: 3.765 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=2371 ms
+		Asset DB Callback time: managed=41 ms, native=15 ms
+		Scripting: domain reloads=1, domain reload time=684 ms, compile time=625 ms, other=26 ms
+		Project Asset Count: scripts=917, non-scripts=1627
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 17.142ms
+	ApplyChangesToAssetFolders: 0.548ms
+	Scan: 112.159ms
+	CategorizeScriptCompilationAssets: 24.467ms
+	ProcessAssetsWithTransientArtifactChanges: 29.257ms
+	CategorizeAssets: 30.096ms
+	CompileScripts: 625.455ms
+	ImportOutOfDateAssets: 2079.583ms (2078.290ms without children)
+		UnloadImportedAssets: 0.596ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.286ms
+		OnDemandSchedulerStart: 0.381ms
+	PostProcessAllAssets: 41.337ms
+		MonoPostProcessAllAssets: 41.284ms
+			SyncVS.PostprocessSyncProject 21.853ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 7.792ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 1.766ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 1.577ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.556ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.273ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.199ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.152ms
+	UnloadStreamsBegin: 1.704ms
+	PersistCurrentRevisions: 0.064ms
+	GenerateScriptTypeHashes: 2.341ms
+	GenerateScriptTypeSerializationHashes: 3.935ms
+	Untracked: 798.608ms
+
+Application.AssetDatabase Initial Refresh End
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
+Scanning for USB devices : 3.554ms
+Initializing Unity extensions:
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-Time Key Unity Slice
+Unloading 27 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 3455 unused Assets / (5.2 MB). Loaded Objects now: 4330.
+Memory consumption went from 172.9 MB to 167.6 MB.
+Total: 9.365400 ms (FindLiveObjects: 0.241600 ms CreateObjectMapping: 0.111900 ms MarkObjects: 5.455700 ms  DeleteObjects: 3.284800 ms)
+
+Unity is running with Administrator privileges, which is not supported. Unity executes scripts and binary libraries in your project that may originate from third party sources and potentially be harmful to your computer. Unity may also execute scripts and binary libraries that are still under development and not yet fully tested. Running Unity with Administrator privileges may lead to catastrophic consequences, including but not limited to accidental data loss, change of global system settings or even bricking your device.
+[Project] Loading completed in 8.346 seconds
+	Project init time: 				6.464 seconds
+		Template init time: 		0.000 seconds
+		Package Manager init time: 		0.584 seconds
+		Asset Database init time: 		0.337 seconds
+		Global illumination init time: 	0.008 seconds
+		Assemblies load time: 			0.778 seconds
+		Unity extensions init time: 	0.014 seconds
+		Asset Database refresh time: 	3.765 seconds
+	Scene opening time: 			0.220 seconds
+##utp:{"type":"ProjectInfo","version":2,"phase":"Immediate","time":1785740036660,"processId":23200,"projectLoad":8.3457079,"projectInit":6.4641291,"templateInit":0.0,"packageManagerInit":0.5843812,"assetDatabaseInit":0.3368983,"globalIlluminationInit":0.0077807,"assembliesLoad":0.7784568,"unityExtensionsInit":0.0135907,"assetDatabaseRefresh":3.7653099,"sceneOpening":0.219898}
+##utp:{"type":"EditorInfo","version":2,"phase":"Immediate","time":1785740036662,"processId":23200,"editorVersion":"6000.4.10f1 (feeafc12a938)","branch":"6000.4/staging","buildType":"Release","platform":"Windows"}
+[Package Manager] The "path" argument must be of type string. Received undefined
+[Package Manager] The "path" argument must be of type string. Received undefined
+Running tests for ExecutionSettings with details:
+targetPlatform =
+playerHeartbeatTimeout = 600
+filters[0] =
+   Filter with settings:
+   testMode = EditMode
+   targetPlatform =
+   testNames = null
+   groupNames = null
+   categoryNames = null
+   assemblyNames = null
+ignoreTests = {}
+featureFlags = null
+
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:InitializeAndExecuteRun (string[]) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/CommandLineTest/Executer.cs:53)
+UnityEditor.TestTools.TestRunner.CommandLineTest.TestStarter:InitializeAndExecuteRun () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/CommandLineTest/TestStarter.cs:64)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/CommandLineTest/Executer.cs Line: 53)
+
+Start Indexing on Editor startup
+[Indexing] Starting Initial Indexing for Assets
+[UnityConnectServicesConfig] config is NOT valid, switching to default
+Created GICache directory at C:/Users/bulbel/AppData/LocalLow/Unity/Caches/GiCache. Took: 0.010s, timestamps: [8.360 - 8.370]
+Starting new worker id: 0 with log in D:/timekey-unity-731/Logs/AssetImportWorker0.log
+Starting new worker id: 1 with log in D:/timekey-unity-731/Logs/AssetImportWorker1.log
+Starting new worker id: 2 with log in D:/timekey-unity-731/Logs/AssetImportWorker2.log
+Starting new worker id: 3 with log in D:/timekey-unity-731/Logs/AssetImportWorker3.log
+Starting new worker id: 4 with log in D:/timekey-unity-731/Logs/AssetImportWorker4.log
+Starting new worker id: 5 with log in D:/timekey-unity-731/Logs/AssetImportWorker5.log
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 0 unused Assets / (55.1 KB). Loaded Objects now: 4355.
+Memory consumption went from 162.5 MB to 162.4 MB.
+Total: 7.222800 ms (FindLiveObjects: 0.233300 ms CreateObjectMapping: 0.102400 ms MarkObjects: 6.874000 ms  DeleteObjects: 0.011100 ms)
+
+Executing IPrebuildSetup for: Unity.PerformanceTesting.Editor.TestRunBuilder.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.BuildActionTaskBase`1/<ExecuteMethods>d__8<UnityEngine.TestTools.IPrebuildSetup>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs:48)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.BuildActionTaskBase`1/<Execute>d__7<UnityEngine.TestTools.IPrebuildSetup>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs:34)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteStep () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:173)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteCallback () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:108)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs Line: 48)
+
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+Unloading 27 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            22.920 ms
+	Integration:            159.640 ms
+	Integration of assets:  0.025 ms
+	Thread Wait Time:       0.289 ms
+	Total Operation Time:   182.874 ms
+Unloading 17 unused Assets / (5.8 KB). Loaded Objects now: 5402.
+Memory consumption went from 166.4 MB to 166.4 MB.
+Total: 6.918800 ms (FindLiveObjects: 0.278800 ms CreateObjectMapping: 0.121100 ms MarkObjects: 6.438800 ms  DeleteObjects: 0.078600 ms)
+
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+Unloading 5 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            8.880 ms
+	Integration:            138.609 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.019 ms
+	Total Operation Time:   147.509 ms
+Unloading 1 unused Assets / (0.5 KB). Loaded Objects now: 5404.
+Memory consumption went from 166.0 MB to 166.0 MB.
+Total: 6.550900 ms (FindLiveObjects: 0.220100 ms CreateObjectMapping: 0.094100 ms MarkObjects: 6.199700 ms  DeleteObjects: 0.036100 ms)
+
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            6.178 ms
+	Integration:            142.785 ms
+	Integration of assets:  0.005 ms
+	Thread Wait Time:       0.052 ms
+	Total Operation Time:   149.021 ms
+Unloading 1 unused Assets / (0.5 KB). Loaded Objects now: 5404.
+Memory consumption went from 165.6 MB to 165.6 MB.
+Total: 7.368700 ms (FindLiveObjects: 0.605800 ms CreateObjectMapping: 0.075300 ms MarkObjects: 6.659200 ms  DeleteObjects: 0.027300 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/GameStart.unity'
+Unloading 31 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameStart.unity'
+	Deserialize:            1.532 ms
+	Integration:            159.788 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.015 ms
+	Total Operation Time:   161.336 ms
+Unloading 673 unused Assets / (5.7 MB). Loaded Objects now: 4422.
+Memory consumption went from 173.4 MB to 167.7 MB.
+Total: 8.534200 ms (FindLiveObjects: 0.263600 ms CreateObjectMapping: 0.105200 ms MarkObjects: 7.133800 ms  DeleteObjects: 1.030300 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/MainMenu.unity'
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/MainMenu.unity'
+	Deserialize:            1.501 ms
+	Integration:            141.467 ms
+	Integration of assets:  0.003 ms
+	Thread Wait Time:       0.011 ms
+	Total Operation Time:   142.982 ms
+Unloading 27 unused Assets / (2.4 KB). Loaded Objects now: 4965.
+Memory consumption went from 173.3 MB to 173.3 MB.
+Total: 6.673100 ms (FindLiveObjects: 0.238300 ms CreateObjectMapping: 0.102500 ms MarkObjects: 6.254600 ms  DeleteObjects: 0.076300 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/Bootstrap.unity'
+Unloading 19 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/Bootstrap.unity'
+	Deserialize:            5.314 ms
+	Integration:            169.577 ms
+	Integration of assets:  0.029 ms
+	Thread Wait Time:       0.016 ms
+	Total Operation Time:   174.936 ms
+Unloading 306 unused Assets / (0.9 MB). Loaded Objects now: 4387.
+Memory consumption went from 171.7 MB to 170.8 MB.
+Total: 10.415600 ms (FindLiveObjects: 0.541300 ms CreateObjectMapping: 0.172000 ms MarkObjects: 9.347700 ms  DeleteObjects: 0.352800 ms)
+
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+Unloading 18 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            13.369 ms
+	Integration:            159.851 ms
+	Integration of assets:  5.299 ms
+	Thread Wait Time:       0.227 ms
+	Total Operation Time:   178.746 ms
+Unloading 5 unused Assets / (10.7 KB). Loaded Objects now: 5396.
+Memory consumption went from 168.1 MB to 168.1 MB.
+Total: 6.350000 ms (FindLiveObjects: 0.261800 ms CreateObjectMapping: 0.070900 ms MarkObjects: 5.937600 ms  DeleteObjects: 0.078300 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/OutOfBattleShell.unity'
+Unloading 23 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/OutOfBattleShell.unity'
+	Deserialize:            1.137 ms
+	Integration:            140.093 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.021 ms
+	Total Operation Time:   141.254 ms
+Unloading 289 unused Assets / (58.7 KB). Loaded Objects now: 4936.
+Memory consumption went from 167.6 MB to 167.5 MB.
+Total: 9.860500 ms (FindLiveObjects: 0.311100 ms CreateObjectMapping: 0.118100 ms MarkObjects: 8.848600 ms  DeleteObjects: 0.581100 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+	Deserialize:            0.798 ms
+	Integration:            146.951 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.016 ms
+	Total Operation Time:   147.767 ms
+Unloading 342 unused Assets / (46.2 KB). Loaded Objects now: 4465.
+Memory consumption went from 166.9 MB to 166.9 MB.
+Total: 8.264900 ms (FindLiveObjects: 0.493300 ms CreateObjectMapping: 0.059300 ms MarkObjects: 7.460900 ms  DeleteObjects: 0.250400 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/Bootstrap.unity'
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/Bootstrap.unity'
+	Deserialize:            1.169 ms
+	Integration:            129.128 ms
+	Integration of assets:  0.017 ms
+	Thread Wait Time:       0.014 ms
+	Total Operation Time:   130.328 ms
+Unloading 54 unused Assets / (3.6 KB). Loaded Objects now: 4388.
+Memory consumption went from 166.5 MB to 166.5 MB.
+Total: 6.128000 ms (FindLiveObjects: 0.235100 ms CreateObjectMapping: 0.079600 ms MarkObjects: 5.735000 ms  DeleteObjects: 0.077500 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/GameStart.unity'
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameStart.unity'
+	Deserialize:            0.584 ms
+	Integration:            120.657 ms
+	Integration of assets:  0.004 ms
+	Thread Wait Time:       0.039 ms
+	Total Operation Time:   121.284 ms
+Unloading 2 unused Assets / (1.5 KB). Loaded Objects now: 4423.
+Memory consumption went from 167.1 MB to 167.1 MB.
+Total: 6.118700 ms (FindLiveObjects: 0.170700 ms CreateObjectMapping: 0.053200 ms MarkObjects: 5.863400 ms  DeleteObjects: 0.030400 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/MainMenu.unity'
+Unloading 3 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/MainMenu.unity'
+	Deserialize:            0.613 ms
+	Integration:            125.377 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.008 ms
+	Total Operation Time:   126.000 ms
+Unloading 27 unused Assets / (2.4 KB). Loaded Objects now: 4966.
+Memory consumption went from 173.6 MB to 173.6 MB.
+Total: 5.971000 ms (FindLiveObjects: 0.199800 ms CreateObjectMapping: 0.068400 ms MarkObjects: 5.635100 ms  DeleteObjects: 0.066700 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/OutOfBattleShell.unity'
+Unloading 18 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/OutOfBattleShell.unity'
+	Deserialize:            0.448 ms
+	Integration:            121.516 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.048 ms
+	Total Operation Time:   122.014 ms
+Unloading 306 unused Assets / (21.0 KB). Loaded Objects now: 4839.
+Memory consumption went from 173.0 MB to 173.0 MB.
+Total: 5.897500 ms (FindLiveObjects: 0.191000 ms CreateObjectMapping: 0.061300 ms MarkObjects: 5.457500 ms  DeleteObjects: 0.186900 ms)
+
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+Unloading 28 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            8.040 ms
+	Integration:            128.990 ms
+	Integration of assets:  3.459 ms
+	Thread Wait Time:       0.039 ms
+	Total Operation Time:   140.528 ms
+Unloading 248 unused Assets / (29.7 KB). Loaded Objects now: 5396.
+Memory consumption went from 168.6 MB to 168.5 MB.
+Total: 6.191200 ms (FindLiveObjects: 0.214800 ms CreateObjectMapping: 0.083600 ms MarkObjects: 5.740600 ms  DeleteObjects: 0.151600 ms)
+
+Opening scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+Unloading 11 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+	Deserialize:            0.390 ms
+	Integration:            124.780 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.103 ms
+	Total Operation Time:   125.275 ms
+Unloading 331 unused Assets / (56.5 KB). Loaded Objects now: 4465.
+Memory consumption went from 167.8 MB to 167.7 MB.
+Total: 6.173500 ms (FindLiveObjects: 0.182600 ms CreateObjectMapping: 0.066300 ms MarkObjects: 5.585500 ms  DeleteObjects: 0.338600 ms)
+
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+Unloading 21 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            7.307 ms
+	Integration:            125.200 ms
+	Integration of assets:  3.675 ms
+	Thread Wait Time:       0.036 ms
+	Total Operation Time:   136.218 ms
+Unloading 57 unused Assets / (8.8 KB). Loaded Objects now: 5396.
+Memory consumption went from 168.9 MB to 168.9 MB.
+Total: 5.944600 ms (FindLiveObjects: 0.204100 ms CreateObjectMapping: 0.060600 ms MarkObjects: 5.561400 ms  DeleteObjects: 0.117900 ms)
+
+Unloading the last loaded scene Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity(build index: 4), is not supported. Please use SceneManager.LoadScene()/EditorSceneManager.OpenScene() to switch to another scene.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEditor.SceneManagement.EditorSceneManager:CloseScene (UnityEngine.SceneManagement.Scene,bool)
+TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests:DuplicateTimelineCoordinateAndInvalidOccupantMapping_ReturnDiagnostics () (at Assets/_Project/Tests/EditMode/AssetTooling/SceneContractValidatorTests.cs:192)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+NUnit.Framework.Internal.Reflect:InvokeMethod (System.Reflection.MethodInfo,object,object[])
+NUnit.Framework.Internal.MethodWrapper:Invoke (object,object[])
+NUnit.Framework.Internal.Commands.TestMethodCommand:RunNonAsyncTestMethod (NUnit.Framework.Internal.ITestExecutionContext)
+NUnit.Framework.Internal.Commands.TestMethodCommand:RunTestMethod (NUnit.Framework.Internal.ITestExecutionContext)
+NUnit.Framework.Internal.Commands.TestMethodCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext)
+UnityEngine.TestTools.UnityTestMethodCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/UnityTestMethodCommand.cs:19)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand/<>c__DisplayClass2_0:<Execute>b__0 () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:24)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand:CaptureException (NUnit.Framework.Internal.TestResult,System.Action) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:72)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand:ExecuteAndCheckLog (UnityEngine.TestTools.Logging.LogScope,NUnit.Framework.Internal.TestResult,System.Action) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:83)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:24)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand/<ExecuteEnumerable>d__3:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:35)
+UnityEngine.TestTools.BeforeAfterTestCommandBase`1/<ExecuteEnumerable>d__16<NUnit.Framework.ITestAction>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/BeforeAfterTestCommandBase.cs:212)
+UnityEngine.TestTools.ImmediateEnumerableCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/ImmediateEnumerableCommand.cs:18)
+UnityEngine.TestTools.BeforeAfterTestCommandBase`1/<ExecuteEnumerable>d__16<System.Reflection.MethodInfo>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/BeforeAfterTestCommandBase.cs:219)
+UnityEngine.TestTools.BeforeAfterTestCommandBase`1/<ExecuteEnumerable>d__16<System.Reflection.MethodInfo>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/BeforeAfterTestCommandBase.cs:212)
+UnityEngine.TestTools.BeforeAfterTestCommandBase`1/<ExecuteEnumerable>d__16<UnityEngine.TestTools.IOuterUnityTestAction>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/BeforeAfterTestCommandBase.cs:212)
+UnityEngine.TestTools.RetryCommand/<ExecuteEnumerable>d__2:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/RetryCommand.cs:37)
+UnityEngine.TestTools.RepeatCommand/<ExecuteEnumerable>d__2:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/RepeatCommand.cs:36)
+UnityEngine.TestTools.IgnoreTestCommand/<ExecuteEnumerable>d__3:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/IgnoreTestCommand.cs:42)
+UnityEngine.TestTools.StrictCheckCommand/<ExecuteEnumerable>d__2:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/StrictCheckCommand.cs:29)
+UnityEngine.TestRunner.NUnitExtensions.Runner.DefaultTestWorkItem/<PerformWork>d__2:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/DefaultTestWorkItem.cs:50)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEditor.TestTools.TestRunner.EditModeRunner:MoveNextAndUpdateYieldObject () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRunner/EditModeRunner.cs:167)
+UnityEditor.TestTools.TestRunner.EditModeRunner:TestConsumer (UnityEditor.TestTools.TestRunner.TestRunnerStateSerializer) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRunner/EditModeRunner.cs:200)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.EditModeRunTask/<Execute>d__1:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/Tasks/EditModeRunTask.cs:48)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteStep () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:173)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteCallback () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:108)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+[./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRunner/EditModeRunner.cs line 167]
+
+Unloading 11 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+	Deserialize:            0.423 ms
+	Integration:            128.070 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.189 ms
+	Total Operation Time:   128.684 ms
+Unloading 332 unused Assets / (326.6 KB). Loaded Objects now: 4465.
+Memory consumption went from 168.1 MB to 167.7 MB.
+Total: 5.995600 ms (FindLiveObjects: 0.187600 ms CreateObjectMapping: 0.059900 ms MarkObjects: 5.368000 ms  DeleteObjects: 0.379500 ms)
+
+Asset Pipeline Refresh (id=c37b48a51ceb9e34a9df76991eadf50c): Total: 0.027 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity additively'
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            7.733 ms
+	Integration:            10.156 ms
+	Integration of assets:  3.648 ms
+	Thread Wait Time:       0.020 ms
+	Total Operation Time:   21.556 ms
+Unloading 29 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+	Deserialize:            0.484 ms
+	Integration:            117.534 ms
+	Integration of assets:  0.001 ms
+	Thread Wait Time:       0.011 ms
+	Total Operation Time:   118.030 ms
+Unloading 333 unused Assets / (265.1 KB). Loaded Objects now: 4470.
+Memory consumption went from 206.3 MB to 206.0 MB.
+Total: 6.587600 ms (FindLiveObjects: 0.179200 ms CreateObjectMapping: 0.060800 ms MarkObjects: 5.982800 ms  DeleteObjects: 0.363900 ms)
+
+Asset Pipeline Refresh (id=5926c1475cae6ff4f8259d383f0f927a): Total: 0.002 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/__TimeKeySceneContractValidatorTests__ using Guid(50ce34c25a94579469bdc6473d8565eb) (DefaultImporter) -> (Import Result ID: '5f459330f6a199492c64ed44fc1b20c5') in 0.0084145 seconds [static dependencies only]. Details - ImportResultOutputID=c6f7f8df7771d0489c1b67094eb08ff3 DependenciesID=2c60977271ec9aa5c39d1a57f257399d StaticDependenciesID=fb462c3fe47fc7e69cfd8fc18539f38a
+Asset Pipeline Refresh (id=81d0f2fbd9f71e8449d8a6e9248b5664): Total: 0.110 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 56 unused Assets / (4.1 MB). Loaded Objects now: 4355.
+Memory consumption went from 210.5 MB to 206.4 MB.
+Total: 8.013300 ms (FindLiveObjects: 0.150700 ms CreateObjectMapping: 0.059000 ms MarkObjects: 5.674400 ms  DeleteObjects: 2.128200 ms)
+
+Start importing Assets/__TimeKeySceneContractValidatorTests__/MissingRoot.unity using Guid(4debef1e904cfef499f410f29f482c62) (DefaultImporter) -> (Import Result ID: 'dbe31dcfdcd494f504c326e6a021ade0') in 0.0088065 seconds [static dependencies only]. Details - ImportResultOutputID=02ae358e2e95dd0b39e0ddbcf6c247e0 DependenciesID=5490d693f3e77e3ee327ddc8f2dd955e StaticDependenciesID=193b242673e88371314d79ecef7f16cd
+Asset Pipeline Refresh (id=3fdd55d1b4862e547be5a546212357ff): Total: 0.033 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Unloading 25 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+	Deserialize:            0.438 ms
+	Integration:            120.825 ms
+	Integration of assets:  0.001 ms
+	Thread Wait Time:       0.014 ms
+	Total Operation Time:   121.278 ms
+Unloading 148 unused Assets / (58.4 KB). Loaded Objects now: 4474.
+Memory consumption went from 216.4 MB to 216.3 MB.
+Total: 6.431200 ms (FindLiveObjects: 0.182000 ms CreateObjectMapping: 0.056500 ms MarkObjects: 5.995900 ms  DeleteObjects: 0.196100 ms)
+
+Asset Pipeline Refresh (id=5b0b83c93a5077e4b89b520daf814033): Total: 0.025 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity additively'
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            7.501 ms
+	Integration:            10.069 ms
+	Integration of assets:  3.346 ms
+	Thread Wait Time:       0.020 ms
+	Total Operation Time:   20.936 ms
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity additively'
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            5.174 ms
+	Integration:            6.191 ms
+	Integration of assets:  0.004 ms
+	Thread Wait Time:       0.043 ms
+	Total Operation Time:   11.412 ms
+Unloading 28 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+	Deserialize:            0.492 ms
+	Integration:            117.204 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.015 ms
+	Total Operation Time:   117.713 ms
+Unloading 333 unused Assets / (0.8 MB). Loaded Objects now: 4474.
+Memory consumption went from 210.8 MB to 210.0 MB.
+Total: 7.678600 ms (FindLiveObjects: 0.228900 ms CreateObjectMapping: 0.071600 ms MarkObjects: 6.981200 ms  DeleteObjects: 0.396000 ms)
+
+Asset Pipeline Refresh (id=ac020f501ff196944b3c162c6c210378): Total: 0.003 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity additively'
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            7.808 ms
+	Integration:            9.936 ms
+	Integration of assets:  3.015 ms
+	Thread Wait Time:       0.018 ms
+	Total Operation Time:   20.778 ms
+Unloading 28 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+	Deserialize:            0.424 ms
+	Integration:            115.386 ms
+	Integration of assets:  0.001 ms
+	Thread Wait Time:       0.010 ms
+	Total Operation Time:   115.822 ms
+Unloading 333 unused Assets / (0.5 MB). Loaded Objects now: 4474.
+Memory consumption went from 210.5 MB to 210.0 MB.
+Total: 6.297500 ms (FindLiveObjects: 0.201300 ms CreateObjectMapping: 0.059900 ms MarkObjects: 5.714600 ms  DeleteObjects: 0.321000 ms)
+
+Asset Pipeline Refresh (id=4d410dc52a3a09b4f890fbb607cb6711): Total: 0.003 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Opening scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+Unloading 17 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity'
+	Deserialize:            7.667 ms
+	Integration:            138.429 ms
+	Integration of assets:  4.043 ms
+	Thread Wait Time:       0.040 ms
+	Total Operation Time:   150.179 ms
+Unloading 57 unused Assets / (8.8 KB). Loaded Objects now: 5405.
+Memory consumption went from 211.8 MB to 211.8 MB.
+Total: 6.665300 ms (FindLiveObjects: 0.238300 ms CreateObjectMapping: 0.079000 ms MarkObjects: 6.257200 ms  DeleteObjects: 0.090000 ms)
+
+Unloading the last loaded scene Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity(build index: 4), is not supported. Please use SceneManager.LoadScene()/EditorSceneManager.OpenScene() to switch to another scene.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEditor.SceneManagement.EditorSceneManager:CloseScene (UnityEngine.SceneManagement.Scene,bool)
+TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests:WrongNonNullSceneReference_ReturnsExactPropertyWithoutSavingScene () (at Assets/_Project/Tests/EditMode/AssetTooling/SceneContractValidatorTests.cs:132)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+NUnit.Framework.Internal.Reflect:InvokeMethod (System.Reflection.MethodInfo,object,object[])
+NUnit.Framework.Internal.MethodWrapper:Invoke (object,object[])
+NUnit.Framework.Internal.Commands.TestMethodCommand:RunNonAsyncTestMethod (NUnit.Framework.Internal.ITestExecutionContext)
+NUnit.Framework.Internal.Commands.TestMethodCommand:RunTestMethod (NUnit.Framework.Internal.ITestExecutionContext)
+NUnit.Framework.Internal.Commands.TestMethodCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext)
+UnityEngine.TestTools.UnityTestMethodCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/UnityTestMethodCommand.cs:19)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand/<>c__DisplayClass2_0:<Execute>b__0 () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:24)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand:CaptureException (NUnit.Framework.Internal.TestResult,System.Action) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:72)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand:ExecuteAndCheckLog (UnityEngine.TestTools.Logging.LogScope,NUnit.Framework.Internal.TestResult,System.Action) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:83)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:24)
+UnityEngine.TestRunner.NUnitExtensions.Runner.UnityLogCheckDelegatingCommand/<ExecuteEnumerable>d__3:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/UnityLogCheckDelegatingCommand.cs:35)
+UnityEngine.TestTools.BeforeAfterTestCommandBase`1/<ExecuteEnumerable>d__16<NUnit.Framework.ITestAction>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/BeforeAfterTestCommandBase.cs:212)
+UnityEngine.TestTools.ImmediateEnumerableCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/ImmediateEnumerableCommand.cs:18)
+UnityEngine.TestTools.BeforeAfterTestCommandBase`1/<ExecuteEnumerable>d__16<System.Reflection.MethodInfo>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/BeforeAfterTestCommandBase.cs:219)
+UnityEngine.TestTools.BeforeAfterTestCommandBase`1/<ExecuteEnumerable>d__16<System.Reflection.MethodInfo>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/BeforeAfterTestCommandBase.cs:212)
+UnityEngine.TestTools.BeforeAfterTestCommandBase`1/<ExecuteEnumerable>d__16<UnityEngine.TestTools.IOuterUnityTestAction>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/BeforeAfterTestCommandBase.cs:212)
+UnityEngine.TestTools.RetryCommand/<ExecuteEnumerable>d__2:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/RetryCommand.cs:37)
+UnityEngine.TestTools.RepeatCommand/<ExecuteEnumerable>d__2:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/RepeatCommand.cs:36)
+UnityEngine.TestTools.IgnoreTestCommand/<ExecuteEnumerable>d__3:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/IgnoreTestCommand.cs:42)
+UnityEngine.TestTools.StrictCheckCommand/<ExecuteEnumerable>d__2:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Commands/StrictCheckCommand.cs:29)
+UnityEngine.TestRunner.NUnitExtensions.Runner.DefaultTestWorkItem/<PerformWork>d__2:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/DefaultTestWorkItem.cs:50)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<RunChildren>d__17:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:207)
+UnityEngine.TestRunner.NUnitExtensions.Runner.CompositeWorkItem/<PerformWork>d__13:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEngine.TestRunner/NUnitExtensions/Runner/CompositeWorkItem.cs:82)
+UnityEditor.TestTools.TestRunner.EditModeRunner:MoveNextAndUpdateYieldObject () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRunner/EditModeRunner.cs:167)
+UnityEditor.TestTools.TestRunner.EditModeRunner:TestConsumer (UnityEditor.TestTools.TestRunner.TestRunnerStateSerializer) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRunner/EditModeRunner.cs:200)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.EditModeRunTask/<Execute>d__1:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/Tasks/EditModeRunTask.cs:48)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteStep () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:173)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteCallback () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:108)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+[./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRunner/EditModeRunner.cs line 167]
+
+Unloading 11 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/_Project/Scenes/Shell/GameOver.unity'
+	Deserialize:            0.486 ms
+	Integration:            144.418 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.011 ms
+	Total Operation Time:   144.917 ms
+Unloading 332 unused Assets / (229.0 KB). Loaded Objects now: 4474.
+Memory consumption went from 210.8 MB to 210.6 MB.
+Total: 8.815000 ms (FindLiveObjects: 0.230100 ms CreateObjectMapping: 0.068200 ms MarkObjects: 7.991300 ms  DeleteObjects: 0.524100 ms)
+
+Asset Pipeline Refresh (id=e617645e9e0b6ce4a862124c9b71883a): Total: 0.003 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+Saving results to: D:\godot\时之钥\时之钥\docs\migration\unity-3d\04-verification\evidence\pluginization-and-asset-tooling\editmode-full-delivery.xml
+Executing IPostBuildCleanup for: Unity.PerformanceTesting.Editor.TestRunBuilder.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.BuildActionTaskBase`1/<ExecuteMethods>d__8<UnityEngine.TestTools.IPostBuildCleanup>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs:48)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.BuildActionTaskBase`1/<Execute>d__7<UnityEngine.TestTools.IPostBuildCleanup>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs:34)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteStep () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:173)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteCallback () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:108)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs Line: 48)
+
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 64 unused Assets / (3.6 MB). Loaded Objects now: 4361.
+Memory consumption went from 209.8 MB to 206.2 MB.
+Total: 10.114100 ms (FindLiveObjects: 0.267400 ms CreateObjectMapping: 0.072300 ms MarkObjects: 8.960100 ms  DeleteObjects: 0.813400 ms)
+
+DisplayProgressbar: Undo
+Test run completed. Exiting with code 0 (Ok). Run completed.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:ExitApplication (UnityEditor.TestTools.TestRunner.CommandLineTest.Executer/ReturnCodes,string) (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/CommandLineTest/Executer.cs:81)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:ExitIfRunIsCompleted () (at ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/CommandLineTest/Executer.cs:74)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@996f223345ba/UnityEditor.TestRunner/CommandLineTest/Executer.cs Line: 81)
+
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-bulbel-6000.4.10-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-bulbel-6000.4.10 channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+Checking for leaked weakptr:
+  Found no leaked weakptrs.
+[Package Manager] Server process was shutdown
+##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1785740044101,"processId":23200,"allocatedMemory":16980599,"memoryLabels":[{"Default":3983437},{"Permanent":15276},{"NewDelete":65795},{"Thread":4237512},{"Manager":37645},{"VertexData":8},{"Geometry":816},{"Texture":24},{"Shader":848547},{"Material":24},{"GfxDevice":57360},{"Animation":392},{"Audio":3008},{"FreeType":8},{"FontEngine":736},{"Physics":2090},{"Physics2D":16},{"Serialization":952},{"Input":9880},{"JobScheduler":33024},{"TextLib":216},{"Mono":32},{"MonoCode":64},{"ScriptingNativeRuntime":155052},{"BaseObject":1620368},{"Resource":1184},{"Renderer":3008},{"Transform":4685},{"File":30330},{"WebCam":616},{"Culling":32},{"Terrain":11394},{"Wind":24},{"STL":40},{"String":13429},{"StaticString":6718},{"Utility":2674406},{"Curl":3176},{"PoolAlloc":2168},{"AI":80},{"TypeTree":13637},{"ScriptManager":448},{"RuntimeInitializeOnLoadManager":64},{"SpriteAtlas":120},{"GI":7792},{"Director":8320},{"CloudService":288},{"WebRequest":808},{"VR":48050},{"SceneManager":504},{"Video":208},{"LazyScriptCache":32},{"Camera":17},{"Secure":2377},{"SerializationCache":1576},{"APIUpdating":10320},{"Subsystems":336},{"VirtualTexturing":57888},{"StaticSafetyDebugInfo":278528},{"Analytics":344},{"Hierarchy":608},{"CoreStats":13112},{"Identifiers":12960},{"Gui":128},{"EditorUtility":109207},{"VersionControl":4},{"Undo":931},{"AssetDatabase":2534646},{"EditorGi":328},{"UnityConnect":37735},{"Upm":1912},{"UpmDiagnostics":8},{"AssetCompliance":64},{"DrivenProperties":72},{"LocalIPC":212},{"ProfilerEditor":9746},{"CoreBusinessMetrics":2617},{"Windowing":456},{"Licensing":664},{"AssetReference":32},{"IPCStream":32}]}

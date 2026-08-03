@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 06:52:59Z" end-time="2026-08-03 06:53:03Z" duration="3.2820739">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="357" result="Passed" start-time="2026-08-03 06:52:59Z" end-time="2026-08-03 06:53:03Z" duration="3.282074" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1400" name="TimeKey.Tests.EditMode.AssetTooling.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.EditMode.AssetTooling.dll" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 06:52:59Z" end-time="2026-08-03 06:53:03Z" duration="3.270988" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="30704" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1401" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 06:52:59Z" end-time="2026-08-03 06:53:03Z" duration="3.270522" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1402" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 06:52:59Z" end-time="2026-08-03 06:53:03Z" duration="3.270350" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1403" name="EditMode" fullname="TimeKey.Tests.EditMode" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 06:52:59Z" end-time="2026-08-03 06:53:03Z" duration="3.270218" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1404" name="AssetTooling" fullname="TimeKey.Tests.EditMode.AssetTooling" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 06:52:59Z" end-time="2026-08-03 06:53:03Z" duration="3.270090" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1393" name="SceneContractValidatorTests" fullname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests" classname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-03 06:52:59Z" end-time="2026-08-03 06:53:03Z" duration="3.268944" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1398" name="DuplicateTimelineCoordinateAndInvalidOccupantMapping_ReturnDiagnostics" fullname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests.DuplicateTimelineCoordinateAndInvalidOccupantMapping_ReturnDiagnostics" methodname="DuplicateTimelineCoordinateAndInvalidOccupantMapping_ReturnDiagnostics" classname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests" runstate="Runnable" seed="833252522" result="Passed" start-time="2026-08-03 06:53:00Z" end-time="2026-08-03 06:53:00Z" duration="0.582715" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Unloading the last loaded scene Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity(build index: 4), is not supported. Please use SceneManager.LoadScene()/EditorSceneManager.OpenScene() to switch to another scene.
+]]></output>
+                </test-case>
+                <test-case id="1399" name="EditorWindow_DisplaysStructuredSummaryAtResponsiveSizes" fullname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests.EditorWindow_DisplaysStructuredSummaryAtResponsiveSizes" methodname="EditorWindow_DisplaysStructuredSummaryAtResponsiveSizes" classname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests" runstate="Runnable" seed="1081842588" result="Passed" start-time="2026-08-03 06:53:00Z" end-time="2026-08-03 06:53:02Z" duration="1.842522" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1396" name="MissingRoot_ReturnsStructuredPathWithoutRepairingScene" fullname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests.MissingRoot_ReturnsStructuredPathWithoutRepairingScene" methodname="MissingRoot_ReturnsStructuredPathWithoutRepairingScene" classname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests" runstate="Runnable" seed="2143835793" result="Passed" start-time="2026-08-03 06:53:02Z" end-time="2026-08-03 06:53:02Z" duration="0.251237" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1395" name="ProductionCombatScene_IsDeterministicAndReadOnly" fullname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests.ProductionCombatScene_IsDeterministicAndReadOnly" methodname="ProductionCombatScene_IsDeterministicAndReadOnly" classname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests" runstate="Runnable" seed="146352414" result="Passed" start-time="2026-08-03 06:53:02Z" end-time="2026-08-03 06:53:02Z" duration="0.225228" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1394" name="ProductionCombatScene_PassesFrozenContract" fullname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests.ProductionCombatScene_PassesFrozenContract" methodname="ProductionCombatScene_PassesFrozenContract" classname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests" runstate="Runnable" seed="1125151328" result="Passed" start-time="2026-08-03 06:53:02Z" end-time="2026-08-03 06:53:02Z" duration="0.042354" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1397" name="WrongNonNullSceneReference_ReturnsExactPropertyWithoutSavingScene" fullname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests.WrongNonNullSceneReference_ReturnsExactPropertyWithoutSavingScene" methodname="WrongNonNullSceneReference_ReturnsExactPropertyWithoutSavingScene" classname="TimeKey.Tests.EditMode.AssetTooling.SceneContractValidatorTests" runstate="Runnable" seed="1678416139" result="Passed" start-time="2026-08-03 06:53:02Z" end-time="2026-08-03 06:53:03Z" duration="0.312392" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Unloading the last loaded scene Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity(build index: 4), is not supported. Please use SceneManager.LoadScene()/EditorSceneManager.OpenScene() to switch to another scene.
+Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

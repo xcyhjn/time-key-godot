@@ -1,0 +1,22 @@
+{
+  "name": "TimeKey.Tests.EditMode.AssetTooling",
+  "rootNamespace": "TimeKey.Tests.EditMode.AssetTooling",
+  "references": [
+    "TimeKey.Editor.AssetTooling",
+    "TimeKey.Presentation"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

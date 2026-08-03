@@ -1,0 +1,197 @@
+{
+    "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 21,
+    "diagnostics": [
+        {
+            "severity": 0,
+            "contractId": "BOOTSTRAP_SERVICE_UNIQUE",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "",
+            "propertyPath": "UnityEngine.EventSystems.EventSystem",
+            "message": "Combat content Scene contains no local EventSystem.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "CombatSceneEntry",
+            "propertyPath": "",
+            "message": "Required Scene root exists.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot",
+            "propertyPath": "",
+            "message": "Required Scene root exists.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas/HUD/BattleFlowPanel",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas/HUD/CardHandHost",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas/HUD/CombatTopHUD",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas/HUD/DetailPanel",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas/HUD/EffectFrameHost",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas/HUD/Header",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas/HUD/Timeline",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/SliceCanvas/HUD/Timeline/ActionLayer",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/World/BattlefieldGround",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/World/CombatBoardRoot",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/World/CombatBoardRoot/BoardRangePreview",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/World/CombatBoardRoot/TargetAnchor",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/World/CombatShellBackground",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/World/Environment/FillLight",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/World/Environment/KeyLight",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NODE_REQUIRED",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "VerticalSliceRoot/World/SliceCamera",
+            "propertyPath": "",
+            "message": "Stable Scene path exists and is unique.",
+            "remediation": ""
+        },
+        {
+            "severity": 0,
+            "contractId": "NO_MUTATION",
+            "assetPath": "Assets/_Project/Scenes/VerticalSlice/CombatVerticalSlice.unity",
+            "objectPath": "",
+            "propertyPath": "",
+            "message": "Scene bytes, dirty state, open scenes, and active scene were preserved.",
+            "remediation": ""
+        }
+    ]
+}

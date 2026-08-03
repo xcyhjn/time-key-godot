@@ -1,0 +1,33 @@
+{
+  "date": "2026-08-03",
+  "slice": "SceneContractValidator",
+  "additionPath": {
+    "status": "passed",
+    "editorOnly": true,
+    "formalSceneModified": false,
+    "formalPrefabModified": false,
+    "manifestModified": false,
+    "packagesLockModified": false,
+    "playerAssemblyPresent": false,
+    "verification": [
+      "SceneContractValidator EditMode 6/6",
+      "full EditMode 357/357",
+      "full PlayMode 107/107",
+      "Windows build succeeded",
+      "strict Player smoke 3/3",
+      "three EditorWindow sizes reviewed"
+    ]
+  },
+  "removalPath": {
+    "status": "passed",
+    "ownedRoots": [
+      "unity/Assets/_Project/Editor/AssetTooling",
+      "unity/Assets/_Project/Tests/EditMode/AssetTooling"
+    ],
+    "method": "Delete the two owned roots and stage-owned documentation/evidence; retain the pre-existing UI Toolkit manifest entry; run the same verification surfaces.",
+    "reversePatchCheck": "git diff --cached --binary | git apply --reverse --check passed",
+    "runtimeRestorationRequired": false,
+    "packageRestorationRequired": false,
+    "sceneRestorationRequired": false
+  }
+}

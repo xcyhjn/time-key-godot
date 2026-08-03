@@ -1,0 +1,20 @@
+{
+  "name": "TimeKey.Editor.AssetTooling",
+  "rootNamespace": "TimeKey.Editor.AssetTooling",
+  "references": [
+    "TimeKey.Application",
+    "TimeKey.Presentation",
+    "TimeKey.Composition"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
