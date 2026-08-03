@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using NUnit.Framework;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain.BattleFlow;
+using TimeKey.Infrastructure.Persistence;
 using UnityEngine;
 
 namespace TimeKey.Tests.EditMode.SceneFlow
@@ -151,6 +153,109 @@ namespace TimeKey.Tests.EditMode.SceneFlow
         }
 
         [Test]
+        public void StateStore_NewRunSaveAndContinueRestoreSameRunMapAndNode()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-b-continue-" + Guid.NewGuid().ToString("N"));
+            var path = Path.Combine(directory, "overworld.json");
+            var firstRoot = new GameObject("state-store-save-test");
+            var secondRoot = new GameObject("state-store-continue-test");
+            try
+            {
+                var first = firstRoot.AddComponent<SceneFlowStateStore>();
+                first.ConfigurePersistencePath(path);
+                var start = Start("run-continue", 731);
+                var request = Request(
+                    1,
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    start);
+                first.Record(request);
+                first.PrepareCommit(request);
+                first.Commit(request);
+                var expected = first.OverworldRun.CreatePersistenceSnapshot();
+
+                var second = secondRoot.AddComponent<SceneFlowStateStore>();
+                second.ConfigurePersistencePath(path);
+                Assert.That(second.RefreshContinueAvailability(), Is.True);
+                Assert.That(second.TryCreateContinuePayload(out var payload), Is.True);
+                var continueRequest = Request(
+                    2,
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    payload);
+                second.Record(continueRequest);
+                var actual = second.OverworldRun.CreatePersistenceSnapshot();
+
+                Assert.That(actual.RunId, Is.EqualTo(expected.RunId));
+                Assert.That(actual.MapFingerprint, Is.EqualTo(expected.MapFingerprint));
+                Assert.That(actual.CurrentNodeId, Is.EqualTo(expected.CurrentNodeId));
+                Assert.That(actual.DomainRevision, Is.EqualTo(expected.DomainRevision));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(firstRoot);
+                UnityEngine.Object.DestroyImmediate(secondRoot);
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
+            }
+        }
+
+        [Test]
+        public void StateStore_FailedPersistencePrepareKeepsPriorSaveAndRollsBackRun()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-b-rollback-" + Guid.NewGuid().ToString("N"));
+            var path = Path.Combine(directory, "overworld.json");
+            var root = new GameObject("state-store-persistence-rollback-test");
+            try
+            {
+                var repository = new OverworldSaveRepository(path);
+                var store = root.AddComponent<SceneFlowStateStore>();
+                store.ConfigurePersistenceRepository(repository);
+                var firstRequest = Request(
+                    1,
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    Start("run-prior", 731));
+                store.Record(firstRequest);
+                store.PrepareCommit(firstRequest);
+                store.Commit(firstRequest);
+                var priorFingerprint = store.OverworldRun.Map.Fingerprint;
+
+                store.ConfigurePersistenceRepository(new OverworldSaveRepository(
+                    path,
+                    new ThrowBeforeReplace()));
+                var replacement = Request(
+                    2,
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    Start("run-replacement", 999));
+                store.Record(replacement);
+
+                Assert.Throws<IOException>(() => store.PrepareCommit(replacement));
+                store.Rollback(replacement);
+
+                Assert.That(store.OverworldRun.Map.Fingerprint, Is.EqualTo(priorFingerprint));
+                var loaded = repository.Load();
+                Assert.That(loaded.Succeeded, Is.True);
+                Assert.That(loaded.Document.RunId, Is.EqualTo("run-prior"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
+            }
+        }
+
+        [Test]
         public void PersistentInputGate_PublishesAndClearsGlobalTransitionLock()
         {
             var root = new GameObject("input-gate-test");
@@ -245,6 +350,21 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 new[] { "lighting", "recover" });
         }
 
+        private static RunStartPayload Start(string runId, int seed)
+        {
+            return new RunStartPayload(
+                RunStartKind.NewGame,
+                runId,
+                seed,
+                seed.ToString(),
+                1,
+                1,
+                1,
+                0,
+                "character-silver",
+                new[] { "lighting", "recover" });
+        }
+
         private static CombatOutcome VictoryOutcome(
             CombatLaunchPayload launch,
             string correlationId)
@@ -291,6 +411,17 @@ namespace TimeKey.Tests.EditMode.SceneFlow
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, "Missing field: " + fieldName);
             field.SetValue(target, value);
+        }
+
+        private sealed class ThrowBeforeReplace : IOverworldSaveWriteFaultInjector
+        {
+            public void OnStage(OverworldSaveWriteStage stage, string temporaryPath)
+            {
+                if (stage == OverworldSaveWriteStage.BeforeReplace)
+                {
+                    throw new IOException("Injected replace failure.");
+                }
+            }
         }
     }
 }

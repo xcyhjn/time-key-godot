@@ -403,3 +403,19 @@ Bootstrap (persistent, Build index 0)
 - `IdleTileInspect` is allowed only with no selected card in `Idle` or `Cancelled`. Same-point same-tile click toggles off; another tile replaces; blank, Escape and short right-click clear; right drag does not clear. Committed, Resolved and global Scene input lock reject inspection.
 - Card selection, cancel, commit, resolve, occupant death, Scene rebind and unbind clear stale inspection/highlight/index state. Timeline pointer exit cannot leave Application in `TimelinePreview` while only Presentation is cleared.
 - Closure evidence is full `351/351 + 107/107`, 9 fresh three-viewport/resize PNGs, Windows build and actual Player smoke.
+## Wave 03 Overworld Gate B transaction boundary
+
+- `OverworldRunApplication` owns exactly one Gate A `OverworldChapterState` and is the
+  authoritative room/chapter lifecycle. `OutOfBattleShellState` is a compatibility
+  projection for existing presenters only.
+- Formal room selection uses exact `MapNodeId` values emitted by Gate A. No
+  `room-01`/`combat-room-01` translation or parallel map state is allowed.
+- SceneFlow binding records a copied candidate. `PrepareCommit` validates and atomically
+  promotes the candidate save before source unload begins; unload success finalizes the
+  in-memory pending record. Pre-commit failures restore source state, file, focus, cover
+  and input.
+- Disk Continue accepts only fully committed room boundaries. In-memory candidate copies
+  may retain an active combat launch solely for rollback.
+- Combat keeps `CombatLaunchPayload`/`CombatOutcome`; Event and Shop use their own typed
+  outcomes. Exact outcome replay is idempotent after restart; a changed fingerprint is a
+  typed conflict.

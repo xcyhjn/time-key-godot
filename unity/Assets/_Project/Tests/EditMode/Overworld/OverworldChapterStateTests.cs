@@ -205,6 +205,58 @@ namespace TimeKey.Tests.EditMode.Overworld
             Assert.That(first.Nodes, Is.Not.InstanceOf<List<OverworldNodeStateSnapshot>>());
         }
 
+        [Test]
+        public void ExportAndRestore_PreservesStateAndExactOperationReplay()
+        {
+            var map = CreateLinearMap(OverworldRoomType.Battle);
+            var state = new OverworldChapterState(map);
+            var room = new MapNodeId("room");
+            var enter = new EnterOverworldRoomCommand(11, 0, map.EntryNodeId, room);
+            var resolve = new ResolveOverworldRoomCommand(
+                12,
+                1,
+                room,
+                OverworldResolutionKind.Victory);
+            state.EnterRoom(enter);
+            state.ResolveRoom(resolve);
+
+            var restored = OverworldChapterState.Restore(map, state.ExportState());
+            var replay = restored.ResolveRoom(resolve);
+            var conflict = restored.ResolveRoom(new ResolveOverworldRoomCommand(
+                12,
+                1,
+                room,
+                OverworldResolutionKind.Defeat));
+
+            Assert.That(restored.Revision, Is.EqualTo(state.Revision));
+            Assert.That(restored.CurrentNodeId, Is.EqualTo(room));
+            Assert.That(replay.Succeeded, Is.True);
+            Assert.That(replay.AfterRevision, Is.EqualTo(2));
+            Assert.That(conflict.Failure, Is.EqualTo(OverworldOperationFailure.SequenceConflict));
+            Assert.That(restored.ExportState().Journal.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Restore_RejectsInvalidCurrentAndActiveRoomState()
+        {
+            var map = CreateBranchingMap();
+            var entry = map.EntryNodeId;
+            var invalid = new OverworldChapterRestoreState(
+                revision: 1,
+                currentNodeId: new MapNodeId("missing"),
+                hasActiveRoom: true,
+                activeRoomNodeId: entry,
+                chapterCompleted: false,
+                chapterAdvanceCount: 0,
+                visitedNodeIds: new[] { entry },
+                settledNodeIds: new[] { entry },
+                journal: new OverworldOperationJournalSnapshot[0]);
+
+            Assert.That(
+                () => OverworldChapterState.Restore(map, invalid),
+                Throws.ArgumentException);
+        }
+
         private static OverworldChapterState AdvanceToBoss(OverworldMapDefinition map)
         {
             var state = new OverworldChapterState(map);

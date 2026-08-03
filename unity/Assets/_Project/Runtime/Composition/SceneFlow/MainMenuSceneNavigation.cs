@@ -48,6 +48,8 @@ namespace TimeKey.Composition.SceneFlow
                 presenter.CommandRequested += OnCommandRequested;
                 presenter.SettingsRequested += OnSettingsRequested;
                 ApplySettings(LoadSettings(), false);
+                presenter.SetContinueAvailable(
+                    stateStore != null && stateStore.RefreshContinueAvailability());
             }
 
             if (stateStore?.OutOfBattleState != null && eraClockPresenter != null)
@@ -198,6 +200,18 @@ namespace TimeKey.Composition.SceneFlow
             MainMenuCommandRequest request,
             long sequence)
         {
+            if (request.Command == MainMenuCommand.Continue)
+            {
+                RunStartPayload continued;
+                if (stateStore == null || !stateStore.TryCreateContinuePayload(out continued))
+                {
+                    throw new InvalidOperationException(
+                        "当前存档不可继续：" + (stateStore?.ContinueDetail ?? "未找到存档"));
+                }
+
+                return continued;
+            }
+
             var defaultSeedText = defaultRunSeed.ToString(CultureInfo.InvariantCulture);
             var suppliedSeed = request.Seed.Trim();
             var seedText = request.Command == MainMenuCommand.SeedGame &&

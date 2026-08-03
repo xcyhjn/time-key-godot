@@ -54,7 +54,7 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             Assert.That(launch, Is.Not.Null);
             Assert.That(launch.RunId, Is.EqualTo(runId));
             Assert.That(launch.RunSeed, Is.EqualTo(runSeed));
-            Assert.That(launch.RoomId, Is.EqualTo("combat-room-01"));
+            Assert.That(launch.RoomId, Does.StartWith("chapter-01-layer-01-node-"));
 
             var composition = Object.FindAnyObjectByType<CombatCompositionRoot>();
             var controller = Object.FindAnyObjectByType<VerticalSliceController>();
@@ -86,12 +86,12 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             Assert.That(store.LastOutcomeApplyResult.WasAlreadyApplied, Is.False);
             Assert.That(store.OutOfBattleState.RunId, Is.EqualTo(runId));
             Assert.That(store.OutOfBattleState.RunSeed, Is.EqualTo(runSeed));
-            Assert.That(store.OutOfBattleState.SettledRoomIds,
-                Is.EqualTo(new[] { launch.RoomId }));
+            Assert.That(store.OutOfBattleState.SettledRoomIds, Does.Contain(launch.RoomId));
+            Assert.That(store.OutOfBattleState.SettledRoomIds, Has.Count.EqualTo(2));
 
             var shell = Object.FindAnyObjectByType<OutOfBattleShellPresenter>();
             Assert.That(shell, Is.Not.Null);
-            Assert.That(shell.RoomState, Is.EqualTo(OutOfBattleRoomState.Settled));
+            Assert.That(shell.RoomState, Is.EqualTo(OutOfBattleRoomState.Idle));
             AssertPersistentTopology(SceneId.OutOfBattleShell);
         }
 
@@ -115,7 +115,10 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             Assert.That(store.LastOutcome.RunId, Is.EqualTo(runId));
             Assert.That(store.LastOutcome.TargetScene, Is.EqualTo(SceneId.GameOver));
             Assert.That(store.ActiveLaunch, Is.Null);
-            Assert.That(store.OutOfBattleState.SettledRoomIds, Is.Empty);
+            Assert.That(store.OutOfBattleState.SettledRoomIds, Has.Count.EqualTo(1));
+            Assert.That(
+                store.OutOfBattleState.SettledRoomIds,
+                Does.Not.Contain(store.LastOutcome.RoomId));
             Assert.That(Object.FindAnyObjectByType<GameOverPresenter>(), Is.Not.Null);
             AssertPersistentTopology(SceneId.GameOver);
 

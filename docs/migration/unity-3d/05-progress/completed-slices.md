@@ -194,3 +194,10 @@
 - idle/Cancelled 地块检查、右键短按/拖拽、卡牌接管和全局输入锁使用同一 overlay priority 与清理边界。
 - Full EditMode `351/351`、graphical D3D12 PlayMode `107/107`、Windows Development build、actual Player smoke 均通过。
 - 9 张 1280x720、1920x1080、2560x1080 与动态 resize 的 frame/Poison/Tower PNG 已逐图确认无错位、误填、裁切或 Silver 文本可读性问题。
+## Wave 03 Overworld Gate B
+
+- 单一 Gate A Domain authority 已接入 Application、typed SceneFlow 和正式壳。
+- schema 2 原子 save、schema 0/1 migration、backup recovery 与真实 Continue 已完成。
+- Victory/reward/settled/unlock/save 顺序、outcome replay/conflict、Defeat cleanup、
+  Boss single advance、focus/input/cover rollback 均有自动化覆盖。
+- Gate B 门禁：`68/68`、`100/100`、`5/5`、`17/17`、Era Clock `17/17 + 13/13`。

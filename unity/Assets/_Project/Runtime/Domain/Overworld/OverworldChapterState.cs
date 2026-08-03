@@ -173,6 +173,106 @@ namespace TimeKey.Domain.Overworld
         public IReadOnlyCollection<MapNodeId> SettledNodeIds { get; }
     }
 
+    public sealed class OverworldOperationJournalSnapshot
+    {
+        public OverworldOperationJournalSnapshot(
+            long sequence,
+            OverworldOperationKind kind,
+            int expectedRevision,
+            MapNodeId sourceNodeId,
+            MapNodeId nodeId,
+            OverworldResolutionKind resolution,
+            OverworldOperationFailure failure,
+            int beforeRevision,
+            int afterRevision,
+            bool chapterAdvanced)
+        {
+            if (sequence <= 0 || expectedRevision < 0 || beforeRevision < 0 ||
+                afterRevision < beforeRevision)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sequence));
+            }
+
+            Sequence = sequence;
+            Kind = kind;
+            ExpectedRevision = expectedRevision;
+            SourceNodeId = sourceNodeId;
+            NodeId = nodeId;
+            Resolution = resolution;
+            Failure = failure;
+            BeforeRevision = beforeRevision;
+            AfterRevision = afterRevision;
+            ChapterAdvanced = chapterAdvanced;
+        }
+
+        public long Sequence { get; }
+        public OverworldOperationKind Kind { get; }
+        public int ExpectedRevision { get; }
+        public MapNodeId SourceNodeId { get; }
+        public MapNodeId NodeId { get; }
+        public OverworldResolutionKind Resolution { get; }
+        public OverworldOperationFailure Failure { get; }
+        public int BeforeRevision { get; }
+        public int AfterRevision { get; }
+        public bool ChapterAdvanced { get; }
+    }
+
+    public sealed class OverworldChapterRestoreState
+    {
+        private readonly ReadOnlyCollection<MapNodeId> _visitedNodeIds;
+        private readonly ReadOnlyCollection<MapNodeId> _settledNodeIds;
+        private readonly ReadOnlyCollection<OverworldOperationJournalSnapshot> _journal;
+
+        public OverworldChapterRestoreState(
+            int revision,
+            MapNodeId currentNodeId,
+            bool hasActiveRoom,
+            MapNodeId activeRoomNodeId,
+            bool chapterCompleted,
+            int chapterAdvanceCount,
+            IReadOnlyCollection<MapNodeId> visitedNodeIds,
+            IReadOnlyCollection<MapNodeId> settledNodeIds,
+            IReadOnlyList<OverworldOperationJournalSnapshot> journal)
+        {
+            if (revision < 0 || chapterAdvanceCount < 0 || chapterAdvanceCount > 1 ||
+                chapterCompleted != (chapterAdvanceCount == 1))
+            {
+                throw new ArgumentOutOfRangeException(nameof(revision));
+            }
+
+            Revision = revision;
+            CurrentNodeId = currentNodeId;
+            HasActiveRoom = hasActiveRoom;
+            ActiveRoomNodeId = activeRoomNodeId;
+            ChapterCompleted = chapterCompleted;
+            ChapterAdvanceCount = chapterAdvanceCount;
+            _visitedNodeIds = Copy(visitedNodeIds, nameof(visitedNodeIds));
+            _settledNodeIds = Copy(settledNodeIds, nameof(settledNodeIds));
+            _journal = new ReadOnlyCollection<OverworldOperationJournalSnapshot>(
+                new List<OverworldOperationJournalSnapshot>(
+                    journal ?? throw new ArgumentNullException(nameof(journal))));
+        }
+
+        public int Revision { get; }
+        public MapNodeId CurrentNodeId { get; }
+        public bool HasActiveRoom { get; }
+        public MapNodeId ActiveRoomNodeId { get; }
+        public bool ChapterCompleted { get; }
+        public int ChapterAdvanceCount { get; }
+        public IReadOnlyCollection<MapNodeId> VisitedNodeIds => _visitedNodeIds;
+        public IReadOnlyCollection<MapNodeId> SettledNodeIds => _settledNodeIds;
+        public IReadOnlyList<OverworldOperationJournalSnapshot> Journal => _journal;
+
+        private static ReadOnlyCollection<MapNodeId> Copy(
+            IReadOnlyCollection<MapNodeId> source,
+            string parameterName)
+        {
+            return new ReadOnlyCollection<MapNodeId>(
+                new List<MapNodeId>(
+                    source ?? throw new ArgumentNullException(parameterName)));
+        }
+    }
+
     public sealed class OverworldChapterState
     {
         private readonly OverworldMapDefinition _map;
@@ -191,10 +291,45 @@ namespace TimeKey.Domain.Overworld
             _settled.Add(CurrentNodeId);
         }
 
+        private OverworldChapterState(
+            OverworldMapDefinition map,
+            OverworldChapterRestoreState restore)
+        {
+            _map = map ?? throw new ArgumentNullException(nameof(map));
+            ValidateRestore(map, restore);
+            Revision = restore.Revision;
+            CurrentNodeId = restore.CurrentNodeId;
+            _hasActiveRoom = restore.HasActiveRoom;
+            _activeRoomNodeId = restore.ActiveRoomNodeId;
+            ChapterCompleted = restore.ChapterCompleted;
+            ChapterAdvanceCount = restore.ChapterAdvanceCount;
+            foreach (var nodeId in restore.VisitedNodeIds)
+            {
+                _visited.Add(nodeId);
+            }
+
+            foreach (var nodeId in restore.SettledNodeIds)
+            {
+                _settled.Add(nodeId);
+            }
+
+            foreach (var entry in restore.Journal)
+            {
+                _journal.Add(entry.Sequence, JournalEntry.Restore(entry));
+            }
+        }
+
         public int Revision { get; private set; }
         public MapNodeId CurrentNodeId { get; private set; }
         public bool ChapterCompleted { get; private set; }
         public int ChapterAdvanceCount { get; private set; }
+
+        public static OverworldChapterState Restore(
+            OverworldMapDefinition map,
+            OverworldChapterRestoreState restore)
+        {
+            return new OverworldChapterState(map, restore);
+        }
 
         public OverworldOperationResult EnterRoom(EnterOverworldRoomCommand command)
         {
@@ -384,6 +519,85 @@ namespace TimeKey.Domain.Overworld
                 new ReadOnlyCollection<MapNodeId>(new List<MapNodeId>(_settled)));
         }
 
+        public OverworldChapterRestoreState ExportState()
+        {
+            var journal = new List<OverworldOperationJournalSnapshot>(_journal.Count);
+            var sequences = new List<long>(_journal.Keys);
+            sequences.Sort();
+            foreach (var sequence in sequences)
+            {
+                journal.Add(_journal[sequence].Snapshot(sequence));
+            }
+
+            return new OverworldChapterRestoreState(
+                Revision,
+                CurrentNodeId,
+                _hasActiveRoom,
+                _activeRoomNodeId,
+                ChapterCompleted,
+                ChapterAdvanceCount,
+                new ReadOnlyCollection<MapNodeId>(new List<MapNodeId>(_visited)),
+                new ReadOnlyCollection<MapNodeId>(new List<MapNodeId>(_settled)),
+                new ReadOnlyCollection<OverworldOperationJournalSnapshot>(journal));
+        }
+
+        private static void ValidateRestore(
+            OverworldMapDefinition map,
+            OverworldChapterRestoreState restore)
+        {
+            if (restore == null)
+            {
+                throw new ArgumentNullException(nameof(restore));
+            }
+
+            var visited = new HashSet<MapNodeId>();
+            foreach (var nodeId in restore.VisitedNodeIds)
+            {
+                if (map.GetNode(nodeId) == null || !visited.Add(nodeId))
+                {
+                    throw new ArgumentException("Restore contains an invalid visited node.", nameof(restore));
+                }
+            }
+
+            var settled = new HashSet<MapNodeId>();
+            foreach (var nodeId in restore.SettledNodeIds)
+            {
+                if (!visited.Contains(nodeId) || !settled.Add(nodeId))
+                {
+                    throw new ArgumentException("Restore contains an invalid settled node.", nameof(restore));
+                }
+            }
+
+            if (map.GetNode(restore.CurrentNodeId) == null ||
+                !visited.Contains(restore.CurrentNodeId) ||
+                !settled.Contains(map.EntryNodeId))
+            {
+                throw new ArgumentException("Restore current/entry state is invalid.", nameof(restore));
+            }
+
+            if (restore.HasActiveRoom &&
+                (restore.ActiveRoomNodeId != restore.CurrentNodeId ||
+                 settled.Contains(restore.ActiveRoomNodeId)))
+            {
+                throw new ArgumentException("Restore active room state is invalid.", nameof(restore));
+            }
+
+            var sequences = new HashSet<long>();
+            foreach (var entry in restore.Journal)
+            {
+                if (entry == null || !sequences.Add(entry.Sequence) ||
+                    entry.AfterRevision > restore.Revision ||
+                    (entry.Failure == OverworldOperationFailure.None &&
+                     map.GetNode(entry.NodeId) == null) ||
+                    (entry.Failure == OverworldOperationFailure.None &&
+                     entry.Kind == OverworldOperationKind.EnterRoom &&
+                     map.GetNode(entry.SourceNodeId) == null))
+                {
+                    throw new ArgumentException("Restore operation journal is invalid.", nameof(restore));
+                }
+            }
+        }
+
         private OverworldOperationResult Failed(
             long sequence,
             OverworldOperationKind kind,
@@ -447,6 +661,21 @@ namespace TimeKey.Domain.Overworld
             public OverworldResolutionKind Resolution { get; }
             public OverworldOperationResult Result { get; }
 
+            public OverworldOperationJournalSnapshot Snapshot(long sequence)
+            {
+                return new OverworldOperationJournalSnapshot(
+                    sequence,
+                    Kind,
+                    ExpectedRevision,
+                    SourceNodeId,
+                    NodeId,
+                    Resolution,
+                    Result.Failure,
+                    Result.BeforeRevision,
+                    Result.AfterRevision,
+                    Result.ChapterAdvanced);
+            }
+
             public bool Matches(EnterOverworldRoomCommand command)
             {
                 return Kind == OverworldOperationKind.EnterRoom &&
@@ -487,6 +716,24 @@ namespace TimeKey.Domain.Overworld
                     command.NodeId,
                     command.Resolution,
                     result);
+            }
+
+            public static JournalEntry Restore(OverworldOperationJournalSnapshot snapshot)
+            {
+                return new JournalEntry(
+                    snapshot.Kind,
+                    snapshot.ExpectedRevision,
+                    snapshot.SourceNodeId,
+                    snapshot.NodeId,
+                    snapshot.Resolution,
+                    new OverworldOperationResult(
+                        snapshot.Sequence,
+                        snapshot.Kind,
+                        snapshot.Failure,
+                        snapshot.BeforeRevision,
+                        snapshot.AfterRevision,
+                        snapshot.NodeId,
+                        snapshot.ChapterAdvanced));
             }
         }
     }

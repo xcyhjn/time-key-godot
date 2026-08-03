@@ -53,3 +53,16 @@ SaveEnvelope { schemaVersion, gameVersion, savedAtUtc, payload }
 ## 授权约束
 
 来源不明的图片、音频和字体不得复制进 Unity 工程。首切片只复制自有规则 JSON，并使用程序化几何、颜色和 Unity 内置运行时字体。
+## Wave 03 Overworld save schema 2
+
+The production overworld save is a persistence-owned immutable DTO. It stores primitive
+run/resources, generator config/version, exact map fingerprint/current/visited/settled
+identity, Domain revision and operation journal, Application outcome identities and
+operation/persistence cursors. It never serializes a Domain/Application object,
+Dictionary, `object`, Unity object or scene reference.
+
+Writes use UTF-8 temp creation, durable flush, reload/schema/content validation and
+atomic replacement with a recoverable backup. Schema 0 and 1 migrate to schema 2;
+future, corrupt and I/O failures remain typed and cannot enable Continue. SceneFlow saves
+the complete candidate before source unload; a failed prepare leaves the prior primary
+unchanged, while a later pre-commit rollback restores the prior document.

@@ -7,7 +7,8 @@ namespace TimeKey.Application.SceneFlow
     public enum RunStartKind
     {
         NewGame,
-        SeedGame
+        SeedGame,
+        Continue
     }
 
     public sealed class RunStartPayload : ISceneTransitionPayload

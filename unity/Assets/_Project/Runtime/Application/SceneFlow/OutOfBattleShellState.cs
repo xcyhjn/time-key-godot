@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using TimeKey.Application.Overworld;
 using TimeKey.Domain.BattleFlow;
 
 namespace TimeKey.Application.SceneFlow
@@ -88,6 +89,36 @@ namespace TimeKey.Application.SceneFlow
             _deckStableIds = Copy(start.DeckStableIds);
         }
 
+        public OutOfBattleShellState(OverworldPersistenceSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            RunId = snapshot.RunId;
+            RunSeed = snapshot.RunSeed;
+            Chapter = snapshot.Chapter;
+            CharacterId = snapshot.CharacterId;
+            CurrentRoomId = snapshot.CurrentNodeId;
+            CurrentLaunchCorrelationId = snapshot.ActiveLaunchCorrelationId;
+            Era = snapshot.Era;
+            Phase = snapshot.Phase;
+            Timecoins = snapshot.Timecoins;
+            IsRunCompleted = snapshot.ChapterCompleted && snapshot.Chapter == snapshot.FinalChapter;
+            _deckStableIds = Copy(snapshot.DeckStableIds);
+            foreach (var roomId in snapshot.SettledNodeIds)
+            {
+                _settledRoomIds.Add(roomId);
+            }
+
+            foreach (var outcome in snapshot.ProcessedOutcomes)
+            {
+                _consumedOutcomeFingerprints[outcome.OutcomeCorrelationId] =
+                    outcome.Fingerprint;
+            }
+        }
+
         private OutOfBattleShellState(OutOfBattleShellState source)
         {
             RunId = source.RunId;
@@ -99,6 +130,7 @@ namespace TimeKey.Application.SceneFlow
             Era = source.Era;
             Phase = source.Phase;
             Timecoins = source.Timecoins;
+            IsRunCompleted = source.IsRunCompleted;
             _deckStableIds = Copy(source._deckStableIds);
             foreach (var pair in source._consumedOutcomeFingerprints)
             {
@@ -128,6 +160,8 @@ namespace TimeKey.Application.SceneFlow
         public int Phase { get; private set; }
 
         public int Timecoins { get; private set; }
+
+        public bool IsRunCompleted { get; private set; }
 
         public IReadOnlyList<string> DeckStableIds => _deckStableIds;
 

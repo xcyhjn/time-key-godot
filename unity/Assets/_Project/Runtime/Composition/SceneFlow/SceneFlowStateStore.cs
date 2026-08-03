@@ -1,5 +1,10 @@
 using System;
+using System.IO;
+using TimeKey.Application.Overworld;
 using TimeKey.Application.SceneFlow;
+using TimeKey.Domain.Overworld;
+using TimeKey.Domain.OverworldMovement;
+using TimeKey.Infrastructure.Persistence;
 using UnityEngine;
 
 namespace TimeKey.Composition.SceneFlow
@@ -7,7 +12,16 @@ namespace TimeKey.Composition.SceneFlow
     [DisallowMultipleComponent]
     public sealed class SceneFlowStateStore : MonoBehaviour
     {
+        [SerializeField] private int finalChapter = 3;
+        [SerializeField] private int intermediateLayerCount = 4;
+        [SerializeField] private int minimumNodesPerLayer = 2;
+        [SerializeField] private int maximumNodesPerLayer = 3;
+        [SerializeField] private string saveFileName = "overworld-save.json";
+
         private PendingRecord _pending;
+        private PreparedLaunchRecord _preparedLaunch;
+        private OverworldRunApplication _preparedContinue;
+        private OverworldSaveRepository _repository;
 
         public SceneTransitionRequest LastRequest { get; private set; }
 
@@ -20,6 +34,116 @@ namespace TimeKey.Composition.SceneFlow
         public OutOfBattleShellState OutOfBattleState { get; private set; }
 
         public CombatOutcomeApplyResult LastOutcomeApplyResult { get; private set; }
+
+        public OverworldRunApplication OverworldRun { get; private set; }
+
+        public OverworldSaveLoadStatus ContinueStatus { get; private set; } =
+            OverworldSaveLoadStatus.Missing;
+
+        public string ContinueDetail { get; private set; } = string.Empty;
+
+        public void ConfigurePersistencePath(string path)
+        {
+            if (_pending != null)
+            {
+                throw new InvalidOperationException(
+                    "Persistence cannot be reconfigured during a scene transition.");
+            }
+
+            _repository = new OverworldSaveRepository(path);
+            _preparedContinue = null;
+        }
+
+        public void ConfigurePersistenceRepository(OverworldSaveRepository repository)
+        {
+            if (_pending != null)
+            {
+                throw new InvalidOperationException(
+                    "Persistence cannot be reconfigured during a scene transition.");
+            }
+
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _preparedContinue = null;
+        }
+
+        public bool RefreshContinueAvailability()
+        {
+            var load = Repository.Load();
+            ContinueStatus = load.Status;
+            ContinueDetail = load.Detail;
+            _preparedContinue = null;
+            if (!load.Succeeded)
+            {
+                return false;
+            }
+
+            try
+            {
+                _preparedContinue = OverworldRunApplication.Restore(
+                    OverworldSaveMapper.ToSnapshot(load.Document));
+                return true;
+            }
+            catch (Exception exception)
+            {
+                ContinueStatus = OverworldSaveLoadStatus.Corrupt;
+                ContinueDetail = exception.Message;
+                return false;
+            }
+        }
+
+        public bool TryCreateContinuePayload(out RunStartPayload payload)
+        {
+            payload = null;
+            if (_preparedContinue == null && !RefreshContinueAvailability())
+            {
+                return false;
+            }
+
+            var snapshot = _preparedContinue.CreatePersistenceSnapshot();
+            payload = new RunStartPayload(
+                RunStartKind.Continue,
+                snapshot.RunId,
+                snapshot.RunSeed,
+                snapshot.SeedText,
+                snapshot.Chapter,
+                snapshot.Era,
+                snapshot.Phase,
+                snapshot.Timecoins,
+                snapshot.CharacterId,
+                snapshot.DeckStableIds);
+            return true;
+        }
+
+        public OverworldCombatLaunchResult PrepareCombatLaunch(
+            long sequence,
+            string roomId,
+            string launchCorrelationId,
+            string battleTag,
+            int battleSeed)
+        {
+            if (OverworldRun == null)
+            {
+                throw new InvalidOperationException("No authoritative overworld run is active.");
+            }
+
+            var candidate = OverworldRun.Copy();
+            var current = candidate.ChapterSnapshot.CurrentNodeId;
+            var result = candidate.TryBeginCombat(
+                new EnterOverworldRoomCommand(
+                    sequence,
+                    candidate.Revision,
+                    current,
+                    new MapNodeId(roomId)),
+                launchCorrelationId,
+                battleTag,
+                battleSeed);
+            if (result.Succeeded)
+            {
+                _preparedLaunch = new PreparedLaunchRecord(result.Launch.Fingerprint, candidate);
+            }
+
+            return result;
+        }
 
         public void Record(SceneTransitionRequest request)
         {
@@ -35,17 +159,37 @@ namespace TimeKey.Composition.SceneFlow
             }
 
             var nextOutOfBattleState = OutOfBattleState?.Copy();
+            var nextOverworldRun = OverworldRun;
             var nextActiveLaunch = ActiveLaunch;
             var nextLastOutcome = LastOutcome;
             var nextOutcomeApplyResult = LastOutcomeApplyResult;
 
             if (request.Payload is CombatLaunchPayload launch)
             {
-                RecordLaunch(launch, ref nextOutOfBattleState, out nextActiveLaunch);
+                if (_preparedLaunch != null &&
+                    _preparedLaunch.PayloadFingerprint == launch.Fingerprint)
+                {
+                    nextOverworldRun = _preparedLaunch.Application;
+                    nextOutOfBattleState = new OutOfBattleShellState(
+                        nextOverworldRun.CreatePersistenceSnapshot());
+                    nextActiveLaunch = launch;
+                    _preparedLaunch = null;
+                }
+                else
+                {
+                    RecordLaunch(launch, ref nextOutOfBattleState, out nextActiveLaunch);
+                }
             }
             else if (request.Payload is RunStartPayload start)
             {
-                nextOutOfBattleState = new OutOfBattleShellState(start);
+                nextOverworldRun = start.Kind == RunStartKind.Continue
+                    ? RequirePreparedContinue(start)
+                    : new OverworldRunApplication(
+                        start,
+                        CreateMapConfig(start.Chapter),
+                        finalChapter);
+                nextOutOfBattleState = new OutOfBattleShellState(
+                    nextOverworldRun.CreatePersistenceSnapshot());
                 nextActiveLaunch = null;
                 nextLastOutcome = null;
                 nextOutcomeApplyResult = null;
@@ -59,6 +203,34 @@ namespace TimeKey.Composition.SceneFlow
                     nextOutOfBattleState,
                     out nextLastOutcome,
                     out nextOutcomeApplyResult);
+                if (nextOverworldRun != null &&
+                    nextOverworldRun.ChapterSnapshot.HasActiveRoom &&
+                    nextOverworldRun.ChapterSnapshot.ActiveRoomNodeId.Value == outcome.RoomId)
+                {
+                    var candidate = nextOverworldRun.Copy();
+                    var applicationResult = candidate.TryApplyCombatOutcome(
+                        request.Sequence,
+                        candidate.Revision,
+                        outcome);
+                    if (!applicationResult.Succeeded)
+                    {
+                        throw new InvalidOperationException(
+                            "Combat outcome could not be applied to the overworld: " +
+                            applicationResult.Failure + ".");
+                    }
+
+                    if (applicationResult.CommitPlan.ChapterDecision.Kind ==
+                        OverworldChapterAdvanceKind.NextChapter)
+                    {
+                        candidate = candidate.CreateNextChapter(
+                            applicationResult.CommitPlan.ChapterDecision.NextChapter);
+                        nextOutOfBattleState = new OutOfBattleShellState(
+                            candidate.CreatePersistenceSnapshot());
+                    }
+
+                    nextOverworldRun = candidate;
+                }
+
                 nextActiveLaunch = null;
             }
             else if (request.Payload is EmptySceneTransitionPayload &&
@@ -69,6 +241,7 @@ namespace TimeKey.Composition.SceneFlow
                 nextActiveLaunch = null;
                 nextLastOutcome = null;
                 nextOutcomeApplyResult = null;
+                nextOverworldRun = null;
             }
 
             _pending = new PendingRecord(
@@ -78,25 +251,65 @@ namespace TimeKey.Composition.SceneFlow
                 ActiveLaunch,
                 LastOutcome,
                 OutOfBattleState,
-                LastOutcomeApplyResult);
+                LastOutcomeApplyResult,
+                OverworldRun);
             LastRequest = request;
             LastPayload = request.Payload;
             ActiveLaunch = nextActiveLaunch;
             LastOutcome = nextLastOutcome;
             OutOfBattleState = nextOutOfBattleState;
             LastOutcomeApplyResult = nextOutcomeApplyResult;
+            OverworldRun = nextOverworldRun;
+        }
+
+        public void PrepareCommit(SceneTransitionRequest request)
+        {
+            RequirePending(request);
+            if (_pending.PersistencePromoted)
+            {
+                return;
+            }
+
+            _pending.PriorSave = Repository.Load();
+            OverworldSaveWriteResult write;
+            if (request.Payload is EmptySceneTransitionPayload &&
+                request.Source == SceneId.GameOver &&
+                request.Target == SceneId.MainMenu)
+            {
+                write = Repository.DeleteAll();
+            }
+            else if (ShouldPersist(request))
+            {
+                write = Repository.Save(OverworldSaveMapper.ToDocument(
+                    OverworldRun.CreatePersistenceSnapshot()));
+            }
+            else
+            {
+                return;
+            }
+
+            if (!write.Succeeded)
+            {
+                throw new IOException(
+                    "Overworld persistence prepare failed: " + write.Failure +
+                    ": " + write.Detail);
+            }
+
+            _pending.PersistencePromoted = true;
         }
 
         public void Commit(SceneTransitionRequest request)
         {
             RequirePending(request);
             _pending = null;
+            _preparedContinue = null;
         }
 
         public void Rollback(SceneTransitionRequest request)
         {
             if (_pending == null)
             {
+                _preparedLaunch = null;
                 return;
             }
 
@@ -107,7 +320,86 @@ namespace TimeKey.Composition.SceneFlow
             LastOutcome = _pending.LastOutcome;
             OutOfBattleState = _pending.OutOfBattleState;
             LastOutcomeApplyResult = _pending.LastOutcomeApplyResult;
+            OverworldRun = _pending.OverworldRun;
+            RestorePriorSave(_pending);
             _pending = null;
+            _preparedLaunch = null;
+        }
+
+        private OverworldRunApplication RequirePreparedContinue(RunStartPayload start)
+        {
+            if (_preparedContinue == null || _preparedContinue.CreatePersistenceSnapshot().RunId !=
+                start.RunId)
+            {
+                throw new InvalidOperationException(
+                    "Continue payload does not match the validated save.");
+            }
+
+            return _preparedContinue.Copy();
+        }
+
+        private OverworldMapGenerationConfig CreateMapConfig(int chapter)
+        {
+            return new OverworldMapGenerationConfig(
+                chapter,
+                intermediateLayerCount,
+                minimumNodesPerLayer,
+                maximumNodesPerLayer);
+        }
+
+        private bool ShouldPersist(SceneTransitionRequest request)
+        {
+            if (OverworldRun == null)
+            {
+                return false;
+            }
+
+            if (request.Payload is RunStartPayload)
+            {
+                return true;
+            }
+
+            return request.Payload is CombatOutcome outcome &&
+                outcome.TargetScene == SceneId.OutOfBattleShell;
+        }
+
+        private void RestorePriorSave(PendingRecord pending)
+        {
+            if (!pending.PersistencePromoted)
+            {
+                return;
+            }
+
+            OverworldSaveWriteResult restore;
+            if (pending.PriorSave != null && pending.PriorSave.Succeeded)
+            {
+                restore = Repository.Save(pending.PriorSave.Document);
+            }
+            else
+            {
+                restore = Repository.DeleteAll();
+            }
+
+            if (!restore.Succeeded)
+            {
+                throw new IOException(
+                    "Overworld persistence rollback failed: " + restore.Failure +
+                    ": " + restore.Detail);
+            }
+        }
+
+        private OverworldSaveRepository Repository
+        {
+            get
+            {
+                if (_repository == null)
+                {
+                    _repository = new OverworldSaveRepository(
+                        Path.Combine(UnityEngine.Application.persistentDataPath, saveFileName));
+                }
+
+                return _repository;
+            }
         }
 
         private static void RecordLaunch(
@@ -191,7 +483,8 @@ namespace TimeKey.Composition.SceneFlow
                 CombatLaunchPayload activeLaunch,
                 CombatOutcome lastOutcome,
                 OutOfBattleShellState outOfBattleState,
-                CombatOutcomeApplyResult lastOutcomeApplyResult)
+                CombatOutcomeApplyResult lastOutcomeApplyResult,
+                OverworldRunApplication overworldRun)
             {
                 RequestFingerprint = requestFingerprint;
                 LastRequest = lastRequest;
@@ -200,6 +493,7 @@ namespace TimeKey.Composition.SceneFlow
                 LastOutcome = lastOutcome;
                 OutOfBattleState = outOfBattleState;
                 LastOutcomeApplyResult = lastOutcomeApplyResult;
+                OverworldRun = overworldRun;
             }
 
             public string RequestFingerprint { get; }
@@ -215,6 +509,27 @@ namespace TimeKey.Composition.SceneFlow
             public OutOfBattleShellState OutOfBattleState { get; }
 
             public CombatOutcomeApplyResult LastOutcomeApplyResult { get; }
+
+            public OverworldRunApplication OverworldRun { get; }
+
+            public OverworldSaveLoadResult PriorSave { get; set; }
+
+            public bool PersistencePromoted { get; set; }
+        }
+
+        private sealed class PreparedLaunchRecord
+        {
+            public PreparedLaunchRecord(
+                string payloadFingerprint,
+                OverworldRunApplication application)
+            {
+                PayloadFingerprint = payloadFingerprint;
+                Application = application;
+            }
+
+            public string PayloadFingerprint { get; }
+
+            public OverworldRunApplication Application { get; }
         }
     }
 }

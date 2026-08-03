@@ -4,7 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using TimeKey.Application.SceneFlow;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace TimeKey.Composition.SceneFlow
 {
@@ -19,6 +21,8 @@ namespace TimeKey.Composition.SceneFlow
         private AsyncOperation _pendingLoad;
         private SceneContentEntry _activeEntry;
         private SceneContentEntry _targetEntry;
+        private GameObject _sourceFocus;
+        private bool _restoringSource;
 
         public async Task LoadInitialAsync(
             SceneId initialScene,
@@ -49,8 +53,9 @@ namespace TimeKey.Composition.SceneFlow
                 transition.SetCovered(false);
                 entry.PlayRevealPresentation();
                 await AwaitRevealPresentation(entry, transition, cancellationToken);
-                inputGate.SetLocked(false);
                 entry.SetInteractive(true);
+                inputGate.SetLocked(false);
+                SelectDefaultFocus(entry);
             }
             catch
             {
@@ -82,6 +87,10 @@ namespace TimeKey.Composition.SceneFlow
                 switch (phase)
                 {
                     case SceneTransitionPhase.InputLocked:
+                        _sourceFocus = EventSystem.current == null
+                            ? null
+                            : EventSystem.current.currentSelectedGameObject;
+                        _restoringSource = false;
                         inputGate.SetLocked(true);
                         _activeEntry?.SetInteractive(false);
                         break;
@@ -119,8 +128,20 @@ namespace TimeKey.Composition.SceneFlow
                             cancellationToken);
                         break;
                     case SceneTransitionPhase.InputUnlocked:
-                        inputGate.SetLocked(false);
                         _activeEntry?.SetInteractive(true);
+                        inputGate.SetLocked(false);
+                        if (_restoringSource && _sourceFocus != null &&
+                            _sourceFocus.activeInHierarchy)
+                        {
+                            EventSystem.current?.SetSelectedGameObject(_sourceFocus);
+                        }
+                        else
+                        {
+                            SelectDefaultFocus(_activeEntry);
+                        }
+
+                        _sourceFocus = null;
+                        _restoringSource = false;
                         break;
                     case SceneTransitionPhase.RollingBackTarget:
                         stateStore.Rollback(request);
@@ -195,14 +216,15 @@ namespace TimeKey.Composition.SceneFlow
                     "The source scene is not loaded: " + request.Source + ".");
             }
 
+            stateStore.PrepareCommit(request);
             var operation = SceneManager.UnloadSceneAsync(scene);
             if (operation == null)
             {
                 throw new InvalidOperationException("The source scene could not be unloaded.");
             }
 
-            stateStore.Commit(request);
             await AwaitOperation(operation, CancellationToken.None);
+            stateStore.Commit(request);
         }
 
         private async Task RollBackTargetAsync(SceneId target)
@@ -232,6 +254,41 @@ namespace TimeKey.Composition.SceneFlow
             _activeEntry = FindEntry(scene, source);
             _activeEntry.SetCameraEnabled(true);
             SceneManager.SetActiveScene(scene);
+            _restoringSource = true;
+        }
+
+        private static void SelectDefaultFocus(SceneContentEntry entry)
+        {
+            if (entry == null || EventSystem.current == null)
+            {
+                return;
+            }
+
+            Selectable fallback = null;
+            foreach (var selectable in entry.GetComponentsInChildren<Selectable>(true))
+            {
+                if (!selectable.gameObject.activeInHierarchy || !selectable.interactable)
+                {
+                    continue;
+                }
+
+                if (fallback == null)
+                {
+                    fallback = selectable;
+                }
+
+                if (string.Equals(
+                        selectable.gameObject.name,
+                        entry.DefaultFocusId,
+                        StringComparison.Ordinal))
+                {
+                    EventSystem.current.SetSelectedGameObject(selectable.gameObject);
+                    return;
+                }
+            }
+
+            EventSystem.current.SetSelectedGameObject(
+                fallback == null ? null : fallback.gameObject);
         }
 
         private static SceneContentEntry FindEntry(Scene scene, SceneId expectedScene)

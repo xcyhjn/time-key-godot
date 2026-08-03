@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TimeKey.Application.EraClock;
 using TimeKey.Application.SceneFlow;
+using TimeKey.Domain.Overworld;
 using TimeKey.Presentation.CombatShell;
 using TimeKey.Presentation.EraClock;
 using TimeKey.Presentation.OutOfBattleShell;
@@ -65,6 +66,7 @@ namespace TimeKey.Composition.SceneFlow
                     }
 
                     presenter.Apply(stateStore.OutOfBattleState);
+                    BindFirstAvailableCombatRoom();
                     ApplySharedTopHud(stateStore.OutOfBattleState);
                     BeginEraClockProjection(stateStore.OutOfBattleState);
                 }
@@ -112,7 +114,6 @@ namespace TimeKey.Composition.SceneFlow
                 return;
             }
 
-            stateStore?.OutOfBattleState?.SetCurrentRoom(nodeId.Value);
             presenter.SetCurrentRoomIdentity(nodeId, "时隙节点 " + nodeId.Value);
             presenter.SetRoomAvailable(nodeType != TimeKey.Domain.OverworldMovement.MapNodeType.Start);
         }
@@ -170,15 +171,21 @@ namespace TimeKey.Composition.SceneFlow
                 await bootstrap.InitializationTask;
                 cancellationToken.ThrowIfCancellationRequested();
                 var sequence = bootstrap.ReserveTransitionSequence();
-                if (PreparedLaunch == null)
+                var state = stateStore.OutOfBattleState;
+                var applicationResult = stateStore.PrepareCombatLaunch(
+                    sequence,
+                    request.RoomId,
+                    state.RunId + "/" + request.RoomId + "/launch-" + sequence,
+                    battleTag,
+                    DeriveBattleSeed(state.RunSeed, request.RoomId));
+                if (!applicationResult.Succeeded)
                 {
-                    var state = stateStore.OutOfBattleState;
-                    PreparedLaunch = state.CreateCombatLaunch(
-                        state.RunId + "/" + request.RoomId + "/launch-" + sequence,
-                        request.RoomId,
-                        battleTag,
-                        DeriveBattleSeed(state.RunSeed, request.RoomId));
+                    throw new InvalidOperationException(
+                        "Overworld room selection failed: " +
+                        applicationResult.Failure + ".");
                 }
+
+                PreparedLaunch = applicationResult.Launch;
 
                 LastResult = await bootstrap.TransitionAsync(
                     new SceneTransitionRequest(
@@ -190,6 +197,7 @@ namespace TimeKey.Composition.SceneFlow
                     CancellationToken.None);
                 if (!LastResult.Succeeded)
                 {
+                    PreparedLaunch = null;
                     _inFlight = false;
                     presenter?.SetTransitionLocked(false);
                     movementPresenter?.SetTransitionLocked(false);
@@ -203,6 +211,7 @@ namespace TimeKey.Composition.SceneFlow
             }
             catch
             {
+                PreparedLaunch = null;
                 _inFlight = false;
                 presenter?.SetTransitionLocked(false);
                 movementPresenter?.SetTransitionLocked(false);
@@ -223,6 +232,47 @@ namespace TimeKey.Composition.SceneFlow
                 }
 
                 return (int)(hash & 0x7fffffff);
+            }
+        }
+
+        private void BindFirstAvailableCombatRoom()
+        {
+            var application = stateStore?.OverworldRun;
+            if (application == null || presenter == null)
+            {
+                return;
+            }
+
+            foreach (var nodeId in application.GetAvailableRoomIds())
+            {
+                var roomType = application.GetRoomType(nodeId);
+                if (roomType != OverworldRoomType.Battle &&
+                    roomType != OverworldRoomType.Elite &&
+                    roomType != OverworldRoomType.Boss)
+                {
+                    continue;
+                }
+
+                presenter.SetCurrentRoomIdentity(
+                    nodeId,
+                    RoomTitle(roomType.Value, nodeId.Value));
+                presenter.SetRoomAvailable(true);
+                return;
+            }
+
+            presenter.SetRoomAvailable(false);
+        }
+
+        private static string RoomTitle(OverworldRoomType roomType, string roomId)
+        {
+            switch (roomType)
+            {
+                case OverworldRoomType.Elite:
+                    return "精英战斗 · " + roomId;
+                case OverworldRoomType.Boss:
+                    return "章节首领 · " + roomId;
+                default:
+                    return "战斗房间 · " + roomId;
             }
         }
 

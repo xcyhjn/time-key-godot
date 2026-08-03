@@ -130,9 +130,9 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 Assert.That(store.LastOutcome.LaunchCorrelationId,
                     Is.EqualTo(launch.LaunchCorrelationId));
                 Assert.That(store.OutOfBattleState.SettledRoomIds,
-                    Has.Count.EqualTo(cycle));
+                    Has.Count.EqualTo(cycle + 1));
                 Assert.That(store.OutOfBattleState.SettledRoomIds.Distinct().Count(),
-                    Is.EqualTo(cycle));
+                    Is.EqualTo(cycle + 1));
                 Assert.That(Object.FindObjectsByType<VerticalSliceController>(
                     FindObjectsInactive.Include).Any(item => item.GetInstanceID() == controllerId),
                     Is.False);

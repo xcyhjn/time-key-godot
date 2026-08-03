@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="68" result="Passed" total="68" passed="68" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.3957625">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="440" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.395763" total="68" passed="68" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1466" name="TimeKey.Tests.EditMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.EditMode.dll" runstate="Runnable" testcasecount="393" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.386178" total="68" passed="68" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="22012" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1467" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="393" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.384062" total="68" passed="68" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1468" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="393" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.378820" total="68" passed="68" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1469" name="EditMode" fullname="TimeKey.Tests.EditMode" runstate="Runnable" testcasecount="393" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.376790" total="68" passed="68" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1477" name="Overworld" fullname="TimeKey.Tests.EditMode.Overworld" runstate="Runnable" testcasecount="22" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.049472" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1167" name="DeterministicOverworldMapGeneratorTests" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.037486" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1178" name="Config_RejectsUnsafeBounds" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Config_RejectsUnsafeBounds" methodname="Config_RejectsUnsafeBounds" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="125030064" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.009254" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1176" name="Definition_RejectsDuplicateAndIllegalEdges" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Definition_RejectsDuplicateAndIllegalEdges" methodname="Definition_RejectsDuplicateAndIllegalEdges" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="153781332" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.006037" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1174" name="Generate_DifferentSeedsProduceObservableDifference" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Generate_DifferentSeedsProduceObservableDifference" methodname="Generate_DifferentSeedsProduceObservableDifference" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="1430593652" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.005974" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1175" name="Generate_ProducesValidLayeredGraphFromEntryToBoss" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Generate_ProducesValidLayeredGraphFromEntryToBoss" methodname="Generate_ProducesValidLayeredGraphFromEntryToBoss" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="249992670" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.003959" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-suite type="ParameterizedMethod" id="1173" name="Generate_SameSeedAndConfigProduceIdenticalMap" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Generate_SameSeedAndConfigProduceIdenticalMap" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.002837" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                  <properties />
+                  <test-case id="1168" name="Generate_SameSeedAndConfigProduceIdenticalMap(0)" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Generate_SameSeedAndConfigProduceIdenticalMap(0)" methodname="Generate_SameSeedAndConfigProduceIdenticalMap" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="116816424" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000529" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1169" name="Generate_SameSeedAndConfigProduceIdenticalMap(17)" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Generate_SameSeedAndConfigProduceIdenticalMap(17)" methodname="Generate_SameSeedAndConfigProduceIdenticalMap" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="855275750" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000187" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1170" name="Generate_SameSeedAndConfigProduceIdenticalMap(-17)" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Generate_SameSeedAndConfigProduceIdenticalMap(-17)" methodname="Generate_SameSeedAndConfigProduceIdenticalMap" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="1449909234" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000122" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1171" name="Generate_SameSeedAndConfigProduceIdenticalMap(int.MinValue)" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Generate_SameSeedAndConfigProduceIdenticalMap(int.MinValue)" methodname="Generate_SameSeedAndConfigProduceIdenticalMap" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="2033738806" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000116" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1172" name="Generate_SameSeedAndConfigProduceIdenticalMap(int.MaxValue)" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.Generate_SameSeedAndConfigProduceIdenticalMap(int.MaxValue)" methodname="Generate_SameSeedAndConfigProduceIdenticalMap" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="1304965616" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000118" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                </test-suite>
+                <test-case id="1177" name="SnapshotCollectionsCannotMutateGeneratedDefinition" fullname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests.SnapshotCollectionsCannotMutateGeneratedDefinition" methodname="SnapshotCollectionsCannotMutateGeneratedDefinition" classname="TimeKey.Tests.EditMode.Overworld.DeterministicOverworldMapGeneratorTests" runstate="Runnable" seed="1144184751" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000498" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1179" name="OverworldChapterStateTests" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.011115" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1184" name="ActiveRoomBlocksSecondEntryAndResolutionKindMustMatchRoom" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.ActiveRoomBlocksSecondEntryAndResolutionKindMustMatchRoom" methodname="ActiveRoomBlocksSecondEntryAndResolutionKindMustMatchRoom" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="538814819" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.002843" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1189" name="BossDefeatDoesNotSettleOrAdvanceChapter" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.BossDefeatDoesNotSettleOrAdvanceChapter" methodname="BossDefeatDoesNotSettleOrAdvanceChapter" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="1236735211" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000671" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1188" name="BossVictoryAdvancesChapterExactlyOnce" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.BossVictoryAdvancesChapterExactlyOnce" methodname="BossVictoryAdvancesChapterExactlyOnce" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="443470383" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000465" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1181" name="EnterRoom_RequiresSavedAdjacentEdgeAndHasNoPartialFailure" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.EnterRoom_RequiresSavedAdjacentEdgeAndHasNoPartialFailure" methodname="EnterRoom_RequiresSavedAdjacentEdgeAndHasNoPartialFailure" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="1847313350" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000226" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1180" name="EntrySnapshot_ExposesOnlyAdjacentOutgoingRooms" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.EntrySnapshot_ExposesOnlyAdjacentOutgoingRooms" methodname="EntrySnapshot_ExposesOnlyAdjacentOutgoingRooms" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="130401537" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000376" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1191" name="ExportAndRestore_PreservesStateAndExactOperationReplay" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.ExportAndRestore_PreservesStateAndExactOperationReplay" methodname="ExportAndRestore_PreservesStateAndExactOperationReplay" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="246216255" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.003304" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-suite type="ParameterizedMethod" id="1187" name="NonCombatRoomCompletesAndUnlocksSuccessor" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.NonCombatRoomCompletesAndUnlocksSuccessor" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000740" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                  <properties />
+                  <test-case id="1185" name="NonCombatRoomCompletesAndUnlocksSuccessor(Event)" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.NonCombatRoomCompletesAndUnlocksSuccessor(Event)" methodname="NonCombatRoomCompletesAndUnlocksSuccessor" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="1563794095" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000267" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1186" name="NonCombatRoomCompletesAndUnlocksSuccessor(Shop)" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.NonCombatRoomCompletesAndUnlocksSuccessor(Shop)" methodname="NonCombatRoomCompletesAndUnlocksSuccessor" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="1612555975" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000068" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                </test-suite>
+                <test-case id="1192" name="Restore_RejectsInvalidCurrentAndActiveRoomState" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.Restore_RejectsInvalidCurrentAndActiveRoomState" methodname="Restore_RejectsInvalidCurrentAndActiveRoomState" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="921266441" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000419" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1182" name="SameSequenceAndPayloadIsIdempotent_DifferentPayloadConflicts" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.SameSequenceAndPayloadIsIdempotent_DifferentPayloadConflicts" methodname="SameSequenceAndPayloadIsIdempotent_DifferentPayloadConflicts" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="747076872" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000315" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1190" name="SnapshotCollectionsAreDefensive" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.SnapshotCollectionsAreDefensive" methodname="SnapshotCollectionsAreDefensive" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="1689082520" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000244" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1183" name="StaleAndCrossKindSequenceConflictsAreExplicit" fullname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests.StaleAndCrossKindSequenceConflictsAreExplicit" methodname="StaleAndCrossKindSequenceConflictsAreExplicit" classname="TimeKey.Tests.EditMode.Overworld.OverworldChapterStateTests" runstate="Runnable" seed="38691929" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000219" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1476" name="OverworldApplication" fullname="TimeKey.Tests.EditMode.OverworldApplication" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.023359" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1156" name="OverworldRunApplicationTests" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.023098" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1163" name="BossVictory_AdvancesOnceAndOrdersFullCommitPlan" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.BossVictory_AdvancesOnceAndOrdersFullCommitPlan" methodname="BossVictory_AdvancesOnceAndOrdersFullCommitPlan" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="394468314" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.011363" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1164" name="BossVictory_OnConfiguredLastChapterReturnsFinalDecision" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.BossVictory_OnConfiguredLastChapterReturnsFinalDecision" methodname="BossVictory_OnConfiguredLastChapterReturnsFinalDecision" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="1738841248" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.001703" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1161" name="CombatDefeat_DoesNotSettleRoomOrMasqueradeAsCompletion" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.CombatDefeat_DoesNotSettleRoomOrMasqueradeAsCompletion" methodname="CombatDefeat_DoesNotSettleRoomOrMasqueradeAsCompletion" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="479199468" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.001383" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1159" name="CombatLaunch_RejectsAdjacentEventAndShopRooms" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.CombatLaunch_RejectsAdjacentEventAndShopRooms" methodname="CombatLaunch_RejectsAdjacentEventAndShopRooms" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="303330248" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000585" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1158" name="CombatLaunch_RequiresAdjacentCombatRoomAndPreservesExistingIdentity" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.CombatLaunch_RequiresAdjacentCombatRoomAndPreservesExistingIdentity" methodname="CombatLaunch_RequiresAdjacentCombatRoomAndPreservesExistingIdentity" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="618609486" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.001021" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1160" name="CombatOutcome_IsAppliedExactlyOnceAndChangedReplayConflicts" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.CombatOutcome_IsAppliedExactlyOnceAndChangedReplayConflicts" methodname="CombatOutcome_IsAppliedExactlyOnceAndChangedReplayConflicts" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="637536237" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000528" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1157" name="Creation_IsDeterministicForNewAndSeedGames" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.Creation_IsDeterministicForNewAndSeedGames" methodname="Creation_IsDeterministicForNewAndSeedGames" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="1580643628" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000410" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1162" name="EventAndShopOutcomes_AreSeparateTypedContracts" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.EventAndShopOutcomes_AreSeparateTypedContracts" methodname="EventAndShopOutcomes_AreSeparateTypedContracts" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="1902134538" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.002462" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1166" name="PersistenceContract_ExposesNoDictionaryObjectOrUnityProperties" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.PersistenceContract_ExposesNoDictionaryObjectOrUnityProperties" methodname="PersistenceContract_ExposesNoDictionaryObjectOrUnityProperties" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="1118243962" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000779" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1165" name="PersistenceSnapshot_IsVersionedOrderedAndDefensivelyCopied" fullname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests.PersistenceSnapshot_IsVersionedOrderedAndDefensivelyCopied" methodname="PersistenceSnapshot_IsVersionedOrderedAndDefensivelyCopied" classname="TimeKey.Tests.EditMode.OverworldApplication.OverworldRunApplicationTests" runstate="Runnable" seed="258069775" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.001656" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1475" name="OverworldMovement" fullname="TimeKey.Tests.EditMode.OverworldMovement" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.062902" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1138" name="OverworldMovementModelTests" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.007855" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1139" name="AxialHexCoord_UsesSixUniqueDirections" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.AxialHexCoord_UsesSixUniqueDirections" methodname="AxialHexCoord_UsesSixUniqueDirections" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="267666392" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.001438" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1149" name="CancelOrFail_RestoresIdleWithoutPartialCommit" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.CancelOrFail_RestoresIdleWithoutPartialCommit" methodname="CancelOrFail_RestoresIdleWithoutPartialCommit" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="1478269382" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.002498" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1141" name="CommitArrival_ChangesPositionAndRevisionOnce" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.CommitArrival_ChangesPositionAndRevisionOnce" methodname="CommitArrival_ChangesPositionAndRevisionOnce" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="651880603" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.001148" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1140" name="RequestMove_DoesNotCommitBeforeArrival" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.RequestMove_DoesNotCommitBeforeArrival" methodname="RequestMove_DoesNotCommitBeforeArrival" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="475182018" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000186" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-suite type="ParameterizedMethod" id="1147" name="RequestMove_RejectsInvalidTargetWithoutSideEffects" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.RequestMove_RejectsInvalidTargetWithoutSideEffects" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000943" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                  <properties />
+                  <test-case id="1142" name="RequestMove_RejectsInvalidTargetWithoutSideEffects(SameNode)" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.RequestMove_RejectsInvalidTargetWithoutSideEffects(SameNode)" methodname="RequestMove_RejectsInvalidTargetWithoutSideEffects" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="1210232271" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000260" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1143" name="RequestMove_RejectsInvalidTargetWithoutSideEffects(NonAdjacent)" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.RequestMove_RejectsInvalidTargetWithoutSideEffects(NonAdjacent)" methodname="RequestMove_RejectsInvalidTargetWithoutSideEffects" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="1617093371" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000066" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1144" name="RequestMove_RejectsInvalidTargetWithoutSideEffects(MissingNode)" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.RequestMove_RejectsInvalidTargetWithoutSideEffects(MissingNode)" methodname="RequestMove_RejectsInvalidTargetWithoutSideEffects" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="973744811" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000044" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1145" name="RequestMove_RejectsInvalidTargetWithoutSideEffects(Blocked)" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.RequestMove_RejectsInvalidTargetWithoutSideEffects(Blocked)" methodname="RequestMove_RejectsInvalidTargetWithoutSideEffects" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="400730010" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000039" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1146" name="RequestMove_RejectsInvalidTargetWithoutSideEffects(Locked)" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.RequestMove_RejectsInvalidTargetWithoutSideEffects(Locked)" methodname="RequestMove_RejectsInvalidTargetWithoutSideEffects" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="2003387467" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000043" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                </test-suite>
+                <test-case id="1148" name="RequestMove_RejectsStaleAndReentrantCommands" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.RequestMove_RejectsStaleAndReentrantCommands" methodname="RequestMove_RejectsStaleAndReentrantCommands" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="2037429853" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000158" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1150" name="SettledNode_IsRejectedAndNotAvailable" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.SettledNode_IsRejectedAndNotAvailable" methodname="SettledNode_IsRejectedAndNotAvailable" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="1577233467" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000377" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1151" name="Snapshot_CollectionsAreDefensiveCopies" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests.Snapshot_CollectionsAreDefensiveCopies" methodname="Snapshot_CollectionsAreDefensiveCopies" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementModelTests" runstate="Runnable" seed="943633536" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000149" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1152" name="OverworldMovementPresentationTests" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementPresentationTests" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementPresentationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.054695" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1153" name="FormalPrefab_ContainsMovementFixtureAndThemeScope" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementPresentationTests.FormalPrefab_ContainsMovementFixtureAndThemeScope" methodname="FormalPrefab_ContainsMovementFixtureAndThemeScope" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementPresentationTests" runstate="Runnable" seed="1437106181" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.039979" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1154" name="InputController_UsesThresholdAndLockForPanAndZoom" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementPresentationTests.InputController_UsesThresholdAndLockForPanAndZoom" methodname="InputController_UsesThresholdAndLockForPanAndZoom" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementPresentationTests" runstate="Runnable" seed="1315891461" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.013185" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1155" name="ThemeAsset_UsesSilverAndNineSliceSprite" fullname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementPresentationTests.ThemeAsset_UsesSilverAndNineSliceSprite" methodname="ThemeAsset_UsesSilverAndNineSliceSprite" classname="TimeKey.Tests.EditMode.OverworldMovement.OverworldMovementPresentationTests" runstate="Runnable" seed="825005929" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000869" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1474" name="OverworldPersistence" fullname="TimeKey.Tests.EditMode.OverworldPersistence" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.172871" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1124" name="OverworldSaveRepositoryTests" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.170136" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1127" name="Document_DefensivelyCopiesEveryInputCollection" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Document_DefensivelyCopiesEveryInputCollection" methodname="Document_DefensivelyCopiesEveryInputCollection" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="390509134" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.008707" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1131" name="Load_ApprovedV0Fixture_ReturnsMigratedCurrentDocument" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Load_ApprovedV0Fixture_ReturnsMigratedCurrentDocument" methodname="Load_ApprovedV0Fixture_ReturnsMigratedCurrentDocument" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="540047632" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.065275" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1133" name="Load_CorruptPrimary_RecoversThePreviousValidBackup" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Load_CorruptPrimary_RecoversThePreviousValidBackup" methodname="Load_CorruptPrimary_RecoversThePreviousValidBackup" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="1964781289" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.039536" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1130" name="Load_FutureSchema_ReturnsUnsupportedFutureVersion" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Load_FutureSchema_ReturnsUnsupportedFutureVersion" methodname="Load_FutureSchema_ReturnsUnsupportedFutureVersion" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="1593945571" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.002010" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1129" name="Load_MalformedJson_ReturnsCorrupt" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Load_MalformedJson_ReturnsCorrupt" methodname="Load_MalformedJson_ReturnsCorrupt" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="598945974" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.001794" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1132" name="Load_Schema1Document_ReturnsMigratedSchema2Document" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Load_Schema1Document_ReturnsMigratedSchema2Document" methodname="Load_Schema1Document_ReturnsMigratedSchema2Document" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="1479372026" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.006938" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1128" name="Load_WhenPrimaryAndBackupAreMissing_ReturnsMissing" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Load_WhenPrimaryAndBackupAreMissing_ReturnsMissing" methodname="Load_WhenPrimaryAndBackupAreMissing_ReturnsMissing" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="1354896747" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000973" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1137" name="Save_FuturePrimaryDoesNotOverwriteAValidBackup" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Save_FuturePrimaryDoesNotOverwriteAValidBackup" methodname="Save_FuturePrimaryDoesNotOverwriteAValidBackup" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="320422013" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.012418" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1136" name="Save_ReplaceFailure_LeavesPreviousSaveReadableAndNoTemp" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Save_ReplaceFailure_LeavesPreviousSaveReadableAndNoTemp" methodname="Save_ReplaceFailure_LeavesPreviousSaveReadableAndNoTemp" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="253155837" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.006717" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1135" name="Save_TempValidationFailure_LeavesPreviousSaveReadableAndNoTemp" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Save_TempValidationFailure_LeavesPreviousSaveReadableAndNoTemp" methodname="Save_TempValidationFailure_LeavesPreviousSaveReadableAndNoTemp" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="434668674" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.006618" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1134" name="Save_TempWriteFailure_LeavesPreviousSaveReadableAndNoTemp" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Save_TempWriteFailure_LeavesPreviousSaveReadableAndNoTemp" methodname="Save_TempWriteFailure_LeavesPreviousSaveReadableAndNoTemp" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="1829421381" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.004408" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1125" name="SaveAndLoad_RoundTripsTheCurrentDocument" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.SaveAndLoad_RoundTripsTheCurrentDocument" methodname="SaveAndLoad_RoundTripsTheCurrentDocument" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="207671163" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.004185" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1126" name="Serialization_NormalizesSetLikeCollectionsDeterministically" fullname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests.Serialization_NormalizesSetLikeCollectionsDeterministically" methodname="Serialization_NormalizesSetLikeCollectionsDeterministically" classname="TimeKey.Tests.EditMode.OverworldPersistence.OverworldSaveRepositoryTests" runstate="Runnable" seed="202926178" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.008109" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestSuite" id="1472" name="SceneFlow" fullname="TimeKey.Tests.EditMode.SceneFlow" runstate="Runnable" testcasecount="38" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.035277" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1099" name="SceneFlowRuntimeStateTests" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.032983" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1107" name="InitialLoadFailure_RevealsAndUnlocksWithObservableFault" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests.InitialLoadFailure_RevealsAndUnlocksWithObservableFault" methodname="InitialLoadFailure_RevealsAndUnlocksWithObservableFault" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" seed="2129923749" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.007992" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1105" name="PersistentInputGate_PublishesAndClearsGlobalTransitionLock" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests.PersistentInputGate_PublishesAndClearsGlobalTransitionLock" methodname="PersistentInputGate_PublishesAndClearsGlobalTransitionLock" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" seed="1143834903" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000351" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1106" name="SceneInputLockLease_DoesNotClearAnIndependentTransitionLock" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests.SceneInputLockLease_DoesNotClearAnIndependentTransitionLock" methodname="SceneInputLockLease_DoesNotClearAnIndependentTransitionLock" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" seed="1880809563" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000225" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1100" name="StateStore_ConsumesMatchingOutcomeOnceAndRejectsAnotherLaunch" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests.StateStore_ConsumesMatchingOutcomeOnceAndRejectsAnotherLaunch" methodname="StateStore_ConsumesMatchingOutcomeOnceAndRejectsAnotherLaunch" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" seed="201949075" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.003377" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1104" name="StateStore_FailedPersistencePrepareKeepsPriorSaveAndRollsBackRun" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests.StateStore_FailedPersistencePrepareKeepsPriorSaveAndRollsBackRun" methodname="StateStore_FailedPersistencePrepareKeepsPriorSaveAndRollsBackRun" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" seed="138043835" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.009641" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1102" name="StateStore_GameOverToMainMenuClearsRunForNextLaunch" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests.StateStore_GameOverToMainMenuClearsRunForNextLaunch" methodname="StateStore_GameOverToMainMenuClearsRunForNextLaunch" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" seed="1245539446" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000840" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1103" name="StateStore_NewRunSaveAndContinueRestoreSameRunMapAndNode" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests.StateStore_NewRunSaveAndContinueRestoreSameRunMapAndNode" methodname="StateStore_NewRunSaveAndContinueRestoreSameRunMapAndNode" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" seed="1119694507" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.007387" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1101" name="StateStore_RollbackRestoresStateBeforeTypedRecord" fullname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests.StateStore_RollbackRestoresStateBeforeTypedRecord" methodname="StateStore_RollbackRestoresStateBeforeTypedRecord" classname="TimeKey.Tests.EditMode.SceneFlow.SceneFlowRuntimeStateTests" runstate="Runnable" seed="262509295" result="Passed" start-time="2026-08-03 19:58:51Z" end-time="2026-08-03 19:58:51Z" duration="0.000492" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

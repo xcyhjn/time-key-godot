@@ -120,3 +120,21 @@ OutOfBattle、Combat 与 GameOver 已接入保存的分层 reveal。自动化时
 Wave 03R-F 以正式 Bootstrap 路由红测复现并关闭了局外 reveal Center 中间态时钟与中央房间重叠：共享 Top HUD 的 Center anchor 固定为 `(0.20, 0.74)`、scale `0.50`，不改变 HUD anchor、SceneFlow completion 或唯一 Presenter 状态机。最终定向门禁为 EditMode `17/17`、graphical PlayMode `13/13`、正式三次 Victory 往返 `1/1`；全量为 EditMode `413/413`、graphical PlayMode `121/121`。六 Scene Windows Development build 成功（`227421290` bytes）；D3D12 Player exit 0、PASS 1、FAIL/异常 0，三轮均只有一个 EraClockPresenter，最终输入未锁定。正式五张 Player 图、三视口四阶段与动态 resize 证据均已逐张复核。
 
 P0、Wave 03P 和地图 Domain Gate A 已在当前提交历史中完成。下一恢复点为 `NEXT_STAGE_OVERWORLD_MAP_PROMPT.md` Gate B；不得重新执行地图 Gate A。当前无用户决策阻塞。
+
+## Wave 03 Overworld Gate B complete
+
+Gate A 的单一 `OverworldChapterState` 已接入 `OverworldRunApplication`、既有 typed
+SceneFlow、正式 MainMenu/OutOfBattle/Combat/GameOver 路由和 schema 2 原子存档。
+`OutOfBattleShellState` 仅作为既有 Presenter 的兼容投影；正式中央入口使用当前
+available 的真实 Gate A 节点 identity，不存在第二套地图、节点翻译表或跨 Scene
+状态机。
+
+Continue 现在由真实可恢复存档决定 enabled，恢复同一 run/map fingerprint/current
+node/resources；schema 0/1 可迁移，损坏/future/I/O failure 有 typed 状态。SceneFlow
+在源卸载前完成候选存档，失败会恢复旧地图、旧文件、源 Scene、焦点、遮罩和输入。
+最终定向门禁为 EditMode `68/68`，SceneFlow/02B4 EditMode `100/100`，真实 additive
+PlayMode `5/5`，全 SceneFlow D3D12 PlayMode `17/17`，Era Clock `17/17 + 13/13`。
+证据入口为 `../04-verification/evidence/overworld-map-gate-b/verification-summary.md`。
+
+下一恢复点为 Gate C：正式动态地图 UI、Event/Shop、Continue 错误提示和三视口视觉。
+当前无用户决策阻塞。

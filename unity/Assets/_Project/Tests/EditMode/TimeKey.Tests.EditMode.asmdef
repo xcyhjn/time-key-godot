@@ -4,6 +4,7 @@
   "references": [
     "TimeKey.Domain",
     "TimeKey.Application",
+    "TimeKey.Infrastructure",
     "TimeKey.Diagnostics",
     "TimeKey.Presentation",
     "TimeKey.Composition",

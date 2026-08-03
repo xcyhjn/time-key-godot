@@ -1,16 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using TimeKey.Application.SceneFlow;
+using TimeKey.Application.Overworld;
 using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain.BattleFlow;
 using TimeKey.Domain.Deck;
+using TimeKey.Domain.Overworld;
+using TimeKey.Domain.OverworldMovement;
+using TimeKey.Infrastructure.Persistence;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 using InvalidOperationException = System.InvalidOperationException;
 
 namespace TimeKey.Tests.PlayMode.SceneFlow
@@ -86,6 +92,7 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 Does.Contain(victoryLaunch.RoomId));
 
             var rejectedLaunch = Launch("settled-retry", victoryLaunch.RoomId);
+            var focusBeforeFailure = EventSystem.current.currentSelectedGameObject;
             yield return TransitionFailure(
                 bootstrap,
                 new SceneTransitionRequest(
@@ -98,6 +105,9 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             AssertPersistentState(SceneId.OutOfBattleShell);
             Assert.That(stateStore.LastOutcome, Is.SameAs(victory));
             Assert.That(stateStore.LastPayload, Is.SameAs(victory));
+            Assert.That(
+                EventSystem.current.currentSelectedGameObject,
+                Is.SameAs(focusBeforeFailure));
 
             var defeatLaunch = Launch("defeat", "room-defeat");
             yield return Transition(
@@ -183,6 +193,251 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             Object.Destroy(root);
             Object.Destroy(routes);
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Bootstrap_GateBGeneratedCombatRoundTripPersistsAndContinuesExactly()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-b-additive-" + System.Guid.NewGuid().ToString("N"));
+            var savePath = Path.Combine(directory, "overworld.json");
+            SceneManager.LoadScene("Bootstrap", LoadSceneMode.Single);
+            yield return null;
+            var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
+            yield return AwaitTask(bootstrap.InitializationTask, "Bootstrap initialization");
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    1,
+                    "gate-b-start-to-menu",
+                    SceneId.GameStart,
+                    SceneId.MainMenu,
+                    new EmptySceneTransitionPayload(SceneId.MainMenu)));
+
+            var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            store.ConfigurePersistencePath(savePath);
+            var seed = FindSeedWithAvailableCombatRoom();
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    2,
+                    "gate-b-menu-to-shell",
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    Start("gate-b-generated-run", seed)));
+
+            var roomId = FindAvailableCombatRoom(store.OverworldRun);
+            var launchResult = store.PrepareCombatLaunch(
+                3,
+                roomId.Value,
+                "gate-b-generated-launch",
+                "combat-vertical-slice",
+                seed);
+            Assert.That(launchResult.Succeeded, Is.True, launchResult.Failure.ToString());
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    3,
+                    launchResult.Launch.LaunchCorrelationId,
+                    SceneId.OutOfBattleShell,
+                    SceneId.Combat,
+                    launchResult.Launch));
+
+            var outcome = Outcome(
+                launchResult.Launch,
+                BattleOutcome.VictorySettlement);
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    4,
+                    outcome.OutcomeCorrelationId,
+                    SceneId.Combat,
+                    SceneId.OutOfBattleShell,
+                    outcome));
+
+            var expected = store.OverworldRun.CreatePersistenceSnapshot();
+            Assert.That(expected.SettledNodeIds, Does.Contain(roomId.Value));
+            Assert.That(SceneInputLockState.IsLocked, Is.False);
+            Assert.That(EventSystem.current.currentSelectedGameObject, Is.Not.Null);
+            var loaded = new OverworldSaveRepository(savePath).Load();
+            Assert.That(loaded.Succeeded, Is.True, loaded.Detail);
+            Assert.That(loaded.Document.CurrentNodeId, Is.EqualTo(roomId.Value));
+
+            var restoreRoot = new GameObject("GateBContinueRestore");
+            var restore = restoreRoot.AddComponent<SceneFlowStateStore>();
+            restore.ConfigurePersistencePath(savePath);
+            Assert.That(restore.RefreshContinueAvailability(), Is.True, restore.ContinueDetail);
+            Assert.That(restore.TryCreateContinuePayload(out var payload), Is.True);
+            var continueRequest = new SceneTransitionRequest(
+                5,
+                "gate-b-continue",
+                SceneId.MainMenu,
+                SceneId.OutOfBattleShell,
+                payload);
+            restore.Record(continueRequest);
+            var actual = restore.OverworldRun.CreatePersistenceSnapshot();
+            Assert.That(actual.RunId, Is.EqualTo(expected.RunId));
+            Assert.That(actual.MapFingerprint, Is.EqualTo(expected.MapFingerprint));
+            Assert.That(actual.CurrentNodeId, Is.EqualTo(expected.CurrentNodeId));
+            Assert.That(actual.SettledNodeIds, Is.EqualTo(expected.SettledNodeIds));
+            var replay = restore.OverworldRun.TryApplyCombatOutcome(
+                5,
+                restore.OverworldRun.Revision,
+                outcome);
+            var conflict = restore.OverworldRun.TryApplyCombatOutcome(
+                6,
+                restore.OverworldRun.Revision,
+                Outcome(launchResult.Launch, BattleOutcome.Defeat));
+            Assert.That(replay.Succeeded, Is.True);
+            Assert.That(replay.WasAlreadyApplied, Is.True);
+            Assert.That(
+                conflict.Failure,
+                Is.EqualTo(TimeKey.Application.Overworld.OverworldApplicationFailure.OutcomeConflict));
+
+            Object.Destroy(restoreRoot);
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Bootstrap_GateBPersistenceFailureRestoresCombatFocusAndPriorSave()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-b-failure-" + System.Guid.NewGuid().ToString("N"));
+            var savePath = Path.Combine(directory, "overworld.json");
+            SceneManager.LoadScene("Bootstrap", LoadSceneMode.Single);
+            yield return null;
+            var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
+            yield return AwaitTask(bootstrap.InitializationTask, "Bootstrap initialization");
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    1,
+                    "gate-b-failure-start-to-menu",
+                    SceneId.GameStart,
+                    SceneId.MainMenu,
+                    new EmptySceneTransitionPayload(SceneId.MainMenu)));
+
+            var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            store.ConfigurePersistencePath(savePath);
+            var seed = FindSeedWithAvailableCombatRoom();
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    2,
+                    "gate-b-failure-menu-to-shell",
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    Start("gate-b-failure-run", seed)));
+            var roomId = FindAvailableCombatRoom(store.OverworldRun);
+            var launchResult = store.PrepareCombatLaunch(
+                3,
+                roomId.Value,
+                "gate-b-failure-launch",
+                "combat-vertical-slice",
+                seed);
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    3,
+                    launchResult.Launch.LaunchCorrelationId,
+                    SceneId.OutOfBattleShell,
+                    SceneId.Combat,
+                    launchResult.Launch));
+
+            store.ConfigurePersistenceRepository(new OverworldSaveRepository(
+                savePath,
+                new ThrowBeforeReplace()));
+            var focusBeforeFailure = EventSystem.current.currentSelectedGameObject;
+            var outcome = Outcome(
+                launchResult.Launch,
+                BattleOutcome.VictorySettlement);
+            yield return TransitionFailure(
+                bootstrap,
+                new SceneTransitionRequest(
+                    4,
+                    outcome.OutcomeCorrelationId,
+                    SceneId.Combat,
+                    SceneId.OutOfBattleShell,
+                    outcome),
+                SceneTransitionPhase.UnloadingSource);
+
+            Assert.That(store.ActiveLaunch, Is.SameAs(launchResult.Launch));
+            Assert.That(store.OverworldRun.ChapterSnapshot.HasActiveRoom, Is.True);
+            Assert.That(SceneInputLockState.IsLocked, Is.False);
+            Assert.That(
+                EventSystem.current.currentSelectedGameObject,
+                Is.SameAs(focusBeforeFailure));
+            var persisted = new OverworldSaveRepository(savePath).Load();
+            Assert.That(persisted.Succeeded, Is.True);
+            Assert.That(persisted.Document.SettledNodeIds, Does.Not.Contain(roomId.Value));
+
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Bootstrap_MainMenuContinueLoadsValidatedSavedRun()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-b-menu-continue-" + System.Guid.NewGuid().ToString("N"));
+            var savePath = Path.Combine(directory, "overworld.json");
+            var savedRun = new OverworldRunApplication(
+                Start("gate-b-menu-continue", 731),
+                new OverworldMapGenerationConfig(1),
+                finalChapter: 3);
+            var saved = new OverworldSaveRepository(savePath).Save(
+                OverworldSaveMapper.ToDocument(savedRun.CreatePersistenceSnapshot()));
+            Assert.That(saved.Succeeded, Is.True, saved.Detail);
+
+            SceneManager.LoadScene("Bootstrap", LoadSceneMode.Single);
+            yield return null;
+            var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
+            yield return AwaitTask(bootstrap.InitializationTask, "Bootstrap initialization");
+            var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            store.ConfigurePersistencePath(savePath);
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    1,
+                    "gate-b-continue-menu",
+                    SceneId.GameStart,
+                    SceneId.MainMenu,
+                    new EmptySceneTransitionPayload(SceneId.MainMenu)));
+
+            var continueButton = FindButton("Continue");
+            Assert.That(continueButton.interactable, Is.True);
+            continueButton.onClick.Invoke();
+            var deadline = Time.realtimeSinceStartup + TaskTimeoutSeconds;
+            while (bootstrap.CurrentScene != SceneId.OutOfBattleShell ||
+                   SceneInputLockState.IsLocked ||
+                   !IsOnlyEntryInteractive(SceneId.OutOfBattleShell))
+            {
+                if (Time.realtimeSinceStartup >= deadline)
+                {
+                    Assert.Fail("Continue navigation timed out.");
+                }
+
+                yield return null;
+            }
+
+            Assert.That(store.OverworldRun, Is.Not.Null);
+            Assert.That(
+                store.OverworldRun.CreatePersistenceSnapshot().RunId,
+                Is.EqualTo("gate-b-menu-continue"));
+            AssertPersistentState(SceneId.OutOfBattleShell);
+
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
         }
 
         private static IEnumerator Transition(
@@ -284,16 +539,83 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
 
         private static RunStartPayload Start(string runId)
         {
+            return Start(runId, 731);
+        }
+
+        private static RunStartPayload Start(string runId, int seed)
+        {
             return new RunStartPayload(
                 RunStartKind.NewGame,
                 runId,
-                731,
-                "731",
+                seed,
+                seed.ToString(),
                 1,
                 1,
                 1,
                 0,
                 StarterDeck.OrderedStableIds);
+        }
+
+        private static int FindSeedWithAvailableCombatRoom()
+        {
+            var generator = new DeterministicOverworldMapGenerator();
+            for (var seed = 1; seed <= 1000; seed++)
+            {
+                var map = generator.Generate(seed, new OverworldMapGenerationConfig(1));
+                foreach (var nodeId in map.GetOutgoing(map.EntryNodeId))
+                {
+                    var type = map.GetNode(nodeId).RoomType;
+                    if (type == OverworldRoomType.Battle ||
+                        type == OverworldRoomType.Elite ||
+                        type == OverworldRoomType.Boss)
+                    {
+                        return seed;
+                    }
+                }
+            }
+
+            Assert.Fail("No deterministic seed exposed an adjacent combat room.");
+            return 0;
+        }
+
+        private static MapNodeId FindAvailableCombatRoom(
+            OverworldRunApplication application)
+        {
+            foreach (var nodeId in application.GetAvailableRoomIds())
+            {
+                var type = application.GetRoomType(nodeId);
+                if (type == OverworldRoomType.Battle ||
+                    type == OverworldRoomType.Elite ||
+                    type == OverworldRoomType.Boss)
+                {
+                    return nodeId;
+                }
+            }
+
+            Assert.Fail("The generated map has no available combat room.");
+            return default(MapNodeId);
+        }
+
+        private static Button FindButton(string name)
+        {
+            foreach (var button in Object.FindObjectsByType<Button>(FindObjectsInactive.Include))
+            {
+                if (button.gameObject.name == name)
+                {
+                    return button;
+                }
+            }
+
+            Assert.Fail("Missing button " + name + ".");
+            return null;
+        }
+
+        private static bool IsOnlyEntryInteractive(SceneId sceneId)
+        {
+            var entries = Object.FindObjectsByType<SceneContentEntry>(
+                FindObjectsInactive.Include);
+            return entries.Length == 1 && entries[0].SceneId == sceneId &&
+                entries[0].IsInteractive;
         }
 
         private static CombatOutcome Outcome(
@@ -332,6 +654,17 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, "Missing field: " + fieldName);
             field.SetValue(target, value);
+        }
+
+        private sealed class ThrowBeforeReplace : IOverworldSaveWriteFaultInjector
+        {
+            public void OnStage(OverworldSaveWriteStage stage, string temporaryPath)
+            {
+                if (stage == OverworldSaveWriteStage.BeforeReplace)
+                {
+                    throw new IOException("Injected Gate B persistence failure.");
+                }
+            }
         }
     }
 }

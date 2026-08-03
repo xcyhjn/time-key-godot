@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="17" result="Passed" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.6034901">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="439" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.603490" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1465" name="TimeKey.Tests.EditMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.EditMode.dll" runstate="Runnable" testcasecount="392" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.594720" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="41196" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1466" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="392" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.592866" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1467" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="392" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.591251" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1468" name="EditMode" fullname="TimeKey.Tests.EditMode" runstate="Runnable" testcasecount="392" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.586335" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1484" name="EraClock" fullname="TimeKey.Tests.EditMode.EraClock" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.579616" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1273" name="EraClockContractTests" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.028149" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1289" name="CancelOnlySettlesTheLatestTransition" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.CancelOnlySettlesTheLatestTransition" methodname="CancelOnlySettlesTheLatestTransition" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="831376407" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.010985" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1288" name="NewerSnapshotWithSameVisualStateAdvancesSequenceWithoutAnimation" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.NewerSnapshotWithSameVisualStateAdvancesSequenceWithoutAnimation" methodname="NewerSnapshotWithSameVisualStateAdvancesSequenceWithoutAnimation" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="261251265" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.001172" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1279" name="OutOfBattleAdapterCopiesAuthoritativeEraAndPhase" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.OutOfBattleAdapterCopiesAuthoritativeEraAndPhase" methodname="OutOfBattleAdapterCopiesAuthoritativeEraAndPhase" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="206726267" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000964" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1285" name="PlannerCanCombinePhaseAndAnchorTransitions" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.PlannerCanCombinePhaseAndAnchorTransitions" methodname="PlannerCanCombinePhaseAndAnchorTransitions" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="657962132" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000246" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1282" name="PlannerClassifiesAdjacentPhaseAndRequestsAnimation" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.PlannerClassifiesAdjacentPhaseAndRequestsAnimation" methodname="PlannerClassifiesAdjacentPhaseAndRequestsAnimation" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="104437460" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000144" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1283" name="PlannerClassifiesEightToOneAsRollover" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.PlannerClassifiesEightToOneAsRollover" methodname="PlannerClassifiesEightToOneAsRollover" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="1222903313" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000148" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1284" name="PlannerSnapsNonAdjacentAuthoritativeJump" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.PlannerSnapsNonAdjacentAuthoritativeJump" methodname="PlannerSnapsNonAdjacentAuthoritativeJump" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="1132651999" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000102" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1280" name="RunStartAdapterCopiesAuthoritativeEraAndPhase" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.RunStartAdapterCopiesAuthoritativeEraAndPhase" methodname="RunStartAdapterCopiesAuthoritativeEraAndPhase" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="2037731399" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000198" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1281" name="SnapshotPreservesInputAndRevealMetadataWithoutOwningInputState" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.SnapshotPreservesInputAndRevealMetadataWithoutOwningInputState" methodname="SnapshotPreservesInputAndRevealMetadataWithoutOwningInputState" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="383557047" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000095" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-suite type="ParameterizedMethod" id="1278" name="SnapshotRejectsInvalidAuthoritativeValues" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.SnapshotRejectsInvalidAuthoritativeValues" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.003429" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                  <properties />
+                  <test-case id="1274" name="SnapshotRejectsInvalidAuthoritativeValues(0,1,0)" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.SnapshotRejectsInvalidAuthoritativeValues(0,1,0)" methodname="SnapshotRejectsInvalidAuthoritativeValues" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="293704784" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.001765" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1275" name="SnapshotRejectsInvalidAuthoritativeValues(1,0,0)" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.SnapshotRejectsInvalidAuthoritativeValues(1,0,0)" methodname="SnapshotRejectsInvalidAuthoritativeValues" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="831416474" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000076" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1276" name="SnapshotRejectsInvalidAuthoritativeValues(1,9,0)" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.SnapshotRejectsInvalidAuthoritativeValues(1,9,0)" methodname="SnapshotRejectsInvalidAuthoritativeValues" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="1343171508" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000047" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1277" name="SnapshotRejectsInvalidAuthoritativeValues(1,1,-1)" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.SnapshotRejectsInvalidAuthoritativeValues(1,1,-1)" methodname="SnapshotRejectsInvalidAuthoritativeValues" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="556652922" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000033" asserts="0">
+                    <properties>
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                </test-suite>
+                <test-case id="1286" name="StateMachineRejectsStaleConflictAndExactRepeat" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.StateMachineRejectsStaleConflictAndExactRepeat" methodname="StateMachineRejectsStaleConflictAndExactRepeat" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="1927913503" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000752" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1287" name="StateMachineTracksRolloverUntilLatestTransitionCompletes" fullname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests.StateMachineTracksRolloverUntilLatestTransitionCompletes" methodname="StateMachineTracksRolloverUntilLatestTransitionCompletes" classname="TimeKey.Tests.EditMode.EraClock.EraClockContractTests" runstate="Runnable" seed="624013986" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.000463" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1290" name="EraClockFormalIntegrationTests" fullname="TimeKey.Tests.EditMode.EraClock.EraClockFormalIntegrationTests" classname="TimeKey.Tests.EditMode.EraClock.EraClockFormalIntegrationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.550621" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1291" name="FormalPrefabs_SaveOneCompleteNonBlockingClockOwner" fullname="TimeKey.Tests.EditMode.EraClock.EraClockFormalIntegrationTests.FormalPrefabs_SaveOneCompleteNonBlockingClockOwner" methodname="FormalPrefabs_SaveOneCompleteNonBlockingClockOwner" classname="TimeKey.Tests.EditMode.EraClock.EraClockFormalIntegrationTests" runstate="Runnable" seed="1137996808" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.066404" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1292" name="FormalScenes_SaveSingleOwnerAndCompositionReferences" fullname="TimeKey.Tests.EditMode.EraClock.EraClockFormalIntegrationTests.FormalScenes_SaveSingleOwnerAndCompositionReferences" methodname="FormalScenes_SaveSingleOwnerAndCompositionReferences" classname="TimeKey.Tests.EditMode.EraClock.EraClockFormalIntegrationTests" runstate="Runnable" seed="1899524928" result="Passed" start-time="2026-08-03 19:44:23Z" end-time="2026-08-03 19:44:23Z" duration="0.483305" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
