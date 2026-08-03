@@ -212,6 +212,7 @@ MonoBehaviour:
   interactionOverlayPresenter: {fileID: 290036138}
   battleFlowPresenter: {fileID: 909771162}
   combatTopHudPresenter: {fileID: 1034515384}
+  eraClockPresenter: {fileID: 1034515386}
 --- !u!114 &1004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4742,6 +4743,17 @@ CanvasGroup:
   m_CorrespondingSourceObject: {fileID: 4337379829230194515, guid: 0fa8ed43bdcd9b140866380bd08d094b, type: 3}
   m_PrefabInstance: {fileID: 1034515382}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1034515386 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2930469272820526321, guid: 0fa8ed43bdcd9b140866380bd08d094b, type: 3}
+  m_PrefabInstance: {fileID: 1034515382}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dc898f93170332419f47c7e98ae30c2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.EraClock.EraClockPresenter
 --- !u!1001 &1053319202
 PrefabInstance:
   m_ObjectHideFlags: 0

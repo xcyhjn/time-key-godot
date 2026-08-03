@@ -180,6 +180,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: TimeKey.Composition::TimeKey.Composition.SceneFlow.MainMenuSceneNavigation
   bootstrap: {fileID: 0}
   presenter: {fileID: 1900027514}
+  stateStore: {fileID: 0}
+  eraClockPresenter: {fileID: 1900027515}
   defaultRunSeed: 731
 --- !u!1 &1500364061
 GameObject:
@@ -530,6 +532,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08d47c9d65082e2498821070106fc1c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.MainMenu.MainMenuPresenter
+--- !u!114 &1900027515 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2494794632487786833, guid: 959345de8969f70459cff89b1d372db9, type: 3}
+  m_PrefabInstance: {fileID: 1900027512}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dc898f93170332419f47c7e98ae30c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.EraClock.EraClockPresenter
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

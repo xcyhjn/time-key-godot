@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using TimeKey.Application.EraClock;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain.BattleFlow;
 using TimeKey.Presentation;
 using TimeKey.Presentation.BattleFlow;
+using TimeKey.Presentation.EraClock;
 using TimeKey.Presentation.MainMenu;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -77,6 +79,9 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             var bootstrap = bootstrapTask.Result;
             var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
             Assert.That(store, Is.Not.Null);
+            yield return AwaitEraClock(
+                store.OutOfBattleState.Era,
+                store.OutOfBattleState.Phase);
             var runId = store.OutOfBattleState.RunId;
             var memory = new List<long>();
 
@@ -97,6 +102,9 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 yield return AwaitTask(transition, "cycle " + cycle + " enter combat");
                 Assert.That(transition.Result.Succeeded, Is.True, transition.Result.Message);
                 yield return AwaitScene(bootstrap, SceneId.Combat);
+                yield return AwaitEraClock(
+                    store.OutOfBattleState.Era,
+                    store.OutOfBattleState.Phase);
 
                 Assert.That(store.ActiveLaunch, Is.Not.Null);
                 Assert.That(store.ActiveLaunch.LaunchCorrelationId,
@@ -112,6 +120,9 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 reward.onClick.Invoke();
 
                 yield return AwaitScene(bootstrap, SceneId.OutOfBattleShell);
+                yield return AwaitEraClock(
+                    store.OutOfBattleState.Era,
+                    store.OutOfBattleState.Phase);
                 Assert.That(store.ActiveLaunch, Is.Null);
                 Assert.That(store.LastOutcome, Is.Not.Null);
                 Assert.That(store.LastOutcome.RunId, Is.EqualTo(runId));
@@ -267,6 +278,29 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             Assert.That(task.IsFaulted, Is.False, task.Exception?.ToString());
         }
 
+        private static IEnumerator AwaitEraClock(int era, int phase)
+        {
+            var deadline = Time.realtimeSinceStartup + TimeoutSeconds;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                var clocks = Object.FindObjectsByType<EraClockPresenter>(
+                    FindObjectsInactive.Include);
+                if (clocks.Length == 1 &&
+                    clocks[0].CurrentSnapshot != null &&
+                    clocks[0].CurrentSnapshot.Era == era &&
+                    clocks[0].CurrentSnapshot.Phase == phase &&
+                    clocks[0].CurrentSnapshot.AnchorTarget == EraClockAnchorTarget.Hud &&
+                    clocks[0].State == EraClockPresenterState.Settled)
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            Assert.Fail("Timed out waiting for the formal EraClock HUD state.");
+        }
+
         private static void AssertPersistentTopology(SceneId expectedScene)
         {
             Assert.That(SceneManager.sceneCount, Is.EqualTo(2));
@@ -281,6 +315,8 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             Assert.That(Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Include),
                 Has.Length.EqualTo(1));
             Assert.That(Object.FindObjectsByType<AudioSource>(FindObjectsInactive.Include),
+                Has.Length.EqualTo(1));
+            Assert.That(Object.FindObjectsByType<EraClockPresenter>(FindObjectsInactive.Include),
                 Has.Length.EqualTo(1));
             var entries = Object.FindObjectsByType<SceneContentEntry>(
                 FindObjectsInactive.Include);

@@ -17,6 +17,8 @@
 | Windows build | `build-summary.json` | succeeded; exit 0; 6 Scenes; Silver attribution |
 | Actual Player | `player-smoke-summary.json` | exit 0; PASS 1; PERF 3; FAIL 0, corroborated by excluded raw log |
 | Manual visual review | `visual-review.md`, 17 PNGs | passed; 0 defects |
+| Wave 03R-F maintenance refresh | `../era-clock-closeout/editmode-full.xml`, `../era-clock-closeout/playmode-full.xml` | `413/413 + 121/121` passed; reveal overlap closed |
+| Wave 03R-F responsive reveal | `../era-clock-closeout/visual-evidence-index.json`, 16 PNGs | red/green formal middle plus 14 three-viewport/resize frames reviewed |
 
 The 17 PNGs comprise nine initial/middle/complete reveal frames, three responsive ocean views and five actual Player route captures. The inherited Gate B four-yaw combat evidence remains valid because Gate E did not change that boundary.
 

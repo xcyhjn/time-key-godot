@@ -1,10 +1,14 @@
 using System;
+using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
+using TimeKey.Application.EraClock;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Presentation.CombatShell;
+using TimeKey.Presentation.EraClock;
 using TimeKey.Presentation.OutOfBattleShell;
 using TimeKey.Presentation.OverworldMovement;
+using TimeKey.Presentation.SceneFlowFinale;
 using UnityEngine;
 
 namespace TimeKey.Composition.SceneFlow
@@ -18,8 +22,12 @@ namespace TimeKey.Composition.SceneFlow
         [SerializeField] private CombatTopHudPresenter sharedTopHud = null;
         [SerializeField] private string battleTag = "combat-vertical-slice";
         [SerializeField] private OverworldMovementPresenter movementPresenter = null;
+        [SerializeField] private EraClockPresenter eraClockPresenter = null;
+        [SerializeField] private LayeredSceneRevealPresenter revealPresenter = null;
 
         private CancellationTokenSource _lifetime;
+        private Coroutine _eraClockRoutine;
+        private long _eraClockSequence;
         private bool _inFlight;
 
         public CombatLaunchPayload PreparedLaunch { get; private set; }
@@ -38,6 +46,12 @@ namespace TimeKey.Composition.SceneFlow
             movementPresenter = movementPresenter != null
                 ? movementPresenter
                 : GetComponentInChildren<OverworldMovementPresenter>(true);
+            eraClockPresenter = eraClockPresenter != null
+                ? eraClockPresenter
+                : GetComponentInChildren<EraClockPresenter>(true);
+            revealPresenter = revealPresenter != null
+                ? revealPresenter
+                : GetComponentInChildren<LayeredSceneRevealPresenter>(true);
             if (presenter != null)
             {
                 presenter.RoomConfirmationRequested += OnRoomConfirmationRequested;
@@ -52,6 +66,7 @@ namespace TimeKey.Composition.SceneFlow
 
                     presenter.Apply(stateStore.OutOfBattleState);
                     ApplySharedTopHud(stateStore.OutOfBattleState);
+                    BeginEraClockProjection(stateStore.OutOfBattleState);
                 }
             }
 
@@ -63,6 +78,17 @@ namespace TimeKey.Composition.SceneFlow
 
         private void OnDisable()
         {
+            if (_eraClockRoutine != null)
+            {
+                StopCoroutine(_eraClockRoutine);
+                _eraClockRoutine = null;
+            }
+
+            if (eraClockPresenter != null && eraClockPresenter.CurrentSnapshot != null)
+            {
+                eraClockPresenter.CancelAndSnap();
+            }
+
             if (presenter != null)
             {
                 presenter.RoomConfirmationRequested -= OnRoomConfirmationRequested;
@@ -220,6 +246,52 @@ namespace TimeKey.Composition.SceneFlow
                     ? "银 · 时钥行者"
                     : state.CharacterId,
                 false));
+        }
+
+        private void BeginEraClockProjection(OutOfBattleShellState state)
+        {
+            if (eraClockPresenter == null || state == null)
+            {
+                return;
+            }
+
+            eraClockPresenter.ApplySnapshot(EraClockSnapshotAdapter.FromOutOfBattle(
+                state,
+                NextEraClockSequence(),
+                EraClockAnchorTarget.Center));
+            if (_eraClockRoutine != null)
+            {
+                StopCoroutine(_eraClockRoutine);
+            }
+
+            _eraClockRoutine = StartCoroutine(MoveEraClockToHudAfterReveal());
+        }
+
+        private IEnumerator MoveEraClockToHudAfterReveal()
+        {
+            yield return null;
+            while (revealPresenter != null && !revealPresenter.IsComplete)
+            {
+                yield return null;
+            }
+
+            _eraClockRoutine = null;
+            var state = stateStore?.OutOfBattleState;
+            if (!isActiveAndEnabled || state == null || eraClockPresenter == null)
+            {
+                yield break;
+            }
+
+            eraClockPresenter.ApplySnapshot(EraClockSnapshotAdapter.FromOutOfBattle(
+                state,
+                NextEraClockSequence(),
+                EraClockAnchorTarget.Hud));
+        }
+
+        private long NextEraClockSequence()
+        {
+            _eraClockSequence++;
+            return _eraClockSequence;
         }
     }
 }

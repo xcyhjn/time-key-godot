@@ -10,7 +10,7 @@ The final full EditMode run passed `343/343` in `editmode-full-final.xml`. The f
 
 Targeted results are saved-assets EditMode `3/3`, build-smoke EditMode `3/3`, layered reveal PlayMode `7/7`, post-review Combat entrance PlayMode `5/5`, three-cycle stability PlayMode `1/1`, and visual capture PlayMode `1/1`. The post-review results are `playmode-combat-entrance-post-review.xml` and `playmode-stability-post-review.xml`; earlier failing or superseded XML remains diagnostic only.
 
-The Windows Development build succeeded with the frozen six-Scene order. The artifact is `227249074` bytes, its executable SHA-256 is `8B85CC34BECB9A5E63DC14325C0266CF01CDAF798F5F35638FC01C0BE0CE7878`, and Silver attribution is present.
+The Windows Development build succeeded with the frozen six-Scene order. The Wave 03R-F maintenance refresh is `227421290` bytes, its executable SHA-256 is `8B85CC34BECB9A5E63DC14325C0266CF01CDAF798F5F35638FC01C0BE0CE7878`, and Silver attribution is present.
 
 The visible Direct3D12 Player exited 0. Its final log contains one PASS marker, three PERF markers and no FAIL marker. All three cycles retained one Bootstrap and one content entry, used distinct room/launch/outcome identities, returned to OutOfBattleShell, and ended with `finalInputLocked=false`.
 
@@ -31,3 +31,5 @@ Allocated memory increased by `412086` bytes across the three samples. Raw sampl
 ## Closure
 
 Gate E is closed locally. The canonical evidence set includes final XML, build/player JSON, the structured animation timeline and 17 reviewed PNGs; raw logs remain local diagnostics. Push was intentionally skipped per user instruction. Current user-decision blockers: none.
+
+Wave 03R-F later refreshed the affected boundary after fixing the OutOfBattle Center reveal overlap: targeted EraClock `17/17 + 13/13`, full `413/413 + 121/121`, formal three-cycle `1/1`, six-Scene build, and visible Direct3D12 Player all pass. The new three-viewport/four-state plus resize evidence lives under `../era-clock-closeout/`; it changes no Combat Shell state machine or Gate E route semantics.

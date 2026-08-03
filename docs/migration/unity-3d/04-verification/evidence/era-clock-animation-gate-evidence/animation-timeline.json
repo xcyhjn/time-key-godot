@@ -1,0 +1,61 @@
+{
+    "unityVersion": "6000.4.10f1",
+    "renderer": "Direct3D12",
+    "viewport": "1920x1080",
+    "fromEra": 7,
+    "fromPhase": 8,
+    "fromSequence": 20,
+    "toEra": 8,
+    "toPhase": 1,
+    "toSequence": 21,
+    "transitionKind": "Rollover",
+    "owner": "EraClockPresenter",
+    "fromAnchor": "Center",
+    "toAnchor": "Center",
+    "configuredDurationSeconds": 2.0,
+    "completionReason": "Completed",
+    "cancellationReason": "None",
+    "inputLocked": false,
+    "events": [
+        {
+            "timeSeconds": 0.0,
+            "eventName": "initial",
+            "eraLabel": "第7时代",
+            "phaseLabel": "8 / 8",
+            "progress": 1.0,
+            "pointerAngle": 45.000003814697269,
+            "pulseAlpha": 0.0,
+            "presenterState": "Settled"
+        },
+        {
+            "timeSeconds": 0.0,
+            "eventName": "accepted-rollover",
+            "eraLabel": "第8时代",
+            "phaseLabel": "1 / 8",
+            "progress": 1.0,
+            "pointerAngle": 36.30491638183594,
+            "pulseAlpha": 0.0,
+            "presenterState": "RolloverTransition"
+        },
+        {
+            "timeSeconds": 0.8830909729003906,
+            "eventName": "reset-pulse",
+            "eraLabel": "第8时代",
+            "phaseLabel": "1 / 8",
+            "progress": 0.0,
+            "pointerAngle": 0.0,
+            "pulseAlpha": 0.8500397205352783,
+            "presenterState": "RolloverTransition"
+        },
+        {
+            "timeSeconds": 1.9841575622558594,
+            "eventName": "terminal-phase-one",
+            "eraLabel": "第8时代",
+            "phaseLabel": "1 / 8",
+            "progress": 0.125,
+            "pointerAngle": 0.0,
+            "pulseAlpha": 0.0,
+            "presenterState": "Settled"
+        }
+    ]
+}

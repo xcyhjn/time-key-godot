@@ -4,11 +4,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using TimeKey.Application.EraClock;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Domain.BattleFlow;
 using TimeKey.Domain.Deck;
 using TimeKey.Presentation;
 using TimeKey.Presentation.BattleFlow;
+using TimeKey.Presentation.EraClock;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -115,6 +117,7 @@ namespace TimeKey.Composition.SceneFlow
             await AwaitSceneAsync(SceneId.MainMenu, 30f);
             Screen.SetResolution(1280, 720, false);
             await WaitFramesAsync(3);
+            AssertSingleEraClockOwner();
             var evidence = EvidenceDirectory();
             Directory.CreateDirectory(evidence);
             DeleteGateEOutput(evidence, "player-smoke-summary.json");
@@ -142,6 +145,7 @@ namespace TimeKey.Composition.SceneFlow
                     StarterDeck.OrderedStableIds),
                 "player-gate-e-start");
             await AwaitSceneAsync(SceneId.OutOfBattleShell, 30f);
+            await AwaitEraClockAsync(1, 1, EraClockAnchorTarget.Hud, 30f);
             await CapturePlayerScreenshotAsync(
                 Path.Combine(evidence, "player-out-of-battle-1280x720.png"));
 
@@ -184,6 +188,11 @@ namespace TimeKey.Composition.SceneFlow
                         launch,
                         "player-gate-e-enter-" + cycle);
                     await AwaitSceneAsync(SceneId.Combat, 30f);
+                    await AwaitEraClockAsync(
+                        store.OutOfBattleState.Era,
+                        store.OutOfBattleState.Phase,
+                        EraClockAnchorTarget.Hud,
+                        30f);
                     AssertTopology(SceneId.Combat);
                     if (cycle == 1)
                     {
@@ -218,6 +227,11 @@ namespace TimeKey.Composition.SceneFlow
                     reward.onClick.Invoke();
                     reward.onClick.Invoke();
                     await AwaitSceneAsync(SceneId.OutOfBattleShell, 30f);
+                    await AwaitEraClockAsync(
+                        store.OutOfBattleState.Era,
+                        store.OutOfBattleState.Phase,
+                        EraClockAnchorTarget.Hud,
+                        30f);
                     stopwatch.Stop();
                     AssertTopology(SceneId.OutOfBattleShell);
                     if (store.ActiveLaunch != null || store.LastOutcome == null ||
@@ -251,6 +265,8 @@ namespace TimeKey.Composition.SceneFlow
                         bootstrapCount = FindObjectsByType<BootstrapRoot>(
                             FindObjectsInactive.Include).Length,
                         contentEntryCount = FindObjectsByType<SceneContentEntry>(
+                            FindObjectsInactive.Include).Length,
+                        eraClockPresenterCount = FindObjectsByType<EraClockPresenter>(
                             FindObjectsInactive.Include).Length
                     };
                     summary.cycles.Add(cycleSummary);
@@ -322,6 +338,7 @@ namespace TimeKey.Composition.SceneFlow
             await CapturePlayerScreenshotAsync(
                 Path.Combine(evidence, "player-returned-shell-2560x1080.png"));
             summary.finalInputLocked = SceneInputLockState.IsLocked;
+            summary.eraClockValidated = true;
             if (summary.finalInputLocked)
             {
                 throw new InvalidOperationException(
@@ -554,7 +571,8 @@ namespace TimeKey.Composition.SceneFlow
                 FindObjectsByType<PersistentInputGate>(FindObjectsInactive.Include).Length != 1 ||
                 FindObjectsByType<TransitionCanvasPresenter>(FindObjectsInactive.Include).Length != 1 ||
                 FindObjectsByType<EventSystem>(FindObjectsInactive.Include).Length != 1 ||
-                FindObjectsByType<AudioSource>(FindObjectsInactive.Include).Length != 1)
+                FindObjectsByType<AudioSource>(FindObjectsInactive.Include).Length != 1 ||
+                FindObjectsByType<EraClockPresenter>(FindObjectsInactive.Include).Length != 1)
             {
                 throw new InvalidOperationException(
                     "Gate E Player smoke found duplicate persistent topology.");
@@ -567,6 +585,48 @@ namespace TimeKey.Composition.SceneFlow
                 throw new InvalidOperationException(
                     "Gate E Player smoke found invalid active content topology.");
             }
+        }
+
+        private static void AssertSingleEraClockOwner()
+        {
+            var presenters = FindObjectsByType<EraClockPresenter>(
+                FindObjectsInactive.Include);
+            if (presenters.Length != 1)
+            {
+                throw new InvalidOperationException(
+                    "Gate E Player smoke requires exactly one EraClock presenter.");
+            }
+        }
+
+        private static async Task AwaitEraClockAsync(
+            int era,
+            int phase,
+            EraClockAnchorTarget anchor,
+            float timeoutSeconds)
+        {
+            var deadline = Time.realtimeSinceStartup + timeoutSeconds;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                var presenters = FindObjectsByType<EraClockPresenter>(
+                    FindObjectsInactive.Include);
+                if (presenters.Length == 1)
+                {
+                    EraClockPresentationSnapshot snapshot = presenters[0].CurrentSnapshot;
+                    if (snapshot != null &&
+                        snapshot.Era == era &&
+                        snapshot.Phase == phase &&
+                        snapshot.AnchorTarget == anchor &&
+                        presenters[0].State == EraClockPresenterState.Settled)
+                    {
+                        return;
+                    }
+                }
+
+                await Task.Yield();
+            }
+
+            throw new InvalidOperationException(
+                "Gate E Player smoke timed out waiting for the formal EraClock state.");
         }
 
         private static string EvidenceDirectory()
@@ -619,6 +679,7 @@ namespace TimeKey.Composition.SceneFlow
             public bool materiallyMonotonicMemoryGrowth;
             public bool sustainedMonotonicMemoryGrowth;
             public bool finalInputLocked;
+            public bool eraClockValidated;
         }
 
         [Serializable]
@@ -636,6 +697,7 @@ namespace TimeKey.Composition.SceneFlow
             public int loadedSceneCount;
             public int bootstrapCount;
             public int contentEntryCount;
+            public int eraClockPresenterCount;
         }
     }
 }

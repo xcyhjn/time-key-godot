@@ -2,8 +2,10 @@ using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using TimeKey.Application.EraClock;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Domain.Deck;
+using TimeKey.Presentation.EraClock;
 using TimeKey.Presentation.MainMenu;
 using UnityEngine;
 
@@ -17,9 +19,12 @@ namespace TimeKey.Composition.SceneFlow
 
         [SerializeField] private BootstrapRoot bootstrap = null;
         [SerializeField] private MainMenuPresenter presenter = null;
+        [SerializeField] private SceneFlowStateStore stateStore = null;
+        [SerializeField] private EraClockPresenter eraClockPresenter = null;
         [SerializeField] private int defaultRunSeed = 731;
 
         private CancellationTokenSource _lifetime;
+        private long _eraClockSequence;
 
         public SceneTransitionResult LastResult { get; private set; }
 
@@ -31,11 +36,26 @@ namespace TimeKey.Composition.SceneFlow
                 presenter = GetComponentInChildren<MainMenuPresenter>(true);
             }
 
+            stateStore = stateStore != null
+                ? stateStore
+                : FindFirstObjectByType<SceneFlowStateStore>();
+            eraClockPresenter = eraClockPresenter != null
+                ? eraClockPresenter
+                : GetComponentInChildren<EraClockPresenter>(true);
+
             if (presenter != null)
             {
                 presenter.CommandRequested += OnCommandRequested;
                 presenter.SettingsRequested += OnSettingsRequested;
                 ApplySettings(LoadSettings(), false);
+            }
+
+            if (stateStore?.OutOfBattleState != null && eraClockPresenter != null)
+            {
+                eraClockPresenter.ApplySnapshot(EraClockSnapshotAdapter.FromOutOfBattle(
+                    stateStore.OutOfBattleState,
+                    NextEraClockSequence(),
+                    EraClockAnchorTarget.Center));
             }
         }
 
@@ -146,13 +166,22 @@ namespace TimeKey.Composition.SceneFlow
             await bootstrap.InitializationTask;
             cancellationToken.ThrowIfCancellationRequested();
             var sequence = bootstrap.ReserveTransitionSequence();
+            var runStart = CreateRunStartPayload(request, sequence);
+            if (eraClockPresenter != null)
+            {
+                eraClockPresenter.ApplySnapshot(EraClockSnapshotAdapter.FromRunStart(
+                    runStart,
+                    NextEraClockSequence(),
+                    EraClockAnchorTarget.Center));
+            }
+
             LastResult = await bootstrap.TransitionAsync(
                 new SceneTransitionRequest(
                     sequence,
                     "main-menu-" + request.Command + "-" + sequence,
                     SceneId.MainMenu,
                     SceneId.OutOfBattleShell,
-                    CreateRunStartPayload(request, sequence)),
+                    runStart),
                 CancellationToken.None);
             if (!LastResult.Succeeded)
             {
@@ -215,6 +244,12 @@ namespace TimeKey.Composition.SceneFlow
 
                 return (int)(hash & 0x7fffffff);
             }
+        }
+
+        private long NextEraClockSequence()
+        {
+            _eraClockSequence++;
+            return _eraClockSequence;
         }
     }
 }

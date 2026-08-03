@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:09Z" duration="4.2337517">
+  <test-suite type="TestSuite" id="1178" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:09Z" duration="4.233752" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1153" name="TimeKey.Tests.PlayMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.PlayMode.dll" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:09Z" duration="4.226747" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="50972" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1154" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:09Z" duration="4.225710" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1155" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:09Z" duration="4.224959" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1156" name="PlayMode" fullname="TimeKey.Tests.PlayMode" runstate="Runnable" testcasecount="119" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:09Z" duration="4.224237" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestSuite" id="1170" name="EraClock" fullname="TimeKey.Tests.PlayMode.EraClock" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:09Z" duration="4.222111" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="TestFixture" id="1098" name="EraClockPresenterTests" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:06Z" duration="1.416306" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1100" name="AdjacentPhaseAnimatesButPublishesFinalLabelsImmediately" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.AdjacentPhaseAnimatesButPublishesFinalLabelsImmediately" methodname="AdjacentPhaseAnimatesButPublishesFinalLabelsImmediately" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="1916060058" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:05Z" duration="0.346503" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1103" name="AnchorTransitionTracksTargetAndRefreshesAfterResize" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.AnchorTransitionTracksTargetAndRefreshesAfterResize" methodname="AnchorTransitionTracksTargetAndRefreshesAfterResize" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="758707222" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:05Z" duration="0.252503" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1107" name="DisableAndEnableLeavesLatestTerminalState" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.DisableAndEnableLeavesLatestTerminalState" methodname="DisableAndEnableLeavesLatestTerminalState" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="411916054" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:05Z" duration="0.004111" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1099" name="InitialBindSnapsAllTerminalValuesAndDisablesRaycasts" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.InitialBindSnapsAllTerminalValuesAndDisablesRaycasts" methodname="InitialBindSnapsAllTerminalValuesAndDisablesRaycasts" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="155524444" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:05Z" duration="0.002738" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1102" name="NewSnapshotCancelsOldCoroutineAndLatestSnapshotWins" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.NewSnapshotCancelsOldCoroutineAndLatestSnapshotWins" methodname="NewSnapshotCancelsOldCoroutineAndLatestSnapshotWins" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="1176984503" result="Passed" start-time="2026-08-03 13:19:05Z" end-time="2026-08-03 13:19:06Z" duration="0.373346" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1105" name="RebindStopsAnimationAndSnapsLatestSnapshotToNewAnchors" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.RebindStopsAnimationAndSnapsLatestSnapshotToNewAnchors" methodname="RebindStopsAnimationAndSnapsLatestSnapshotToNewAnchors" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="98780054" result="Passed" start-time="2026-08-03 13:19:06Z" end-time="2026-08-03 13:19:06Z" duration="0.052218" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1101" name="RolloverPassesThroughResetPulseBeforePhaseOneTerminal" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.RolloverPassesThroughResetPulseBeforePhaseOneTerminal" methodname="RolloverPassesThroughResetPulseBeforePhaseOneTerminal" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="323184353" result="Passed" start-time="2026-08-03 13:19:06Z" end-time="2026-08-03 13:19:06Z" duration="0.371827" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1106" name="StaleAndRepeatedSnapshotsDoNotReplaceCurrentPresentation" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.StaleAndRepeatedSnapshotsDoNotReplaceCurrentPresentation" methodname="StaleAndRepeatedSnapshotsDoNotReplaceCurrentPresentation" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="940068711" result="Passed" start-time="2026-08-03 13:19:06Z" end-time="2026-08-03 13:19:06Z" duration="0.001394" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1104" name="ZeroDurationCompletesPhaseRolloverAndAnchorInSameFrame" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests.ZeroDurationCompletesPhaseRolloverAndAnchorInSameFrame" methodname="ZeroDurationCompletesPhaseRolloverAndAnchorInSameFrame" classname="TimeKey.Tests.PlayMode.EraClock.EraClockPresenterTests" runstate="Runnable" seed="1352252865" result="Passed" start-time="2026-08-03 13:19:06Z" end-time="2026-08-03 13:19:06Z" duration="0.000753" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1108" name="EraClockVisualEvidenceTests" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockVisualEvidenceTests" classname="TimeKey.Tests.PlayMode.EraClock.EraClockVisualEvidenceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-03 13:19:06Z" end-time="2026-08-03 13:19:09Z" duration="2.804091" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1110" name="CapturesRolloverTimelineWithResetPulse" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockVisualEvidenceTests.CapturesRolloverTimelineWithResetPulse" methodname="CapturesRolloverTimelineWithResetPulse" classname="TimeKey.Tests.PlayMode.EraClock.EraClockVisualEvidenceTests" runstate="Runnable" seed="618436685" result="Passed" start-time="2026-08-03 13:19:06Z" end-time="2026-08-03 13:19:08Z" duration="2.047167" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="Timeout" value="240000" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1109" name="CapturesThreeViewportsAndDynamicResize" fullname="TimeKey.Tests.PlayMode.EraClock.EraClockVisualEvidenceTests.CapturesThreeViewportsAndDynamicResize" methodname="CapturesThreeViewportsAndDynamicResize" classname="TimeKey.Tests.PlayMode.EraClock.EraClockVisualEvidenceTests" runstate="Runnable" seed="1792347760" result="Passed" start-time="2026-08-03 13:19:08Z" end-time="2026-08-03 13:19:09Z" duration="0.755420" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="Timeout" value="240000" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

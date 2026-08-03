@@ -1,6 +1,6 @@
 # Unity 3D 迁移路线图
 
-> 状态：Wave 02B2A 已完成；解耦 R1 已通过，R2 执行中
+> 状态：Wave 02B2A 与解耦 R1/R2/R3 已完成；下一阶段为剩余卡牌
 > 负责人：主智能体
 > 最后验证日期：2026-08-01
 > 证据来源：可行性报告、依赖矩阵、风险登记、共享契约
@@ -17,7 +17,7 @@
 | 04 内容与体验 | 教程、音频、VFX、中文字体、资产 | 授权清单完成 | 视觉/音频对照、性能预算 |
 | 05 发布加固 | 存档升级、平台、构建与回归 | 目标平台冻结 | 发布构建、回归矩阵 |
 
-Wave 00、Wave 01、Wave 02A、Wave 02B1 与 Wave 02B2A 已关闭。七卡 typed schema、`front_image`、`lighting` 与 `earthquake +2` 的真实 `0.32` 堆叠、范围、两格时间轴和多卡 UI 均已验证。当前实施单元是解耦 R2/R3：在继续其余卡牌效果前冻结 Application、Presentation、Infrastructure 与 Diagnostics 边界。扩展敌方意图前仍需保留 MIG-002 的源行为。
+Wave 00、Wave 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1/R2/R3 已关闭。七卡 typed schema、`front_image`、`lighting` 与 `earthquake +2` 的真实 `0.32` 堆叠、范围、两格时间轴和七卡 UI 均已验证；Application、Presentation、Infrastructure、Diagnostics 与 Composition 边界已冻结。下一实施单元由 `NEXT_STAGE_REMAINING_CARDS_PROMPT.md` 定义。扩展敌方意图前仍需保留 MIG-002 的源行为。
 
 ## Wave 01 依赖顺序
 
@@ -35,3 +35,9 @@ Wave 00、Wave 01、Wave 02A、Wave 02B1 与 Wave 02B2A 已关闭。七卡 typed
 - 单位改为自由移动或高度不再是整数层，破坏 axial 格语义。
 - 需要复制授权不明素材或 vendored 插件内容。
 - 首切片证明 uGUI 无法满足卡牌/时间轴交互。
+
+## 2026-08-03 Wave 03 恢复点
+
+P0 Editor-only 工具链、Wave 03P 局外移动/Theme 核心、地图 Domain Gate A 与 Wave 03R EraClock 正式接线已经完成。Wave 03R-F 已关闭局外 reveal Center 中间态与中央房间重叠；EraClock 继续使用单一 typed owner 接入 MainMenu、OutOfBattle 和 CombatTopHUD，并通过全量 `413/413 + 121/121`、六 Scene build 与 D3D12 Bootstrap Player。
+
+Wave 03 的当前入口是 `NEXT_STAGE_OVERWORLD_MAP_PROMPT.md` Gate B：在既有地图 Domain contract 上接入 Application、SceneFlow 和房间流程。不得重新生成 Gate A 模型，也不得建立第二套 Theme、移动或时钟状态机。

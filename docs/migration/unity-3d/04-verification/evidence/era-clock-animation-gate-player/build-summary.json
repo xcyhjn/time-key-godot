@@ -1,0 +1,13 @@
+{
+    "result": "Succeeded",
+    "unityVersion": "6000.4.10f1",
+    "target": "StandaloneWindows64",
+    "developmentBuild": true,
+    "scene": "Assets/_Project/Editor/EraClock/EraClockPlayerEvidence.unity",
+    "totalBytes": 227078396,
+    "durationMilliseconds": 6575.3134,
+    "executablePath": "C:\\Users\\bulbel\\AppData\\Local\\Temp\\TimeKeyEraClockEvidence\\20260803-131043\\TimeKeyEraClockEvidence.exe",
+    "executableSha256": "8B85CC34BECB9A5E63DC14325C0266CF01CDAF798F5F35638FC01C0BE0CE7878",
+    "buildSettingsUnchanged": true,
+    "isolatedEvidenceScene": true
+}

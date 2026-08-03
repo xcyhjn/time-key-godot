@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using TimeKey.Application;
+using TimeKey.Application.EraClock;
 using TimeKey.Domain;
 using TimeKey.Domain.BattleFlow;
 using TimeKey.Domain.Deck;
 using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.CombatShell;
+using TimeKey.Presentation.EraClock;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Terrain;
@@ -28,8 +30,10 @@ namespace TimeKey.Presentation.Bindings
         [SerializeField] private CombatInteractionOverlayPresenter interactionOverlayPresenter = null;
         [SerializeField] private BattleFlowPresenter battleFlowPresenter = null;
         [SerializeField] private CombatTopHudPresenter combatTopHudPresenter = null;
+        [SerializeField] private EraClockPresenter eraClockPresenter = null;
 
         private bool _isBound;
+        private long _eraClockSequence;
         private CombatSessionView _currentState;
         private readonly ActionIdentityIndex _actionIdentityIndex = new ActionIdentityIndex();
         private readonly OverlayPriorityCoordinator _overlayCoordinator =
@@ -145,6 +149,13 @@ namespace TimeKey.Presentation.Bindings
             if (battleFlowPresenter != null && state.BattleFlow != null)
             {
                 battleFlowPresenter.Apply(state.BattleFlow);
+            }
+            if (eraClockPresenter != null && state.BattleFlow != null)
+            {
+                eraClockPresenter.ApplySnapshot(EraClockSnapshotAdapter.FromBattleFlow(
+                    state.BattleFlow,
+                    NextEraClockSequence(),
+                    EraClockAnchorTarget.Hud));
             }
             if (combatTopHudPresenter != null)
             {
@@ -550,6 +561,12 @@ namespace TimeKey.Presentation.Bindings
 
             instanceId = new CardInstanceId(value);
             return true;
+        }
+
+        private long NextEraClockSequence()
+        {
+            _eraClockSequence++;
+            return _eraClockSequence;
         }
     }
 }

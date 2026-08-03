@@ -1,6 +1,6 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Combat Shell Gate E 已关闭；Wave 03 Prompt 已生成
+> 状态：Combat Shell Gate E 已关闭；P0 插件化与资产工具链 Prompt 已置顶；Wave 03 Prompt 已生成
 > 负责人：主智能体
 > 最后验证日期：2026-08-03
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
@@ -8,6 +8,8 @@
 ## 结论
 
 迁移结论保持 `CONDITIONAL GO`，总体难度 4/5。解耦、剩余五卡、02B3 与 02B4 已关闭：稳定战斗层级保存为可编辑 Scene，十一个实际 Prefab 可由 Inspector 调整，运行时职责已分到 Domain、Application、Presentation、Infrastructure、Diagnostics 与 Composition；局外 Godot 内容没有改动。
+
+当前队列置顶为 `00-bootstrap/NEXT_STAGE_PLUGINIZATION_AND_ASSET_TOOLING_PROMPT.md`。该阶段只在当前写入任务完成检查点并交回所有权后进入实现；它优先建立 Editor-only 场景/Prefab 校验、卡牌/资产导入审计和联网候选登记，再由主智能体串行决定是否安装任何新包。现有解耦、剩余卡牌和局外地图 Prompt 的功能顺序不变。
 
 ## 当前切片
 
@@ -110,3 +112,11 @@ OutOfBattle、Combat 与 GameOver 已接入保存的分层 reveal。自动化时
 效果框已改为逐占用格填充并只绘制真实外轮廓，Tower 与 Poison 的非矩形缺口不会被根矩形误填；同一 frame 实例在 1280x720、1920x1080、2560x1080 与动态 resize 后会按 layout signature 重新吸附。CardInstanceId、ActionId、stable card id 和地图 runtime id 通过统一 identity index 建立双向映射，重复 stable id 不再造成错误高亮。
 
 空手 idle/Cancelled 地块检查已接入统一清理路径：同格复点、空地、Escape、短右键、卡牌接管、取消、提交、结算、Scene rebind、disable 和全局输入锁均清理；右键拖拽继续只旋转相机。最终 full EditMode `351/351`、graphical D3D12 PlayMode `107/107`、Windows Development build 和实际 Player smoke 全部通过；9 张三视口/动态 resize/non-rect PNG 已逐图复核。Combat Shell Gate A-E 经审查均已关闭，因此没有可继续执行的未完成 Combat Shell Gate，恢复位置保持当前正式后继。当前无用户决策阻塞；按用户指示不执行 push。
+
+## Wave 03R Era Clock formal integration complete
+
+原 Godot `clock_noring/ring/point` 与 Silver 已通过 typed snapshot、adapter、planner、state machine 和单一 Presenter 接入正式 MainMenu、OutOfBattleShell 与 CombatTopHUD。MainMenu 使用 Center；局外等待真实 reveal completion 后进入 HUD；Combat 从 authoritative BattleFlow 投影 HUD。共享 `HudAnchor` 保存于 `TopBar/ClockPlate`，settled Presenter 自动跟随首帧 Canvas/Layout 重排和动态 resize，不持有 input lease。
+
+Wave 03R-F 以正式 Bootstrap 路由红测复现并关闭了局外 reveal Center 中间态时钟与中央房间重叠：共享 Top HUD 的 Center anchor 固定为 `(0.20, 0.74)`、scale `0.50`，不改变 HUD anchor、SceneFlow completion 或唯一 Presenter 状态机。最终定向门禁为 EditMode `17/17`、graphical PlayMode `13/13`、正式三次 Victory 往返 `1/1`；全量为 EditMode `413/413`、graphical PlayMode `121/121`。六 Scene Windows Development build 成功（`227421290` bytes）；D3D12 Player exit 0、PASS 1、FAIL/异常 0，三轮均只有一个 EraClockPresenter，最终输入未锁定。正式五张 Player 图、三视口四阶段与动态 resize 证据均已逐张复核。
+
+P0、Wave 03P 和地图 Domain Gate A 已在当前提交历史中完成。下一恢复点为 `NEXT_STAGE_OVERWORLD_MAP_PROMPT.md` Gate B；不得重新执行地图 Gate A。当前无用户决策阻塞。

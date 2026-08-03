@@ -1,0 +1,70 @@
+{
+    "unityVersion": "6000.4.10f1",
+    "renderer": "Direct3D12",
+    "frames": [
+        {
+            "file": "center-1280x720.png",
+            "state": "center",
+            "viewport": "1280x720",
+            "width": 1280,
+            "height": 720,
+            "distinctColorCount": 135,
+            "checksum": 13841578701613923752,
+            "rootBlocksRaycasts": false,
+            "withinViewport": true,
+            "contentMinX": 572,
+            "contentMinY": 204,
+            "contentMaxX": 708,
+            "contentMaxY": 453,
+            "rasterHasMargin": true
+        },
+        {
+            "file": "center-1920x1080.png",
+            "state": "center",
+            "viewport": "1920x1080",
+            "width": 1920,
+            "height": 1080,
+            "distinctColorCount": 131,
+            "checksum": 5846737852679815006,
+            "rootBlocksRaycasts": false,
+            "withinViewport": true,
+            "contentMinX": 858,
+            "contentMinY": 306,
+            "contentMaxX": 1063,
+            "contentMaxY": 680,
+            "rasterHasMargin": true
+        },
+        {
+            "file": "center-2560x1080.png",
+            "state": "center",
+            "viewport": "2560x1080",
+            "width": 2560,
+            "height": 1080,
+            "distinctColorCount": 113,
+            "checksum": 5116362445809011205,
+            "rootBlocksRaycasts": false,
+            "withinViewport": true,
+            "contentMinX": 1162,
+            "contentMinY": 269,
+            "contentMaxX": 1398,
+            "contentMaxY": 702,
+            "rasterHasMargin": true
+        },
+        {
+            "file": "dynamic-resize-1600x900.png",
+            "state": "dynamic-resize",
+            "viewport": "1600x900",
+            "width": 1600,
+            "height": 900,
+            "distinctColorCount": 53,
+            "checksum": 848485444490931017,
+            "rootBlocksRaycasts": false,
+            "withinViewport": true,
+            "contentMinX": 936,
+            "contentMinY": 696,
+            "contentMaxX": 1014,
+            "contentMaxY": 840,
+            "rasterHasMargin": true
+        }
+    ]
+}

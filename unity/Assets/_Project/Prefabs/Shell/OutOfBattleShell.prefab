@@ -690,6 +690,8 @@ MonoBehaviour:
   sharedTopHud: {fileID: 4885156498136332150}
   battleTag: combat-vertical-slice
   movementPresenter: {fileID: 8903617702218998566}
+  eraClockPresenter: {fileID: 1257931072933554383}
+  revealPresenter: {fileID: 1317367890286926321}
 --- !u!114 &1317367890286926321
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3482,6 +3484,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0fa8ed43bdcd9b140866380bd08d094b, type: 3}
+--- !u!114 &1257931072933554383 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2930469272820526321, guid: 0fa8ed43bdcd9b140866380bd08d094b, type: 3}
+  m_PrefabInstance: {fileID: 4169787775266800702}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dc898f93170332419f47c7e98ae30c2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.EraClock.EraClockPresenter
 --- !u!114 &4885156498136332150 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8797078254722757448, guid: 0fa8ed43bdcd9b140866380bd08d094b, type: 3}
