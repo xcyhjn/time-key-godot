@@ -265,3 +265,12 @@ Gate D does not claim Windows build, actual Player smoke, repeated three-cycle s
 - Final closure: full EditMode, full graphical D3D12 PlayMode, refreshed affected three-viewport views, inherited unaffected four-yaw evidence and manual review.
 
 Final results are full EditMode `343/343`, full graphical Direct3D12 PlayMode `100/100`, asset EditMode `3/3`, build-smoke EditMode `3/3`, layered reveal PlayMode `7/7`, post-review Combat entrance PlayMode `5/5`, stability PlayMode `1/1`, and animation capture PlayMode `1/1`. Post-review coverage stops the active reveal coroutine before forced completion, rejects stale evidence files, records the actual render-counter name/value and rejects stable or increasing positive post-GC growth. The Windows build succeeded and actual Player smoke exited 0 with `PASS=1`, `PERF=3`, `FAIL=0`. Seventeen PNGs passed manual review; superseded failing diagnostics remain non-canonical.
+
+## Wave 02B3R effect-frame stability
+
+- Gate 0 red tests: missing coordinator/identity/frame contract `0/3`; missing Tower/resize geometry `0/2`.
+- Pure EditMode: overlay priority, right-click threshold, IdleTileInspect toggle/replace, duplicate card instance and map reverse index; final targeted `8/8`.
+- Geometry PlayMode: Tower `010,111`, Poison `110,111`, same-instance resize and existing frame behavior; final `6/6`.
+- Scene PlayMode: blank/card/cancel/commit/resolve cleanup plus Scene rebind/global lock; final `2/2`.
+- Visual PlayMode: ordinary action and non-rect Poison/Tower at 1280x720, 2560x1080 and 1920x1080, same frame IDs across resize; `2/2`, 9 PNGs manually reviewed.
+- Delivery: full EditMode `351/351`, full graphical D3D12 PlayMode `107/107`, Windows build and visible Player smoke `PASS=1 / Exception=0 / Error=0`.

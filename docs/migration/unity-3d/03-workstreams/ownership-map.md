@@ -158,3 +158,5 @@ Gate C 按原互斥边界完成 Presentation、三个 Shell Prefab 和局部测�
 Gate D 使用新增的互斥 Prompt：Presentation Agent 只拥有 `Runtime/Presentation/OutOfBattleShell/**` 与对应 PlayMode tests；契约审计 Agent 只读检查 SceneFlow/02B4 边界；资产测试 Agent 只新增 `CombatShellGateDAssetTests.cs(.meta)`。主智能体独占既有 Application/Composition、正式 Scene/Prefab、Editor authoring、共享文档、证据与 Git。所有 Agent 均已返回，未 stage/commit/push，当前 Gate D 路径已全部回收；最终验证为 `343/343 + 92/92`。
 
 Gate E 的两份实现 Prompt 已通过互斥审查：layered reveal Agent 只新增 SceneFlowFinale Presentation/tests，stability Agent 只新增单一稳定性测试；既有 Scene/Prefab、Combat entrance、Player smoke、build automation、共享文档、证据与 Git 始终由主智能体独占。当前协作树没有仍在运行的 Gate E 子智能体；两条实现路径已经回收。最终只读复核发现并关闭了 running reveal、证据新鲜度、render-counter 命名和内存斜率门禁；主智能体串行完成 `5/5 + 1/1 + 343/343 + 100/100`、build、Player 与 17 张逐图复核。
+
+Wave 02B3R 使用三份互斥 Prompt。Geometry 路径只拥有 `Runtime/Presentation/Actions/**`、局部 `TimelineActionFrame.prefab` 和几何测试；Interaction 路径只拥有新建 `Runtime/Presentation/Interaction/**` 与纯测试；Identity 路径只拥有新建 `Runtime/Presentation/Identity/**` 与纯测试。主智能体独占既有 Controller/Binding/Presenter、authoring、正式 Prefab、共享文档、证据与 Git。所有审查/实现 Agent 已返回，Geometry 所有权已回收；Unity、Godot、Build、测试和 Player 写入进程均在检查点前退出。

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Failed(Child)" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.0503177">
+  <test-suite type="TestSuite" id="1000" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="346" result="Failed" site="Child" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.050318" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1363" name="TimeKey.Tests.EditMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.EditMode.dll" runstate="Runnable" testcasecount="305" result="Failed" site="Child" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.040978" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="24476" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1364" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="305" result="Failed" site="Child" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.038387" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1365" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="305" result="Failed" site="Child" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.036390" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1366" name="EditMode" fullname="TimeKey.Tests.EditMode" runstate="Runnable" testcasecount="305" result="Failed" site="Child" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.034870" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestSuite" id="1376" name="EffectFrameStability" fullname="TimeKey.Tests.EditMode.EffectFrameStability" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.030582" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-suite type="TestFixture" id="1227" name="EffectFrameStabilityGate0ContractTests" fullname="TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests" classname="TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.029640" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1229" name="IdentityContract_ProvidesActionCardMapLink" fullname="TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests.IdentityContract_ProvidesActionCardMapLink" methodname="IdentityContract_ProvidesActionCardMapLink" classname="TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests" runstate="Runnable" seed="1325064800" result="Failed" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.018819" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Expected: not null
+  But was:  null
+]]></message>
+                    <stack-trace><![CDATA[at TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests.IdentityContract_ProvidesActionCardMapLink () [0x00000] in D:\timekey-unity-731\Assets\_Project\Tests\EditMode\EffectFrameStability\EffectFrameStabilityGate0ContractTests.cs:21
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1228" name="InteractionContract_ProvidesCoordinatorAndTileInspectionPort" fullname="TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests.InteractionContract_ProvidesCoordinatorAndTileInspectionPort" methodname="InteractionContract_ProvidesCoordinatorAndTileInspectionPort" classname="TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests" runstate="Runnable" seed="824584710" result="Failed" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.000570" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Expected: not null
+  But was:  null
+]]></message>
+                    <stack-trace><![CDATA[at TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests.InteractionContract_ProvidesCoordinatorAndTileInspectionPort () [0x00000] in D:\timekey-unity-731\Assets\_Project\Tests\EditMode\EffectFrameStability\EffectFrameStabilityGate0ContractTests.cs:14
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1230" name="TimelineFrameContract_ExposesOnlyRealOccupiedGeometry" fullname="TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests.TimelineFrameContract_ExposesOnlyRealOccupiedGeometry" methodname="TimelineFrameContract_ExposesOnlyRealOccupiedGeometry" classname="TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests" runstate="Runnable" seed="1038444885" result="Failed" start-time="2026-08-03 03:14:10Z" end-time="2026-08-03 03:14:10Z" duration="0.000692" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  TimelineActionFrame must expose the real occupied-cell geometry contract before Gate B.
+  Expected: not null
+  But was:  null
+]]></message>
+                    <stack-trace><![CDATA[at TimeKey.Tests.EditMode.EffectFrameStability.EffectFrameStabilityGate0ContractTests.TimelineFrameContract_ExposesOnlyRealOccupiedGeometry () [0x00025] in D:\timekey-unity-731\Assets\_Project\Tests\EditMode\EffectFrameStability\EffectFrameStabilityGate0ContractTests.cs:30
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

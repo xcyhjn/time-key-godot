@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TimeKey.Application;
 using TimeKey.Domain;
 using TimeKey.Domain.BattleFlow;
+using TimeKey.Domain.Deck;
 using TimeKey.Presentation.BattleFlow;
 using TimeKey.Presentation.Cards;
 using TimeKey.Presentation.CombatShell;
@@ -10,6 +11,8 @@ using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Presenters;
 using TimeKey.Presentation.Terrain;
 using TimeKey.Presentation.Tooltips;
+using TimeKey.Presentation.Identity;
+using TimeKey.Presentation.Interaction;
 using UnityEngine;
 
 namespace TimeKey.Presentation.Bindings
@@ -28,6 +31,14 @@ namespace TimeKey.Presentation.Bindings
 
         private bool _isBound;
         private CombatSessionView _currentState;
+        private readonly ActionIdentityIndex _actionIdentityIndex = new ActionIdentityIndex();
+        private readonly OverlayPriorityCoordinator _overlayCoordinator =
+            new OverlayPriorityCoordinator();
+        private readonly IdleTileInspectPort _idleTileInspect = new IdleTileInspectPort();
+
+        public OverlayPriorityCoordinator OverlayCoordinator => _overlayCoordinator;
+
+        public IdleTileInspectPort IdleTileInspect => _idleTileInspect;
 
         public event Action<string> CardSelected;
         public event Action<string> CardCancelled;
@@ -106,6 +117,9 @@ namespace TimeKey.Presentation.Bindings
             cardHandPresenter.Unbind();
             timelinePresenter.Unbind();
             hudPresenter.Unbind();
+            ClearInspectedTile();
+            _actionIdentityIndex.Clear();
+            _currentState = null;
             _isBound = false;
         }
 
@@ -118,6 +132,12 @@ namespace TimeKey.Presentation.Bindings
 
             ValidateDependencies();
             _currentState = state;
+            RebuildActionIdentityIndex(state);
+            UpdateOverlayOwnership(state);
+            if (!CanInspectTile())
+            {
+                _idleTileInspect.ClearAll();
+            }
             cardHandPresenter.Refresh(state);
             boardRangePresenter.Refresh(state);
             timelinePresenter.Refresh(state);
@@ -131,6 +151,22 @@ namespace TimeKey.Presentation.Bindings
                 combatTopHudPresenter.Refresh(state);
             }
             RestorePersistentDetail();
+        }
+
+        public bool SetInspectedTile(HexCoord coordinate)
+        {
+            return CanInspectTile() && _idleTileInspect.Set(coordinate);
+        }
+
+        public bool ToggleInspectedTile(HexCoord coordinate)
+        {
+            return CanInspectTile() && _idleTileInspect.Toggle(coordinate);
+        }
+
+        public void ClearInspectedTile()
+        {
+            _idleTileInspect.ClearAll();
+            _overlayCoordinator.ClearAll();
         }
 
         public void RenderTimelineAction(
@@ -241,6 +277,7 @@ namespace TimeKey.Presentation.Bindings
 
         private void HandleCardSelected(string stableId)
         {
+            ClearInspectedTile();
             CardSelected?.Invoke(stableId);
         }
 
@@ -266,8 +303,16 @@ namespace TimeKey.Presentation.Bindings
         {
             if (entered)
             {
+                if (!_overlayCoordinator.TryAcquire(
+                        CombatOverlayOwner.IdleActionHover,
+                        card.ViewId,
+                        out _))
+                {
+                    return;
+                }
+
                 interactionOverlayPresenter.ShowCard(card);
-                var action = FindPlayerAction(card.StableId);
+                var action = FindPlayerAction(card);
                 if (action != null)
                 {
                     timelinePresenter.HighlightAction(action.ActionId, true);
@@ -277,7 +322,12 @@ namespace TimeKey.Presentation.Bindings
                 return;
             }
 
-            timelinePresenter.HighlightCardActions(card.StableId, false);
+            _overlayCoordinator.Release(CombatOverlayOwner.IdleActionHover, card.ViewId);
+            var actionOnExit = FindPlayerAction(card);
+            if (actionOnExit != null)
+            {
+                timelinePresenter.HighlightAction(actionOnExit.ActionId, false);
+            }
             boardRangePresenter.HighlightAction(null, false);
             RestorePersistentDetail();
         }
@@ -288,8 +338,22 @@ namespace TimeKey.Presentation.Bindings
         {
             if (entered)
             {
+                if (!_overlayCoordinator.TryAcquire(
+                        CombatOverlayOwner.IdleActionHover,
+                        action.ActionId.Value,
+                        out _))
+                {
+                    return;
+                }
+
                 interactionOverlayPresenter.ShowAction(action);
-                if (action.CardStableId != null)
+                if (action.CardInstanceId.HasValue)
+                {
+                    cardHandPresenter.HighlightActionCardByViewId(
+                        action.CardInstanceId.Value.ToString(),
+                        true);
+                }
+                else if (action.CardStableId != null)
                 {
                     cardHandPresenter.HighlightActionCard(action.CardStableId, true);
                 }
@@ -298,7 +362,16 @@ namespace TimeKey.Presentation.Bindings
                 return;
             }
 
-            if (action.CardStableId != null)
+            _overlayCoordinator.Release(
+                CombatOverlayOwner.IdleActionHover,
+                action.ActionId.Value);
+            if (action.CardInstanceId.HasValue)
+            {
+                cardHandPresenter.HighlightActionCardByViewId(
+                    action.CardInstanceId.Value.ToString(),
+                    false);
+            }
+            else if (action.CardStableId != null)
             {
                 cardHandPresenter.HighlightActionCard(action.CardStableId, false);
             }
@@ -307,30 +380,52 @@ namespace TimeKey.Presentation.Bindings
             RestorePersistentDetail();
         }
 
-        private TimelineActionPresentationSnapshot FindPlayerAction(string stableId)
+        private TimelineActionPresentationSnapshot FindPlayerAction(CardViewModel card)
         {
-            if (_currentState == null)
+            if (_currentState == null || card == null)
             {
                 return null;
             }
 
-            for (var index = 0; index < _currentState.TimelineActions.Count; index++)
+            if (TryParseCardInstanceId(card.ViewId, out var cardInstanceId))
             {
-                var action = _currentState.TimelineActions[index];
-                if (string.Equals(action.CardStableId, stableId, StringComparison.Ordinal))
+                for (var index = 0; index < _currentState.TimelineActions.Count; index++)
                 {
-                    return action;
+                    var action = _currentState.TimelineActions[index];
+                    if (action.CardInstanceId.HasValue &&
+                        action.CardInstanceId.Value == cardInstanceId)
+                    {
+                        return action;
+                    }
                 }
             }
 
-            return null;
+            TimelineActionPresentationSnapshot only = null;
+            for (var index = 0; index < _currentState.TimelineActions.Count; index++)
+            {
+                var action = _currentState.TimelineActions[index];
+                if (string.Equals(action.CardStableId, card.StableId, StringComparison.Ordinal))
+                {
+                    if (only != null)
+                    {
+                        return null;
+                    }
+
+                    only = action;
+                }
+            }
+
+            return only;
         }
 
         private void RestorePersistentDetail()
         {
             if (_currentState != null && _currentState.SelectedStableId != null)
             {
-                var card = cardHandPresenter.GetCard(_currentState.SelectedStableId);
+                var card = _currentState.SelectedCardInstanceId.HasValue
+                    ? cardHandPresenter.GetCardByViewId(
+                        _currentState.SelectedCardInstanceId.Value.ToString())
+                    : cardHandPresenter.GetCard(_currentState.SelectedStableId);
                 if (card != null)
                 {
                     interactionOverlayPresenter.ShowCard(card);
@@ -365,7 +460,96 @@ namespace TimeKey.Presentation.Bindings
         {
             timelinePresenter.RemoveActionsBySource(runtimeId);
             boardRangePresenter.HighlightAction(null, false);
+            ClearInspectedTile();
             interactionOverlayPresenter.Clear();
+        }
+
+        private void RebuildActionIdentityIndex(CombatSessionView state)
+        {
+            _actionIdentityIndex.Clear();
+            for (var index = 0; index < state.TimelineActions.Count; index++)
+            {
+                var action = state.TimelineActions[index];
+                _actionIdentityIndex.Add(new ActionIdentityLink(
+                    action.ActionId,
+                    action.CardStableId,
+                    action.CardInstanceId,
+                    action.SourceId,
+                    action.TargetId));
+            }
+        }
+
+        private void UpdateOverlayOwnership(CombatSessionView state)
+        {
+            _overlayCoordinator.ClearAll();
+            if (state.BattleFlow != null && state.BattleFlow.IsInputLocked)
+            {
+                _overlayCoordinator.TryAcquire(
+                    CombatOverlayOwner.Disabled,
+                    "battle-input-lock",
+                    out _);
+                return;
+            }
+
+            switch (state.Phase)
+            {
+                case CombatSessionPhase.Disposed:
+                case CombatSessionPhase.Committed:
+                    _overlayCoordinator.TryAcquire(
+                        CombatOverlayOwner.Disabled,
+                        state.Phase.ToString(),
+                        out _);
+                    return;
+                case CombatSessionPhase.Resolved:
+                    _overlayCoordinator.TryAcquire(
+                        CombatOverlayOwner.Resolving,
+                        state.Phase.ToString(),
+                        out _);
+                    return;
+                case CombatSessionPhase.TimelinePreview:
+                    _overlayCoordinator.TryAcquire(
+                        state.InteractionMode == CombatInteractionMode.TimelineClear
+                            ? CombatOverlayOwner.Clear
+                            : CombatOverlayOwner.Scheduling,
+                        state.SelectedCardInstanceId.HasValue
+                            ? state.SelectedCardInstanceId.Value.ToString()
+                            : state.SelectedStableId,
+                        out _);
+                    return;
+                case CombatSessionPhase.CardSelected:
+                case CombatSessionPhase.TargetSelected:
+                    _overlayCoordinator.TryAcquire(
+                        state.InteractionMode == CombatInteractionMode.TimelineClear
+                            ? CombatOverlayOwner.Clear
+                            : CombatOverlayOwner.CardTargeting,
+                        state.SelectedCardInstanceId.HasValue
+                            ? state.SelectedCardInstanceId.Value.ToString()
+                            : state.SelectedStableId,
+                        out _);
+                    return;
+            }
+        }
+
+        private bool CanInspectTile()
+        {
+            return _currentState != null &&
+                (_currentState.BattleFlow == null || !_currentState.BattleFlow.IsInputLocked) &&
+                _currentState.SelectedCard == null &&
+                (_currentState.Phase == CombatSessionPhase.Idle ||
+                 _currentState.Phase == CombatSessionPhase.Cancelled);
+        }
+
+        private static bool TryParseCardInstanceId(string value, out CardInstanceId instanceId)
+        {
+            if (string.IsNullOrWhiteSpace(value) ||
+                value.IndexOf("/card:", StringComparison.Ordinal) < 0)
+            {
+                instanceId = default;
+                return false;
+            }
+
+            instanceId = new CardInstanceId(value);
+            return true;
         }
     }
 }

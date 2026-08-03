@@ -31,3 +31,11 @@
 6. 三视口下牌区计数与实体手牌一致；Victory 只显示一次奖励入口且锁住底层输入，领取后按钮消失；Defeat 不显示奖励。
 
 结构测试在 `CombatSceneAssetTests`，表现测试在 `Tests/PlayMode/Actions`、`Tooltips`、`Cards`、`Occupants` 与 `BattleFlow`。最终截图和人工结论位于 `04-verification/evidence/deck-battle-flow-gate-d/`。
+
+## 效果框与交互稳定化
+
+- 新 action frame 样式在 `TimelineActionFrame.prefab` 的隐藏 `CellBackgroundTemplate`/`EdgeTemplate` 上调整；必须同步 `VerticalSliceSceneAuthoring.CreateTimelineActionFramePrefab()`，根 background/outline 保持不渲染且全部 graphic `raycastTarget=false`。
+- 新卡牌映射必须把提交时的 `CardInstanceId` 保存到 immutable action snapshot；不要用 stable ID 匹配重复实体卡。地图 hover source/target 使用 `ActionIdentityIndex.FindByMapRuntimeId()` 反查 action IDs。
+- 新交互模式先在 `CombatOverlayOwner` 选择准确优先级，再在 Binding Refresh 建立/释放 owner；不得由多个 Presenter 直接竞争详情框。
+- `IdleTileInspectPort` 只保存逻辑坐标。Controller 负责 BoardTileView 高亮、同屏同格 toggle、blank/Escape/短右键、右拖仲裁和所有 command/rebind/lock 清理。
+- 新增 action shape 后同时添加缺格不填充测试、三视口 Scene 截图和同实例 resize 测试；不要只断言根 bounding rect。

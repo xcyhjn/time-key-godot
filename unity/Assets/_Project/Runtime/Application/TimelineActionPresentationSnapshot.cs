@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using TimeKey.Domain;
+using TimeKey.Domain.Deck;
 
 namespace TimeKey.Application
 {
@@ -100,7 +101,8 @@ namespace TimeKey.Application
             IReadOnlyList<HexCoord> effectRange,
             TimelineActionValidity validity,
             TimelineActionInvalidReason invalidReason,
-            TimelineActionResolveState resolveState)
+            TimelineActionResolveState resolveState,
+            CardInstanceId? cardInstanceId = null)
         {
             if (!actionId.IsValid)
             {
@@ -137,6 +139,7 @@ namespace TimeKey.Application
             TargetCoord = targetCoord;
             CardStableId = cardStableId;
             EffectStableId = effectStableId;
+            CardInstanceId = cardInstanceId;
             Display = display;
             Origin = origin;
             _shape = CopyRequired(shape, nameof(shape));
@@ -162,6 +165,8 @@ namespace TimeKey.Application
         public HexCoord? TargetCoord { get; }
 
         public string CardStableId { get; }
+
+        public CardInstanceId? CardInstanceId { get; }
 
         public string EffectStableId { get; }
 

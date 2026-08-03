@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Failed(Child)" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.1403401">
+  <test-suite type="TestSuite" id="1156" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="102" result="Failed" site="Child" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.140340" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1133" name="TimeKey.Tests.PlayMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.PlayMode.dll" runstate="Runnable" testcasecount="102" result="Failed" site="Child" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.133333" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="31056" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1134" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="102" result="Failed" site="Child" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.132590" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1135" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="102" result="Failed" site="Child" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.132261" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1136" name="PlayMode" fullname="TimeKey.Tests.PlayMode" runstate="Runnable" testcasecount="102" result="Failed" site="Child" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.131996" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestSuite" id="1153" name="Actions" fullname="TimeKey.Tests.PlayMode.Actions" runstate="Runnable" testcasecount="5" result="Failed" site="Child" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.128444" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-suite type="TestFixture" id="1126" name="EffectFrameGeometryStabilityTests" fullname="TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests" classname="TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.127148" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1128" name="ActionFrame_ReanchorsAfterSameInstanceResizeSequence" fullname="TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests.ActionFrame_ReanchorsAfterSameInstanceResizeSequence" methodname="ActionFrame_ReanchorsAfterSameInstanceResizeSequence" classname="TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests" runstate="Runnable" seed="470810581" result="Failed" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.112333" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Action frame did not re-anchor after resize to 1280x720 (0,0).
+  Expected: less than 1.0f
+  But was:  84.0f
+]]></message>
+                    <stack-trace><![CDATA[at TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests.AssertFrameMatchesCells (TimeKey.Presentation.Actions.TimelineActionFrame frame, System.Collections.Generic.IReadOnlyDictionary`2[TKey,TValue] cells, System.Collections.Generic.IReadOnlyList`1[T] occupied, TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests+ResizeStep viewport) [0x00019] in D:\timekey-unity-731\Assets\_Project\Tests\PlayMode\Actions\EffectFrameGeometryStabilityTests.cs:255
+at TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests+<ActionFrame_ReanchorsAfterSameInstanceResizeSequence>d__3.MoveNext () [0x001ae] in D:\timekey-unity-731\Assets\_Project\Tests\PlayMode\Actions\EffectFrameGeometryStabilityTests.cs:113
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@996f223345ba\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1127" name="TowerShape_DoesNotFillUnoccupiedBoundingBoxCells" fullname="TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests.TowerShape_DoesNotFillUnoccupiedBoundingBoxCells" methodname="TowerShape_DoesNotFillUnoccupiedBoundingBoxCells" classname="TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests" runstate="Runnable" seed="176164861" result="Failed" start-time="2026-08-03 03:23:48Z" end-time="2026-08-03 03:23:48Z" duration="0.005782" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  A visible action-frame image fills Tower's missing top-left cell.
+  Expected: False
+  But was:  True
+]]></message>
+                    <stack-trace><![CDATA[at TimeKey.Tests.PlayMode.Actions.EffectFrameGeometryStabilityTests+<TowerShape_DoesNotFillUnoccupiedBoundingBoxCells>d__2.MoveNext () [0x0018f] in D:\timekey-unity-731\Assets\_Project\Tests\PlayMode\Actions\EffectFrameGeometryStabilityTests.cs:70
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@996f223345ba\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

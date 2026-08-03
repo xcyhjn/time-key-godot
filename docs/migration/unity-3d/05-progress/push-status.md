@@ -48,3 +48,7 @@
 `e70988c` 的推送把远端从 `053a6ef` 推进到该实现提交，因此先前受 reset 阻塞的汉化、Gate 0/A 和状态祖先提交也已全部到达远端；历史失败记录保留，不改写。`cf82430` 推送后 `git rev-list --left-right --count HEAD...origin/unity_7.31` 为 `0/0`。
 
 本阶段实际保护清单扩大为 Godot 四文件、dirty 本阶段 Prompt、dirty migration roadmap、5 张历史 targeting PNG、两个 ProjectSettings 和 3 个来源不明 Prompt；均未进入 `e70988c`。
+
+## Wave 02B3R 本地检查点
+
+Wave 02B3R 仅创建精确本地 Git 检查点，不执行 push。暂存白名单只包含本阶段 identity/interaction/frame 实现、Prefab/authoring 同步、自动化测试、最终 XML/PNG、Agent Prompt 与维护账本；既有 Godot 文件、Bootstrap Prompt、migration roadmap、历史证据、ProjectSettings、原始日志和其他阶段未跟踪文件继续保留在工作区且不进入检查点。

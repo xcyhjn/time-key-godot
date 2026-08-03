@@ -19,6 +19,8 @@ namespace TimeKey.Application
         private long _actionIdentitySequence;
         private readonly CombatTurnLifecycleCoordinator _turnLifecycle;
         private readonly BattleFlowNextTurnHook _battleFlow;
+        private readonly Dictionary<TimelineActionIdentity, CardInstanceId> _cardInstanceIdsByActionId =
+            new Dictionary<TimelineActionIdentity, CardInstanceId>();
 
         private CombatSessionPhase _phase;
         private CardDefinition _selectedCard;
@@ -339,6 +341,8 @@ namespace TimeKey.Application
 
             try
             {
+                var committedActionId = _cardPlaySession.ActionId;
+                var committedCardInstanceId = _selectedCardInstanceId;
                 var transition = _cardPlaySession.Commit(_timeline);
                 _timelineOrigin = _cardPlaySession.TimelineOrigin;
                 _isPlacementValid = transition.IsPlacementValid;
@@ -347,6 +351,11 @@ namespace TimeKey.Application
                 {
                     throw new InvalidOperationException(
                         "The selected card instance could not enter the discard pile.");
+                }
+
+                if (transition.Succeeded && committedCardInstanceId.HasValue)
+                {
+                    _cardInstanceIdsByActionId[committedActionId] = committedCardInstanceId.Value;
                 }
 
                 return transition.Succeeded
@@ -882,9 +891,11 @@ namespace TimeKey.Application
         {
             var scheduledActions = _timeline.ScheduledActions;
             var snapshots = new List<TimelineActionPresentationSnapshot>(scheduledActions.Count);
+            var liveActionIds = new HashSet<TimelineActionIdentity>();
             for (var actionIndex = 0; actionIndex < scheduledActions.Count; actionIndex++)
             {
                 var action = scheduledActions[actionIndex];
+                liveActionIds.Add(action.ActionId);
                 if (_turnLifecycle != null &&
                     action.ActorKind == TimelineActorKind.Enemy &&
                     _turnLifecycle.TryGetScheduledIntentSnapshot(
@@ -906,6 +917,7 @@ namespace TimeKey.Application
                 var effectStableId = action.Effects.Count == 0
                     ? action.CardId
                     : action.Effects[0].Kind.ToString();
+                _cardInstanceIdsByActionId.TryGetValue(action.ActionId, out var cardInstanceId);
                 snapshots.Add(new TimelineActionPresentationSnapshot(
                     action.ActionId,
                     action.ActorKind,
@@ -927,7 +939,22 @@ namespace TimeKey.Application
                     isUnsupported
                         ? TimelineActionInvalidReason.UnsupportedSourceCommand
                         : TimelineActionInvalidReason.None,
-                    TimelineActionResolveState.Scheduled));
+                    TimelineActionResolveState.Scheduled,
+                    cardInstanceId.IsValid ? cardInstanceId : (CardInstanceId?)null));
+            }
+
+            var staleActionIds = new List<TimelineActionIdentity>();
+            foreach (var pair in _cardInstanceIdsByActionId)
+            {
+                if (!liveActionIds.Contains(pair.Key))
+                {
+                    staleActionIds.Add(pair.Key);
+                }
+            }
+
+            for (var index = 0; index < staleActionIds.Count; index++)
+            {
+                _cardInstanceIdsByActionId.Remove(staleActionIds[index]);
             }
 
             return snapshots;

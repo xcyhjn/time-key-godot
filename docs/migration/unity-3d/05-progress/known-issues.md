@@ -29,3 +29,5 @@
 | MIG-020 | D3D12 Player 未提供有效的 `Draw Calls Count`/`Batches Count` recorder，三次内存原始样本严格递增 | 无法直接给出 draw-call 计数；短样本也不能证明不存在长期泄漏 | smoke 显式记录 `SetPass Calls Count=18` 为 render counter；总增量 412,086 bytes，material/sustained-slope 均为 false，post-GC 门禁通过；长期结论仍需 Profiler |
 
 Tower decay、Poison 传播/伤害/减层、action identity 映射、02B4 牌库/资源/终局和 Combat Shell Gate E 均已关闭。当前没有阻塞 Wave 03 的产品或环境问题；MIG-002 仍只限制“无权威 command 时不得发明敌人伤害”。MIG-019 与 MIG-020 均为非阻塞观察。
+
+Wave 02B3R 已关闭效果框真实轮廓、动态 resize、重复卡 identity、idle/Cancelled 地块检查和全状态清理问题，未新增阻塞项。MIG-019 与 MIG-020 的非阻塞观察保持不变；当前无用户决策阻塞。

@@ -146,6 +146,16 @@ namespace TimeKey.Presentation.Cards
             return null;
         }
 
+        public CardHandView GetCardByViewId(string viewId)
+        {
+            if (string.IsNullOrWhiteSpace(viewId))
+            {
+                return null;
+            }
+
+            return _cardsById.TryGetValue(viewId, out var card) ? card : null;
+        }
+
         public bool RequestCancelSelectedCard()
         {
             if (_selectedViewId == null || !_cardsById.TryGetValue(_selectedViewId, out var selected))
@@ -185,6 +195,17 @@ namespace TimeKey.Presentation.Cards
                     _cards[index].SetMappedHighlight(highlighted);
                 }
             }
+        }
+
+        public void HighlightCardByViewId(string viewId, bool highlighted)
+        {
+            if (string.IsNullOrWhiteSpace(viewId) ||
+                !_cardsById.TryGetValue(viewId, out var card))
+            {
+                return;
+            }
+
+            card.SetMappedHighlight(highlighted);
         }
 
         private static int FindSelectedIndex(IReadOnlyList<CardViewModel> viewModels)

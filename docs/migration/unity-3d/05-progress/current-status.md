@@ -104,3 +104,9 @@ OutOfBattle、Combat 与 GameOver 已接入保存的分层 reveal。自动化时
 六 Scene Windows Development build 已成功，`227249074` bytes，Silver attribution 存在；实际 Player smoke exit 0，日志为 `PASS=1 / PERF=3 / FAIL=0`。三轮 transition 约 `1674 / 1513 / 1513 ms`，最终输入未锁定；三次内存原始样本总增量 `412086` bytes，material monotonic 与 sustained-slope 均为 false。实际渲染 recorder 为 `SetPass Calls Count`，三轮值均为 18；这些短样本不宣称长期无泄漏或 profiler-grade GPU 结论。
 
 局外关卡选择界面已按用户要求改用原 Godot 海洋 tile，并通过 1280x720、1920x1080、2560x1080 响应式复核。最终 full EditMode `343/343`、full graphical D3D12 PlayMode `100/100`；9 张 reveal、3 张海洋三视口和 5 张 Player 路径图共 17 张均逐图通过。Gate B 的四 yaw 证据因 combat camera/background 边界未变化而继续继承。Gate E 已关闭，正式后继为 `NEXT_STAGE_OVERWORLD_MAP_PROMPT.md`；用户已指示 push 不可用时直接跳过，本阶段不尝试 push。
+
+## Wave 02B3R Effect Frame Stability complete
+
+效果框已改为逐占用格填充并只绘制真实外轮廓，Tower 与 Poison 的非矩形缺口不会被根矩形误填；同一 frame 实例在 1280x720、1920x1080、2560x1080 与动态 resize 后会按 layout signature 重新吸附。CardInstanceId、ActionId、stable card id 和地图 runtime id 通过统一 identity index 建立双向映射，重复 stable id 不再造成错误高亮。
+
+空手 idle/Cancelled 地块检查已接入统一清理路径：同格复点、空地、Escape、短右键、卡牌接管、取消、提交、结算、Scene rebind、disable 和全局输入锁均清理；右键拖拽继续只旋转相机。最终 full EditMode `351/351`、graphical D3D12 PlayMode `107/107`、Windows Development build 和实际 Player smoke 全部通过；9 张三视口/动态 resize/non-rect PNG 已逐图复核。Combat Shell Gate A-E 经审查均已关闭，因此没有可继续执行的未完成 Combat Shell Gate，恢复位置保持当前正式后继。当前无用户决策阻塞；按用户指示不执行 push。

@@ -394,3 +394,12 @@ Bootstrap (persistent, Build index 0)
 - The actual Player smoke uses `-timekeyCombatShellGateESmoke`, performs three typed cycles, verifies one Bootstrap and one content entry, resizes to 2560x1080 and exits with input unlocked.
 - The out-of-battle shell reuses the byte-identical Godot ocean tile through `OutOfBattleOceanBackground`; its UV scale preserves square pixels across 1280x720, 1920x1080 and 2560x1080.
 - Gate E is frozen by full EditMode `343/343`, full graphical Direct3D12 PlayMode `100/100`, the six-Scene Windows build, three-cycle actual Player smoke and 17 manually reviewed PNGs. Post-review coverage proves running reveal completion stays terminal, evidence outputs are fresh, render-counter semantics are explicit and positive post-GC growth is not stable or increasing. Gate B four-yaw evidence remains inherited because the combat camera/background boundary was unchanged.
+
+## Wave 02B3R effect-frame stability contract
+
+- `TimelineActionIdentity` is the scheduled-action primary key. `CardInstanceId`, card stable ID and map runtime ID are reverse lookup keys only; duplicate stable IDs never choose a frame unless exactly one match exists.
+- `TimelineActionFrame` visuals are the union of actual occupied cells and perimeter edges. The root bounding rect is layout-only and must not render missing Tower/Poison cells or receive raycasts.
+- Binding owns one overlay priority coordinator: `Disabled > Resolving > CardTargeting > Clear > Drag > Scheduling > IdleActionHover > None`. Refresh reconstructs the base owner from the Application view.
+- `IdleTileInspect` is allowed only with no selected card in `Idle` or `Cancelled`. Same-point same-tile click toggles off; another tile replaces; blank, Escape and short right-click clear; right drag does not clear. Committed, Resolved and global Scene input lock reject inspection.
+- Card selection, cancel, commit, resolve, occupant death, Scene rebind and unbind clear stale inspection/highlight/index state. Timeline pointer exit cannot leave Application in `TimelinePreview` while only Presentation is cleared.
+- Closure evidence is full `351/351 + 107/107`, 9 fresh three-viewport/resize PNGs, Windows build and actual Player smoke.

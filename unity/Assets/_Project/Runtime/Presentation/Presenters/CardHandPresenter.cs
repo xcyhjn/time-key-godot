@@ -207,6 +207,11 @@ namespace TimeKey.Presentation.Presenters
             cardHand.HighlightCard(stableId, highlighted);
         }
 
+        public void HighlightActionCardByViewId(string viewId, bool highlighted)
+        {
+            cardHand.HighlightCardByViewId(viewId, highlighted);
+        }
+
         public CardViewModel GetCard(string stableId)
         {
             for (var index = 0; index < _cards.Count; index++)
@@ -218,6 +223,12 @@ namespace TimeKey.Presentation.Presenters
             }
 
             return null;
+        }
+
+        public CardViewModel GetCardByViewId(string viewId)
+        {
+            var card = cardHand.GetCardByViewId(viewId);
+            return card == null ? null : card.ViewModel;
         }
 
         private void HandleCardHovered(CardViewModel card, bool entered)

@@ -83,6 +83,7 @@ namespace TimeKey.Presentation.Presenters
             }
 
             _cellsByCoordinate.Clear();
+            ClearActionFrames();
             _isBound = false;
         }
 

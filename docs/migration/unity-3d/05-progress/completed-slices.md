@@ -186,3 +186,11 @@
 - Post-review entrance `5/5` 与 stability `1/1` 关闭运行中强制完成、旧证据误用、render-counter 误命名和固定小幅内存增长门禁。
 - Full EditMode `343/343`、full graphical Direct3D12 PlayMode `100/100`，失败/跳过/不确定均为 0。
 - 9 张 reveal、3 张海洋三视口和 5 张 Player 共 17 张 PNG 逐图通过；Gate B 四 yaw 证据因受影响边界未变化而继续继承。
+
+## Wave 02B3R Effect Frame Stability
+
+- Timeline action frame 使用逐格填充和 perimeter edge，支持同实例动态 resize、Scene rebind 与异常后的刷新恢复。
+- action identity index 统一 ActionId、精确 CardInstanceId、stable card id、source/target map runtime id；重复 stable id 只允许精确实例或唯一回退。
+- idle/Cancelled 地块检查、右键短按/拖拽、卡牌接管和全局输入锁使用同一 overlay priority 与清理边界。
+- Full EditMode `351/351`、graphical D3D12 PlayMode `107/107`、Windows Development build、actual Player smoke 均通过。
+- 9 张 1280x720、1920x1080、2560x1080 与动态 resize 的 frame/Poison/Tower PNG 已逐图确认无错位、误填、裁切或 Silver 文本可读性问题。

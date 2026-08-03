@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-03 04:03:27Z" end-time="2026-08-03 04:03:28Z" duration="1.1377686">
+  <test-suite type="TestSuite" id="1158" name="Time Key Unity Slice" fullname="Time Key Unity Slice" runstate="Runnable" testcasecount="104" result="Passed" start-time="2026-08-03 04:03:27Z" end-time="2026-08-03 04:03:28Z" duration="1.137769" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1135" name="TimeKey.Tests.PlayMode.dll" fullname="D:/timekey-unity-731/Library/ScriptAssemblies/TimeKey.Tests.PlayMode.dll" runstate="Runnable" testcasecount="104" result="Passed" start-time="2026-08-03 04:03:27Z" end-time="2026-08-03 04:03:28Z" duration="1.130453" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="42672" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1136" name="TimeKey" fullname="TimeKey" runstate="Runnable" testcasecount="104" result="Passed" start-time="2026-08-03 04:03:27Z" end-time="2026-08-03 04:03:28Z" duration="1.129549" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1137" name="Tests" fullname="TimeKey.Tests" runstate="Runnable" testcasecount="104" result="Passed" start-time="2026-08-03 04:03:27Z" end-time="2026-08-03 04:03:28Z" duration="1.128732" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1138" name="PlayMode" fullname="TimeKey.Tests.PlayMode" runstate="Runnable" testcasecount="104" result="Passed" start-time="2026-08-03 04:03:27Z" end-time="2026-08-03 04:03:28Z" duration="1.128089" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1001" name="CombatVerticalSliceTests" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-08-03 04:03:27Z" end-time="2026-08-03 04:03:28Z" duration="1.125414" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1018" name="EffectFrameVisualEvidence_TracksThreeViewportsAndDynamicResize" fullname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests.EffectFrameVisualEvidence_TracksThreeViewportsAndDynamicResize" methodname="EffectFrameVisualEvidence_TracksThreeViewportsAndDynamicResize" classname="TimeKey.Tests.PlayMode.CombatVerticalSliceTests" runstate="Runnable" seed="1276612685" result="Passed" start-time="2026-08-03 04:03:27Z" end-time="2026-08-03 04:03:28Z" duration="1.115173" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=recover
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=resolve-effect|phaseBefore=Resolved|phaseAfter=Resolved|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell|effect=Recover|before=10|after=100
+TIMEKEY_COMBAT_TRACE|command=resolve-timeline|phaseBefore=Committed|phaseAfter=Idle|card=recover|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=select-card|phaseBefore=Idle|phaseAfter=CardSelected|card=lighting
+TIMEKEY_COMBAT_TRACE|command=select-target|phaseBefore=CardSelected|phaseAfter=TargetSelected|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord
+TIMEKEY_COMBAT_TRACE|command=preview-timeline|phaseBefore=TargetSelected|phaseAfter=TimelinePreview|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+TIMEKEY_COMBAT_TRACE|command=commit-timeline|phaseBefore=TimelinePreview|phaseAfter=Committed|card=lighting|target=target-01|coordinate=TimeKey.Domain.HexCoord|origin=TimeKey.Domain.TimelineCell
+Saving results to: C:/Users/bulbel/AppData/LocalLow/TimeKey/Time Key Unity Slice\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -134,3 +134,12 @@ Gate D is closed at `343/343 + 92/92` with 18 manually inspected PNGs. Build, ac
 | Out-of-battle ocean | Godot room-selection scene uses the ocean tile without aspect distortion | Unity shell uses the byte-identical tile with responsive square-pixel UV scaling | 等价 | 3 viewport PNGs; source/import SHA-256 match |
 
 Gate E closes with full EditMode `343/343`, full graphical Direct3D12 PlayMode `100/100`, passing targeted tests, a successful six-Scene build, an actual three-cycle Player smoke and 17 manually reviewed PNGs. Gate B four-yaw evidence remains inherited because that combat boundary was unaffected.
+
+## Wave 02B3R
+
+| 项目 | Godot/冻结语义 | Unity 结果 | 结论 | 证据 |
+| --- | --- | --- | --- | --- |
+| 非矩形 action | Tower `010,111`、Poison `110,111` 只覆盖真实格 | per-cell fill + perimeter edge，缺格透明 | 等价并修复 bbox 偏差 | Gate B `6/6`；Gate D 6 张非矩形 PNG |
+| 响应式吸附 | frame 跟随时间轴格 | 同实例 1280→2560→1920 重算且 ID 不变 | 等价 | Gate D visual tests/screenshots |
+| 身份映射 | action、卡实体、地图实体互相可追踪 | action primary + card instance/map runtime reverse index | 等价并消除重复 stable ID 歧义 | EditMode identity `2/2` |
+| 无卡地图检查 | 复点/空地/取消输入退出 | blank/Escape/短右键/卡牌/提交/结算/rebind/lock 清理 | 等价 | targeted EditMode/PlayMode；full `351/351 + 107/107` |

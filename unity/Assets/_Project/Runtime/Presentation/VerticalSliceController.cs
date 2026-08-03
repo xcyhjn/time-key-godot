@@ -12,6 +12,7 @@ using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Targeting;
 using TimeKey.Presentation.Terrain;
+using TimeKey.Presentation.Interaction;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -74,6 +75,10 @@ namespace TimeKey.Presentation
         private bool _initialized;
         private bool _viewsBound;
         private long _settlementCommandSequence = 1;
+        private readonly RightClickGesturePolicy _rightClickPolicy = new RightClickGesturePolicy(8f);
+        private Vector2 _lastInspectScreenPoint;
+        private float _lastInspectYaw;
+        private bool _hasLastInspectScreenPoint;
 
         public int CurrentTargetHp => _state == null ? 0 : _state.TargetHp;
 
@@ -162,6 +167,8 @@ namespace TimeKey.Presentation
 
         private void OnDisable()
         {
+            ClearInspectedTile();
+            _rightClickPolicy.Cancel();
             UnbindViews();
         }
 
@@ -169,7 +176,45 @@ namespace TimeKey.Presentation
         {
             if (SceneInputLockState.IsLocked)
             {
+                _rightClickPolicy.Cancel();
+                ClearInspectedTile();
                 return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (_applicationSession != null && _applicationSession.Current.SelectedCard != null)
+                {
+                    CancelSelectedCard();
+                }
+                else
+                {
+                    ClearInspectedTile();
+                }
+            }
+
+            if (Input.GetMouseButtonDown(1))
+            {
+                _rightClickPolicy.Begin(
+                    new PointerPoint(Input.mousePosition.x, Input.mousePosition.y),
+                    IsScreenPointOverInterface(Input.mousePosition));
+            }
+
+            if (Input.GetMouseButton(1))
+            {
+                _rightClickPolicy.Move(
+                    new PointerPoint(Input.mousePosition.x, Input.mousePosition.y));
+            }
+
+            if (Input.GetMouseButtonUp(1))
+            {
+                var gesture = _rightClickPolicy.End(
+                    new PointerPoint(Input.mousePosition.x, Input.mousePosition.y),
+                    IsScreenPointOverInterface(Input.mousePosition));
+                if (gesture == RightClickGestureResult.ShortClick)
+                {
+                    ClearInspectedTile();
+                }
             }
 
             if (_generatedRoot == null ||
@@ -391,6 +436,7 @@ namespace TimeKey.Presentation
                 return false;
             }
 
+            ClearInspectedTile();
             SetHandCardsActive(true);
             BoardCamera.InputEnabled = false;
             RefreshPresentation();
@@ -438,6 +484,7 @@ namespace TimeKey.Presentation
                 return false;
             }
 
+            ClearInspectedTile();
             BoardCamera.InputEnabled = true;
             RefreshPresentation();
             return true;
@@ -462,7 +509,8 @@ namespace TimeKey.Presentation
         public bool SelectTile(HexCoord coordinate)
         {
             EnsureBuilt();
-            if (!_tiles.TryGetValue(coordinate, out var tile))
+            if (SceneInputLockState.IsLocked ||
+                !_tiles.TryGetValue(coordinate, out var tile))
             {
                 return false;
             }
@@ -472,6 +520,13 @@ namespace TimeKey.Presentation
                 return SelectEarthquakeTarget(coordinate);
             }
 
+            if (_applicationSession.Current.SelectedCard != null ||
+                (_applicationSession.Current.Phase != CombatSessionPhase.Idle &&
+                 _applicationSession.Current.Phase != CombatSessionPhase.Cancelled))
+            {
+                return false;
+            }
+
             if (_selectedTile != null)
             {
                 _selectedTile.SetSelected(false);
@@ -479,6 +534,7 @@ namespace TimeKey.Presentation
 
             _selectedTile = tile;
             _selectedTile.SetSelected(true);
+            presentationBinding.SetInspectedTile(coordinate);
             SetStatus(CombatChineseText.TileSelected(coordinate));
             return true;
         }
@@ -526,6 +582,7 @@ namespace TimeKey.Presentation
             var hits = Physics.RaycastAll(ray, SceneCamera.farClipPlane);
             if (hits.Length == 0)
             {
+                ClearInspectedTile();
                 return false;
             }
 
@@ -577,7 +634,33 @@ namespace TimeKey.Presentation
                 }
             }
 
-            return selectedTile != null && SelectTile(selectedTile.Coordinate);
+            if (selectedTile == null)
+            {
+                ClearInspectedTile();
+                return false;
+            }
+
+            if (_selectedTile != null && _selectedTile.Coordinate.Equals(selectedTile.Coordinate))
+            {
+                var moved = !_hasLastInspectScreenPoint ||
+                    (screenPoint - _lastInspectScreenPoint).sqrMagnitude > 16f ||
+                    Mathf.Abs(Mathf.DeltaAngle(boardCamera.Yaw, _lastInspectYaw)) > 0.5f;
+                if (!moved)
+                {
+                    ClearInspectedTile();
+                    return true;
+                }
+            }
+
+            var selected = SelectTile(selectedTile.Coordinate);
+            if (selected)
+            {
+                _lastInspectScreenPoint = screenPoint;
+                _lastInspectYaw = boardCamera.Yaw;
+                _hasLastInspectScreenPoint = true;
+            }
+
+            return selected;
         }
 
         public bool IsScreenPointOverInterface(Vector2 screenPoint)
@@ -648,6 +731,7 @@ namespace TimeKey.Presentation
                 }
 
                 presentationBinding.ApplyTimelineClearResult(clearCommit.ClearResult);
+                ClearInspectedTile();
                 SetHandCardsActive(true);
                 BoardCamera.InputEnabled = true;
                 RefreshPresentation();
@@ -674,6 +758,7 @@ namespace TimeKey.Presentation
             }
 
             SetHandCardsActive(true);
+            ClearInspectedTile();
             BoardCamera.InputEnabled = true;
             RefreshPresentation();
             return true;
@@ -714,6 +799,19 @@ namespace TimeKey.Presentation
             {
                 presentationBinding.ClearTimelinePreview();
             }
+
+            if (_applicationSession != null &&
+                _applicationSession.Current.Phase == CombatSessionPhase.TimelinePreview)
+            {
+                var cancel = _applicationSession.CancelCard();
+                if (cancel.Succeeded)
+                {
+                    ClearInspectedTile();
+                    SetHandCardsActive(true);
+                    BoardCamera.InputEnabled = true;
+                    RefreshPresentation();
+                }
+            }
         }
 
         public ResolutionSnapshot ResolveTimeline()
@@ -732,6 +830,7 @@ namespace TimeKey.Presentation
             }
 
             _lastSnapshot = result.Resolution;
+            ClearInspectedTile();
             ApplyTileEffects(_lastSnapshot);
             presentationBinding.ApplyOccupantEffects(_lastSnapshot.OccupantEffectResults);
             presentationBinding.ApplyLifecycleChanges(
@@ -988,6 +1087,22 @@ namespace TimeKey.Presentation
             presentationBinding.Unbind();
 
             _viewsBound = false;
+        }
+
+        private void ClearInspectedTile()
+        {
+            if (_selectedTile != null)
+            {
+                _selectedTile.SetSelected(false);
+                _selectedTile = null;
+            }
+
+            _hasLastInspectScreenPoint = false;
+
+            if (presentationBinding != null)
+            {
+                presentationBinding.ClearInspectedTile();
+            }
         }
 
         private void HandleCardSelected(string stableId)

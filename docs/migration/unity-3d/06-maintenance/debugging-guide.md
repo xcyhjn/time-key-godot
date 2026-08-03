@@ -85,3 +85,7 @@ Binding 或首帧等待失败后先检查 `SceneFlowStateStore` 是否仍有 pen
 三轮 smoke 卡住或拓扑计数增加时，依次检查 Bootstrap 数量、content entry 数量、旧 content Scene 是否卸载、active launch 是否在 outcome 后关闭，以及 transition completion 是否释放 `SceneInputLockState`。每轮 room、launch correlation 与 outcome correlation 都应唯一且互相对应。
 
 Player 内存样本小幅递增不等于已证明泄漏；先看稳定性测试的 post-GC 增量预算，再用 Profiler 做更长采样。D3D12 Player 若无法取得有效的 `Draw Calls Count`/`Batches Count`，smoke 会回退到 `SetPass Calls Count` 并在 JSON 记录实际名称；不要把它误报为 draw-call 计数。最终 Player 必须以 exit 0、PASS 一次、PERF 三次、FAIL 零次和 `finalInputLocked=false` 联合判定。
+
+效果框错位时先检查 `VisualOccupiedCells`、ActionLayer 的 `ignoreLayout`、模板引用和 `OnRectTransformDimensionsChange` 后的 layout signature；不要先改 anchoredPosition 常量。缺格被填色时检查 cell pool/edge pool，而不是根 rect。
+
+交互残留按退出表逐项复现：同格复点、另一格、blank、Escape、短右键、右拖、选卡、取消、提交、结算、occupant death、disable/enable、Scene rebind 和 `SceneInputLockState=true`。同时记录 Application phase、`OverlayCoordinator.Owner/Identity`、`IdleTileInspect.State`、selected card instance 和 action ID；任一层单独清空都不是完整修复。

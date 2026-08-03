@@ -952,6 +952,22 @@ namespace TimeKey.Editor
             label.raycastTarget = false;
             badge.raycastTarget = false;
 
+            var cellTemplateRect = CreateRect("CellBackgroundTemplate", root.transform);
+            SetRect(cellTemplateRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                new Vector2(-1f, -1f), new Vector2(1f, 1f));
+            var cellTemplate = cellTemplateRect.gameObject.AddComponent<Image>();
+            cellTemplate.color = new Color(0.04f, 0.38f, 0.40f, 0.38f);
+            cellTemplate.raycastTarget = false;
+            cellTemplateRect.gameObject.SetActive(false);
+
+            var edgeTemplateRect = CreateRect("EdgeTemplate", root.transform);
+            SetRect(edgeTemplateRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.one);
+            var edgeTemplate = edgeTemplateRect.gameObject.AddComponent<Image>();
+            edgeTemplate.color = new Color(0.18f, 0.88f, 0.80f, 1f);
+            edgeTemplate.raycastTarget = false;
+            edgeTemplateRect.gameObject.SetActive(false);
+
             var frame = root.GetComponent<TimelineActionFrame>();
             var serialized = new SerializedObject(frame);
             SetReference(serialized, "background", background);
@@ -960,6 +976,8 @@ namespace TimeKey.Editor
             SetReference(serialized, "label", label);
             SetReference(serialized, "badge", badge);
             SetReference(serialized, "canvasGroup", root.GetComponent<CanvasGroup>());
+            SetReference(serialized, "cellBackgroundTemplate", cellTemplate);
+            SetReference(serialized, "edgeTemplate", edgeTemplate);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             PrefabUtility.SaveAsPrefabAsset(root, TimelineActionFramePrefabPath);
             UnityEngine.Object.DestroyImmediate(root);

@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using TimeKey.Application.SceneFlow;
@@ -6,6 +8,7 @@ using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain;
 using TimeKey.Presentation;
 using TimeKey.Presentation.Cards;
+using TimeKey.Presentation.Actions;
 using TimeKey.Presentation.Localization;
 using TimeKey.Presentation.Occupants;
 using TimeKey.Presentation.Targeting;
@@ -494,6 +497,232 @@ namespace TimeKey.Tests.PlayMode
             Assert.That(controller.IsScreenPointOverInterface(screenCenter), Is.True);
             Assert.That(controller.TrySelectWorldAtScreenPoint(screenCenter), Is.False);
             Assert.That(controller.SelectedTile, Is.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator IdleTileInspection_ClearsOnBlankCardCommitAndResolve()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            var center = new TimeKey.Domain.HexCoord(0, 0);
+            Assert.That(controller.SelectTile(center), Is.True);
+            Assert.That(controller.SelectedTile, Is.EqualTo(center));
+            Assert.That(controller.TrySelectWorldAtScreenPoint(new Vector2(-100f, -100f)), Is.False);
+            Assert.That(controller.SelectedTile, Is.Null);
+
+            Assert.That(controller.SelectTile(center), Is.True);
+            Assert.That(controller.SelectCard("recover"), Is.True);
+            Assert.That(controller.SelectedTile, Is.Null);
+            Assert.That(controller.CancelSelectedCard(), Is.True);
+            Assert.That(controller.SelectTile(center), Is.True);
+            Assert.That(controller.TrySelectWorldAtScreenPoint(new Vector2(-100f, -100f)), Is.False);
+            Assert.That(controller.SelectedTile, Is.Null);
+
+            AdvanceToSecondHand(controller);
+            Assert.That(controller.SelectTile(center), Is.True);
+            Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
+            Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
+            Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
+            Assert.That(controller.SelectedTile, Is.Null);
+            Assert.That(controller.ResolveTimeline(), Is.Not.Null);
+            Assert.That(controller.SelectedTile, Is.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator IdleTileInspection_ClearsOnSceneRebindAndGlobalInputLock()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            var center = new TimeKey.Domain.HexCoord(0, 0);
+
+            Assert.That(controller.SelectTile(center), Is.True);
+            controller.enabled = false;
+            yield return null;
+            controller.enabled = true;
+            yield return null;
+            Assert.That(controller.SelectedTile, Is.Null);
+
+            Assert.That(controller.SelectTile(center), Is.True);
+            SceneInputLockState.SetLocked(true);
+            yield return null;
+            var selectedAfterLock = controller.SelectedTile;
+            var acceptedWhileLocked = controller.SelectTile(center);
+            SceneInputLockState.SetLocked(false);
+
+            Assert.That(selectedAfterLock, Is.Null);
+            Assert.That(acceptedWhileLocked, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator EffectFrameVisualEvidence_TracksThreeViewportsAndDynamicResize()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            AdvanceToSecondHand(controller);
+            Assert.That(controller.SelectCard(VerticalSliceController.LightingCardId), Is.True);
+            Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
+            Assert.That(controller.TryPlaceSelected(0, 0), Is.True);
+            Canvas.ForceUpdateCanvases();
+            yield return null;
+
+            var frames = Object.FindObjectsByType<TimelineActionFrame>(FindObjectsInactive.Include);
+            Assert.That(frames.Length, Is.GreaterThanOrEqualTo(2));
+            var frameIds = frames.Select(frame => frame.GetInstanceID()).OrderBy(id => id).ToArray();
+            var viewports = new[]
+            {
+                new Vector2Int(1280, 720),
+                new Vector2Int(2560, 1080),
+                new Vector2Int(1920, 1080)
+            };
+
+            for (var index = 0; index < viewports.Length; index++)
+            {
+                var viewport = viewports[index];
+                Screen.SetResolution(viewport.x, viewport.y, false);
+                yield return null;
+                yield return null;
+                Canvas.ForceUpdateCanvases();
+                var currentFrames = Object.FindObjectsByType<TimelineActionFrame>(FindObjectsInactive.Include);
+                Assert.That(currentFrames.Select(frame => frame.GetInstanceID()).OrderBy(id => id),
+                    Is.EqualTo(frameIds));
+                for (var frameIndex = 0; frameIndex < currentFrames.Length; frameIndex++)
+                {
+                    Assert.That(currentFrames[frameIndex].VisualOccupiedCells, Is.Not.Empty);
+                }
+
+                var capture = CaptureScene(controller.SceneCamera, viewport.x, viewport.y);
+                try
+                {
+                    Assert.That(CountDistinctPixels(capture), Is.GreaterThan(32));
+                    WriteEffectFrameEvidence(capture, viewport, index == 0
+                        ? "1280x720"
+                        : index == 1
+                            ? "2560x1080-resize"
+                            : "1920x1080-resize");
+                }
+                finally
+                {
+                    Object.Destroy(capture);
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator NonRectEffectFrameVisualEvidence_CapturesPoisonAndTowerAtThreeViewports()
+        {
+            yield return LoadSlice();
+            var controller = GetController();
+            Assert.That(controller.SelectCard("poison"), Is.True);
+            Assert.That(controller.SelectTarget(VerticalSliceController.TargetId), Is.True);
+            Assert.That(controller.TryPlaceSelected(4, 0), Is.True);
+            yield return CaptureActionViewports(controller, "poison", 5);
+
+            yield return LoadSlice();
+            controller = GetController();
+            AdvanceToSecondHand(controller);
+            Assert.That(controller.SelectCard("tower"), Is.True);
+            Assert.That(controller.SelectEarthquakeTarget(new HexCoord(0, 0)), Is.True);
+            Assert.That(controller.TryPlaceSelected(4, 0), Is.True);
+            yield return CaptureActionViewports(controller, "tower", 4);
+        }
+
+        private static IEnumerator CaptureActionViewports(
+            VerticalSliceController controller,
+            string stableId,
+            int occupiedCellCount)
+        {
+            yield return new WaitForSecondsRealtime(0.75f);
+            Canvas.ForceUpdateCanvases();
+            yield return null;
+            var frame = Object.FindObjectsByType<TimelineActionFrame>(FindObjectsInactive.Include)
+                .Single(candidate => candidate.Snapshot != null &&
+                    string.Equals(candidate.Snapshot.CardStableId, stableId));
+            var frameId = frame.GetInstanceID();
+            Assert.That(frame.VisualOccupiedCells, Has.Count.EqualTo(occupiedCellCount));
+
+            foreach (var viewport in new[]
+                     {
+                         new Vector2Int(1280, 720),
+                         new Vector2Int(2560, 1080),
+                         new Vector2Int(1920, 1080)
+                     })
+            {
+                Screen.SetResolution(viewport.x, viewport.y, false);
+                yield return null;
+                yield return null;
+                Canvas.ForceUpdateCanvases();
+                var current = Object.FindObjectsByType<TimelineActionFrame>(FindObjectsInactive.Include)
+                    .Single(candidate => candidate.Snapshot != null &&
+                        string.Equals(candidate.Snapshot.CardStableId, stableId));
+                Assert.That(current.GetInstanceID(), Is.EqualTo(frameId));
+                Assert.That(current.VisualOccupiedCells, Has.Count.EqualTo(occupiedCellCount));
+
+                var capture = CaptureScene(controller.SceneCamera, viewport.x, viewport.y);
+                try
+                {
+                    Assert.That(CountDistinctPixels(capture), Is.GreaterThan(32));
+                    WriteEffectFrameEvidence(capture, viewport, stableId);
+                }
+                finally
+                {
+                    Object.Destroy(capture);
+                }
+            }
+        }
+
+        private static Texture2D CaptureScene(Camera camera, int width, int height)
+        {
+            var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+            target.Create();
+            var previousTarget = camera.targetTexture;
+            var previousActive = RenderTexture.active;
+            camera.targetTexture = target;
+            camera.Render();
+            RenderTexture.active = target;
+            var capture = new Texture2D(width, height, TextureFormat.RGB24, false);
+            capture.ReadPixels(new Rect(0f, 0f, width, height), 0, 0, false);
+            capture.Apply(false, false);
+            RenderTexture.active = previousActive;
+            camera.targetTexture = previousTarget;
+            target.Release();
+            Object.Destroy(target);
+            return capture;
+        }
+
+        private static int CountDistinctPixels(Texture2D image)
+        {
+            var pixels = image.GetPixels32();
+            var colors = new HashSet<int>();
+            for (var index = 0; index < pixels.Length; index += 97)
+            {
+                var pixel = pixels[index];
+                colors.Add(pixel.r | (pixel.g << 8) | (pixel.b << 16));
+            }
+
+            return colors.Count;
+        }
+
+        private static void WriteEffectFrameEvidence(Texture2D capture, Vector2Int viewport, string state)
+        {
+            var repositoryRoot = System.Environment.GetEnvironmentVariable("TIMEKEY_REPOSITORY_ROOT");
+            if (string.IsNullOrWhiteSpace(repositoryRoot))
+            {
+                return;
+            }
+
+            var directory = Path.Combine(
+                repositoryRoot,
+                "docs",
+                "migration",
+                "unity-3d",
+                "04-verification",
+                "evidence",
+                "effect-frame-stability-gate-d");
+            Directory.CreateDirectory(directory);
+            File.WriteAllBytes(
+                Path.Combine(directory,
+                    string.Format("effect-frame-{0}-{1}.png", viewport.x + "x" + viewport.y, state)),
+                capture.EncodeToPNG());
         }
 
         private static IEnumerator LoadSlice()

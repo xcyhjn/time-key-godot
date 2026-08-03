@@ -163,3 +163,9 @@ Gate D 检查点 `105a66d` 是本阶段进入基线。Gate E 修改了正式 She
 已刷新证据包括：full EditMode `343/343`、full graphical D3D12 PlayMode `100/100`、layered reveal PlayMode `7/7`、post-review entrance `5/5`、三轮稳定性 PlayMode `1/1`、动画采集 PlayMode `1/1`、六 Scene Windows Development build exit 0，以及实际 Player exit 0 / PASS 1 / PERF 3 / FAIL 0。Player 三轮保持一个 Bootstrap、一个内容 entry、不同 room/launch/outcome identity，最终输入未锁定。
 
 Gate E 的 9 张动画阶段图、3 张局外海洋三视口图和 5 张 Player 图均已人工复核，缺陷数为 0。Gate B 的四 yaw 证据继续继承，因为 Combat camera/background/board boundary 未变化；其余受影响边界已由本阶段证据刷新。
+
+## Wave 02B3R 继承与刷新
+
+继续继承 Wave 02B3 Gate D 的 card targeting、enemy intent、map source/target/range、clear 和 Silver 字体证据，以及 Combat Shell Gate B-E 的 camera/background/SceneFlow/build/player 证据。效果框几何、重复卡实体映射、overlay owner 与 IdleTileInspect 退出路径属于受影响边界，不继承旧结论。
+
+受影响边界已刷新为 targeted EditMode `8/8`、geometry PlayMode `6/6`、interaction PlayMode `2/2`、visual PlayMode `2/2`、full `351/351 + 107/107`、9 张逐图复核 PNG、Windows build 与 actual Player smoke。历史失败 XML 保留为 Gate 0 红灯，不作为最终绿灯。
