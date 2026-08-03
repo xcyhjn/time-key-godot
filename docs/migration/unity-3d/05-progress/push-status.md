@@ -52,3 +52,13 @@
 ## Wave 02B3R 本地检查点
 
 Wave 02B3R 仅创建精确本地 Git 检查点，不执行 push。暂存白名单只包含本阶段 identity/interaction/frame 实现、Prefab/authoring 同步、自动化测试、最终 XML/PNG、Agent Prompt 与维护账本；既有 Godot 文件、Bootstrap Prompt、migration roadmap、历史证据、ProjectSettings、原始日志和其他阶段未跟踪文件继续保留在工作区且不进入检查点。
+
+## Wave 03 Era Clock and Overworld Map
+
+| 检查点 | Commit | 远端状态 | 范围 |
+| --- | --- | --- | --- |
+| Wave 03R-F | `cf530f751a2757a61cb7c0ae043bdf84037bea6f` | 已推送至 `origin/unity_7.31` | 修复局外 reveal 中间态 Era Clock/中央房间重叠，三视口/resize、全量测试、六 Scene build 和 Player 证据 |
+| Overworld Gate B | `5b5812b87536d86900e86a653d4595edac5057fc` | 已推送至 `origin/unity_7.31` | 单一 Gate A authority、typed SceneFlow、schema 2/migration/Continue、原子 rollback 与 Agent Prompt/审计 |
+| Overworld Gate C | `f98db414559253cc1396175e23b07969c1ae0735` | 已推送至 `origin/unity_7.31`；推送后 `0/0` | 动态地图、Event safe-skip、Shop exact-once、Continue 错误态、`446/446 + 128/128`、15 PNG、六 Scene build 和实际可见 Player |
+
+三个检查点均使用精确路径暂存，提交前 cached diff 白名单通过；未使用 `git add -A`。每次提交后 staging 为 0，既有 Godot/Prompt/ProjectSettings/历史证据和其他来源不明改动均未进入检查点。
