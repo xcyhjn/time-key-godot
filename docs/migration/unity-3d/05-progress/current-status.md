@@ -162,3 +162,25 @@ Era Clock、动态地图/连线和底部详情无重叠。证据入口为
 
 下一恢复点为 Gate D：多房间路线、Boss/章节推进、失败返回和重启 Continue 的端到端
 闭环。当前无用户决策阻塞。
+
+## Wave 03 Overworld Gate D complete
+
+Gate D 已用两个独立可见 Player 进程关闭真实重启边界。第一段在 Event 房结算后写入
+schema 2；第二段 fresh Bootstrap 从 Continue 恢复完全相同的 run、seed、map fingerprint、
+current node、100 时间币、12 张牌和 settled identity。Continue 在预留 transition 前先
+用持久 operation cursor 提升 sequence floor，避免新进程序列重用。
+
+同一 seed 4 路线随后完成 50 时间币 Shop、两次普通战斗和 Boss，购买 `earthquake`
+只发生一次，Boss victory 只生成 chapter 2 一次，相同 outcome replay 为 already applied。
+chapter 2 的实际 Defeat 进入 GameOver；返回 MainMenu 后 run、save、launch、outcome 和
+input lock 全部清除。
+
+最终门禁为 additive `10/10`、full graphical EditMode `446/446`、full graphical D3D12
+PlayMode `130/130`。六 Scene Windows build 成功；Player launcher 仍为 `667648` bytes、
+SHA-256 `FE5E81292DF0F6591DCEEC172141B6F0F22D7CBB853DE83786B725E1BC68BEEE`，
+Silver attribution 已随 Player 放置。prepare/resume 两段 Player 均 exit 0，10 张三视口
+Player PNG 已逐张通过。证据入口为
+`../04-verification/evidence/overworld-map-gate-d/verification-summary.md`。
+
+Wave 03 Overworld Gate A-D 已关闭；当前主 Prompt 没有剩余地图 Gate，且无用户决策硬
+阻塞。

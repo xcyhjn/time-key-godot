@@ -213,3 +213,16 @@
 - Continue 有效档恢复，corrupt/future/I/O 使用 typed fail 与 Silver 中文提示。
 - Gate C 门禁：targeted `39/39`、additive `10/10`、visual `2/2`、full graphical
   `446/446 + 128/128`、15 张人工复核 PNG、六 Scene build 与实际可见 Player 路径。
+
+## Wave 03 Overworld Gate D
+
+- 新增真实进程重启门禁：第一段 Player 在 Event 结算后保存，第二段 fresh Bootstrap
+  Continue 恢复 exact run/map/current/resources/deck/settled snapshot。
+- Continue 从已验证存档提升 Bootstrap transition sequence floor，关闭新进程序列与持久
+  Application operation cursor 重用；未新增 schema 或状态机。
+- seed 4 的确定性路线完成 Event、50 时间币 Shop、两次普通战斗和 Boss；Boss 胜利只推进
+  chapter 2 一次，相同 outcome replay 幂等。
+- chapter 2 实际 Defeat 进入 GameOver，返回 MainMenu 后 run/save/launch/outcome/input lock
+  全清。
+- 最终门禁：additive `10/10`、full graphical `446/446 + 130/130`、六 Scene Windows
+  build、两段实际 Player exit `0/0`、10 张人工复核 Player PNG。

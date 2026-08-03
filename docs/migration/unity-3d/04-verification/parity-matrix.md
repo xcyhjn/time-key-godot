@@ -156,5 +156,20 @@ Gate E closes with full EditMode `343/343`, full graphical Direct3D12 PlayMode `
 | 响应式布局 | 地图与 HUD 不遮挡核心房间 | 顶部 Era Clock、中央地图、底部详情带在三视口和 resize 中保持分区 | 允许差异 | 15 PNG + actual Player inspection |
 
 Gate C closes at full graphical `446/446 + 128/128`, a successful six-Scene build,
-actual visible Player inspection and 15 manually reviewed PNGs. Gate D retains the
-multi-room/Boss/chapter/defeat/restart end-to-end closure.
+actual visible Player inspection and 15 manually reviewed PNGs. At the Gate C checkpoint,
+the multi-room/Boss/chapter/defeat/restart end-to-end closure was deferred to Gate D.
+
+## Wave 03 Overworld Gate D
+
+| 行为 | Godot 可观察语义 | Unity 最终实现 | 判定 | 证据 |
+| --- | --- | --- | --- | --- |
+| 进程重启 Continue | 已提交局外边界可恢复 | 独立 Player 恢复 exact run/map/current/resources/deck/settled snapshot，并提升 sequence floor | 等价并显式化 | phase-one/player summary + additive tests |
+| 多房间路线 | Event/Shop/战斗沿可达图推进 | 同一 Gate A map authority 完成 Event -> Shop -> Combat -> Combat -> Boss | 允许差异且确定 | route IDs + actual Player PNG |
+| Shop exact-once | 固定价格购买后牌组增加 | 50 时间币只扣一次，`earthquake` 只追加一次，retry 不重复 | 等价并显式化 | restart test + player summary |
+| Boss/章节 | Boss 胜利后进入下一章节 | authoritative reward return 后只生成 chapter 2 一次；相同 outcome replay 为 already-applied | 等价并显式化 | Gate D route test + chapter PNG |
+| Defeat 清理 | 失败进入 GameOver 并回主菜单 | chapter-2 Defeat -> GameOver -> MainMenu，run/save/launch/outcome/input lock 全清 | 等价 | additive test + Player GameOver/menu PNG |
+
+Gate D closes at `446/446 + 130/130`, with additive `10/10`, a successful six-Scene
+Windows build, two actual Player processes exiting 0 and 10 manually reviewed Player
+PNGs. Wave 03 Overworld Gate A-D are complete without a second map or SceneFlow state
+machine.

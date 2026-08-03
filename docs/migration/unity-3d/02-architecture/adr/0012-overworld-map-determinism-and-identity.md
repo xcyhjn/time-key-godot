@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted through Gate C. Gate D end-to-end route closure remains pending.
+Accepted through Gate D. The end-to-end overworld route is closed.
 
 ## Decision
 
@@ -14,4 +14,4 @@ Accepted through Gate C. Gate D end-to-end route closure remains pending.
 
 Gate B 已将唯一 `OverworldChapterState` 接入 typed SceneFlow 和 schema 2 原子存档；Gate C 的正式地图 UI 只投影该状态，不创建平行节点表或第二套状态机。事件房在源资源缺失时只允许显式安全跳过；商店使用确定性 offer，并把时间币扣除、卡牌加入 deck、房间结算和存档作为单一原子提交。Continue 仅对有效、已提交的存档启用，损坏、future schema 与 I/O failure 使用 typed 结果和可恢复中文提示。
 
-Gate D 仍负责跨多房间、Boss、章节推进、失败返回和重启恢复的最终端到端证明。任何 future schema 继续使用版本化原子写入，并在新快照通过验证前保留旧文件。
+Gate D 已通过两个独立 Player 进程证明跨多房间、Boss、单次章节推进、失败返回和重启恢复。重启 Continue 会先从已验证的 schema 2 snapshot 提升 Bootstrap transition sequence floor，再预留新 request sequence，避免新进程序列与持久 operation cursor 重用。该修正不增加 schema、payload 或状态机。任何 future schema 继续使用版本化原子写入，并在新快照通过验证前保留旧文件。

@@ -31,6 +31,14 @@ namespace TimeKey.Composition.SceneFlow
             return Interlocked.Increment(ref _reservedSequence);
         }
 
+        public void EnsureTransitionSequenceAtLeast(long sequence)
+        {
+            if (sequence > 0)
+            {
+                RaiseSequenceFloor(sequence);
+            }
+        }
+
         private void Awake()
         {
             if (effects == null)

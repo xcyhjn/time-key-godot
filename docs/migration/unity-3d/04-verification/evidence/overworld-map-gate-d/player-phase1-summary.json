@@ -1,0 +1,15 @@
+{
+    "status": "passed",
+    "seed": 4,
+    "runId": "player-overworld-gate-d-run",
+    "eventRoomId": "chapter-01-layer-01-node-01",
+    "mapFingerprint": "map:4:1:4:2:3|chapter-01-layer-00-node-00:0|chapter-01-layer-01-node-00:1|chapter-01-layer-01-node-01:3|chapter-01-layer-01-node-02:3|chapter-01-layer-02-node-00:1|chapter-01-layer-02-node-01:4|chapter-01-layer-02-node-02:4|chapter-01-layer-03-node-00:4|chapter-01-layer-03-node-01:1|chapter-01-layer-03-node-02:4|chapter-01-layer-04-node-00:1|chapter-01-layer-04-node-01:1|chapter-01-layer-05-node-00:5|chapter-01-layer-00-node-00>chapter-01-layer-01-node-00|chapter-01-layer-00-node-00>chapter-01-layer-01-node-01|chapter-01-layer-00-node-00>chapter-01-layer-01-node-02|chapter-01-layer-01-node-00>chapter-01-layer-02-node-00|chapter-01-layer-01-node-01>chapter-01-layer-02-node-01|chapter-01-layer-01-node-02>chapter-01-layer-02-node-02|chapter-01-layer-01-node-02>chapter-01-layer-02-node-00|chapter-01-layer-01-node-02>chapter-01-layer-02-node-01|chapter-01-layer-02-node-00>chapter-01-layer-03-node-00|chapter-01-layer-02-node-01>chapter-01-layer-03-node-01|chapter-01-layer-02-node-02>chapter-01-layer-03-node-02|chapter-01-layer-02-node-00>chapter-01-layer-03-node-02|chapter-01-layer-02-node-02>chapter-01-layer-03-node-00|chapter-01-layer-02-node-02>chapter-01-layer-03-node-01|chapter-01-layer-03-node-00>chapter-01-layer-04-node-00|chapter-01-layer-03-node-01>chapter-01-layer-04-node-01|chapter-01-layer-03-node-02>chapter-01-layer-04-node-00|chapter-01-layer-04-node-00>chapter-01-layer-05-node-00|chapter-01-layer-04-node-01>chapter-01-layer-05-node-00|",
+    "currentNodeId": "chapter-01-layer-01-node-01",
+    "timecoins": 100,
+    "deckCount": 12,
+    "settledNodeIds": [
+        "chapter-01-layer-00-node-00",
+        "chapter-01-layer-01-node-01"
+    ],
+    "inputLocked": false
+}

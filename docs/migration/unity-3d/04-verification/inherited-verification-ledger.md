@@ -181,4 +181,16 @@ Event/Shop 本地提交、Continue 表现和正式视觉，因此旧的单房间
 PlayMode `2/2`、full graphical `446/446 + 128/128`、15 张三视口/resize/交互/房间/Continue
 PNG、六 Scene build 和 actual visible Player 路径。未修改的 Combat board/camera、02B3
 lifecycle、02B4 deck/battle rules 与 Silver 原始字体继续继承；Gate D 必须刷新多房间、
-Boss、章节推进、失败返回和重启恢复。
+  Boss、章节推进、失败返回和重启恢复。
+
+## Wave 03 Overworld Gate D final refresh
+
+Gate C 的单进程 Event/Shop/Continue 与静态视觉继续作为进入基线，但不能证明真实进程
+重启、跨多房间、Boss、章节推进或 Defeat 清理。Gate D 修改了 Bootstrap sequence floor、
+Continue 恢复接线和 Player smoke，因此这些边界以新的两进程证据完整刷新。
+
+最终受影响边界为 additive `10/10`、full graphical EditMode `446/446`、full graphical
+Direct3D12 PlayMode `130/130`、六 Scene Windows build、prepare/resume Player exit `0/0`
+及 10 张实际 Player PNG。Combat board/camera、02B3 lifecycle、02B4 deck/battle rules、
+Gate C 动态地图生成和 Silver 字体未被重写并在全量回归中保持通过。外置 full-suite
+evidence root 避免重写 Gate C canonical PNG；继承脏证据仍不进入 Gate D 检查点。

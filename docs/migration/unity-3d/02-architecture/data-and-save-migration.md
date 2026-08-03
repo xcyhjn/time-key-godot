@@ -75,3 +75,15 @@ candidate, then promote it in memory. Shop promotion includes the exact timecoin
 the purchased stable card ID and the settled room identity in the same write. Persistence
 failure preserves the prior in-memory state and prior primary file, while exact operation
 replay remains idempotent and a changed fingerprint remains a typed conflict.
+
+### Gate D restart and chapter boundary
+
+The saved `OperationSequenceCursor` is also the lower bound for a fresh Bootstrap
+process. After Continue validates and prepares schema 2, Composition raises the
+transition sequence floor to that cursor before reserving the Continue request. This
+prevents request-sequence reuse without moving persistence ownership into Bootstrap.
+
+The canonical two-process Player proof restores the Event boundary exactly, persists a
+single Shop purchase, advances Boss victory to chapter 2 exactly once, treats replay of
+the same Boss outcome as already applied, and deletes both primary/backup run state after
+Defeat returns to MainMenu. No schema bump was required.

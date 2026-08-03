@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -7,12 +8,16 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using TimeKey.Application.SceneFlow;
 using TimeKey.Application.Overworld;
+using TimeKey.Composition;
 using TimeKey.Composition.SceneFlow;
 using TimeKey.Domain.BattleFlow;
 using TimeKey.Domain.Deck;
 using TimeKey.Domain.Overworld;
 using TimeKey.Domain.OverworldMovement;
 using TimeKey.Infrastructure.Persistence;
+using TimeKey.Presentation;
+using TimeKey.Presentation.BattleFlow;
+using TimeKey.Presentation.GameOver;
 using TimeKey.Presentation.MainMenu;
 using TimeKey.Presentation.OutOfBattleShell;
 using TimeKey.Presentation.OverworldMovement;
@@ -22,6 +27,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 using InvalidOperationException = System.InvalidOperationException;
+using Object = UnityEngine.Object;
 
 namespace TimeKey.Tests.PlayMode.SceneFlow
 {
@@ -559,6 +565,185 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             yield return AssertInvalidSaveNotice(true);
         }
 
+        [UnityTest]
+        public IEnumerator Bootstrap_GateDEventAndShopSurviveRestartWithoutDuplicateSpend()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-d-restart-" + Guid.NewGuid().ToString("N"));
+            var savePath = Path.Combine(directory, "overworld.json");
+            var plan = FindGateDRoutePlan();
+
+            BootstrapRoot bootstrap = null;
+            SceneFlowStateStore store = null;
+            yield return StartGateDRun(
+                savePath,
+                plan.Seed,
+                "gate-d-restart-run",
+                100,
+                value => bootstrap = value,
+                value => store = value);
+
+            var eventRoom = plan.ChapterOnePath[1];
+            var shopRoom = plan.ChapterOnePath[2];
+            yield return SelectAndConfirmLocalRoom(store, eventRoom, "安全跳过");
+            var afterEvent = store.OverworldRun.CreatePersistenceSnapshot();
+            Assert.That(afterEvent.CurrentNodeId, Is.EqualTo(eventRoom.Value));
+            Assert.That(afterEvent.Timecoins, Is.EqualTo(100));
+            Assert.That(afterEvent.DeckStableIds, Is.EqualTo(StarterDeck.OrderedStableIds));
+
+            yield return RestartAndContinue(
+                savePath,
+                value => bootstrap = value,
+                value => store = value);
+            var restoredEvent = store.OverworldRun.CreatePersistenceSnapshot();
+            AssertEquivalentRunBoundary(afterEvent, restoredEvent);
+
+            var offer = store.OverworldRun.GetShopOffer(shopRoom);
+            yield return SelectAndConfirmLocalRoom(store, shopRoom, "价格");
+            var afterShop = store.OverworldRun.CreatePersistenceSnapshot();
+            Assert.That(afterShop.Timecoins, Is.EqualTo(100 - offer.TimecoinCost));
+            Assert.That(afterShop.DeckStableIds.Count,
+                Is.EqualTo(afterEvent.DeckStableIds.Count + 1));
+            Assert.That(afterShop.DeckStableIds.Last(), Is.EqualTo(offer.CardStableId));
+
+            yield return RestartAndContinue(
+                savePath,
+                value => bootstrap = value,
+                value => store = value);
+            var restoredShop = store.OverworldRun.CreatePersistenceSnapshot();
+            AssertEquivalentRunBoundary(afterShop, restoredShop);
+            var beforeReplay = store.OverworldRun.CreatePersistenceSnapshot();
+            var replay = store.PurchaseShopRoom(
+                bootstrap.ReserveTransitionSequence(),
+                bootstrap.ReserveTransitionSequence(),
+                shopRoom.Value);
+            Assert.That(replay.Succeeded, Is.False);
+            var afterReplay = store.OverworldRun.CreatePersistenceSnapshot();
+            Assert.That(afterReplay.Timecoins, Is.EqualTo(beforeReplay.Timecoins));
+            Assert.That(afterReplay.DeckStableIds, Is.EqualTo(beforeReplay.DeckStableIds));
+            Assert.That(afterReplay.SettledNodeIds, Is.EqualTo(beforeReplay.SettledNodeIds));
+            AssertPersistentState(SceneId.OutOfBattleShell);
+
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Bootstrap_GateDThreeRoomBossAdvanceAndDefeatRouteStayExact()
+        {
+            var directory = Path.Combine(
+                Path.GetTempPath(),
+                "timekey-gate-d-route-" + Guid.NewGuid().ToString("N"));
+            var savePath = Path.Combine(directory, "overworld.json");
+            var plan = FindGateDRoutePlan();
+
+            BootstrapRoot bootstrap = null;
+            SceneFlowStateStore store = null;
+            yield return StartGateDRun(
+                savePath,
+                plan.Seed,
+                "gate-d-route-run",
+                100,
+                value => bootstrap = value,
+                value => store = value);
+
+            CombatOutcome bossOutcome = null;
+            var completedRooms = 0;
+            for (var index = 1; index < plan.ChapterOnePath.Count; index++)
+            {
+                var roomId = plan.ChapterOnePath[index];
+                var roomType = store.OverworldRun.GetRoomType(roomId);
+                if (roomType == OverworldRoomType.Event)
+                {
+                    yield return SelectAndConfirmLocalRoom(store, roomId, "安全跳过");
+                }
+                else if (roomType == OverworldRoomType.Shop)
+                {
+                    yield return SelectAndConfirmLocalRoom(store, roomId, "价格");
+                }
+                else
+                {
+                    yield return SelectAndResolveCombatRoom(
+                        bootstrap,
+                        store,
+                        roomId,
+                        BattleOutcome.VictorySettlement,
+                        value =>
+                        {
+                            if (roomType == OverworldRoomType.Boss)
+                            {
+                                bossOutcome = value;
+                            }
+                        });
+                }
+
+                completedRooms++;
+                Assert.That(SceneInputLockState.IsLocked, Is.False);
+                AssertPersistentState(SceneId.OutOfBattleShell);
+            }
+
+            Assert.That(completedRooms, Is.GreaterThanOrEqualTo(3));
+            Assert.That(bossOutcome, Is.Not.Null);
+            var chapterTwo = store.OverworldRun.CreatePersistenceSnapshot();
+            var expectedChapterTwo = new OverworldRunApplication(
+                new RunStartPayload(
+                    RunStartKind.NewGame,
+                    "gate-d-expected-chapter-two",
+                    plan.Seed,
+                    plan.Seed.ToString(),
+                    2,
+                    chapterTwo.Era,
+                    chapterTwo.Phase,
+                    chapterTwo.Timecoins,
+                    chapterTwo.CharacterId,
+                    chapterTwo.DeckStableIds),
+                new OverworldMapGenerationConfig(2),
+                finalChapter: 3);
+            Assert.That(chapterTwo.Chapter, Is.EqualTo(2));
+            Assert.That(chapterTwo.MapFingerprint,
+                Is.EqualTo(expectedChapterTwo.Map.Fingerprint));
+            Assert.That(chapterTwo.CurrentNodeId,
+                Is.EqualTo(expectedChapterTwo.Map.EntryNodeId.Value));
+
+            var replay = store.OverworldRun.TryApplyCombatOutcome(
+                bootstrap.ReserveTransitionSequence(),
+                store.OverworldRun.Revision,
+                bossOutcome);
+            Assert.That(replay.Succeeded, Is.True);
+            Assert.That(replay.WasAlreadyApplied, Is.True);
+            var afterReplay = store.OverworldRun.CreatePersistenceSnapshot();
+            Assert.That(afterReplay.Chapter, Is.EqualTo(2));
+            Assert.That(afterReplay.MapFingerprint, Is.EqualTo(chapterTwo.MapFingerprint));
+            Assert.That(afterReplay.CurrentNodeId, Is.EqualTo(chapterTwo.CurrentNodeId));
+
+            var defeatRoom = FindAvailableCombatRoom(store.OverworldRun);
+            yield return SelectAndResolveCombatRoom(
+                bootstrap,
+                store,
+                defeatRoom,
+                BattleOutcome.Defeat,
+                value => { });
+            Assert.That(bootstrap.CurrentScene, Is.EqualTo(SceneId.GameOver));
+            Assert.That(Object.FindAnyObjectByType<GameOverPresenter>(), Is.Not.Null);
+            AssertPersistentState(SceneId.GameOver);
+
+            FindButton("ReturnButton").onClick.Invoke();
+            yield return AwaitInteractiveScene(bootstrap, SceneId.MainMenu);
+            Assert.That(store.OverworldRun, Is.Null);
+            Assert.That(store.OutOfBattleState, Is.Null);
+            Assert.That(store.ActiveLaunch, Is.Null);
+            Assert.That(store.LastOutcome, Is.Null);
+            AssertPersistentState(SceneId.MainMenu);
+
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
         private static IEnumerator Transition(
             BootstrapRoot bootstrap,
             SceneTransitionRequest request)
@@ -753,6 +938,235 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
             yield return null;
         }
 
+        private static IEnumerator StartGateDRun(
+            string savePath,
+            int seed,
+            string runId,
+            int timecoins,
+            Action<BootstrapRoot> captureBootstrap,
+            Action<SceneFlowStateStore> captureStore)
+        {
+            SceneManager.LoadScene("Bootstrap", LoadSceneMode.Single);
+            yield return null;
+            var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
+            yield return AwaitTask(bootstrap.InitializationTask, "Bootstrap initialization");
+            var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            store.ConfigurePersistencePath(savePath);
+            var menuSequence = bootstrap.ReserveTransitionSequence();
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    menuSequence,
+                    "gate-d-start-menu-" + menuSequence,
+                    SceneId.GameStart,
+                    SceneId.MainMenu,
+                    new EmptySceneTransitionPayload(SceneId.MainMenu)));
+            var runSequence = bootstrap.ReserveTransitionSequence();
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    runSequence,
+                    "gate-d-start-run-" + runSequence,
+                    SceneId.MainMenu,
+                    SceneId.OutOfBattleShell,
+                    Start(runId, seed, timecoins)));
+            captureBootstrap(bootstrap);
+            captureStore(store);
+        }
+
+        private static IEnumerator RestartAndContinue(
+            string savePath,
+            Action<BootstrapRoot> captureBootstrap,
+            Action<SceneFlowStateStore> captureStore)
+        {
+            SceneManager.LoadScene("Bootstrap", LoadSceneMode.Single);
+            yield return null;
+            var bootstrap = Object.FindAnyObjectByType<BootstrapRoot>();
+            yield return AwaitTask(
+                bootstrap.InitializationTask,
+                "Restarted Bootstrap initialization");
+            var store = Object.FindAnyObjectByType<SceneFlowStateStore>();
+            store.ConfigurePersistencePath(savePath);
+            var sequence = bootstrap.ReserveTransitionSequence();
+            yield return Transition(
+                bootstrap,
+                new SceneTransitionRequest(
+                    sequence,
+                    "gate-d-restart-menu-" + sequence,
+                    SceneId.GameStart,
+                    SceneId.MainMenu,
+                    new EmptySceneTransitionPayload(SceneId.MainMenu)));
+            var continueButton = FindButton("Continue");
+            Assert.That(continueButton.interactable, Is.True, store.ContinueDetail);
+            continueButton.onClick.Invoke();
+            yield return AwaitInteractiveScene(bootstrap, SceneId.OutOfBattleShell);
+            captureBootstrap(bootstrap);
+            captureStore(store);
+        }
+
+        private static IEnumerator SelectAndResolveCombatRoom(
+            BootstrapRoot bootstrap,
+            SceneFlowStateStore store,
+            MapNodeId roomId,
+            BattleOutcome outcome,
+            Action<CombatOutcome> captureOutcome)
+        {
+            var movement = Object.FindAnyObjectByType<OverworldMovementPresenter>();
+            Assert.That(movement, Is.Not.Null);
+            var view = movement.GetComponentsInChildren<OverworldNodeView>(true)
+                .Single(candidate => candidate.Id == roomId);
+            Assert.That(view.State, Is.EqualTo(OverworldNodeVisualState.Available));
+            view.GetComponent<Button>().onClick.Invoke();
+            var deadline = Time.realtimeSinceStartup + TaskTimeoutSeconds;
+            while (movement.IsMoving)
+            {
+                if (Time.realtimeSinceStartup >= deadline)
+                {
+                    Assert.Fail("Combat room selection timed out.");
+                }
+
+                yield return null;
+            }
+
+            FindButton("CombatRoom").onClick.Invoke();
+            yield return null;
+            var confirm = FindButton("ConfirmButton");
+            Assert.That(confirm.interactable, Is.True);
+            confirm.onClick.Invoke();
+            yield return AwaitInteractiveScene(bootstrap, SceneId.Combat);
+
+            var controller = Object.FindAnyObjectByType<VerticalSliceController>();
+            Assert.That(controller, Is.Not.Null);
+            var resolution = controller.ResolveBattleOutcome(outcome);
+            Assert.That(resolution.Succeeded, Is.True, resolution.Failure.ToString());
+            var settlement = Object.FindAnyObjectByType<BattleSettlementPresenter>();
+            Assert.That(settlement, Is.Not.Null);
+            if (outcome == BattleOutcome.VictorySettlement)
+            {
+                Assert.That(settlement.IsRewardVisible, Is.True);
+                FindButton("RewardButton").onClick.Invoke();
+                yield return AwaitInteractiveScene(bootstrap, SceneId.OutOfBattleShell);
+            }
+            else
+            {
+                Assert.That(settlement.IsRewardVisible, Is.False);
+                yield return AwaitInteractiveScene(bootstrap, SceneId.GameOver);
+            }
+
+            captureOutcome(store.LastOutcome);
+        }
+
+        private static IEnumerator AwaitInteractiveScene(
+            BootstrapRoot bootstrap,
+            SceneId sceneId)
+        {
+            var deadline = Time.realtimeSinceStartup + TaskTimeoutSeconds;
+            while (bootstrap.CurrentScene != sceneId ||
+                   SceneInputLockState.IsLocked ||
+                   !IsOnlyEntryInteractive(sceneId))
+            {
+                if (Time.realtimeSinceStartup >= deadline)
+                {
+                    Assert.Fail("Timed out waiting for interactive " + sceneId + ".");
+                }
+
+                yield return null;
+            }
+
+            yield return null;
+        }
+
+        private static void AssertEquivalentRunBoundary(
+            OverworldPersistenceSnapshot expected,
+            OverworldPersistenceSnapshot actual)
+        {
+            Assert.That(actual.RunId, Is.EqualTo(expected.RunId));
+            Assert.That(actual.Chapter, Is.EqualTo(expected.Chapter));
+            Assert.That(actual.MapFingerprint, Is.EqualTo(expected.MapFingerprint));
+            Assert.That(actual.CurrentNodeId, Is.EqualTo(expected.CurrentNodeId));
+            Assert.That(actual.Timecoins, Is.EqualTo(expected.Timecoins));
+            Assert.That(actual.DeckStableIds, Is.EqualTo(expected.DeckStableIds));
+            Assert.That(actual.SettledNodeIds, Is.EqualTo(expected.SettledNodeIds));
+            Assert.That(actual.VisitedNodeIds, Is.EqualTo(expected.VisitedNodeIds));
+        }
+
+        private static GateDRoutePlan FindGateDRoutePlan()
+        {
+            var generator = new DeterministicOverworldMapGenerator();
+            for (var seed = 1; seed <= 10000; seed++)
+            {
+                var chapterOne = generator.Generate(
+                    seed,
+                    new OverworldMapGenerationConfig(1));
+                var path = new List<MapNodeId> { chapterOne.EntryNodeId };
+                IReadOnlyList<MapNodeId> route;
+                if (!TryFindGateDPath(chapterOne, chapterOne.EntryNodeId, path, out route))
+                {
+                    continue;
+                }
+
+                var chapterTwo = generator.Generate(
+                    seed,
+                    new OverworldMapGenerationConfig(2));
+                var hasChapterTwoCombat = chapterTwo.GetOutgoing(chapterTwo.EntryNodeId)
+                    .Any(nodeId => IsCombatRoom(chapterTwo.GetNode(nodeId).RoomType));
+                if (hasChapterTwoCombat)
+                {
+                    return new GateDRoutePlan(seed, route);
+                }
+            }
+
+            Assert.Fail("No deterministic Gate D route was found.");
+            return null;
+        }
+
+        private static bool TryFindGateDPath(
+            OverworldMapDefinition map,
+            MapNodeId current,
+            List<MapNodeId> path,
+            out IReadOnlyList<MapNodeId> route)
+        {
+            if (current == map.BossNodeId)
+            {
+                var roomTypes = path.Skip(1)
+                    .Select(nodeId => map.GetNode(nodeId).RoomType)
+                    .ToArray();
+                if (roomTypes.Length >= 4 &&
+                    roomTypes[0] == OverworldRoomType.Event &&
+                    roomTypes[1] == OverworldRoomType.Shop &&
+                    roomTypes.Skip(2).All(type => type != OverworldRoomType.Shop) &&
+                    roomTypes.Take(roomTypes.Length - 1).Any(IsCombatRoom))
+                {
+                    route = path.ToArray();
+                    return true;
+                }
+
+                route = null;
+                return false;
+            }
+
+            foreach (var next in map.GetOutgoing(current))
+            {
+                path.Add(next);
+                if (TryFindGateDPath(map, next, path, out route))
+                {
+                    return true;
+                }
+
+                path.RemoveAt(path.Count - 1);
+            }
+
+            route = null;
+            return false;
+        }
+
+        private static bool IsCombatRoom(OverworldRoomType roomType)
+        {
+            return roomType == OverworldRoomType.Battle ||
+                roomType == OverworldRoomType.Elite ||
+                roomType == OverworldRoomType.Boss;
+        }
+
         private static IEnumerator AssertInvalidSaveNotice(bool futureVersion)
         {
             var directory = Path.Combine(
@@ -921,6 +1335,18 @@ namespace TimeKey.Tests.PlayMode.SceneFlow
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, "Missing field: " + fieldName);
             field.SetValue(target, value);
+        }
+
+        private sealed class GateDRoutePlan
+        {
+            public GateDRoutePlan(int seed, IReadOnlyList<MapNodeId> chapterOnePath)
+            {
+                Seed = seed;
+                ChapterOnePath = chapterOnePath;
+            }
+
+            public int Seed { get; }
+            public IReadOnlyList<MapNodeId> ChapterOnePath { get; }
         }
 
         private sealed class ThrowBeforeReplace : IOverworldSaveWriteFaultInjector

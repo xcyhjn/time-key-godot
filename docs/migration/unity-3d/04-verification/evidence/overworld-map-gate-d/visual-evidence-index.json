@@ -1,0 +1,30 @@
+{
+  "gate": "Wave 03 Overworld Gate D",
+  "manualReview": "Passed",
+  "pngCount": 10,
+  "viewports": [
+    "1280x720",
+    "1920x1080",
+    "2560x1080"
+  ],
+  "checks": [
+    "nonblank",
+    "no Era Clock or map-node overlap",
+    "no clipping",
+    "Silver Chinese readable",
+    "stable layout after scene return and resize",
+    "GameOver and returned MainMenu readable"
+  ],
+  "files": [
+    "player-event-selected-1280x720.png",
+    "player-event-result-1280x720.png",
+    "player-continue-1920x1080.png",
+    "player-shop-selected-1920x1080.png",
+    "player-shop-result-1920x1080.png",
+    "player-boss-selected-1920x1080.png",
+    "player-boss-victory-1920x1080.png",
+    "player-chapter-02-2560x1080.png",
+    "player-game-over-2560x1080.png",
+    "player-returned-menu-2560x1080.png"
+  ]
+}

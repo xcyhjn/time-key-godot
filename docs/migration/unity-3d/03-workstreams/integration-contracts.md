@@ -440,3 +440,22 @@ Bootstrap (persistent, Build index 0)
   PlayMode `2/2`, full graphical EditMode `446/446`, full graphical D3D12 PlayMode
   `128/128`, 15 manually reviewed PNGs, a successful six-Scene Windows build and an
   actual visible Player Bootstrap-to-overworld inspection.
+
+## Wave 03 Overworld Gate D restart and route boundary
+
+- Continue may transition only after schema 2 has been validated and prepared. The
+  prepared Application operation cursor raises the fresh Bootstrap transition-sequence
+  floor before a new request is reserved; persistence remains the cursor owner.
+- The restart boundary is exact: run ID, seed, map fingerprint, current node, resources,
+  deck, visited and settled identities must match the phase-one save.
+- Event and Shop remain local typed operations over the same map. Shop purchase consumes
+  50 timecoins, appends one deterministic stable card ID, settles once and persists once;
+  retry cannot duplicate spend, deck growth or settlement.
+- Battle, Elite and Boss continue through the existing Combat launch/outcome boundary.
+  Boss victory advances one deterministic chapter only after authoritative reward return;
+  exact outcome replay is idempotent and cannot regenerate chapter state.
+- Chapter-2 Defeat follows the existing GameOver route. Returning to MainMenu clears the
+  run, prepared launch/outcome state, persistence files and input lock.
+- Gate D is frozen by additive `10/10`, full graphical EditMode `446/446`, full graphical
+  Direct3D12 PlayMode `130/130`, a six-Scene Windows build, two visible Player processes
+  both exiting 0 and 10 manually reviewed Player PNGs.

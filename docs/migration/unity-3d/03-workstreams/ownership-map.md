@@ -161,7 +161,7 @@ Gate E 的两份实现 Prompt 已通过互斥审查：layered reveal Agent 只�
 
 Wave 02B3R 使用三份互斥 Prompt。Geometry 路径只拥有 `Runtime/Presentation/Actions/**`、局部 `TimelineActionFrame.prefab` 和几何测试；Interaction 路径只拥有新建 `Runtime/Presentation/Interaction/**` 与纯测试；Identity 路径只拥有新建 `Runtime/Presentation/Identity/**` 与纯测试。主智能体独占既有 Controller/Binding/Presenter、authoring、正式 Prefab、共享文档、证据与 Git。所有审查/实现 Agent 已返回，Geometry 所有权已回收；Unity、Godot、Build、测试和 Player 写入进程均在检查点前退出。
 
-## Wave 03 Overworld Gate B/C 所有权
+## Wave 03 Overworld Gate B-D 所有权
 
 | Gate | 角色 | 独占路径摘要 | 当前状态 |
 | --- | --- | --- | --- |
@@ -170,4 +170,4 @@ Wave 02B3R 使用三份互斥 Prompt。Geometry 路径只拥有 `Runtime/Present
 | Gate B | Integration audit Agent | 只读检查 SceneFlow/02B4/地图身份边界 | 已完成交回 |
 | Gate B-D | 主智能体 | SceneFlow、既有共享代码、正式 Scene/Prefab、authoring、共享契约、最终证据、Unity/Player 和 Git | 独占 |
 
-三份 Gate B Agent Prompt 及交集审查位于 `agents/prompts/overworld-gate-b-*.md`；所有 Agent 均未 stage、commit、push 或运行 Unity。Gate B 检查点完成后所有路径已交回主智能体。Gate C 未再启动写入 Agent，由主智能体在无并发 Unity/Agent 写入者时完成动态地图、Event/Shop、Continue、正式资产、全量验证与证据；当前 staging 所有权仍由主智能体独占。
+三份 Gate B Agent Prompt 及交集审查位于 `agents/prompts/overworld-gate-b-*.md`；所有 Agent 均未 stage、commit、push 或运行 Unity。Gate B 检查点完成后所有路径已交回主智能体。Gate C/D 未再启动写入 Agent，由主智能体在无并发 Unity/Agent 写入者时完成动态地图、Event/Shop、Continue、多房间/Boss/章节/失败/重启闭环、正式资产、全量验证与证据。Gate D 终验时 Unity、Player 和所有 Agent 均已退出，staging/Git 所有权仍由主智能体独占。

@@ -221,6 +221,9 @@ namespace TimeKey.Composition.SceneFlow
                         "当前存档不可继续：" + (stateStore?.ContinueDetail ?? "未找到存档"));
                 }
 
+                bootstrap.EnsureTransitionSequenceAtLeast(
+                    stateStore.PreparedContinueOperationSequenceCursor);
+
                 return continued;
             }
 

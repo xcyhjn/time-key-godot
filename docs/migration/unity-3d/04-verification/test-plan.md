@@ -292,3 +292,23 @@ Final results are full EditMode `343/343`, full graphical Direct3D12 PlayMode `1
 All counts passed with zero failed, skipped or inconclusive tests. Fifteen PNGs were
 manually reviewed for nonblank output, overlap, clipping, Silver readability and dynamic
 layout. Canonical evidence is `evidence/overworld-map-gate-c/verification-summary.md`.
+
+## Wave 03 Overworld Gate D
+
+- Restart: first Player persists the exact Event boundary; a fresh Player enables
+  Continue and restores run/map/current/resources/deck/visited/settled identity.
+- Sequence safety: prepared schema-2 operation cursor raises the new Bootstrap transition
+  floor before Continue reserves a request.
+- Route: deterministic Event -> Shop -> combat rooms -> Boss, with actual UI room
+  selection, Combat victory/reward return and a single chapter advance.
+- Idempotence: Shop retry cannot duplicate spend/deck/settled state; Boss outcome replay
+  reports already applied and cannot regenerate chapter 2.
+- Defeat: an available chapter-2 combat resolves Defeat, reaches GameOver, returns to
+  MainMenu and deletes/clears the run with input unlocked.
+- Delivery: additive `10/10`, full graphical EditMode `446/446`, full graphical D3D12
+  PlayMode `130/130`, exact six-Scene Windows build and two visible Player processes.
+
+All canonical tests passed with zero failed, skipped or inconclusive results. Ten actual
+Player PNGs cover 1280x720, 1920x1080 and 2560x1080 and were manually reviewed after
+waiting for Era Clock settlement following every combat return. Canonical evidence is
+`evidence/overworld-map-gate-d/verification-summary.md`.

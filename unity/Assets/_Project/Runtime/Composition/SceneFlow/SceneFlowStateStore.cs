@@ -75,6 +75,11 @@ namespace TimeKey.Composition.SceneFlow
 
         public string ContinueDetail { get; private set; } = string.Empty;
 
+        public long PreparedContinueOperationSequenceCursor =>
+            _preparedContinue == null
+                ? 0
+                : _preparedContinue.CreatePersistenceSnapshot().OperationSequenceCursor;
+
         public void ConfigurePersistencePath(string path)
         {
             if (_pending != null)
