@@ -1,8 +1,8 @@
 # 已完成切片
 
-> 状态：截至 Combat Shell Gate E 已完成
+> 状态：截至 Wave 03 Overworld Gate A-D 已完成；Wave 04 Gate 0 已冻结
 > 负责人：主智能体
-> 最后验证日期：2026-08-03
+> 最后验证日期：2026-08-04
 > 证据来源：Slice Definition of Done
 
 ## Wave 00：迁移评估基线
@@ -226,3 +226,12 @@
   全清。
 - 最终门禁：additive `10/10`、full graphical `446/446 + 130/130`、六 Scene Windows
   build、两段实际 Player exit `0/0`、10 张人工复核 Player PNG。
+
+## Wave 04 Gate 0：内容与体验契约冻结
+
+- 继承 Wave 03 Gate A-D 权威 XML/JSON/PNG/build/Player 证据并复核解析；不改历史 evidence。
+- 记录 145 个 tracked dirty、317 个 untracked、0 staged、进程/lock 状态和目标文件 SHA-256。
+- 13 个项目 OGG 登记为 `LOCAL_DEV_ONLY`；Dialogic 示例 typing WAV 为 `HOLD`；Silver 继续按既有
+  CC BY 4.0 attribution 记录；公开发布授权未宣称完成。
+- 冻结 `AudioCue`、`CombatFeedbackEvent`、`TutorialStep` 和互斥 Agent ownership；Gate 0 红测留待
+  独立 XML，正式 Gate A-E 完成后再登记为 Wave 04 切片。

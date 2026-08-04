@@ -1,8 +1,8 @@
 # Unity 3D 迁移总待办
 
-> 状态：Wave 02B4 已完成；下一阶段为 Combat Shell 与 Scene Flow
+> 状态：Wave 03 Overworld Gate A-D 已完成；当前为 Wave 04 内容、反馈、音频与教程
 > 负责人：主智能体
-> 最后验证日期：2026-08-02
+> 最后验证日期：2026-08-04
 > 证据来源：迁移路线图、风险登记、首切片验收契约
 
 ## Wave 00：评估
@@ -45,8 +45,8 @@
 - [x] Wave 02B2C：wind/tornado 即时 clear 会话、完整 action 移除和专用时间轴预览。
 - [x] Wave 02B3：敌方/建筑行动、意图优先级/重判、塔自损与 poison 回合开始状态。
 - [x] Wave 02B4：抽弃牌、回合、时间币、胜负和局内奖励入口。
-- [ ] Wave 03：暂停；局外地图和流程保持 Godot 现状。
-- [ ] Wave 04：教程、中文字体、音频、VFX 和授权资产。
+- [x] Wave 03：单一地图 authority、schema 2 Continue、Event safe-skip、Shop、Boss、章节、Defeat 和真实重启。
+- [ ] Wave 04：Gate 0 资产/typed 契约，Gate A 音频，Gate B 战斗反馈，Gate C 地图/UI，Gate D 教程，Gate E 回归/构建/Player。
 - [ ] Wave 05：平台冻结、性能预算、存档升级和发布构建。
 
 ## Wave 02B3：回合生命周期与交互表现

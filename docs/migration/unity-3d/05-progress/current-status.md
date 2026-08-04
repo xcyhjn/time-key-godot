@@ -1,9 +1,20 @@
 # Unity 3D 迁移当前状态
 
-> 状态：Combat Shell Gate E 已关闭；P0 插件化与资产工具链 Prompt 已置顶；Wave 03 Prompt 已生成
+> 状态：Wave 03 Overworld Gate A-D 已关闭；Wave 04 Gate 0 已冻结，等待 Gate A
 > 负责人：主智能体
-> 最后验证日期：2026-08-03
+> 最后验证日期：2026-08-04
 > 证据来源：评估门禁、共享契约、Godot 基线、Git 状态
+
+## Wave 04 Gate 0 intake
+
+Wave 03 Overworld Gate A-D 已从权威 XML/JSON/PNG/build/Player 证据重新复核并继承；没有重新实现
+任何 Wave 03 Gate A-D。当前分支、进程、锁、dirty/untracked inventory、目标文件 hash、包/asmdef
+状态和资产许可分类记录于 `04-verification/evidence/wave-04-gate-0/intake.md`。
+
+Gate 0 已冻结 `AudioCue`、`CombatFeedbackEvent` 和 `TutorialStep` typed contract；三个 Agent Prompt
+已写入 `03-workstreams/agents/prompts/` 并通过互斥路径审查。Unity Hub/许可进程已按用户要求终止，
+当前没有 Unity/Godot/Player/Agent 写入者。下一步是运行 Gate 0 定向红测并保存独立 XML，再串行
+审查 Audio/Feedback/Tutorial 回报后由主智能体集成正式 Scene/Prefab 和设置。
 
 ## 结论
 

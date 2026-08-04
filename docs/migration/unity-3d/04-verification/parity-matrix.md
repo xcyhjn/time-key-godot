@@ -1,8 +1,8 @@
 # Godot / Unity 等价矩阵
 
-> 状态：Combat Shell Gate E 已关闭；Wave 03 局外地图待执行
+> 状态：Wave 03 Overworld Gate A-D 已关闭；Wave 04 Gate 0 已冻结，A-E 进行中
 > 负责人：主智能体
-> 最后验证日期：2026-08-03
+> 最后验证日期：2026-08-04
 > 证据来源：Godot 实跑截图/日志、玩法等价契约、Unity 全量测试、构建、Player smoke 与实际截图
 
 | 行为 | Godot 基线 | Unity 当前实现 | 判定 | 证据 |
@@ -173,3 +173,15 @@ Gate D closes at `446/446 + 130/130`, with additive `10/10`, a successful six-Sc
 Windows build, two actual Player processes exiting 0 and 10 manually reviewed Player
 PNGs. Wave 03 Overworld Gate A-D are complete without a second map or SceneFlow state
 machine.
+
+## Wave 04 Gate 0 supplement
+
+| 输入域 | 当前冻结事实 | Unity Wave 04 约束 | 证据 |
+| --- | --- | --- | --- |
+| Audio cue | Godot 为 3 BGM、10 SFX、Master/Music/SFX bus、双 BGM、6 one-shot、1 looping source | 13 个 stable cue id、AudioMixer/Cue catalog/pool；设置与 SceneFlow 仍由主智能体集成 | `wave-04-gate-0/asset-license-ledger.md`、`integration-contracts-wave-04.md` |
+| Combat feedback | 现有 Application result/trace/snapshot 是唯一结果来源 | immutable result-to-feedback event；不反写 Domain/HP/turn/save；UnsupportedSourceCommand no-effect | `integration-contracts-wave-04.md`、Gate B report |
+| Tutorial | Godot director/mask/Dialogic 与 ConfigFile 偏好存在，固定牌组含缺失数字 JSON 风险 | typed step + 真实状态完成条件；偏好与 schema 2 run save 分离；缺失内容透明降级 | Tutorial Audit report、Gate D evidence |
+| Assets | 原 OGG/图片/字体授权未闭合；Dialogic 示例 WAV 不属于项目清单 | `LOCAL_DEV_ONLY`/`HOLD` 分类优先于导入；不覆盖历史 hash | asset ledger、candidate records |
+
+Gate 0 的红测只证明 AudioRoot/Mixer/Cue 与反馈/教程 typed runtime 尚未存在；实现后应转为正式
+contract tests，不改变 Wave 03 A-D 的既有等价判定。

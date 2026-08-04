@@ -1,8 +1,8 @@
 # Unity 3D 迁移路线图
 
-> 状态：Wave 02B2A 与解耦 R1/R2/R3 已完成；下一阶段为剩余卡牌
+> 状态：Wave 03 Overworld Gate A-D 已完成；当前阶段为 Wave 04 内容、反馈、音频与教程
 > 负责人：主智能体
-> 最后验证日期：2026-08-01
+> 最后验证日期：2026-08-04
 > 证据来源：可行性报告、依赖矩阵、风险登记、共享契约
 
 ## 波次
@@ -13,11 +13,11 @@
 | 01 战斗垂直切片 | 真实卡牌→时间轴→结算→3D 目标 | 共享契约冻结 | EditMode、PlayMode、build、双视口截图 |
 | 02A 局内 3D 棋盘 | 360° 轨道镜头、实体堆叠、稳定选格、原美术语言 | Wave 01 无架构阻断 | 4 向截图、PlayMode、FBX 几何证据 |
 | 02B 战斗规则扩展 | 全卡牌效果、形状、敌人/建筑、胜负 | 02A 棋盘空间契约稳定 | parity fixtures、战斗闭环 |
-| 03 局外闭环 | 暂停，保持 Godot 现状 | 用户重新排定优先级且存档策略已决策 | 固定 seed 流程、跨场景测试 |
-| 04 内容与体验 | 教程、音频、VFX、中文字体、资产 | 授权清单完成 | 视觉/音频对照、性能预算 |
+| 03 局外闭环 | 单一地图 authority、schema 2 Continue、多房间/Boss/Defeat/重启 | Wave 02B4 与 SceneFlow 已关闭 | `446/446 + 130/130`、两段 Player、Gate D summary |
+| 04 内容与体验 | 教程、音频、战斗反馈、地图/UI 产品化 | Gate 0 资产/typed 契约冻结 | Gate A-E 定向/全量回归、三视口/resize、Player |
 | 05 发布加固 | 存档升级、平台、构建与回归 | 目标平台冻结 | 发布构建、回归矩阵 |
 
-Wave 00、Wave 01、Wave 02A、Wave 02B1、Wave 02B2A 与解耦 R1/R2/R3 已关闭。七卡 typed schema、`front_image`、`lighting` 与 `earthquake +2` 的真实 `0.32` 堆叠、范围、两格时间轴和七卡 UI 均已验证；Application、Presentation、Infrastructure、Diagnostics 与 Composition 边界已冻结。下一实施单元由 `NEXT_STAGE_REMAINING_CARDS_PROMPT.md` 定义。扩展敌方意图前仍需保留 MIG-002 的源行为。
+Wave 00、Wave 01、Wave 02A、Wave 02B1、Wave 02B2A、Wave 02B2B/C、Wave 02B3/4、Combat Shell A-E 与 Wave 03 Overworld Gate A-D 已关闭。Wave 04 以本地 `wave-04-gate-0/intake.md`、`asset-license-ledger.md` 和 `integration-contracts-wave-04.md` 为入口；Audio/Feedback/Tutorial 仍只能消费既有 typed result/trace/snapshot，不能建立第二套 Domain、SceneFlow、save、Theme 或 identity。MIG-002/MIG-003/MIG-005 继续透明记录。
 
 ## Wave 01 依赖顺序
 
