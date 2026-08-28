@@ -41,6 +41,7 @@ logs/
 log/game.log
 log/game.log
 /log
+/build-player/
 .claude/
 docs/.obsidian/
 
@@ -65,3 +66,15 @@ docs/.obsidian/
 /unity/playmode-final.log
 /unity/player-startup.log
 /unity/player-startup-*.log
+
+# Centralized local archive for raw test/editor output and temporary fixtures.
+# Tracked historical evidence remains tracked even when it matches these patterns.
+/.local-artifacts/
+*.log
+*.xml
+!/docs/migration/unity-3d/04-verification/evidence/**/*.xml
+!/docs/migration/unity-3d/04-validation/**/*.xml
+/unity/TestResults/
+/unity/docs/
+/unity/Assets/InitTestScene*.unity
+/unity/Assets/InitTestScene*.unity.meta

@@ -1,5 +1,0 @@
-build=Succeeded
-player_started=True
-player_window_idle=True
-player_exit_code=-1
-scene_count=6

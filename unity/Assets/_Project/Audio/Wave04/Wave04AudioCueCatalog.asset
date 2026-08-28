@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a04d0fc5c1051a4d90781d60e0c3d10, type: 3}
+  m_Name: Wave04AudioCueCatalog
+  m_EditorClassIdentifier: TimeKey.Presentation::TimeKey.Presentation.Audio.AudioCueCatalog
+  cues:
+  - stableId: bgm.main_menu
+    clip: {fileID: 8300000, guid: 927b9428f5d4a4441b5ca3502c4501e0, type: 3}
+    route: 1
+    loop: 1
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: bgm.battle
+    clip: {fileID: 8300000, guid: b862c8fc452f94b42b65393d6a57529a, type: 3}
+    route: 1
+    loop: 1
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: bgm.battle_boss
+    clip: {fileID: 8300000, guid: dc20772c8fba2994ea5a1a26d4f8d7e8, type: 3}
+    route: 1
+    loop: 1
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.clock_tick
+    clip: {fileID: 8300000, guid: b520ca4d3d0b9cd46b0e43750f47b55c, type: 3}
+    route: 2
+    loop: 0
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.choose_role
+    clip: {fileID: 8300000, guid: 3035c7c94aa2bf743a3fc4f03743a90d, type: 3}
+    route: 2
+    loop: 0
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.walk_dim
+    clip: {fileID: 8300000, guid: 11df5bf7a6709c444bb5b24ec3fe908b, type: 3}
+    route: 2
+    loop: 0
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.draw_card
+    clip: {fileID: 8300000, guid: f66de1b7bd2c8f142b4fc744b8607acf, type: 3}
+    route: 2
+    loop: 0
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.card_shuffle
+    clip: {fileID: 8300000, guid: 9f8b9ca72dbb1624284e1d867a2cb65f, type: 3}
+    route: 2
+    loop: 0
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.confirm_timeline
+    clip: {fileID: 8300000, guid: 9338d4dd4e927444d986e5639aff379c, type: 3}
+    route: 2
+    loop: 0
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.tile_damage
+    clip: {fileID: 8300000, guid: 499deabee9f038f488ebbbe742323c73, type: 3}
+    route: 2
+    loop: 0
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.victory_short
+    clip: {fileID: 8300000, guid: 128fa72319000cc40b3a06cef2f1fe36, type: 3}
+    route: 2
+    loop: 1
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.victory_long
+    clip: {fileID: 8300000, guid: 7f3892adf2ddc434ab14bea45504ce60, type: 3}
+    route: 2
+    loop: 1
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1
+  - stableId: sfx.game_over
+    clip: {fileID: 8300000, guid: 268e22b3cdf9f7947a2728d5add2a266, type: 3}
+    route: 2
+    loop: 1
+    volume: 0.70794576
+    priority: 128
+    pitchMin: 1
+    pitchMax: 1

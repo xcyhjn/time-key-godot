@@ -1,8 +1,0 @@
-{
-  "status": "passed",
-  "player": "D:\\timekey-unity-731\\Builds\\Windows\\TimeKeySlice.exe",
-  "exitCode": 0,
-  "requiredMarker": "TIMEKEY_PLAYER_SMOKE_PASS",
-  "markerFound": true,
-  "arguments": ["-batchmode", "-timekeySmokeQuit"]
-}

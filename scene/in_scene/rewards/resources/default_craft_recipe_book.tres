@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="CraftRecipeBook" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="CraftRecipeBook" format=3 uid="uid://c30lx2slqg0ov"]
 
-[ext_resource type="Script" path="res://scene/in_scene/rewards/resources/CraftRecipeBook.gd" id="1_recipe_book"]
-[ext_resource type="Script" path="res://scene/in_scene/rewards/resources/CraftRecipeEntry.gd" id="2_recipe_entry"]
+[ext_resource type="Script" uid="uid://bhthoocqpjfd0" path="res://scene/in_scene/rewards/resources/CraftRecipeBook.gd" id="1_recipe_book"]
+[ext_resource type="Script" uid="uid://c4omiawsldkfg" path="res://scene/in_scene/rewards/resources/CraftRecipeEntry.gd" id="2_recipe_entry"]
 
 [sub_resource type="Resource" id="Resource_wind_tower"]
 script = ExtResource("2_recipe_entry")

@@ -11,16 +11,16 @@ void fragment() {
     float ratio = screen_width / screen_height;
     vec2 uv = UV;
     uv.x *= ratio;
-    
+
     // 计算圆心（屏幕中心）坐标
     vec2 center = vec2(0.5 * ratio, 0.5);
-    
+
     // 计算像素点到中心的距离
     float dist = distance(uv, center);
-    
+
     // 核心逻辑：如果距离大于尺寸，则显示黑色；小于则透明
     // smoothstep 用于消除锯齿
     float mask = smoothstep(circle_size, circle_size + 0.01, dist);
-    
+
     COLOR = vec4(0.0, 0.0, 0.0, mask);
 }
